@@ -1,14 +1,16 @@
 # Motake — Phase 1: Order Management System
 
-**Product Requirements Document (PRD v1.8)**
+**Product Requirements Document (PRD v1.9)**
 
 | Field | Value |
 | --- | --- |
 | **Company** | Motake |
+
+
 | **Phase** | Phase 1 — Order Management System |
 | **Target Delivery** | 15 days (2 weeks) |
-| **Document Version** | 1.8 |
-| **Status** | Updated per clarification review (v1.8) |
+| **Document Version** | 1.9 |
+| **Status** | Updated per clarification review (v1.9) |
 | **Reference** | [prideofcows.com](https://prideofcows.com) (business model & product positioning) |
 
 ---
@@ -1082,7 +1084,7 @@ Salesman Browser                         Backend                    Admin View
   └────────────┘ └────┬─────┘
                       ▼
               ┌───────────────┐
-              │Product Variety│────► Product
+              │Product Variety│────► Product (no categories, no prices)
               └───────────────┘
 ```
 
@@ -1091,16 +1093,17 @@ Salesman Browser                         Backend                    Admin View
 | Table | Key Fields |
 | --- | --- |
 | `profiles` | id (FK → auth.users), role, phone, email, name, status |
-| `salesmen` | id, profile_id, salesman_code, online_status, last_seen_at, offline_reason |
-| `products` | id, name, description, category, image_url, status |
-| `product_varieties` | id, product_id, sku, name, unit, price, status |
-| `customers` | id, shop_name, contact_name, phone, address, lat, lng, notes, created_by |
-| `customer_update_requests` | id, customer_id, requested_by, changes_json, status, reviewed_by |
-| `orders` | id, order_code, type, status, salesman_id, customer_id, total, scheduled_date, placed_at, fulfilled_at, fulfilled_by, idempotency_key |
-| `order_items` | id, order_id, variety_id, quantity, unit_price, line_total |
-| `gatepasses` | id, salesman_id, date, status, issued_by, closed_by, closed_at, notes |
-| `gatepass_items` | id, gatepass_id, variety_id, issued_qty, sold_qty, returned_qty |
-| `audit_logs` | id, actor_id, action, entity_type, entity_id, payload, timestamp |
+| `salesmen` | id (FK → profiles), salesman_code |
+| `products` | id, name, description, image_url, status |
+| `product_varieties` | id, product_id, sku, name, unit, status |
+| `customers` | id, shop_name, contact_name, phone, address, notes, created_by |
+| `orders` | id, order_code, type, status, salesman_id, customer_id, total_quantity, scheduled_date, placed_at, fulfilled_at, fulfilled_by, idempotency_key |
+| `order_items` | id, order_id, variety_id, quantity |
+| `gatepasses` | id, salesman_id, business_date, status, issued_by, closed_by, closed_at, has_discrepancy, notes |
+| `gatepass_items` | id, gatepass_id, variety_id, issued_qty, sold_qty, returned_qty, available_qty (generated) |
+| `audit_logs` | id, actor_id, action, entity_type, entity_id, payload, created_at |
+
+**Phase 1 exclusions (data model):** No price or monetary fields anywhere. No `categories` table — products are a flat catalog filtered by name search only. No `customer_update_requests` (admin direct CRUD). No presence/online-status fields on salesmen.
 
 ---
 
@@ -1434,8 +1437,9 @@ Salesman A (creator)             Salesman B (any)              System
 | v1.5 | No central stock; GatePass direct allotment only; Pre-orders are order records with zero GatePass impact; Book Now deducts GatePass only |
 | v1.6 | Migrated auth from Clerk → Supabase Auth; database from Neon → Supabase PostgreSQL; RLS required; roles in `app_metadata`; Next.js 16 `proxy.ts` for session + RBAC |
 | v1.7 | Drizzle ORM as sole data-access layer; Supabase client for Auth only; drizzle-kit migrations; Prisma excluded |
-| v1.8 | **This version.** Single Next.js project (no monorepo); feature-based folder architecture (`app/` + `features/`); mobile-first PWA; Drizzle in `lib/db/` |
+| v1.8 | Single Next.js project (no monorepo); feature-based folder architecture (`app/` + `features/`); mobile-first PWA; Drizzle in `lib/db/` |
+| v1.9 | **This version.** DB: no price/monetary fields; no categories table — quantity and status tracking only |
 
 ---
 
-*End of PRD v1.8*
+*End of PRD v1.9*

@@ -1,10 +1,26 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  GOOGLE_OAUTH_CLIENT_ID: z.string(),
-  GOOGLE_OAUTH_CLIENT_SECRET: z.string(),
-  GOOGLE_OAUTH_REDIRECT_URI: z.string(),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
+    JWT_SECRET: z
+      .string()
+      .min(8, "JWT_SECRET must be at least 8 characters")
+      .describe(
+        "Secret key used for signing JWT tokens. Keep secret; never expose in client-side code.",
+      )
+  })
+  .superRefine((val, ctx) => {
+    if (val.NODE_ENV === "production" && val.JWT_SECRET.length < 32) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["JWT_SECRET"],
+        message: "JWT_SECRET must be at least 32 characters in production",
+      });
+    }
+  });
 
 function createEnv(env: NodeJS.ProcessEnv) {
   const safeParseResult = envSchema.safeParse(env);
