@@ -1,55 +1,66 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import { initTRPC } from "@trpc/server";
 import { OpenApiMeta } from "trpc-to-openapi";
+import { ZodError } from "zod";
+
 import { createContext } from "./context";
+import { authService } from "./services";
 import { getAuthentication } from "./utils/cookie";
-import { unauthorized } from "./utils/error";
-import { verifyToken } from "@repo/services/auth"
+import { forbidden, unauthorized } from "./utils/error";
 
 export const tRPCContext = initTRPC
   .meta<OpenApiMeta>()
   .context<typeof createContext>()
-  .create({});
+  .create({
+    errorFormatter({ shape, error }) {
+      const zodError = error.cause instanceof ZodError ? error.cause : null;
+      return {
+        ...shape,
+        message: zodError ? "Validation failed" : shape.message,
+        data: {
+          ...shape.data,
+          stack: undefined,
+          issues:
+            zodError?.issues.map((issue) => ({
+              path: issue.path.join("."),
+              message: issue.message,
+            })) ?? null,
+        },
+      };
+    },
+  });
 
 export const router = tRPCContext.router;
 
 export const publicProcedure = tRPCContext.procedure;
 
-export const protectedProcedure = tRPCContext.procedure.use(
-  async ({ ctx, next }) => {
-    const token = getAuthentication(ctx);
-    if (!token) throw unauthorized();
+export const protectedProcedure = tRPCContext.procedure.use(async ({ ctx, next }) => {
+  const accessToken = getAuthentication(ctx);
+  if (!accessToken) throw unauthorized();
 
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch {
-      throw unauthorized("Invalid or expired session");
-    }
+  let authenticatedUser;
+  try {
+    authenticatedUser = await authService.verifyAccessToken(accessToken);
+  } catch {
+    throw unauthorized("Invalid or expired session");
+  }
 
-    if (!payload?.id) throw unauthorized("Invalid session payload");
-
-    // Validate that the token was issued AFTER the user's most recent password
-    // change. Lets `changePassword` invalidate sessions on other devices.
-    // TODO: Implement user service and get user by id
-    const user = { id: null };
-
-    // if (!user) throw unauthorized("Session is no longer valid");
-    // if (payload.iat !== undefined) {
-    //   const pwdChangedAtSec = Math.floor(
-    //     user.passwordChangedAt.getTime() / 1000,
-    //   );
-    //   if (payload.iat < pwdChangedAtSec) {
-    //     throw unauthorized("Session was revoked. Please sign in again.");
-    //   }
-    // }
-
-    return next({
-      ctx: {
-        ...ctx,
-        user: {
-          id: user.id,
-        },
+  return next({
+    ctx: {
+      ...ctx,
+      user: {
+        id: authenticatedUser.id,
+        role: authenticatedUser.role,
       },
-    });
-  },
-);
+    },
+  });
+});
+
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user?.role !== "admin") throw forbidden();
+  return next({ ctx });
+});
+
+export const salesmanProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user?.role !== "salesman") throw forbidden();
+  return next({ ctx });
+});

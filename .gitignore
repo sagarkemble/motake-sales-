@@ -9,9 +9,13 @@ packages/*/node_modules/
 .pnp
 .pnp.js
 .yarn/install-state.gz
-
+files_to_zip.txt
 # Package managers
 .pnpm-store/
+
+*.zip
+motake.zip
+files_to_zip.txt
 
 # Build outputs
 dist/

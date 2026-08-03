@@ -3,10 +3,10 @@ import { api } from "~/trpc/server";
 export default async function Home() {
   const { status } = await api.health.getHealth.query();
   return (
-    <main className="min-h-screen min-w-screen flex justify-center items-center">
-      <div>
-        <h1 className="text-3xl">Streamyst - Stream in Style</h1>
-        <h2>tRPC Lunar Studio Template Health Check: {status}</h2>
+    <main className="min-h-screen">
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold">Motake Service Test Grid</h1>
+        <p className="text-sm text-muted-foreground">Health check: {status}</p>
       </div>
     </main>
   );

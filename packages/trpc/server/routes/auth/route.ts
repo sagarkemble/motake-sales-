@@ -1,19 +1,65 @@
+import { authService } from "../../services";
 import { z, zodUndefinedModel } from "../../schema";
-import { userService } from "../../services";
-import { getAuthenticationMethodOutputSchema } from "@repo/services/user/model";
-import { publicProcedure, router } from "../../trpc";
+import { protectedProcedure, publicProcedure, router } from "../../trpc";
+import { clearAuthentication, setAuthentication } from "../../utils/cookie";
+import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { generatePath } from "../../utils/path-generator";
+import { createSessionInputSchema, sessionUserSchema } from "./model";
 
-const TAGS = ["Authentication"];
-const getPath = generatePath("/authentication");
+const path = generatePath("/auth");
 
 export const authRouter = router({
-  getSupportedAuthenticationProviders: publicProcedure
-    .meta({ openapi: { method: "GET", path: getPath("/supported-providers"), tags: TAGS } })
+  createSession: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/session"),
+        tags: ["Auth"],
+        summary: "Create a session from a Supabase access token",
+        description:
+          "Check the Supabase access token. Save it in an httpOnly session cookie. Return the user id and role.",
+      },
+    })
+    .input(createSessionInputSchema)
+    .output(apiResponseSchema(sessionUserSchema))
+    .mutation(async ({ ctx, input }) => {
+      const authenticatedUser = await authService.verifyAccessToken(input.accessToken);
+      setAuthentication(ctx, input.accessToken);
+      return apiResponse({ id: authenticatedUser.id, role: authenticatedUser.role });
+    }),
+
+  logout: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/logout"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "End the current session",
+        description: "Clear the session cookie. The user must sign in again to make new requests.",
+      },
+    })
     .input(zodUndefinedModel)
-    .output(z.readonly(z.array(getAuthenticationMethodOutputSchema)))
-    .query(async () => {
-      const supportedMethods = await userService.getAuthenticationMethods();
-      return supportedMethods;
+    .output(apiResponseSchema(z.object({ loggedOut: z.literal(true) })))
+    .mutation(async ({ ctx }) => {
+      clearAuthentication(ctx);
+      return apiResponse({ loggedOut: true as const });
+    }),
+
+  me: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/me"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "Get the signed-in user",
+        description: "Return the id and role of the user tied to the current session.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(sessionUserSchema))
+    .query(async ({ ctx }) => {
+      return apiResponse({ id: ctx.user.id, role: ctx.user.role });
     }),
 });
