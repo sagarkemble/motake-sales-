@@ -42,6 +42,13 @@ export const createSalesmanAccountInputSchema = z.object({
 
 export const salesmanIdInputSchema = z.object({ id: z.string().uuid() });
 
+export const updateSalesmanAccountInputSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  phone: z.string().min(1).max(20).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(8).optional(),
+});
+
 export const listSalesmenInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),

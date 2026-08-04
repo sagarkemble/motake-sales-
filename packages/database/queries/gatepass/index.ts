@@ -194,9 +194,9 @@ export interface GatepassEndOfDayTotals {
 export async function getEndOfDayTotalsForDate(businessDate: string): Promise<GatepassEndOfDayTotals> {
   const itemTotalsRows = await db
     .select({
-      totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)`,
-      totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)`,
-      totalReturnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)`,
+      totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
+      totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+      totalReturnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)::int`,
     })
     .from(gatepassItemsTable)
     .innerJoin(gatepassesTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))

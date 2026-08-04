@@ -10,3 +10,8 @@ export const sessionUserSchema = z.object({
   id: z.string(),
   role: appRoleSchema,
 });
+
+export const updatedPhoneSchema = z.object({
+  id: z.string(),
+  phone: z.string().nullable(),
+});

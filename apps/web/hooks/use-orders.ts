@@ -7,6 +7,7 @@ import { emptyPaginatedResult } from "./shared/pagination";
 interface UseOrdersParams {
   listFilters?: RouterInputs["orders"]["list"];
   orderId?: string;
+  detailOrderId?: string;
   duePreordersDate?: string;
   enabled?: boolean;
 }
@@ -14,6 +15,7 @@ interface UseOrdersParams {
 export function useOrders({
   listFilters,
   orderId,
+  detailOrderId,
   duePreordersDate,
   enabled = true,
 }: UseOrdersParams = {}) {
@@ -25,6 +27,10 @@ export function useOrders({
   const orderQuery = trpc.orders.getById.useQuery(
     { id: orderId ?? "" },
     { enabled: enabled && Boolean(orderId) },
+  );
+  const orderDetailQuery = trpc.orders.getDetail.useQuery(
+    { id: detailOrderId ?? "" },
+    { enabled: enabled && Boolean(detailOrderId) },
   );
   const duePreordersQuery = trpc.orders.listDuePreorders.useQuery(
     { businessDate: duePreordersDate ?? "" },
@@ -60,6 +66,11 @@ export function useOrders({
     isOrderLoading: orderQuery.isLoading,
     isOrderError: orderQuery.isError,
     refetchOrder: orderQuery.refetch,
+
+    orderDetail: orderDetailQuery.data?.data ?? null,
+    isOrderDetailLoading: orderDetailQuery.isLoading,
+    isOrderDetailError: orderDetailQuery.isError,
+    refetchOrderDetail: orderDetailQuery.refetch,
 
     duePreorders: duePreordersQuery.data?.data ?? [],
     isDuePreordersLoading: duePreordersQuery.isLoading,

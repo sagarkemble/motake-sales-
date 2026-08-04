@@ -11,6 +11,14 @@ export type CreateProductInput = z.infer<typeof createProductInputSchema>;
 export const updateProductInputSchema = createProductInputSchema.partial();
 export type UpdateProductInput = z.infer<typeof updateProductInputSchema>;
 
+export const allowedProductImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export const createImageUploadUrlInputSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z.enum(allowedProductImageContentTypes),
+});
+export type CreateImageUploadUrlInput = z.infer<typeof createImageUploadUrlInputSchema>;
+
 export const createProductVarietyInputSchema = z.object({
   productId: z.string().uuid(),
   sku: z.string().min(1).max(64),

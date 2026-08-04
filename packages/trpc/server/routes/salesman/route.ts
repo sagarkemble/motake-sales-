@@ -2,17 +2,19 @@ import { authService, salesmanService } from "../../services";
 import { z, zodUndefinedModel } from "../../schema";
 import { adminProcedure, router, salesmanProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { notFound } from "../../utils/error";
+import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   createSalesmanAccountInputSchema,
   listSalesmenInputSchema,
   paginatedSalesmenSchema,
+  profileSchema,
   salesmanDayWiseHistoryRowSchema,
   salesmanHistoryInputSchema,
   salesmanIdInputSchema,
   salesmanSchema,
   salesmanWithProfileSchema,
+  updateSalesmanAccountInputSchema,
 } from "./model";
 
 const path = generatePath("/salesmen");
@@ -70,6 +72,25 @@ export const salesmanRouter = router({
     .mutation(async ({ input }) => {
       await authService.deactivateSalesmanAccount(input.id);
       return apiResponse({ deactivated: true as const });
+    }),
+
+  update: adminProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/:id"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Update a salesman account",
+        description: "Change the name, phone, email, or password of a salesman. Admin only.",
+      },
+    })
+    .input(salesmanIdInputSchema.extend(updateSalesmanAccountInputSchema.shape))
+    .output(apiResponseSchema(profileSchema))
+    .mutation(async ({ input }) => {
+      const { id, ...changes } = input;
+      const profile = await authService.updateSalesmanAccount(id, changes);
+      return apiResponse(profile);
     }),
 
   getHistory: adminProcedure

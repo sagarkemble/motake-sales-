@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import { createContext } from "./context";
 import { authService } from "./services";
 import { getAuthentication } from "./utils/cookie";
-import { forbidden, unauthorized } from "./utils/error";
+import { forbidden, unauthorized } from "@repo/services/errors";
 
 export const tRPCContext = initTRPC
   .meta<OpenApiMeta>()

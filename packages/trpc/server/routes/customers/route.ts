@@ -1,12 +1,13 @@
 import { customerService } from "../../services";
 import { adminProcedure, protectedProcedure, router, salesmanProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { notFound } from "../../utils/error";
+import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   createCustomerInputSchema,
   customerIdInputSchema,
   customerSchema,
+  customerStatsSchema,
   listCustomersInputSchema,
   paginatedCustomersSchema,
   updateCustomerInputSchema,
@@ -50,6 +51,24 @@ export const customersRouter = router({
       const customer = await customerService.getCustomerById(input.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
       return apiResponse(customer);
+    }),
+
+  getStats: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/:id/stats"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "Get customer stats",
+        description: "Return lifetime order count, quantity sold, and last order date for a customer.",
+      },
+    })
+    .input(customerIdInputSchema)
+    .output(apiResponseSchema(customerStatsSchema))
+    .query(async ({ input }) => {
+      const stats = await customerService.getCustomerStats(input.id);
+      return apiResponse(stats);
     }),
 
   create: salesmanProcedure

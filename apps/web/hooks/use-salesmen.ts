@@ -36,6 +36,9 @@ export function useSalesmen({
   const deactivateSalesmanAccountMutation = trpc.salesmen.deactivate.useMutation({
     onSuccess: () => utils.salesmen.invalidate(),
   });
+  const updateSalesmanAccountMutation = trpc.salesmen.update.useMutation({
+    onSuccess: () => utils.salesmen.invalidate(),
+  });
 
   return {
     salesmenPage: salesmenListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
@@ -62,5 +65,10 @@ export function useSalesmen({
     deactivateSalesmanAccountAsync: deactivateSalesmanAccountMutation.mutateAsync,
     isDeactivatingSalesmanAccount: deactivateSalesmanAccountMutation.isPending,
     deactivateSalesmanAccountError: deactivateSalesmanAccountMutation.error ?? null,
+
+    updateSalesmanAccount: updateSalesmanAccountMutation.mutate,
+    updateSalesmanAccountAsync: updateSalesmanAccountMutation.mutateAsync,
+    isUpdatingSalesmanAccount: updateSalesmanAccountMutation.isPending,
+    updateSalesmanAccountError: updateSalesmanAccountMutation.error ?? null,
   };
 }

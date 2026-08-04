@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import { orderItemsTable, ordersTable, productVarietiesTable, productsTable } from "../../schema";
@@ -18,7 +18,7 @@ export async function getDailyKpiSummary(
   placedRange: { from: Date; to: Date },
 ): Promise<DailyKpiSummary> {
   const bookNowRows = await db
-    .select({ orderCount: sql<number>`count(*)` })
+    .select({ orderCount: count() })
     .from(ordersTable)
     .where(
       and(
@@ -29,7 +29,7 @@ export async function getDailyKpiSummary(
     );
 
   const preOrderRows = await db
-    .select({ orderCount: sql<number>`count(*)` })
+    .select({ orderCount: count() })
     .from(ordersTable)
     .where(
       and(
@@ -40,7 +40,7 @@ export async function getDailyKpiSummary(
     );
 
   const fulfilledRows = await db
-    .select({ orderCount: sql<number>`count(*)` })
+    .select({ orderCount: count() })
     .from(ordersTable)
     .where(
       and(
@@ -86,7 +86,7 @@ export async function getProductWiseSalesSummary(
       varietyId: orderItemsTable.varietyId,
       productName: productsTable.name,
       varietyName: productVarietiesTable.name,
-      totalQuantitySold: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)`,
+      totalQuantitySold: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
     })
     .from(orderItemsTable)
     .innerJoin(ordersTable, eq(orderItemsTable.orderId, ordersTable.id))
@@ -102,7 +102,7 @@ export async function getAverageFulfillmentDurationSeconds(
 ): Promise<number | null> {
   const rows = await db
     .select({
-      averageSeconds: sql<number | null>`avg(extract(epoch from (${ordersTable.fulfilledAt} - ${ordersTable.placedAt})))`,
+      averageSeconds: sql<number | null>`avg(extract(epoch from (${ordersTable.fulfilledAt} - ${ordersTable.placedAt})))::float8`,
     })
     .from(ordersTable)
     .where(

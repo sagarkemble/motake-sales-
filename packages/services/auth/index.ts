@@ -1,14 +1,17 @@
-import { createProfile, softDeleteProfile } from "@repo/database/queries/auth";
-import type { SelectSalesman } from "@repo/database/schema";
+import { createProfile, getProfileById, softDeleteProfile, updateProfile } from "@repo/database/queries/auth";
+import type { InsertProfile, SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { supabaseAdminClient } from "../clients/supabase-admin";
+import { badRequest, notFound, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
 import {
   appRoleSchema,
   createSalesmanAccountInputSchema,
+  updateSalesmanAccountInputSchema,
   type AppRole,
   type AuthenticatedUser,
   type CreateSalesmanAccountInput,
+  type UpdateSalesmanAccountInput,
 } from "./model";
 
 class AuthService {
@@ -17,11 +20,11 @@ class AuthService {
   public async verifyAccessToken(accessToken: string): Promise<AuthenticatedUser> {
     const { data, error } = await supabaseAdminClient.auth.getUser(accessToken);
     if (error || !data.user) {
-      throw new Error("Invalid or expired session");
+      throw unauthorized("Invalid or expired session");
     }
 
     const role = appRoleSchema.parse(data.user.app_metadata?.role);
-    return { id: data.user.id, email: data.user.email ?? "", role };
+    return { id: data.user.id, email: data.user.email ?? "", phone: data.user.phone, role };
   }
 
   public async createSalesmanAccount(
@@ -37,7 +40,7 @@ class AuthService {
       app_metadata: { role: salesmanRole },
     });
     if (error || !data.user) {
-      throw new Error(`Failed to create Supabase account: ${error?.message ?? "unknown error"}`);
+      throw badRequest(`Failed to create Supabase account: ${error?.message ?? "unknown error"}`);
     }
 
     try {
@@ -57,6 +60,49 @@ class AuthService {
       await supabaseAdminClient.auth.admin.deleteUser(data.user.id);
       throw appRecordCreationError;
     }
+  }
+
+  public async confirmPhoneNumber(accessToken: string, expectedProfileId: string): Promise<SelectProfile> {
+    const authenticatedUser = await this.verifyAccessToken(accessToken);
+    if (authenticatedUser.id !== expectedProfileId) {
+      throw unauthorized("Access token does not match the signed-in user");
+    }
+    if (!authenticatedUser.phone) {
+      throw badRequest("Phone number was not verified");
+    }
+
+    const updatedProfile = await updateProfile(authenticatedUser.id, {
+      phone: authenticatedUser.phone,
+    });
+    if (!updatedProfile) throw notFound("Profile not found");
+    return updatedProfile;
+  }
+
+  public async updateSalesmanAccount(
+    profileId: string,
+    changes: UpdateSalesmanAccountInput,
+  ): Promise<SelectProfile> {
+    const parsedChanges = updateSalesmanAccountInputSchema.parse(changes);
+
+    if (parsedChanges.email || parsedChanges.password) {
+      const { error } = await supabaseAdminClient.auth.admin.updateUserById(profileId, {
+        email: parsedChanges.email,
+        password: parsedChanges.password,
+      });
+      if (error) throw badRequest(`Failed to update Supabase account: ${error.message}`);
+    }
+
+    const profileChanges: Partial<InsertProfile> = {};
+    if (parsedChanges.name !== undefined) profileChanges.name = parsedChanges.name;
+    if (parsedChanges.phone !== undefined) profileChanges.phone = parsedChanges.phone;
+    if (parsedChanges.email !== undefined) profileChanges.email = parsedChanges.email;
+
+    const updatedProfile =
+      Object.keys(profileChanges).length > 0
+        ? await updateProfile(profileId, profileChanges)
+        : await getProfileById(profileId);
+    if (!updatedProfile) throw notFound("Profile not found");
+    return updatedProfile;
   }
 
   public async deactivateSalesmanAccount(profileId: string): Promise<void> {

@@ -11,6 +11,11 @@ export const updateSalesmanCodeInputSchema = z.object({
 });
 export type UpdateSalesmanCodeInput = z.infer<typeof updateSalesmanCodeInputSchema>;
 
+export const updateSalesmanProfileInputSchema = z.object({
+  name: z.string().min(1).max(120),
+});
+export type UpdateSalesmanProfileInput = z.infer<typeof updateSalesmanProfileInputSchema>;
+
 export const listSalesmenInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),

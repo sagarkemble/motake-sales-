@@ -2,9 +2,11 @@ import { productService } from "../../services";
 import { z } from "../../schema";
 import { adminProcedure, protectedProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { notFound } from "../../utils/error";
+import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
+  createImageUploadUrlInputSchema,
+  createImageUploadUrlOutputSchema,
   createProductInputSchema,
   createProductVarietyInputSchema,
   listProductsInputSchema,
@@ -56,6 +58,24 @@ export const productsRouter = router({
       const product = await productService.getProductById(input.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
+    }),
+
+  createImageUploadUrl: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/image-upload-url"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Get a product image upload URL",
+        description: "Return a short-lived URL the browser can upload a product image to directly. Admin only.",
+      },
+    })
+    .input(createImageUploadUrlInputSchema)
+    .output(apiResponseSchema(createImageUploadUrlOutputSchema))
+    .mutation(async ({ input }) => {
+      const result = await productService.createImageUploadUrl(input);
+      return apiResponse(result);
     }),
 
   create: adminProcedure

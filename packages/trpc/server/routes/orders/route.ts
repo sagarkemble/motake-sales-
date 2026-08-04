@@ -1,11 +1,12 @@
 import { orderService } from "../../services";
 import { router, salesmanProcedure, protectedProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { forbidden, notFound } from "../../utils/error";
+import { forbidden, notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   dueDateInputSchema,
   listOrdersInputSchema,
+  orderDetailSchema,
   orderIdInputSchema,
   orderSchema,
   orderWithItemsSchema,
@@ -96,6 +97,28 @@ export const ordersRouter = router({
         throw forbidden();
       }
       return apiResponse(orderWithItems);
+    }),
+
+  getDetail: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/:id/detail"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "Get full order detail",
+        description:
+          "Return the order with customer, salesman and product/variety names for display.",
+      },
+    })
+    .input(orderIdInputSchema)
+    .output(apiResponseSchema(orderDetailSchema))
+    .query(async ({ ctx, input }) => {
+      const orderDetail = await orderService.getOrderDetail(input.id);
+      if (ctx.user.role === "salesman" && orderDetail.order.salesmanId !== ctx.user.id) {
+        throw forbidden();
+      }
+      return apiResponse(orderDetail);
     }),
 
   listDuePreorders: salesmanProcedure

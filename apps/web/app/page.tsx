@@ -1,13 +1,27 @@
-import { api } from "~/trpc/server";
+"use client";
 
-export default async function Home() {
-  const { status } = await api.health.getHealth.query();
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { Spinner } from "~/components/ui/spinner";
+import { useAuth } from "~/hooks/use-auth";
+
+export default function Home() {
+  const router = useRouter();
+  const { signedInUser, isSignedInUserLoading, isSignedInUserError } = useAuth();
+
+  useEffect(() => {
+    if (isSignedInUserLoading) return;
+    if (!signedInUser || isSignedInUserError) {
+      router.replace("/login");
+      return;
+    }
+    router.replace(signedInUser.role === "admin" ? "/admin" : "/salesman");
+  }, [signedInUser, isSignedInUserLoading, isSignedInUserError, router]);
+
   return (
-    <main className="min-h-screen">
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Motake Service Test Grid</h1>
-        <p className="text-sm text-muted-foreground">Health check: {status}</p>
-      </div>
+    <main className="flex min-h-dvh items-center justify-center bg-background">
+      <Spinner className="size-6 text-muted-foreground" />
     </main>
   );
 }

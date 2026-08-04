@@ -28,6 +28,7 @@ export type PlacePreOrderInput = z.infer<typeof placePreOrderInputSchema>;
 
 export const listOrdersInputSchema = z.object({
   salesmanId: z.string().uuid().optional(),
+  customerId: z.string().uuid().optional(),
   type: z.enum(["book_now", "pre_order"]).optional(),
   status: z.enum(["confirmed", "scheduled", "due", "fulfilled", "cancelled"]).optional(),
   customerPhone: z.string().optional(),

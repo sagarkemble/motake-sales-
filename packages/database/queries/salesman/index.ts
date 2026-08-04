@@ -109,9 +109,9 @@ export async function getSalesmanDayWiseHistory(
     .select({
       businessDate: gatepassesTable.businessDate,
       status: gatepassesTable.status,
-      allottedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)`,
-      soldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)`,
-      returnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)`,
+      allottedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
+      soldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+      returnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)::int`,
     })
     .from(gatepassesTable)
     .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
@@ -127,7 +127,7 @@ export async function getSalesmanDayWiseHistory(
   const preOrderRows = await db
     .select({
       businessDate: sql<string>`date(${ordersTable.placedAt})`,
-      preOrderedQty: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)`,
+      preOrderedQty: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
     })
     .from(ordersTable)
     .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))

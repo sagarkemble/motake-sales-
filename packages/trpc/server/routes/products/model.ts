@@ -70,3 +70,16 @@ export const updateProductVarietyInputSchema = createProductVarietyInputSchema
 export const varietyIdInputSchema = z.object({ id: z.string().uuid() });
 
 export const productVarietiesInputSchema = z.object({ productId: z.string().uuid() });
+
+export const allowedProductImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export const createImageUploadUrlInputSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z.enum(allowedProductImageContentTypes),
+});
+
+export const createImageUploadUrlOutputSchema = z.object({
+  uploadUrl: z.string(),
+  imageKey: z.string(),
+  imageUrl: z.string(),
+});

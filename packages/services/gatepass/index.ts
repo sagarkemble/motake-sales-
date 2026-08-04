@@ -17,6 +17,7 @@ import {
 } from "@repo/database/queries/gatepass";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
+import { conflict, notFound } from "../errors";
 import {
   allotGatepassInputSchema,
   closeGatepassInputSchema,
@@ -36,7 +37,7 @@ class GatepassService {
       parsedInput.businessDate,
     );
     if (existingGatepass) {
-      throw new Error(
+      throw conflict(
         `Gatepass already allotted for salesman ${parsedInput.salesmanId} on ${parsedInput.businessDate}`,
       );
     }
@@ -77,7 +78,7 @@ class GatepassService {
       parsedInput.quantity,
     );
     if (!updatedItem) {
-      throw new Error("Insufficient gatepass quantity available for this sale");
+      throw conflict("Insufficient gatepass quantity available for this sale");
     }
     return updatedItem;
   }
@@ -88,7 +89,7 @@ class GatepassService {
   ): Promise<SelectGatepassItem> {
     const restoredItem = await restoreSoldQtyOnCancellation(gatepassItemId, quantity);
     if (!restoredItem) {
-      throw new Error("Cannot restore more quantity than was sold");
+      throw conflict("Cannot restore more quantity than was sold");
     }
     return restoredItem;
   }
@@ -100,7 +101,7 @@ class GatepassService {
       parsedInput.returnedQty,
     );
     if (!updatedItem) {
-      throw new Error(`Gatepass item ${parsedInput.gatepassItemId} not found`);
+      throw notFound(`Gatepass item ${parsedInput.gatepassItemId} not found`);
     }
     return updatedItem;
   }

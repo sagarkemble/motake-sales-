@@ -7,6 +7,8 @@ import {
   gatepassesTable,
   orderItemsTable,
   ordersTable,
+  productVarietiesTable,
+  productsTable,
   salesmenTable,
   type InsertOrder,
   type InsertOrderItem,
@@ -14,6 +16,7 @@ import {
   type SelectOrderItem,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
+import { toIstBusinessDate } from "../shared/business-date";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -78,8 +81,70 @@ export async function getOrderWithItemsById(orderId: string): Promise<OrderWithI
   return { order, items };
 }
 
+export interface OrderDetailItem {
+  varietyId: string;
+  productName: string;
+  varietyName: string;
+  unit: string;
+  quantity: number;
+}
+
+export interface OrderDetail {
+  order: SelectOrder;
+  customer: {
+    shopName: string;
+    contactName: string | null;
+    phone: string;
+    address: string;
+  };
+  salesmanCode: string;
+  items: OrderDetailItem[];
+}
+
+export async function getOrderDetailById(orderId: string): Promise<OrderDetail | undefined> {
+  const order = await getOrderById(orderId);
+  if (!order) return undefined;
+
+  const customerRows = await db
+    .select({
+      shopName: customersTable.shopName,
+      contactName: customersTable.contactName,
+      phone: customersTable.phone,
+      address: customersTable.address,
+    })
+    .from(customersTable)
+    .where(eq(customersTable.id, order.customerId));
+
+  const salesmanRows = await db
+    .select({ salesmanCode: salesmenTable.salesmanCode })
+    .from(salesmenTable)
+    .where(eq(salesmenTable.id, order.salesmanId));
+
+  const items = await db
+    .select({
+      varietyId: orderItemsTable.varietyId,
+      productName: productsTable.name,
+      varietyName: productVarietiesTable.name,
+      unit: productVarietiesTable.unit,
+      quantity: orderItemsTable.quantity,
+    })
+    .from(orderItemsTable)
+    .innerJoin(productVarietiesTable, eq(orderItemsTable.varietyId, productVarietiesTable.id))
+    .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
+    .where(eq(orderItemsTable.orderId, orderId));
+
+  return {
+    order,
+    customer: firstOrThrow(customerRows, `getOrderDetailById customer for order ${orderId}`),
+    salesmanCode: firstOrThrow(salesmanRows, `getOrderDetailById salesman for order ${orderId}`)
+      .salesmanCode,
+    items,
+  };
+}
+
 export interface OrderListFilters {
   salesmanId?: string;
+  customerId?: string;
   type?: SelectOrder["type"];
   status?: SelectOrder["status"];
   customerPhone?: string;
@@ -87,13 +152,21 @@ export interface OrderListFilters {
   placedTo?: Date;
 }
 
+export interface OrderListRow {
+  order: SelectOrder;
+  customerShopName: string;
+  customerPhone: string;
+  salesmanCode: string;
+}
+
 export async function listOrders(
   filters: OrderListFilters,
   pagination: PaginationParams,
-): Promise<PaginatedResult<SelectOrder>> {
+): Promise<PaginatedResult<OrderListRow>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
   const whereClause = and(
     filters.salesmanId ? eq(ordersTable.salesmanId, filters.salesmanId) : undefined,
+    filters.customerId ? eq(ordersTable.customerId, filters.customerId) : undefined,
     filters.type ? eq(ordersTable.type, filters.type) : undefined,
     filters.status ? eq(ordersTable.status, filters.status) : undefined,
     filters.customerPhone ? eq(customersTable.phone, filters.customerPhone) : undefined,
@@ -103,9 +176,15 @@ export async function listOrders(
 
   const [rows, countRows] = await Promise.all([
     db
-      .select({ order: ordersTable })
+      .select({
+        order: ordersTable,
+        customerShopName: customersTable.shopName,
+        customerPhone: customersTable.phone,
+        salesmanCode: salesmenTable.salesmanCode,
+      })
       .from(ordersTable)
       .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+      .innerJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
       .where(whereClause)
       .orderBy(desc(ordersTable.placedAt))
       .limit(limit)
@@ -118,11 +197,7 @@ export async function listOrders(
   ]);
 
   const { totalCount } = firstOrThrow(countRows, "listOrders count");
-  return toPaginatedResult(
-    rows.map((row) => row.order),
-    totalCount,
-    pagination,
-  );
+  return toPaginatedResult(rows, totalCount, pagination);
 }
 
 export async function listDuePreordersForDate(businessDate: string): Promise<SelectOrder[]> {
@@ -326,7 +401,7 @@ export async function cancelBookNowOrderWithGatepassRestoration(
     }
 
     if (existingOrder.type === "book_now") {
-      const businessDate = existingOrder.placedAt.toISOString().slice(0, 10);
+      const businessDate = toIstBusinessDate(existingOrder.placedAt);
       const [salesmanGatepass] = await tx
         .select()
         .from(gatepassesTable)
@@ -338,22 +413,34 @@ export async function cancelBookNowOrderWithGatepassRestoration(
         )
         .for("update");
 
-      if (salesmanGatepass) {
-        const orderLineItems = await tx
-          .select()
-          .from(orderItemsTable)
-          .where(eq(orderItemsTable.orderId, orderId));
+      if (!salesmanGatepass) {
+        throw new Error(
+          `Cannot restore book_now order ${orderId}, no gatepass found for salesman ${existingOrder.salesmanId} on ${businessDate}`,
+        );
+      }
 
-        for (const lineItem of orderLineItems) {
-          await tx
-            .update(gatepassItemsTable)
-            .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${lineItem.quantity}` })
-            .where(
-              and(
-                eq(gatepassItemsTable.gatepassId, salesmanGatepass.id),
-                eq(gatepassItemsTable.varietyId, lineItem.varietyId),
-              ),
-            );
+      const orderLineItems = await tx
+        .select()
+        .from(orderItemsTable)
+        .where(eq(orderItemsTable.orderId, orderId));
+
+      for (const lineItem of orderLineItems) {
+        const [restoredGatepassItem] = await tx
+          .update(gatepassItemsTable)
+          .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${lineItem.quantity}` })
+          .where(
+            and(
+              eq(gatepassItemsTable.gatepassId, salesmanGatepass.id),
+              eq(gatepassItemsTable.varietyId, lineItem.varietyId),
+              sql`${gatepassItemsTable.soldQty} >= ${lineItem.quantity}`,
+            ),
+          )
+          .returning();
+
+        if (!restoredGatepassItem) {
+          throw new Error(
+            `Cannot restore ${lineItem.quantity} of variety ${lineItem.varietyId} to gatepass ${salesmanGatepass.id}, sold quantity would go negative`,
+          );
         }
       }
     }

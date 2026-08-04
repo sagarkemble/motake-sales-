@@ -20,6 +20,10 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
     { id: customerId ?? "" },
     { enabled: enabled && Boolean(customerId) },
   );
+  const customerStatsQuery = trpc.customers.getStats.useQuery(
+    { id: customerId ?? "" },
+    { enabled: enabled && Boolean(customerId) },
+  );
 
   const createCustomerMutation = trpc.customers.create.useMutation({
     onSuccess: () => utils.customers.list.invalidate(),
@@ -41,6 +45,11 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
     isCustomerLoading: customerQuery.isLoading,
     isCustomerError: customerQuery.isError,
     refetchCustomer: customerQuery.refetch,
+
+    customerStats: customerStatsQuery.data?.data ?? null,
+    isCustomerStatsLoading: customerStatsQuery.isLoading,
+    isCustomerStatsError: customerStatsQuery.isError,
+    refetchCustomerStats: customerStatsQuery.refetch,
 
     createCustomer: createCustomerMutation.mutate,
     createCustomerAsync: createCustomerMutation.mutateAsync,

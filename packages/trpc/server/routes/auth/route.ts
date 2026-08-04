@@ -4,7 +4,7 @@ import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { clearAuthentication, setAuthentication } from "../../utils/cookie";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { generatePath } from "../../utils/path-generator";
-import { createSessionInputSchema, sessionUserSchema } from "./model";
+import { createSessionInputSchema, sessionUserSchema, updatedPhoneSchema } from "./model";
 
 const path = generatePath("/auth");
 
@@ -61,5 +61,25 @@ export const authRouter = router({
     .output(apiResponseSchema(sessionUserSchema))
     .query(async ({ ctx }) => {
       return apiResponse({ id: ctx.user.id, role: ctx.user.role });
+    }),
+
+  confirmPhoneNumber: protectedProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/me/phone"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "Save a verified phone number",
+        description:
+          "Check the Supabase access token from a completed phone OTP verification. Save the verified phone number on the signed-in user's profile.",
+      },
+    })
+    .input(createSessionInputSchema)
+    .output(apiResponseSchema(updatedPhoneSchema))
+    .mutation(async ({ ctx, input }) => {
+      const updatedProfile = await authService.confirmPhoneNumber(input.accessToken, ctx.user.id);
+      setAuthentication(ctx, input.accessToken);
+      return apiResponse({ id: updatedProfile.id, phone: updatedProfile.phone });
     }),
 });

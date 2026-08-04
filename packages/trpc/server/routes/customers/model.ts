@@ -40,6 +40,12 @@ export const updateCustomerInputSchema = z.object({
 
 export const customerIdInputSchema = z.object({ id: z.string().uuid() });
 
+export const customerStatsSchema = z.object({
+  totalOrderCount: z.number(),
+  totalQuantitySold: z.number(),
+  lastOrderAt: z.date().nullable(),
+});
+
 export const listCustomersInputSchema = z.object({
   searchTerm: z.string().optional(),
   page: z.number().int().min(1).default(1),

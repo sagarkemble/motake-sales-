@@ -7,17 +7,21 @@ import {
   createOrderWithItems,
   getOrderByIdempotencyKey,
   getOrderCountsPerSalesmanInRange,
+  getOrderDetailById,
   getOrderWithItemsById,
   listDuePreordersForDate,
   listOrders,
   markOrderFulfilled,
   transitionScheduledPreordersToDue,
   type OrderCountBySalesman,
+  type OrderDetail,
+  type OrderListRow,
   type OrderWithItems,
 } from "@repo/database/queries/orders";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectOrder } from "@repo/database/schema";
 
+import { badRequest, conflict, notFound } from "../errors";
 import {
   listOrdersInputSchema,
   placeBookNowOrderInputSchema,
@@ -33,6 +37,22 @@ function generateOrderCode(prefix: string): string {
   return `${prefix}-${randomSuffix}`;
 }
 
+function mapGatepassDeductionError(caughtError: unknown) {
+  const message = caughtError instanceof Error ? caughtError.message : "Failed to place order";
+  if (message.includes("No active gatepass")) return badRequest(message);
+  if (message.includes("not allotted or insufficient")) return conflict(message);
+  return caughtError;
+}
+
+function mapOrderCancellationError(caughtError: unknown) {
+  const message = caughtError instanceof Error ? caughtError.message : "Failed to cancel order";
+  if (message.includes("not found")) return notFound(message);
+  if (message.includes("already fulfilled or cancelled")) return conflict(message);
+  if (message.includes("no gatepass found")) return conflict(message);
+  if (message.includes("sold quantity would go negative")) return conflict(message);
+  return caughtError;
+}
+
 class OrderService {
   public async placeBookNowOrder(input: PlaceBookNowOrderInput): Promise<OrderWithItems> {
     const parsedInput = placeBookNowOrderInputSchema.parse(input);
@@ -45,15 +65,19 @@ class OrderService {
       }
     }
 
-    return createBookNowOrderWithGatepassDeduction({
-      orderCode: generateOrderCode("BN"),
-      salesmanId: parsedInput.salesmanId,
-      customerId: parsedInput.customerId,
-      businessDate: parsedInput.businessDate,
-      idempotencyKey: parsedInput.idempotencyKey,
-      notes: parsedInput.notes,
-      items: parsedInput.items,
-    });
+    try {
+      return await createBookNowOrderWithGatepassDeduction({
+        orderCode: generateOrderCode("BN"),
+        salesmanId: parsedInput.salesmanId,
+        customerId: parsedInput.customerId,
+        businessDate: parsedInput.businessDate,
+        idempotencyKey: parsedInput.idempotencyKey,
+        notes: parsedInput.notes,
+        items: parsedInput.items,
+      });
+    } catch (gatepassDeductionError) {
+      throw mapGatepassDeductionError(gatepassDeductionError);
+    }
   }
 
   public async placePreOrder(input: PlacePreOrderInput): Promise<OrderWithItems> {
@@ -89,7 +113,15 @@ class OrderService {
     return getOrderWithItemsById(orderId);
   }
 
-  public async listOrders(input: ListOrdersInput): Promise<PaginatedResult<SelectOrder>> {
+  public async getOrderDetail(orderId: string): Promise<OrderDetail> {
+    const orderDetail = await getOrderDetailById(orderId);
+    if (!orderDetail) {
+      throw notFound(`Order ${orderId} not found`);
+    }
+    return orderDetail;
+  }
+
+  public async listOrders(input: ListOrdersInput): Promise<PaginatedResult<OrderListRow>> {
     const parsedInput = listOrdersInputSchema.parse(input);
     return listOrders(parsedInput, parsedInput);
   }
@@ -105,13 +137,17 @@ class OrderService {
   public async fulfillOrder(orderId: string, fulfilledBy: string): Promise<SelectOrder> {
     const fulfilledOrder = await markOrderFulfilled(orderId, fulfilledBy, new Date());
     if (!fulfilledOrder) {
-      throw new Error(`Order ${orderId} not found or already fulfilled`);
+      throw notFound(`Order ${orderId} not found or already fulfilled`);
     }
     return fulfilledOrder;
   }
 
   public async cancelOrder(orderId: string, cancelledBy: string): Promise<SelectOrder> {
-    return cancelBookNowOrderWithGatepassRestoration(orderId, cancelledBy);
+    try {
+      return await cancelBookNowOrderWithGatepassRestoration(orderId, cancelledBy);
+    } catch (cancellationError) {
+      throw mapOrderCancellationError(cancellationError);
+    }
   }
 
   public async countOrdersPlacedInRange(

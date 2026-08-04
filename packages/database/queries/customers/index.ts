@@ -1,7 +1,7 @@
-import { and, asc, count, eq, ilike, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "../../index";
-import { customersTable, type InsertCustomer, type SelectCustomer } from "../../schema";
+import { customersTable, ordersTable, type InsertCustomer, type SelectCustomer } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
 import {
   buildPaginationOffsets,
@@ -80,6 +80,31 @@ export async function updateCustomer(
     .where(eq(customersTable.id, customerId))
     .returning();
   return updatedCustomer;
+}
+
+export interface CustomerStats {
+  totalOrderCount: number;
+  totalQuantitySold: number;
+  lastOrderAt: Date | null;
+}
+
+export async function getCustomerStats(customerId: string): Promise<CustomerStats> {
+  const [statsRow] = await db
+    .select({
+      totalOrderCount: count(),
+      totalQuantitySold: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
+      lastOrderAt: sql<Date | null>`max(${ordersTable.placedAt})`,
+    })
+    .from(ordersTable)
+    .where(and(eq(ordersTable.customerId, customerId), ne(ordersTable.status, "cancelled")));
+
+  return (
+    statsRow ?? {
+      totalOrderCount: 0,
+      totalQuantitySold: 0,
+      lastOrderAt: null,
+    }
+  );
 }
 
 export async function softDeleteCustomer(customerId: string): Promise<SelectCustomer | undefined> {

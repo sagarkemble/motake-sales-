@@ -36,12 +36,39 @@ export const orderWithItemsSchema = z.object({
   items: z.array(orderItemSchema),
 });
 
+export const orderListRowSchema = z.object({
+  order: orderSchema,
+  customerShopName: z.string(),
+  customerPhone: z.string(),
+  salesmanCode: z.string(),
+});
+
 export const paginatedOrdersSchema = z.object({
-  items: z.array(orderSchema),
+  items: z.array(orderListRowSchema),
   totalCount: z.number(),
   page: z.number(),
   pageSize: z.number(),
   totalPages: z.number(),
+});
+
+export const orderDetailItemSchema = z.object({
+  varietyId: z.string(),
+  productName: z.string(),
+  varietyName: z.string(),
+  unit: z.string(),
+  quantity: z.number(),
+});
+
+export const orderDetailSchema = z.object({
+  order: orderSchema,
+  customer: z.object({
+    shopName: z.string(),
+    contactName: z.string().nullable(),
+    phone: z.string(),
+    address: z.string(),
+  }),
+  salesmanCode: z.string(),
+  items: z.array(orderDetailItemSchema),
 });
 
 const orderLineItemSchema = z.object({
@@ -69,6 +96,7 @@ export const orderIdInputSchema = z.object({ id: z.string().uuid() });
 
 export const listOrdersInputSchema = z.object({
   salesmanId: z.string().uuid().optional(),
+  customerId: z.string().uuid().optional(),
   type: orderTypeSchema.optional(),
   status: orderStatusSchema.optional(),
   customerPhone: z.string().optional(),

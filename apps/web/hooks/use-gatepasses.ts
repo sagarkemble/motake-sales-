@@ -2,10 +2,15 @@ import { trpc } from "~/trpc/client";
 
 interface UseGatepassesParams {
   businessDate?: string;
+  includeMyGatepass?: boolean;
   enabled?: boolean;
 }
 
-export function useGatepasses({ businessDate, enabled = true }: UseGatepassesParams = {}) {
+export function useGatepasses({
+  businessDate,
+  includeMyGatepass = false,
+  enabled = true,
+}: UseGatepassesParams = {}) {
   const utils = trpc.useUtils();
   const dateIsSet = enabled && Boolean(businessDate);
 
@@ -15,7 +20,7 @@ export function useGatepasses({ businessDate, enabled = true }: UseGatepassesPar
   );
   const myGatepassQuery = trpc.gatepasses.getMine.useQuery(
     { businessDate: businessDate ?? "" },
-    { enabled: dateIsSet },
+    { enabled: dateIsSet && includeMyGatepass },
   );
   const allotmentMatrixQuery = trpc.gatepasses.getAllotmentMatrix.useQuery(
     { businessDate: businessDate ?? "" },

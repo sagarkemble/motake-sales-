@@ -2,6 +2,7 @@ import {
   createProduct,
   createProductVariety,
   getProductById,
+  getProductVarietyBySku,
   listActiveProductsWithVarieties,
   listVarietiesByProductId,
   softDeleteProduct,
@@ -13,18 +14,30 @@ import {
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
+import { conflict, notFound } from "../errors";
+import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl } from "../uploads/r2-client";
 import {
+  createImageUploadUrlInputSchema,
   createProductInputSchema,
   createProductVarietyInputSchema,
   listProductsInputSchema,
   updateProductInputSchema,
   updateProductVarietyInputSchema,
+  type CreateImageUploadUrlInput,
   type CreateProductInput,
   type CreateProductVarietyInput,
   type ListProductsInput,
   type UpdateProductInput,
   type UpdateProductVarietyInput,
 } from "./model";
+
+const productImageFolderName = "products";
+
+interface ImageUploadUrlResult {
+  uploadUrl: string;
+  imageKey: string;
+  imageUrl: string;
+}
 
 class ProductService {
   public async createProduct(input: CreateProductInput): Promise<SelectProduct> {
@@ -60,7 +73,11 @@ class ProductService {
     const parsedInput = createProductVarietyInputSchema.parse(input);
     const parentProduct = await getProductById(parsedInput.productId);
     if (!parentProduct) {
-      throw new Error(`Cannot create variety, product ${parsedInput.productId} not found`);
+      throw notFound(`Cannot create variety, product ${parsedInput.productId} not found`);
+    }
+    const varietyWithSameSku = await getProductVarietyBySku(parsedInput.sku);
+    if (varietyWithSameSku) {
+      throw conflict(`SKU "${parsedInput.sku}" is already in use by another variety`);
     }
     return createProductVariety(parsedInput);
   }
@@ -74,11 +91,24 @@ class ProductService {
     changes: UpdateProductVarietyInput,
   ): Promise<SelectProductVariety | undefined> {
     const parsedChanges = updateProductVarietyInputSchema.parse(changes);
+    if (parsedChanges.sku) {
+      const varietyWithSameSku = await getProductVarietyBySku(parsedChanges.sku);
+      if (varietyWithSameSku && varietyWithSameSku.id !== varietyId) {
+        throw conflict(`SKU "${parsedChanges.sku}" is already in use by another variety`);
+      }
+    }
     return updateProductVariety(varietyId, parsedChanges);
   }
 
   public async deactivateProductVariety(varietyId: string): Promise<SelectProductVariety | undefined> {
     return softDeleteProductVariety(varietyId);
+  }
+
+  public async createImageUploadUrl(input: CreateImageUploadUrlInput): Promise<ImageUploadUrlResult> {
+    const parsedInput = createImageUploadUrlInputSchema.parse(input);
+    const imageKey = buildObjectKey(productImageFolderName, parsedInput.fileName);
+    const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
+    return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
   }
 }
 

@@ -2,14 +2,17 @@ import {
   createCustomer,
   findActiveCustomerByPhone,
   getCustomerById,
+  getCustomerStats,
   listActiveCustomersByIds,
   searchActiveCustomers,
   softDeleteCustomer,
   updateCustomer,
+  type CustomerStats,
 } from "@repo/database/queries/customers";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectCustomer } from "@repo/database/schema";
 
+import { conflict } from "../errors";
 import {
   createCustomerInputSchema,
   listCustomersInputSchema,
@@ -24,7 +27,7 @@ class CustomerService {
     const parsedInput = createCustomerInputSchema.parse(input);
     const existingCustomerWithPhone = await findActiveCustomerByPhone(parsedInput.phone);
     if (existingCustomerWithPhone) {
-      throw new Error(`Customer with phone ${parsedInput.phone} already exists`);
+      throw conflict(`Customer with phone ${parsedInput.phone} already exists`);
     }
     return createCustomer(parsedInput);
   }
@@ -35,6 +38,10 @@ class CustomerService {
 
   public async getCustomersByIds(customerIds: string[]): Promise<SelectCustomer[]> {
     return listActiveCustomersByIds(customerIds);
+  }
+
+  public async getCustomerStats(customerId: string): Promise<CustomerStats> {
+    return getCustomerStats(customerId);
   }
 
   public async searchCustomers(input: ListCustomersInput): Promise<PaginatedResult<SelectCustomer>> {
@@ -50,7 +57,7 @@ class CustomerService {
     if (parsedChanges.phone) {
       const existingCustomerWithPhone = await findActiveCustomerByPhone(parsedChanges.phone);
       if (existingCustomerWithPhone && existingCustomerWithPhone.id !== customerId) {
-        throw new Error(`Customer with phone ${parsedChanges.phone} already exists`);
+        throw conflict(`Customer with phone ${parsedChanges.phone} already exists`);
       }
     }
     return updateCustomer(customerId, parsedChanges);

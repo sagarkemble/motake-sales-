@@ -2,7 +2,7 @@ import { gatepassService } from "../../services";
 import { z } from "../../schema";
 import { adminProcedure, router, salesmanProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { notFound } from "../../utils/error";
+import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   allotGatepassInputSchema,
