@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { useState } from "react";
 
 import { supabaseBrowserClient } from "~/lib/supabase-browser-client";
+import { CART_LOCAL_STORAGE_KEY } from "~/providers/cart-provider";
 import { trpc } from "~/trpc/client";
 
 const MAGIC_LINK_SESSION_WAIT_MS = 5000;
@@ -27,6 +29,7 @@ interface ConfirmPhoneNumberChangeParams {
 
 export function useAuth({ enabled = true }: UseAuthParams = {}) {
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [oneTimePasscodeError, setOneTimePasscodeError] = useState<Error | null>(null);
   const [isSendingOneTimePasscode, setIsSendingOneTimePasscode] = useState(false);
@@ -45,7 +48,14 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
     onSuccess: () => utils.auth.me.invalidate(),
   });
   const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => utils.auth.me.invalidate(),
+    onSuccess: () => {
+      void supabaseBrowserClient.auth.signOut();
+      queryClient.clear();
+      try {
+        window.localStorage.removeItem(CART_LOCAL_STORAGE_KEY);
+      } catch {}
+      utils.auth.me.invalidate();
+    },
   });
   const confirmPhoneNumberMutation = trpc.auth.confirmPhoneNumber.useMutation({
     onSuccess: () => utils.auth.me.invalidate(),
