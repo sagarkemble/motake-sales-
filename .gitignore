@@ -56,6 +56,12 @@ Thumbs.db
 # Certificates / keys
 *.pem
 
+# Generated deploy config
+deploy/Caddyfile
+deploy/motake.caddy
+deploy/runtime.env
+deploy/ecosystem.config.cjs
+
 # IDE
 .idea/
 .vscode/*

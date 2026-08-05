@@ -1,0 +1,18 @@
+# Motake Caddy fragment — run ./caddy-setup.sh to generate deploy/motake.caddy
+#
+# Production: copied to /etc/caddy/sites/motake.caddy
+# The script appends "import sites/motake.caddy" to /etc/caddy/Caddyfile
+# only if it is not already present. Existing domains are never removed.
+
+# motake — managed by caddy-setup.sh
+# motake-domains: app.example.com api.example.com
+
+app.example.com {
+	encode gzip zstd
+	reverse_proxy localhost:3001
+}
+
+api.example.com {
+	encode gzip zstd
+	reverse_proxy localhost:8001
+}

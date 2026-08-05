@@ -2,23 +2,42 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_EXAMPLE="$ROOT_DIR/.env.example"
+ENV_FILE="$ROOT_DIR/.env"
 FORCE=false
+
+SYMLINK_TARGETS=(
+  "apps/api/.env"
+  "apps/web/.env.local"
+  "packages/database/.env"
+  "packages/services/.env"
+  "packages/logger/.env"
+)
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--force]
 
-Creates .env files for the monorepo based on each package's env schema.
+Interactive environment setup for the monorepo:
 
-  --force   Overwrite existing .env files
+  1. Reads .env.example and prompts for each variable (defaults shown in brackets)
+  2. Writes root .env with your values
+  3. Symlinks root .env into each app/package that needs it
 
-Files created:
-  .env
-  apps/api/.env
-  apps/web/.env.local
-  packages/database/.env
-  packages/services/.env
-  packages/logger/.env
+  --force   Re-prompt for all values and overwrite existing .env / symlinks
+
+Root:
+  .env.example   Template with default values (committed)
+  .env           Local secrets (gitignored)
+
+Symlinks created:
+  apps/api/.env              -> ../../.env
+  apps/web/.env.local        -> ../../.env
+  packages/database/.env     -> ../../.env
+  packages/services/.env     -> ../../.env
+  packages/logger/.env       -> ../../.env
+
+Then run: pnpm dev
 EOF
 }
 
@@ -40,84 +59,178 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Defaults aligned with docker-compose.yml and env.ts / env.js schemas
-PORT="${PORT:-8000}"
-NODE_ENV="${NODE_ENV:-development}"
-BASE_URL="${BASE_URL:-http://localhost:8000}"
-DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/dev}"
-LOGGER_LEVEL="${LOGGER_LEVEL:-debug}"
-JWT_SECRET="${JWT_SECRET:-dev-jwt-secret-change-in-production}"
-NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:8000/trpc}"
+if [[ ! -f "$ENV_EXAMPLE" ]]; then
+  echo "error: $ENV_EXAMPLE not found" >&2
+  exit 1
+fi
 
-write_env_file() {
-  local target="$1"
-  local content="$2"
-
-  if [[ -f "$target" && "$FORCE" != true ]]; then
-    echo "skip  $target (already exists; use --force to overwrite)"
-    return 0
-  fi
-
-  mkdir -p "$(dirname "$target")"
-  printf '%s\n' "$content" >"$target"
-  echo "write $target"
+trim_whitespace() {
+  local input="$1"
+  input="${input#"${input%%[![:space:]]*}"}"
+  input="${input%"${input##*[![:space:]]}"}"
+  printf '%s' "$input"
 }
 
-write_env_file "$ROOT_DIR/.env" "$(cat <<EOF
-# apps/api (apps/api/src/env.ts)
-PORT=$PORT
-NODE_ENV=$NODE_ENV
-BASE_URL=$BASE_URL
+normalize_pasted_value() {
+  local key="$1"
+  local value="$2"
 
-# packages/database (packages/database/env.ts)
-DATABASE_URL=$DATABASE_URL
+  value="${value//$'\r'/}"
 
-# packages/logger (packages/logger/env.ts)
-LOGGER_LEVEL=$LOGGER_LEVEL
+  if [[ "$value" == *$'\n'* ]]; then
+    echo "  note: multi-line paste detected; using the first line only." >&2
+    value="${value%%$'\n'*}"
+  fi
 
-# packages/services (packages/services/env.ts)
-NODE_ENV=$NODE_ENV
-JWT_SECRET=$JWT_SECRET
+  if [[ "$value" =~ ^${key}=(.*)$ ]]; then
+    value="${BASH_REMATCH[1]}"
+  elif [[ "$value" =~ ^[A-Za-z_][A-Za-z0-9_]*=(.*)$ ]]; then
+    echo "  note: extracted value from pasted KEY=value line." >&2
+    value="${BASH_REMATCH[1]}"
+  fi
 
-# apps/web (apps/web/env.js)
-NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-EOF
-)"
+  trim_whitespace "$value"
+}
 
-write_env_file "$ROOT_DIR/apps/api/.env" "$(cat <<EOF
-# apps/api/src/env.ts
-PORT=$PORT
-NODE_ENV=$NODE_ENV
-BASE_URL=$BASE_URL
-EOF
-)"
+drain_extra_tty_input() {
+  local extra=""
 
-write_env_file "$ROOT_DIR/apps/web/.env.local" "$(cat <<EOF
-# apps/web/env.js
-NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-EOF
-)"
+  while true; do
+    if ! IFS= read -r -t 0.01 extra <&3; then
+      break
+    fi
 
-write_env_file "$ROOT_DIR/packages/database/.env" "$(cat <<EOF
-# packages/database/env.ts
-DATABASE_URL=$DATABASE_URL
-EOF
-)"
+    extra="$(trim_whitespace "${extra//$'\r'/}")"
+    if [[ -n "$extra" ]]; then
+      echo "  ! ignored extra pasted input (paste one value per prompt): $extra" >&2
+    fi
+  done
+}
 
-write_env_file "$ROOT_DIR/packages/services/.env" "$(cat <<EOF
-# packages/services/env.ts
-NODE_ENV=$NODE_ENV
-JWT_SECRET=$JWT_SECRET
-EOF
-)"
+prompt_for_value() {
+  local key="$1"
+  local default="$2"
+  local value=""
+  local prompt="  $key"
 
-write_env_file "$ROOT_DIR/packages/logger/.env" "$(cat <<EOF
-# packages/logger/env.ts
-NODE_ENV=$NODE_ENV
-LOGGER_LEVEL=$LOGGER_LEVEL
-EOF
-)"
+  if [[ -n "$default" ]]; then
+    prompt+=" [$default]"
+  fi
+  prompt+=": "
+
+  if ! IFS= read -e -r -p "$prompt" value <&3; then
+    value=""
+  fi
+
+  value="$(normalize_pasted_value "$key" "$value")"
+  drain_extra_tty_input
+
+  if [[ -z "$value" ]]; then
+    value="$default"
+  fi
+
+  REPLY="$value"
+}
+
+create_env_from_prompts() {
+  local -a example_lines=()
+  local -a output_lines=()
+  local line key default
+
+  if [[ ! -e /dev/tty ]]; then
+    echo "error: interactive terminal required (run directly in a terminal, not via pipe)" >&2
+    exit 1
+  fi
+
+  exec 3</dev/tty
+
+  mapfile -t example_lines <"$ENV_EXAMPLE"
+
+  echo
+  echo "Configure environment variables."
+  echo "  - Press Enter to accept the default shown in [brackets]."
+  echo "  - Paste one value at a time with Ctrl+Shift+V, then press Enter."
+  echo
+
+  for line in "${example_lines[@]}"; do
+    if [[ "$line" =~ ^[[:space:]]*# ]]; then
+      output_lines+=("$line")
+      if [[ "$line" =~ ^#\ ---\  ]]; then
+        echo
+        echo "${line#\# }"
+      fi
+      continue
+    fi
+
+    if [[ -z "${line//[[:space:]]/}" ]]; then
+      output_lines+=("")
+      continue
+    fi
+
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      default="${BASH_REMATCH[2]}"
+      prompt_for_value "$key" "$default"
+      output_lines+=("$key=$REPLY")
+      continue
+    fi
+
+    output_lines+=("$line")
+  done
+
+  exec 3<&-
+
+  printf '%s\n' "${output_lines[@]}" >"$ENV_FILE"
+  echo
+  echo "write .env"
+}
+
+create_symlink() {
+  local target_rel="$1"
+  local target="$ROOT_DIR/$target_rel"
+  local link_target="../../.env"
+
+  mkdir -p "$(dirname "$target")"
+
+  if [[ -e "$target" || -L "$target" ]]; then
+    if [[ -L "$target" ]]; then
+      if [[ "$FORCE" != true ]]; then
+        echo "skip  $target_rel (symlink already exists; use --force to replace)"
+        return 0
+      fi
+      rm "$target"
+    elif [[ -f "$target" ]]; then
+      if [[ "$FORCE" != true ]]; then
+        echo "skip  $target_rel (file already exists; use --force to replace with symlink)"
+        return 0
+      fi
+      rm "$target"
+    else
+      if [[ "$FORCE" != true ]]; then
+        echo "skip  $target_rel (path exists; use --force to replace)"
+        return 0
+      fi
+      rm -rf "$target"
+    fi
+  fi
+
+  ln -sf "$link_target" "$target"
+  echo "link  $target_rel -> $link_target"
+}
+
+if [[ -f "$ENV_FILE" && "$FORCE" != true ]]; then
+  echo "skip  .env (already exists; use --force to reconfigure)"
+else
+  create_env_from_prompts
+fi
 
 echo
-echo "Done. Start Postgres with: docker compose up -d"
-echo "Then run: pnpm dev"
+echo "Creating symlinks..."
+for target_rel in "${SYMLINK_TARGETS[@]}"; do
+  create_symlink "$target_rel"
+done
+
+echo
+echo "Done."
+echo "Root env file: $ENV_FILE"
+echo "Run: pnpm dev"
