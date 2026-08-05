@@ -352,7 +352,7 @@ step_domains_and_build() {
   if [[ -f "$ENV_FILE" ]]; then
     update_env_key "BASE_URL" "$base_url"
     update_env_key "NEXT_PUBLIC_API_URL" "$api_url"
-    update_env_key "NODE_ENV" "prod"
+    update_env_key "NODE_ENV" "production"
   else
     echo "error: ${ENV_FILE} not found — run ./env-setup.sh first" >&2
     exit 1
