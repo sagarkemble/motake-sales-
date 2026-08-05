@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
-
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -20,12 +18,11 @@ interface GatepassTabProps {
 }
 
 export function GatepassTab({ salesmanId }: GatepassTabProps) {
-  const businessDate = format(new Date(), "yyyy-MM-dd");
-
+  const { canonicalBusinessDate: businessDate, isCanonicalDateLoading } = useGatepasses();
   const { gatepasses, allotmentMatrix, isGatepassesLoading, isAllotmentMatrixLoading } =
-    useGatepasses({ businessDate });
+    useGatepasses({ businessDate: businessDate || undefined, includeAdminOverview: true });
 
-  if (isGatepassesLoading || isAllotmentMatrixLoading) {
+  if (isCanonicalDateLoading || isGatepassesLoading || isAllotmentMatrixLoading || !businessDate) {
     return <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>;
   }
 

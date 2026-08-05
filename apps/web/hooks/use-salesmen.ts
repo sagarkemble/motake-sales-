@@ -5,6 +5,7 @@ import { trpc } from "~/trpc/client";
 import { emptyPaginatedResult } from "./shared/pagination";
 
 interface UseSalesmenParams {
+  salesmanId?: string;
   listFilters?: RouterInputs["salesmen"]["list"];
   historyFilters?: RouterInputs["salesmen"]["getHistory"];
   includeMyProfile?: boolean;
@@ -12,6 +13,7 @@ interface UseSalesmenParams {
 }
 
 export function useSalesmen({
+  salesmanId,
   listFilters,
   historyFilters,
   includeMyProfile = false,
@@ -26,6 +28,10 @@ export function useSalesmen({
     historyFilters ?? { id: "", from: "", to: "" },
     { enabled: enabled && Boolean(historyFilters?.id) },
   );
+  const salesmanByIdQuery = trpc.salesmen.getById.useQuery(
+    { id: salesmanId ?? "" },
+    { enabled: enabled && Boolean(salesmanId) },
+  );
   const mySalesmanProfileQuery = trpc.salesmen.getMyProfile.useQuery(undefined, {
     enabled: enabled && includeMyProfile,
   });
@@ -34,6 +40,12 @@ export function useSalesmen({
     onSuccess: () => utils.salesmen.invalidate(),
   });
   const deactivateSalesmanAccountMutation = trpc.salesmen.deactivate.useMutation({
+    onSuccess: () => utils.salesmen.invalidate(),
+  });
+  const reactivateSalesmanAccountMutation = trpc.salesmen.reactivate.useMutation({
+    onSuccess: () => utils.salesmen.invalidate(),
+  });
+  const deleteSalesmanAccountMutation = trpc.salesmen.delete.useMutation({
     onSuccess: () => utils.salesmen.invalidate(),
   });
   const updateSalesmanAccountMutation = trpc.salesmen.update.useMutation({
@@ -51,6 +63,11 @@ export function useSalesmen({
     isSalesmanHistoryError: salesmanHistoryQuery.isError,
     refetchSalesmanHistory: salesmanHistoryQuery.refetch,
 
+    salesmanById: salesmanByIdQuery.data?.data ?? null,
+    isSalesmanByIdLoading: salesmanByIdQuery.isLoading,
+    isSalesmanByIdError: salesmanByIdQuery.isError,
+    refetchSalesmanById: salesmanByIdQuery.refetch,
+
     mySalesmanProfile: mySalesmanProfileQuery.data?.data ?? null,
     isMySalesmanProfileLoading: mySalesmanProfileQuery.isLoading,
     isMySalesmanProfileError: mySalesmanProfileQuery.isError,
@@ -65,6 +82,16 @@ export function useSalesmen({
     deactivateSalesmanAccountAsync: deactivateSalesmanAccountMutation.mutateAsync,
     isDeactivatingSalesmanAccount: deactivateSalesmanAccountMutation.isPending,
     deactivateSalesmanAccountError: deactivateSalesmanAccountMutation.error ?? null,
+
+    reactivateSalesmanAccount: reactivateSalesmanAccountMutation.mutate,
+    reactivateSalesmanAccountAsync: reactivateSalesmanAccountMutation.mutateAsync,
+    isReactivatingSalesmanAccount: reactivateSalesmanAccountMutation.isPending,
+    reactivateSalesmanAccountError: reactivateSalesmanAccountMutation.error ?? null,
+
+    deleteSalesmanAccount: deleteSalesmanAccountMutation.mutate,
+    deleteSalesmanAccountAsync: deleteSalesmanAccountMutation.mutateAsync,
+    isDeletingSalesmanAccount: deleteSalesmanAccountMutation.isPending,
+    deleteSalesmanAccountError: deleteSalesmanAccountMutation.error ?? null,
 
     updateSalesmanAccount: updateSalesmanAccountMutation.mutate,
     updateSalesmanAccountAsync: updateSalesmanAccountMutation.mutateAsync,

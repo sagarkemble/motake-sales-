@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon, UserIcon } from "lucide-react";
@@ -16,9 +16,19 @@ function SalesmanPageContent() {
   const router = useRouter();
   const pageSize = 20;
   const { page, setPage } = useListQueryState({ withSearch: false });
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
-  const { salesmenPage, isSalesmenListLoading, deactivateSalesmanAccountAsync } = useSalesmen({
-    listFilters: { page, pageSize },
+  const {
+    salesmenPage,
+    isSalesmenListLoading,
+    deactivateSalesmanAccountAsync,
+    isDeactivatingSalesmanAccount,
+    reactivateSalesmanAccountAsync,
+    isReactivatingSalesmanAccount,
+    deleteSalesmanAccountAsync,
+    isDeletingSalesmanAccount,
+  } = useSalesmen({
+    listFilters: { page, pageSize, includeDeleted },
   });
 
   async function handleDeactivate(salesmanId: string) {
@@ -27,6 +37,25 @@ function SalesmanPageContent() {
       toast.success("Salesman deactivated");
     } catch (error) {
       toast.error(getErrorMessage(error, "Could not deactivate salesman. Try again."));
+    }
+  }
+
+  async function handleReactivate(salesmanId: string) {
+    try {
+      await reactivateSalesmanAccountAsync({ id: salesmanId });
+      toast.success("Salesman reactivated");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not reactivate salesman. Try again."));
+    }
+  }
+
+  async function handleDelete(salesmanId: string) {
+    if (!window.confirm("Are you sure you want to soft-delete this salesman?")) return;
+    try {
+      await deleteSalesmanAccountAsync({ id: salesmanId });
+      toast.success("Salesman deleted");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not delete salesman. Try again."));
     }
   }
 
@@ -45,6 +74,18 @@ function SalesmanPageContent() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-end">
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(event) => setIncludeDeleted(event.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Show deleted salesmen
+        </label>
+      </div>
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isSalesmenListLoading ? (
           <ListItemSkeleton count={6} />
@@ -60,7 +101,9 @@ function SalesmanPageContent() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") router.push(`/admin/salesman/${salesman.id}`);
               }}
-              className="flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+              className={`flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50 ${
+                profile.deletedAt ? "opacity-60" : ""
+              }`}
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
                 <UserIcon className="size-5 text-muted-foreground" />
@@ -73,18 +116,52 @@ function SalesmanPageContent() {
                 </p>
               </div>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-                disabled={profile.status === "inactive"}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleDeactivate(salesman.id);
-                }}
-              >
-                Deactivate
-              </Button>
+              <div className="flex shrink-0 items-center gap-2">
+                {profile.deletedAt ? (
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
+                    Deleted
+                  </span>
+                ) : null}
+                {profile.status === "active" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full border-muted text-foreground hover:bg-accent hover:text-foreground"
+                    disabled={Boolean(profile.deletedAt) || isDeactivatingSalesmanAccount}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleDeactivate(salesman.id);
+                    }}
+                  >
+                    Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+                    disabled={Boolean(profile.deletedAt) || isReactivatingSalesmanAccount}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleReactivate(salesman.id);
+                    }}
+                  >
+                    Reactivate
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={Boolean(profile.deletedAt) || isDeletingSalesmanAccount}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleDelete(salesman.id);
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           ))
         )}

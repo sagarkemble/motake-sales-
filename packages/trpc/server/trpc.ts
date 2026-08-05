@@ -3,7 +3,7 @@ import { OpenApiMeta } from "trpc-to-openapi";
 import { ZodError } from "zod";
 
 import { createContext } from "./context";
-import { authService } from "./services";
+import { authService, salesmanService } from "./services";
 import { getAuthentication } from "./utils/cookie";
 import { forbidden, unauthorized } from "@repo/services/errors";
 
@@ -60,7 +60,15 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx });
 });
 
-export const salesmanProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+export const salesmanProcedure = protectedProcedure.use(async ({ ctx, next, type }) => {
   if (ctx.user?.role !== "salesman") throw forbidden();
+
+  if (type === "mutation" && ctx.user?.id) {
+    const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(ctx.user.id);
+    if (salesmanWithProfile?.profile.status === "inactive") {
+      throw forbidden("Account is deactivated. Contact admin.");
+    }
+  }
+
   return next({ ctx });
 });

@@ -8,8 +8,7 @@ const supabaseUrlSchema = z.url().superRefine((url, ctx) => {
     ctx.addIssue({ code: "custom", message: "Supabase URL host must end with .supabase.co" });
     return;
   }
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction && parsedUrl.protocol !== "https:") {
+  if (parsedUrl.protocol !== "https:") {
     ctx.addIssue({ code: "custom", message: "Supabase URL must use https in production" });
   }
 });

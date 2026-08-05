@@ -81,3 +81,7 @@ export const gatepassEndOfDayTotalsSchema = z.object({
   totalReturnedQty: z.number(),
   discrepancyGatepassCount: z.number(),
 });
+
+export const canonicalDateSchema = z.object({
+  businessDate: z.string(),
+});

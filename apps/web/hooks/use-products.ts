@@ -36,6 +36,12 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
   const deactivateProductMutation = trpc.products.deactivate.useMutation({
     onSuccess: () => utils.products.invalidate(),
   });
+  const reactivateProductMutation = trpc.products.reactivate.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
+  const deleteProductMutation = trpc.products.delete.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
   const createProductVarietyMutation = trpc.products.createVariety.useMutation({
     onSuccess: () => utils.products.invalidate(),
   });
@@ -80,6 +86,16 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     deactivateProductAsync: deactivateProductMutation.mutateAsync,
     isDeactivatingProduct: deactivateProductMutation.isPending,
     deactivateProductError: deactivateProductMutation.error ?? null,
+
+    reactivateProduct: reactivateProductMutation.mutate,
+    reactivateProductAsync: reactivateProductMutation.mutateAsync,
+    isReactivatingProduct: reactivateProductMutation.isPending,
+    reactivateProductError: reactivateProductMutation.error ?? null,
+
+    deleteProduct: deleteProductMutation.mutate,
+    deleteProductAsync: deleteProductMutation.mutateAsync,
+    isDeletingProduct: deleteProductMutation.isPending,
+    deleteProductError: deleteProductMutation.error ?? null,
 
     createProductVariety: createProductVarietyMutation.mutate,
     createProductVarietyAsync: createProductVarietyMutation.mutateAsync,

@@ -1,22 +1,23 @@
 "use client";
 
-import { Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { PackageIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
-import { GridItemSkeleton } from "~/components/admin/shared/grid-item-skeleton";
+import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 
 function ProductsPageContent() {
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize },
+    listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize, includeDeleted },
   });
 
   return (
@@ -52,6 +53,18 @@ function ProductsPageContent() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-end">
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(event) => setIncludeDeleted(event.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Show deleted products
+        </label>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {isProductsListLoading ? (
           <GridItemSkeleton count={6} />
@@ -63,7 +76,9 @@ function ProductsPageContent() {
           productsPage.items.map(({ product, varieties }) => (
             <div
               key={product.id}
-              className="flex flex-col gap-2 rounded-2xl border bg-card p-3 transition-colors hover:border-brand/40"
+              className={`flex flex-col gap-2 rounded-2xl border bg-card p-3 transition-colors hover:border-brand/40 ${
+                product.deletedAt ? "opacity-60" : ""
+              }`}
             >
               <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/40">
                 {product.imageUrl ? (
@@ -77,7 +92,14 @@ function ProductsPageContent() {
                     <PackageIcon className="size-8 text-muted-foreground" />
                   </div>
                 )}
-                <StatusBadge status={product.status} className="absolute right-2 top-2" />
+                <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+                  <StatusBadge status={product.status} />
+                  {product.deletedAt && (
+                    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                      Deleted
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex-1">

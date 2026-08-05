@@ -25,6 +25,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 
 const MAX_CATALOG_PAGE_SIZE = 200;
 
@@ -55,7 +56,7 @@ function GatepassPageContent() {
 
   const [selectedSalesmanId, setSelectedSalesmanId] = useState(preselectedSalesmanId);
   const [businessDate, setBusinessDate] = useState(new Date());
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [quantitiesByVarietyId, setQuantitiesByVarietyId] = useState<Record<string, number>>({});
 
   const businessDateKey = format(businessDate, "yyyy-MM-dd");
@@ -64,7 +65,7 @@ function GatepassPageContent() {
     listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
+    listFilters: { searchTerm: debouncedSearchTerm || undefined, page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
   const { allotGatepassAsync, isAllottingGatepass } = useGatepasses({
     businessDate: businessDateKey,

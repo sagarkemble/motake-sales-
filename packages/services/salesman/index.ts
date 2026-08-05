@@ -4,7 +4,8 @@ import {
   getSalesmanById,
   getSalesmanDayWiseHistory,
   getSalesmanWithProfileById,
-  listActiveSalesmenWithProfiles,
+  listSalesmenWithProfiles,
+  reactivateSalesman,
   updateSalesmanCode,
   type SalesmanDayWiseHistoryRow,
   type SalesmanWithProfile,
@@ -47,7 +48,14 @@ class SalesmanService {
 
   public async listSalesmen(input: ListSalesmenInput): Promise<PaginatedResult<SalesmanWithProfile>> {
     const parsedInput = listSalesmenInputSchema.parse(input);
-    return listActiveSalesmenWithProfiles(parsedInput);
+    return listSalesmenWithProfiles(
+      { page: parsedInput.page, pageSize: parsedInput.pageSize },
+      parsedInput.includeDeleted,
+    );
+  }
+
+  public async reactivateSalesman(salesmanId: string): Promise<SelectProfile | undefined> {
+    return reactivateSalesman(salesmanId);
   }
 
   public async updateSalesmanCode(

@@ -52,6 +52,7 @@ export const updateSalesmanAccountInputSchema = z.object({
 export const listSalesmenInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
+  includeDeleted: z.boolean().optional().default(false),
 });
 
 export const salesmanHistoryInputSchema = z.object({

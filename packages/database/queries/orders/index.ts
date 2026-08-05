@@ -9,6 +9,7 @@ import {
   ordersTable,
   productVarietiesTable,
   productsTable,
+  profilesTable,
   salesmenTable,
   type InsertOrder,
   type InsertOrderItem,
@@ -98,6 +99,7 @@ export interface OrderDetail {
     address: string;
   };
   salesmanCode: string;
+  salesmanName: string | null;
   items: OrderDetailItem[];
 }
 
@@ -116,8 +118,9 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
     .where(eq(customersTable.id, order.customerId));
 
   const salesmanRows = await db
-    .select({ salesmanCode: salesmenTable.salesmanCode })
+    .select({ salesmanCode: salesmenTable.salesmanCode, salesmanName: profilesTable.name })
     .from(salesmenTable)
+    .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
     .where(eq(salesmenTable.id, order.salesmanId));
 
   const items = await db
@@ -133,11 +136,13 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
     .where(eq(orderItemsTable.orderId, orderId));
 
+  const salesmanRow = firstOrThrow(salesmanRows, `getOrderDetailById salesman for order ${orderId}`);
+
   return {
     order,
     customer: firstOrThrow(customerRows, `getOrderDetailById customer for order ${orderId}`),
-    salesmanCode: firstOrThrow(salesmanRows, `getOrderDetailById salesman for order ${orderId}`)
-      .salesmanCode,
+    salesmanCode: salesmanRow.salesmanCode,
+    salesmanName: salesmanRow.salesmanName,
     items,
   };
 }
@@ -157,6 +162,7 @@ export interface OrderListRow {
   customerShopName: string;
   customerPhone: string;
   salesmanCode: string;
+  salesmanName: string | null;
 }
 
 export async function listOrders(
@@ -181,10 +187,12 @@ export async function listOrders(
         customerShopName: customersTable.shopName,
         customerPhone: customersTable.phone,
         salesmanCode: salesmenTable.salesmanCode,
+        salesmanName: profilesTable.name,
       })
       .from(ordersTable)
       .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
       .innerJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
+      .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
       .where(whereClause)
       .orderBy(desc(ordersTable.placedAt))
       .limit(limit)

@@ -41,6 +41,7 @@ export const orderListRowSchema = z.object({
   customerShopName: z.string(),
   customerPhone: z.string(),
   salesmanCode: z.string(),
+  salesmanName: z.string().nullable(),
 });
 
 export const paginatedOrdersSchema = z.object({
@@ -68,6 +69,7 @@ export const orderDetailSchema = z.object({
     address: z.string(),
   }),
   salesmanCode: z.string(),
+  salesmanName: z.string().nullable(),
   items: z.array(orderDetailItemSchema),
 });
 

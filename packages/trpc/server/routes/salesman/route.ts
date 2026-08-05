@@ -38,6 +38,25 @@ export const salesmanRouter = router({
       return apiResponse(result);
     }),
 
+  getById: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/:id"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Get a salesman by ID",
+        description: "Return a salesman account and profile by ID. Admin only.",
+      },
+    })
+    .input(salesmanIdInputSchema)
+    .output(apiResponseSchema(salesmanWithProfileSchema))
+    .query(async ({ input }) => {
+      const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(input.id);
+      if (!salesmanWithProfile) throw notFound("Salesman profile not found");
+      return apiResponse(salesmanWithProfile);
+    }),
+
   create: adminProcedure
     .meta({
       openapi: {
@@ -64,7 +83,7 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Deactivate a salesman",
-        description: "Ban the salesman login and mark the profile as inactive. Admin only.",
+        description: "Mark the salesman profile as inactive. Admin only.",
       },
     })
     .input(salesmanIdInputSchema)
@@ -72,6 +91,42 @@ export const salesmanRouter = router({
     .mutation(async ({ input }) => {
       await authService.deactivateSalesmanAccount(input.id);
       return apiResponse({ deactivated: true as const });
+    }),
+
+  reactivate: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/reactivate"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Reactivate a salesman",
+        description: "Mark the salesman profile as active. Admin only.",
+      },
+    })
+    .input(salesmanIdInputSchema)
+    .output(apiResponseSchema(z.object({ reactivated: z.literal(true) })))
+    .mutation(async ({ input }) => {
+      await authService.reactivateSalesmanAccount(input.id);
+      return apiResponse({ reactivated: true as const });
+    }),
+
+  delete: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/delete"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Delete a salesman",
+        description: "Ban the salesman login and soft-delete the profile. Admin only.",
+      },
+    })
+    .input(salesmanIdInputSchema)
+    .output(apiResponseSchema(z.object({ deleted: z.literal(true) })))
+    .mutation(async ({ input }) => {
+      await authService.deleteSalesmanAccount(input.id);
+      return apiResponse({ deleted: true as const });
     }),
 
   update: adminProcedure

@@ -3,9 +3,11 @@ import {
   createProductVariety,
   getProductById,
   getProductVarietyBySku,
+  hardArchiveProduct,
   listActiveProductsWithVarieties,
+  listProductsForAdminWithVarieties,
   listVarietiesByProductId,
-  softDeleteProduct,
+  reactivateProduct,
   softDeleteProductVariety,
   updateProduct,
   updateProductVariety,
@@ -58,7 +60,16 @@ class ProductService {
   }
 
   public async deactivateProduct(productId: string): Promise<SelectProduct | undefined> {
-    return softDeleteProduct(productId);
+    return updateProduct(productId, { status: "inactive" });
+  }
+
+  public async reactivateProduct(productId: string): Promise<SelectProduct | undefined> {
+    return reactivateProduct(productId);
+  }
+
+  public async deleteProduct(productId: string): Promise<SelectProduct | undefined> {
+    await updateProduct(productId, { status: "inactive" });
+    return hardArchiveProduct(productId);
   }
 
   public async listProducts(input: ListProductsInput): Promise<PaginatedResult<ProductWithVarieties>> {
@@ -66,6 +77,15 @@ class ProductService {
     return listActiveProductsWithVarieties(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
       parsedInput.searchTerm,
+    );
+  }
+
+  public async listProductsForAdmin(input: ListProductsInput): Promise<PaginatedResult<ProductWithVarieties>> {
+    const parsedInput = listProductsInputSchema.parse(input);
+    return listProductsForAdminWithVarieties(
+      { page: parsedInput.page, pageSize: parsedInput.pageSize },
+      parsedInput.searchTerm,
+      parsedInput.includeDeleted,
     );
   }
 

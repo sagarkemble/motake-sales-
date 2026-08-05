@@ -12,22 +12,18 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useSalesmen } from "~/hooks/use-salesmen";
 
-const MAX_SALESMEN_PAGE_SIZE = 200;
-
 export default function SalesmanDetailPage() {
   const params = useParams<{ id: string }>();
   const salesmanId = params.id;
 
-  const { salesmenPage, isSalesmenListLoading } = useSalesmen({
-    listFilters: { page: 1, pageSize: MAX_SALESMEN_PAGE_SIZE },
+  const { salesmanById: salesmanEntry, isSalesmanByIdLoading } = useSalesmen({
+    salesmanId,
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  if (isSalesmenListLoading) {
+  if (isSalesmanByIdLoading) {
     return <div className="p-4 text-sm text-muted-foreground">Loading</div>;
   }
-
-  const salesmanEntry = salesmenPage.items.find((entry) => entry.salesman.id === salesmanId);
 
   if (!salesmanEntry) {
     return <div className="p-4 text-sm text-muted-foreground">Salesman not found</div>;

@@ -40,7 +40,7 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
   const [isRequestingPhoneNumberChange, setIsRequestingPhoneNumberChange] = useState(false);
   const [isConfirmingPhoneNumberChange, setIsConfirmingPhoneNumberChange] = useState(false);
 
-  const signedInUserQuery = trpc.auth.me.useQuery(undefined, { enabled });
+  const signedInUserQuery = trpc.auth.me.useQuery(undefined, { enabled, retry: false });
   const createSessionMutation = trpc.auth.createSession.useMutation({
     onSuccess: () => utils.auth.me.invalidate(),
   });
@@ -121,19 +121,25 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
   }
 
   async function waitForMagicLinkSession(): Promise<Session> {
-    const { data } = await supabaseBrowserClient.auth.getSession();
-    if (data.session) return data.session;
+    const { data: initialData } = await supabaseBrowserClient.auth.getSession();
+    if (initialData.session) return initialData.session;
 
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         authStateSubscription.unsubscribe();
-        reject(new Error("The sign-in link is wrong or expired."));
+        void supabaseBrowserClient.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            resolve(data.session);
+          } else {
+            reject(new Error("The sign-in link is wrong or expired."));
+          }
+        });
       }, MAGIC_LINK_SESSION_WAIT_MS);
 
       const {
         data: { subscription: authStateSubscription },
       } = supabaseBrowserClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) {
+        if (session && event !== "SIGNED_OUT") {
           clearTimeout(timeoutId);
           authStateSubscription.unsubscribe();
           resolve(session);

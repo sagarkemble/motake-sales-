@@ -36,8 +36,11 @@ export const productsRouter = router({
     })
     .input(listProductsInputSchema)
     .output(apiResponseSchema(paginatedProductsSchema))
-    .query(async ({ input }) => {
-      const result = await productService.listProducts(input);
+    .query(async ({ input, ctx }) => {
+      const result =
+        ctx.user?.role === "admin"
+          ? await productService.listProductsForAdmin(input)
+          : await productService.listProducts(input);
       return apiResponse(result);
     }),
 
@@ -131,6 +134,44 @@ export const productsRouter = router({
     .output(apiResponseSchema(productSchema))
     .mutation(async ({ input }) => {
       const product = await productService.deactivateProduct(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
+    }),
+
+  reactivate: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/reactivate"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Reactivate a product",
+        description: "Mark a product as active again.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.reactivateProduct(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
+    }),
+
+  delete: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/delete"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Delete a product",
+        description: "Soft-delete an existing product.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.deleteProduct(input.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),

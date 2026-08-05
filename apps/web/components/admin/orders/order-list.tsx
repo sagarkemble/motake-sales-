@@ -30,7 +30,7 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
       ) : ordersPage.items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No orders yet</p>
       ) : (
-        ordersPage.items.map(({ order, customerShopName, customerPhone, salesmanCode }) => (
+        ordersPage.items.map(({ order, customerShopName, customerPhone, salesmanCode, salesmanName }) => (
           <button
             key={order.id}
             type="button"
@@ -46,7 +46,7 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
               <p className="text-xs text-muted-foreground">{customerPhone}</p>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Salesman {salesmanCode}</span>
+              <span>Salesman {salesmanName ?? salesmanCode}</span>
               <span>{order.totalQuantity} qty</span>
               <span>
                 {format(

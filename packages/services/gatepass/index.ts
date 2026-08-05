@@ -29,7 +29,22 @@ import {
   type RecordSaleInput,
 } from "./model";
 
+const GATEPASS_UNIQUE_VIOLATION_CODE = "23505";
+
+function isDuplicateGatepassError(caughtError: unknown): boolean {
+  return (
+    typeof caughtError === "object" &&
+    caughtError !== null &&
+    "code" in caughtError &&
+    (caughtError as { code: unknown }).code === GATEPASS_UNIQUE_VIOLATION_CODE
+  );
+}
+
 class GatepassService {
+  public getCurrentBusinessDate(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
   public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithItems> {
     const parsedInput = allotGatepassInputSchema.parse(input);
     const existingGatepass = await getGatepassBySalesmanAndDate(
@@ -41,15 +56,24 @@ class GatepassService {
         `Gatepass already allotted for salesman ${parsedInput.salesmanId} on ${parsedInput.businessDate}`,
       );
     }
-    return createGatepassWithItems(
-      {
-        salesmanId: parsedInput.salesmanId,
-        businessDate: parsedInput.businessDate,
-        issuedBy: parsedInput.issuedBy,
-        status: "active",
-      },
-      parsedInput.items,
-    );
+    try {
+      return await createGatepassWithItems(
+        {
+          salesmanId: parsedInput.salesmanId,
+          businessDate: parsedInput.businessDate,
+          issuedBy: parsedInput.issuedBy,
+          status: "active",
+        },
+        parsedInput.items,
+      );
+    } catch (insertError) {
+      if (isDuplicateGatepassError(insertError)) {
+        throw conflict(
+          `Gatepass already allotted for salesman ${parsedInput.salesmanId} on ${parsedInput.businessDate}`,
+        );
+      }
+      throw insertError;
+    }
   }
 
   public async getGatepassById(gatepassId: string): Promise<SelectGatepass | undefined> {

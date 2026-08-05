@@ -49,7 +49,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Salesman</p>
-                  <p className="font-medium">{orderDetail.salesmanCode}</p>
+                  <p className="font-medium">{orderDetail.salesmanName ?? orderDetail.salesmanCode}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total quantity</p>

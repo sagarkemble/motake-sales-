@@ -1,12 +1,13 @@
 import { gatepassService } from "../../services";
-import { z } from "../../schema";
-import { adminProcedure, router, salesmanProcedure } from "../../trpc";
+import { z, zodUndefinedModel } from "../../schema";
+import { adminProcedure, protectedProcedure, router, salesmanProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   allotGatepassInputSchema,
   allotmentMatrixRowSchema,
+  canonicalDateSchema,
   closeGatepassInputSchema,
   gatepassDateInputSchema,
   gatepassEndOfDayTotalsSchema,
@@ -20,6 +21,24 @@ import {
 const path = generatePath("/gatepasses");
 
 export const gatepassRouter = router({
+  getCanonicalDate: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/canonical-date"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Get canonical server business date",
+        description: "Return the canonical server business date in yyyy-MM-dd format.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(canonicalDateSchema))
+    .query(() => {
+      const businessDate = gatepassService.getCurrentBusinessDate();
+      return apiResponse({ businessDate });
+    }),
+
   allot: adminProcedure
     .meta({
       openapi: {

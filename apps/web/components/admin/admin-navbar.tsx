@@ -4,6 +4,7 @@ import { LogOutIcon, MenuIcon, SmartphoneIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -15,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
+import { getErrorMessage } from "~/lib/get-error-message";
 import { useAuth } from "~/hooks/use-auth";
 import { adminNavItems, getPageTitleForPathname, isNavItemActive } from "./nav-items";
 
@@ -28,8 +30,12 @@ export function AdminNavbar() {
   const avatarInitial = signedInUser?.role.charAt(0).toUpperCase() ?? "A";
 
   async function handleLogout() {
-    await logoutAsync();
-    router.replace("/login");
+    try {
+      await logoutAsync();
+      router.replace("/login");
+    } catch (logoutError) {
+      toast.error(getErrorMessage(logoutError, "Could not log out. Try again."));
+    }
   }
 
   return (

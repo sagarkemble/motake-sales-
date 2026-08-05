@@ -7,6 +7,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   phone?: string;
+  phoneConfirmedAt?: string;
   role: AppRole;
 }
 

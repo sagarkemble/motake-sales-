@@ -49,6 +49,13 @@ app.use(
   createOpenApiExpressMiddleware({
     router: serverRouter,
     createContext,
+    onError({ error, path }) {
+      logger.error(`tRPC OpenAPI error on ${path ?? "unknown path"}`, {
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+      });
+    },
   }),
 );
 
@@ -57,6 +64,13 @@ app.use(
   trpcExpress.createExpressMiddleware({
     router: serverRouter,
     createContext,
+    onError({ error, path }) {
+      logger.error(`tRPC error on ${path ?? "unknown path"}`, {
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+      });
+    },
   }),
 );
 

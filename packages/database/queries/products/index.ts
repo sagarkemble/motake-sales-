@@ -47,13 +47,22 @@ export async function updateProduct(
   return updatedProduct;
 }
 
-export async function softDeleteProduct(productId: string): Promise<SelectProduct | undefined> {
-  const [deletedProduct] = await db
+export async function hardArchiveProduct(productId: string): Promise<SelectProduct | undefined> {
+  const [archivedProduct] = await db
     .update(productsTable)
-    .set({ deletedAt: new Date(), status: "inactive" })
+    .set({ deletedAt: new Date() })
     .where(eq(productsTable.id, productId))
     .returning();
-  return deletedProduct;
+  return archivedProduct;
+}
+
+export async function reactivateProduct(productId: string): Promise<SelectProduct | undefined> {
+  const [reactivatedProduct] = await db
+    .update(productsTable)
+    .set({ status: "active" })
+    .where(eq(productsTable.id, productId))
+    .returning();
+  return reactivatedProduct;
 }
 
 export async function searchActiveProducts(
@@ -100,6 +109,69 @@ export async function listActiveProductsWithVarieties(
         inArray(productVarietiesTable.productId, productIds),
         eq(productVarietiesTable.status, "active"),
         isNull(productVarietiesTable.deletedAt),
+      ),
+    );
+
+  const varietiesByProductId = new Map<string, SelectProductVariety[]>();
+  for (const variety of varieties) {
+    const existingVarieties = varietiesByProductId.get(variety.productId) ?? [];
+    existingVarieties.push(variety);
+    varietiesByProductId.set(variety.productId, existingVarieties);
+  }
+
+  return {
+    ...productsPage,
+    items: productsPage.items.map((product) => ({
+      product,
+      varieties: varietiesByProductId.get(product.id) ?? [],
+    })),
+  };
+}
+
+export async function searchProductsForAdmin(
+  searchTerm: string | undefined,
+  pagination: PaginationParams,
+  includeDeleted = false,
+): Promise<PaginatedResult<SelectProduct>> {
+  const { limit, offset } = buildPaginationOffsets(pagination);
+  const whereClause = and(
+    includeDeleted ? undefined : isNull(productsTable.deletedAt),
+    searchTerm ? ilike(productsTable.name, `%${searchTerm}%`) : undefined,
+  );
+
+  const [items, countRows] = await Promise.all([
+    db
+      .select()
+      .from(productsTable)
+      .where(whereClause)
+      .orderBy(asc(productsTable.name))
+      .limit(limit)
+      .offset(offset),
+    db.select({ totalCount: count() }).from(productsTable).where(whereClause),
+  ]);
+
+  const { totalCount } = firstOrThrow(countRows, "searchProductsForAdmin count");
+  return toPaginatedResult(items, totalCount, pagination);
+}
+
+export async function listProductsForAdminWithVarieties(
+  pagination: PaginationParams,
+  searchTerm?: string,
+  includeDeleted = false,
+): Promise<PaginatedResult<ProductWithVarieties>> {
+  const productsPage = await searchProductsForAdmin(searchTerm, pagination, includeDeleted);
+  if (productsPage.items.length === 0) {
+    return { ...productsPage, items: [] };
+  }
+
+  const productIds = productsPage.items.map((product) => product.id);
+  const varieties = await db
+    .select()
+    .from(productVarietiesTable)
+    .where(
+      and(
+        inArray(productVarietiesTable.productId, productIds),
+        includeDeleted ? undefined : isNull(productVarietiesTable.deletedAt),
       ),
     );
 

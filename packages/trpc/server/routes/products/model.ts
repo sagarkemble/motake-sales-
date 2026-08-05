@@ -54,6 +54,7 @@ export const listProductsInputSchema = z.object({
   searchTerm: z.string().optional(),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
+  includeDeleted: z.boolean().optional().default(false),
 });
 
 export const createProductVarietyInputSchema = z.object({

@@ -24,7 +24,13 @@ class AuthService {
     }
 
     const role = appRoleSchema.parse(data.user.app_metadata?.role);
-    return { id: data.user.id, email: data.user.email ?? "", phone: data.user.phone, role };
+    return {
+      id: data.user.id,
+      email: data.user.email ?? "",
+      phone: data.user.phone,
+      phoneConfirmedAt: data.user.phone_confirmed_at,
+      role,
+    };
   }
 
   public async createSalesmanAccount(
@@ -67,8 +73,8 @@ class AuthService {
     if (authenticatedUser.id !== expectedProfileId) {
       throw unauthorized("Access token does not match the signed-in user");
     }
-    if (!authenticatedUser.phone) {
-      throw badRequest("Phone number was not verified");
+    if (!authenticatedUser.phone || !authenticatedUser.phoneConfirmedAt) {
+      throw badRequest("Phone number was not verified by provider");
     }
 
     const updatedProfile = await updateProfile(authenticatedUser.id, {
@@ -106,8 +112,16 @@ class AuthService {
   }
 
   public async deactivateSalesmanAccount(profileId: string): Promise<void> {
+    await updateProfile(profileId, { status: "inactive" });
+  }
+
+  public async deleteSalesmanAccount(profileId: string): Promise<void> {
     await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "876000h" });
     await softDeleteProfile(profileId);
+  }
+
+  public async reactivateSalesmanAccount(profileId: string): Promise<void> {
+    await updateProfile(profileId, { status: "active" });
   }
 }
 
