@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarIcon, PackageIcon, SearchIcon } from "lucide-react";
@@ -36,7 +36,7 @@ interface CatalogItem {
   productImageUrl: string | null;
 }
 
-export default function GatepassPage() {
+function GatepassPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedSalesmanId = searchParams.get("salesmanId") ?? "";
@@ -249,5 +249,19 @@ export default function GatepassPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function GatepassPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-dvh items-center justify-center bg-background">
+          <Spinner className="size-6 text-muted-foreground" />
+        </main>
+      }
+    >
+      <GatepassPageContent />
+    </Suspense>
   );
 }
