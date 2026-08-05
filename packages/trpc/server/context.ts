@@ -7,6 +7,7 @@ import {
 
 export interface TRPCCtxUser {
   id: string;
+  role: "admin" | "salesman";
 }
 
 /**

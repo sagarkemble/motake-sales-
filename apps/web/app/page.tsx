@@ -1,13 +1,27 @@
-import { api } from "~/trpc/server";
+"use client";
 
-export default async function Home() {
-  const { status } = await api.health.getHealth.query();
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { Spinner } from "~/components/ui/spinner";
+import { useAuth } from "~/hooks/use-auth";
+
+export default function Home() {
+  const router = useRouter();
+  const { signedInUser, isSignedInUserLoading, isSignedInUserError } = useAuth();
+
+  useEffect(() => {
+    if (isSignedInUserLoading) return;
+    if (!signedInUser || isSignedInUserError) {
+      router.replace("/login");
+      return;
+    }
+    router.replace(signedInUser.role === "admin" ? "/admin" : "/salesman");
+  }, [signedInUser, isSignedInUserLoading, isSignedInUserError, router]);
+
   return (
-    <main className="min-h-screen min-w-screen flex justify-center items-center">
-      <div>
-        <h1 className="text-3xl">Streamyst - Stream in Style</h1>
-        <h2>tRPC Lunar Studio Template Health Check: {status}</h2>
-      </div>
+    <main className="flex min-h-dvh items-center justify-center bg-background">
+      <Spinner className="size-6 text-muted-foreground" />
     </main>
   );
 }

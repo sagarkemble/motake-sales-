@@ -3,7 +3,15 @@ import { publicProcedure, router } from "../../trpc";
 
 export const healthRouter = router({
   getHealth: publicProcedure
-    .meta({ openapi: { method: "GET", path: "/health" } })
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/health",
+        tags: ["Health"],
+        summary: "Check server health",
+        description: "Return the current server status. Use this to confirm the server is running.",
+      },
+    })
     .input(zodUndefinedModel)
     .output(
       z.object({

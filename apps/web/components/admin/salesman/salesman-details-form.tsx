@@ -1,0 +1,69 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import { Button } from "~/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
+
+const salesmanDetailsFormSchema = z.object({
+  name: z.string().min(1, "Enter a name").max(120),
+});
+
+export type SalesmanDetailsFormValues = z.infer<typeof salesmanDetailsFormSchema>;
+
+interface SalesmanDetailsFormProps {
+  defaultValues: SalesmanDetailsFormValues;
+  isSubmitting: boolean;
+  onSubmit: (values: SalesmanDetailsFormValues) => void;
+}
+
+export function SalesmanDetailsForm({
+  defaultValues,
+  isSubmitting,
+  onSubmit,
+}: SalesmanDetailsFormProps) {
+  const form = useForm<SalesmanDetailsFormValues>({
+    resolver: zodResolver(salesmanDetailsFormSchema),
+    defaultValues,
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Full name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          {isSubmitting ? "Saving" : "Save changes"}
+        </Button>
+      </form>
+    </Form>
+  );
+}

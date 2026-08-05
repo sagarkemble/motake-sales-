@@ -1,0 +1,146 @@
+"use client";
+
+import { Suspense } from "react";
+import Link from "next/link";
+import { PackageIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { StatusBadge } from "~/components/admin/products/status-badge";
+import { GridItemSkeleton } from "~/components/admin/shared/grid-item-skeleton";
+import { useProducts } from "~/hooks/use-products";
+import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+
+function ProductsPageContent() {
+  const pageSize = 20;
+  const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
+
+  const { productsPage, isProductsListLoading } = useProducts({
+    listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize },
+  });
+
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="rounded-full bg-muted/40 pl-9 pr-9"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <XIcon className="size-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          asChild
+          size="icon"
+          className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          <Link href="/admin/products/new" aria-label="New product">
+            <PlusIcon />
+          </Link>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {isProductsListLoading ? (
+          <GridItemSkeleton count={6} />
+        ) : productsPage.items.length === 0 ? (
+          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
+            {debouncedSearchTerm ? `No products match "${debouncedSearchTerm}"` : "No products yet"}
+          </p>
+        ) : (
+          productsPage.items.map(({ product, varieties }) => (
+            <div
+              key={product.id}
+              className="flex flex-col gap-2 rounded-2xl border bg-card p-3 transition-colors hover:border-brand/40"
+            >
+              <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/40">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="mt-2 size-full object-contain p-2"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center">
+                    <PackageIcon className="size-8 text-muted-foreground" />
+                  </div>
+                )}
+                <StatusBadge status={product.status} className="absolute right-2 top-2" />
+              </div>
+
+              <div className="flex-1">
+                <p className="truncate text-sm font-medium">{product.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {varieties.length} {varieties.length === 1 ? "variety" : "varieties"}
+                </p>
+              </div>
+
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+              >
+                <Link href={`/admin/products/${product.id}`}>Edit</Link>
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {productsPage.totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">
+            Page {productsPage.page} of {productsPage.totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              disabled={productsPage.page <= 1}
+              onClick={() => setPage(productsPage.page - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              disabled={productsPage.page >= productsPage.totalPages}
+              onClick={() => setPage(productsPage.page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto grid w-full max-w-4xl grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3 lg:grid-cols-4">
+          <GridItemSkeleton count={8} />
+        </div>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
+  );
+}

@@ -2,6 +2,18 @@
   "name": "@repo/services",
   "version": "1.0.0",
   "private": true,
+  "exports": {
+    "./auth": "./auth/index.ts",
+    "./clients": "./clients/index.ts",
+    "./customers": "./customers/index.ts",
+    "./errors": "./errors/index.ts",
+    "./gatepass": "./gatepass/index.ts",
+    "./orders": "./orders/index.ts",
+    "./products": "./products/index.ts",
+    "./reports": "./reports/index.ts",
+    "./salesman": "./salesman/index.ts",
+    "./uploads": "./uploads/r2-client.ts"
+  },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
@@ -10,8 +22,12 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.925.0",
+    "@aws-sdk/s3-request-presigner": "^3.925.0",
     "@repo/database": "workspace:*",
     "@repo/logger": "workspace:*",
+    "@supabase/supabase-js": "^2.75.0",
+    "@trpc/server": "^11.8.1",
     "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.3.5"
