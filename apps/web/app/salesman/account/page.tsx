@@ -1,0 +1,133 @@
+"use client";
+
+import { Loader2Icon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { UpdateAvatarDialog } from "~/components/salesman/update-avatar-dialog";
+import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Skeleton } from "~/components/ui/skeleton";
+import { getErrorMessage } from "~/lib/get-error-message";
+import { getNameInitials } from "~/lib/get-name-initials";
+import { useSalesmen } from "~/hooks/use-salesmen";
+
+export default function SalesmanAccountPage() {
+  const { mySalesmanProfile, isMySalesmanProfileLoading, updateMyProfileAsync, isUpdatingMyProfile } =
+    useSalesmen({ includeMyProfile: true });
+
+  const [isUpdateAvatarDialogOpen, setIsUpdateAvatarDialogOpen] = useState(false);
+  const [isUpdatePhoneDialogOpen, setIsUpdatePhoneDialogOpen] = useState(false);
+  const [nameInputValue, setNameInputValue] = useState("");
+
+  const profile = mySalesmanProfile?.profile ?? null;
+  const salesman = mySalesmanProfile?.salesman ?? null;
+  const avatarInitial = getNameInitials(profile?.name, "S");
+  const hasNameChanged = nameInputValue.trim() !== (profile?.name ?? "").trim();
+
+  useEffect(() => {
+    setNameInputValue(profile?.name ?? "");
+  }, [profile?.name]);
+
+  async function handleSaveName() {
+    const trimmedName = nameInputValue.trim();
+    if (!trimmedName || !hasNameChanged) return;
+
+    try {
+      await updateMyProfileAsync({ name: trimmedName });
+      toast.success("Name updated");
+    } catch (updateError) {
+      toast.error(getErrorMessage(updateError, "Could not save the name. Try again."));
+    }
+  }
+
+  if (isMySalesmanProfileLoading || !profile || !salesman) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3">
+          <Avatar className="size-24">
+            <AvatarImage src={profile.avatarUrl ?? undefined} alt="Avatar" />
+            <AvatarFallback className="text-2xl">{avatarInitial}</AvatarFallback>
+          </Avatar>
+          <Button variant="outline" size="sm" onClick={() => setIsUpdateAvatarDialogOpen(true)}>
+            Change avatar
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile details</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="account-name">Name</Label>
+            <div className="flex gap-2">
+              <Input
+                id="account-name"
+                value={nameInputValue}
+                onChange={(event) => setNameInputValue(event.target.value)}
+                placeholder="Your name"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={!hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0}
+                onClick={() => void handleSaveName()}
+              >
+                {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
+                Save
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="account-email">Email</Label>
+            <Input id="account-email" value={profile.email} readOnly disabled />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="account-phone">Phone number</Label>
+            <div className="flex gap-2">
+              <Input
+                id="account-phone"
+                value={profile.phone ?? "Not set"}
+                readOnly
+                disabled
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsUpdatePhoneDialogOpen(true)}
+              >
+                Change
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="account-salesman-code">Salesman code</Label>
+            <Input id="account-salesman-code" value={salesman.salesmanCode} readOnly disabled />
+          </div>
+        </CardContent>
+      </Card>
+
+      <UpdateAvatarDialog open={isUpdateAvatarDialogOpen} onOpenChange={setIsUpdateAvatarDialogOpen} />
+      <UpdatePhoneNumberDialog open={isUpdatePhoneDialogOpen} onOpenChange={setIsUpdatePhoneDialogOpen} />
+    </div>
+  );
+}

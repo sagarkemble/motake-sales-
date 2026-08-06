@@ -3,8 +3,14 @@ import { z, zodUndefinedModel } from "../../schema";
 import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { clearAuthentication, setAuthentication } from "../../utils/cookie";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
+import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
-import { createSessionInputSchema, sessionUserSchema, updatedPhoneSchema } from "./model";
+import {
+  createSessionInputSchema,
+  sessionUserSchema,
+  signedInUserSchema,
+  updatedPhoneSchema,
+} from "./model";
 
 const path = generatePath("/auth");
 
@@ -54,13 +60,20 @@ export const authRouter = router({
         tags: ["Auth"],
         protect: true,
         summary: "Get the signed-in user",
-        description: "Return the id and role of the user tied to the current session.",
+        description: "Return the profile of the user tied to the current session.",
       },
     })
     .input(zodUndefinedModel)
-    .output(apiResponseSchema(sessionUserSchema))
+    .output(apiResponseSchema(signedInUserSchema))
     .query(async ({ ctx }) => {
-      return apiResponse({ id: ctx.user.id, role: ctx.user.role });
+      const profile = await authService.getProfileById(ctx.user.id);
+      if (!profile) throw notFound("Profile not found");
+      return apiResponse({
+        id: profile.id,
+        role: profile.role,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+      });
     }),
 
   confirmPhoneNumber: protectedProcedure

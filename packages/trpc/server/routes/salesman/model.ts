@@ -13,6 +13,7 @@ export const profileSchema = z.object({
   email: z.string(),
   name: z.string().nullable(),
   phone: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
   status: z.enum(["active", "inactive"]),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -59,6 +60,25 @@ export const salesmanHistoryInputSchema = z.object({
   id: z.string().uuid(),
   from: z.string(),
   to: z.string(),
+});
+
+export const updateMyProfileInputSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  avatarKey: z.string().optional(),
+  avatarUrl: z.string().optional(),
+});
+
+export const allowedAvatarImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export const createAvatarUploadUrlInputSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z.enum(allowedAvatarImageContentTypes),
+});
+
+export const createAvatarUploadUrlOutputSchema = z.object({
+  uploadUrl: z.string(),
+  imageKey: z.string(),
+  imageUrl: z.string(),
 });
 
 export const salesmanDayWiseHistoryRowSchema = z.object({

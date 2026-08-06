@@ -5,6 +5,8 @@ import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
+  createAvatarUploadUrlInputSchema,
+  createAvatarUploadUrlOutputSchema,
   createSalesmanAccountInputSchema,
   listSalesmenInputSchema,
   paginatedSalesmenSchema,
@@ -14,6 +16,7 @@ import {
   salesmanIdInputSchema,
   salesmanSchema,
   salesmanWithProfileSchema,
+  updateMyProfileInputSchema,
   updateSalesmanAccountInputSchema,
 } from "./model";
 
@@ -186,5 +189,42 @@ export const salesmanRouter = router({
       const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(ctx.user.id);
       if (!salesmanWithProfile) throw notFound("Salesman profile not found");
       return apiResponse(salesmanWithProfile);
+    }),
+
+  updateMyProfile: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/me"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Update my salesman profile",
+        description: "Change the name or avatar of the signed-in salesman.",
+      },
+    })
+    .input(updateMyProfileInputSchema)
+    .output(apiResponseSchema(profileSchema))
+    .mutation(async ({ ctx, input }) => {
+      const profile = await salesmanService.updateSalesmanProfile(ctx.user.id, input);
+      if (!profile) throw notFound("Salesman profile not found");
+      return apiResponse(profile);
+    }),
+
+  createAvatarUploadUrl: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/me/avatar-upload-url"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Get my avatar upload URL",
+        description: "Return a short-lived URL the browser can upload the salesman's avatar image to directly.",
+      },
+    })
+    .input(createAvatarUploadUrlInputSchema)
+    .output(apiResponseSchema(createAvatarUploadUrlOutputSchema))
+    .mutation(async ({ input }) => {
+      const result = await salesmanService.createAvatarUploadUrl(input);
+      return apiResponse(result);
     }),
 });

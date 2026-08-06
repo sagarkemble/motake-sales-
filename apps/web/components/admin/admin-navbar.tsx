@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { getNameInitials } from "~/lib/get-name-initials";
 import { useAuth } from "~/hooks/use-auth";
 import { adminNavItems, getPageTitleForPathname, isNavItemActive } from "./nav-items";
 
@@ -27,7 +28,7 @@ export function AdminNavbar() {
   const [isUpdatePhoneDialogOpen, setIsUpdatePhoneDialogOpen] = useState(false);
 
   const pageTitle = getPageTitleForPathname(currentPathname);
-  const avatarInitial = signedInUser?.role.charAt(0).toUpperCase() ?? "A";
+  const avatarInitial = getNameInitials(signedInUser?.name, signedInUser?.role.charAt(0) ?? "A");
 
   async function handleLogout() {
     try {
@@ -95,6 +96,7 @@ export function AdminNavbar() {
         <DropdownMenuTrigger asChild>
           <button aria-label="Open account menu">
             <Avatar>
+              <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
               <AvatarFallback>{avatarInitial}</AvatarFallback>
             </Avatar>
           </button>

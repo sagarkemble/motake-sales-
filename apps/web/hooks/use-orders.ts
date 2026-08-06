@@ -48,6 +48,7 @@ export function useOrders({
   });
   const fulfillOrderMutation = trpc.orders.fulfill.useMutation({
     onSuccess: () => utils.orders.invalidate(),
+    onError: () => utils.orders.invalidate(),
   });
   const cancelOrderMutation = trpc.orders.cancel.useMutation({
     onSuccess: () => {

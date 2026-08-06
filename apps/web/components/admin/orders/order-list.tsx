@@ -5,7 +5,7 @@ import { format } from "date-fns";
 
 import { Button } from "~/components/ui/button";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
-import { OrderStatusBadge } from "~/components/admin/orders/order-status-badge";
+import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
 import { useOrders } from "~/hooks/use-orders";
 

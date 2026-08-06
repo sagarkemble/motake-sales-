@@ -68,6 +68,10 @@ class AuthService {
     }
   }
 
+  public async getProfileById(profileId: string): Promise<SelectProfile | undefined> {
+    return getProfileById(profileId);
+  }
+
   public async confirmPhoneNumber(accessToken: string, expectedProfileId: string): Promise<SelectProfile> {
     const authenticatedUser = await this.verifyAccessToken(accessToken);
     if (authenticatedUser.id !== expectedProfileId) {

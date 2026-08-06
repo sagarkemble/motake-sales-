@@ -11,6 +11,7 @@ import {
   closeGatepassInputSchema,
   gatepassDateInputSchema,
   gatepassEndOfDayTotalsSchema,
+  gatepassHistoryRowSchema,
   gatepassItemSchema,
   gatepassSchema,
   gatepassWithItemsSchema,
@@ -98,6 +99,24 @@ export const gatepassRouter = router({
       );
       if (!gatepassWithItems) throw notFound("No gatepass for today");
       return apiResponse(gatepassWithItems);
+    }),
+
+  getMyHistory: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/me/history"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Get my gatepass history",
+        description: "Return every past gatepass allotted to the signed-in salesman, newest first.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(z.array(gatepassHistoryRowSchema)))
+    .query(async ({ ctx }) => {
+      const history = await gatepassService.getGatepassHistoryForSalesman(ctx.user.id);
+      return apiResponse(history);
     }),
 
   getAllotmentMatrix: adminProcedure

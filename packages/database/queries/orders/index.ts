@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -232,7 +232,7 @@ export async function transitionScheduledPreordersToDue(
       and(
         eq(ordersTable.type, "pre_order"),
         eq(ordersTable.status, "scheduled"),
-        lte(ordersTable.scheduledDate, businessDate),
+        lt(ordersTable.scheduledDate, businessDate),
       ),
     )
     .returning();

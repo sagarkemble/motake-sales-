@@ -1,8 +1,13 @@
+import type { RouterOutputs } from "@repo/trpc/client";
+
 import { trpc } from "~/trpc/client";
+
+export type GatepassHistoryRow = RouterOutputs["gatepasses"]["getMyHistory"]["data"][number];
 
 interface UseGatepassesParams {
   businessDate?: string;
   includeMyGatepass?: boolean;
+  includeMyHistory?: boolean;
   includeAdminOverview?: boolean;
   enabled?: boolean;
 }
@@ -10,6 +15,7 @@ interface UseGatepassesParams {
 export function useGatepasses({
   businessDate,
   includeMyGatepass = false,
+  includeMyHistory = false,
   includeAdminOverview = false,
   enabled = true,
 }: UseGatepassesParams = {}) {
@@ -17,13 +23,21 @@ export function useGatepasses({
   const dateIsSet = enabled && Boolean(businessDate);
   const canonicalDateQuery = trpc.gatepasses.getCanonicalDate.useQuery(undefined, { enabled });
 
+  const myHistoryQuery = trpc.gatepasses.getMyHistory.useQuery(undefined, {
+    enabled: enabled && includeMyHistory,
+  });
+
   const gatepassesForDateQuery = trpc.gatepasses.listForDate.useQuery(
     { businessDate: businessDate ?? "" },
     { enabled: dateIsSet && includeAdminOverview },
   );
   const myGatepassQuery = trpc.gatepasses.getMine.useQuery(
     { businessDate: businessDate ?? "" },
-    { enabled: dateIsSet && includeMyGatepass },
+    {
+      enabled: dateIsSet && includeMyGatepass,
+      retry: (failedAttemptCount, queryError) =>
+        queryError.data?.code !== "NOT_FOUND" && failedAttemptCount < 3,
+    },
   );
   const allotmentMatrixQuery = trpc.gatepasses.getAllotmentMatrix.useQuery(
     { businessDate: businessDate ?? "" },
@@ -60,6 +74,11 @@ export function useGatepasses({
     isMyGatepassLoading: myGatepassQuery.isLoading,
     isMyGatepassError: myGatepassQuery.isError,
     refetchMyGatepass: myGatepassQuery.refetch,
+
+    myHistory: myHistoryQuery.data?.data ?? [],
+    isMyHistoryLoading: myHistoryQuery.isLoading,
+    isMyHistoryError: myHistoryQuery.isError,
+    refetchMyHistory: myHistoryQuery.refetch,
 
     allotmentMatrix: allotmentMatrixQuery.data?.data ?? [],
     isAllotmentMatrixLoading: allotmentMatrixQuery.isLoading,

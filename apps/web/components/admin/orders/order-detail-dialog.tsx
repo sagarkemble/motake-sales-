@@ -4,7 +4,7 @@ import { format } from "date-fns";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useOrders } from "~/hooks/use-orders";
-import { OrderStatusBadge } from "~/components/admin/orders/order-status-badge";
+import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 
 interface OrderDetailDialogProps {
   orderId: string | null;

@@ -150,6 +150,26 @@ export async function updateGatepassStatus(
   return updatedGatepass;
 }
 
+export interface GatepassHistoryRow {
+  gatepass: SelectGatepass;
+  totalIssuedQty: number;
+  totalSoldQty: number;
+}
+
+export async function getGatepassHistoryForSalesman(salesmanId: string): Promise<GatepassHistoryRow[]> {
+  return db
+    .select({
+      gatepass: gatepassesTable,
+      totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
+      totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+    })
+    .from(gatepassesTable)
+    .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
+    .where(eq(gatepassesTable.salesmanId, salesmanId))
+    .groupBy(gatepassesTable.id)
+    .orderBy(desc(gatepassesTable.businessDate));
+}
+
 export interface AllotmentMatrixRow {
   salesmanId: string;
   salesmanCode: string;

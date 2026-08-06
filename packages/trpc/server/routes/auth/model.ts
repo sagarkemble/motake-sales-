@@ -11,6 +11,13 @@ export const sessionUserSchema = z.object({
   role: appRoleSchema,
 });
 
+export const signedInUserSchema = z.object({
+  id: z.string(),
+  role: appRoleSchema,
+  name: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+});
+
 export const updatedPhoneSchema = z.object({
   id: z.string(),
   phone: z.string().nullable(),

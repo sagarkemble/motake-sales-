@@ -1,8 +1,13 @@
 "use client";
 
 import { format } from "date-fns";
-import { PackageIcon } from "lucide-react";
+import { useState } from "react";
 
+import { GatepassDetailDrawer } from "~/components/salesman/gatepass-detail-drawer";
+import { GatepassHistoryCard } from "~/components/salesman/gatepass-history-card";
+import { GatepassTodayViewDesktop } from "~/components/salesman/gatepass/gatepass-today-view.desktop";
+import { GatepassTodayViewMobile } from "~/components/salesman/gatepass/gatepass-today-view.mobile";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 
@@ -10,10 +15,12 @@ const CATALOG_PAGE_SIZE = 200;
 
 export default function SalesmanGatepassPage() {
   const businessDateKey = format(new Date(), "yyyy-MM-dd");
+  const [detailBusinessDate, setDetailBusinessDate] = useState<string | null>(null);
 
-  const { myGatepass, isMyGatepassLoading } = useGatepasses({
+  const { myGatepass, isMyGatepassLoading, myHistory, isMyHistoryLoading } = useGatepasses({
     businessDate: businessDateKey,
     includeMyGatepass: true,
+    includeMyHistory: true,
   });
   const { productsPage } = useProducts({
     listFilters: { page: 1, pageSize: CATALOG_PAGE_SIZE },
@@ -28,57 +35,92 @@ export default function SalesmanGatepassPage() {
     ),
   );
 
+  const todayItems = (myGatepass?.items ?? []).map((item) => {
+    const display = varietyDisplayById.get(item.varietyId);
+    const remainingQty = item.availableQty ?? item.issuedQty - item.soldQty;
+    return {
+      id: item.id,
+      productName: display?.productName ?? "Product",
+      varietyName: display?.varietyName ?? "",
+      unit: display?.unit ?? "",
+      issuedQty: item.issuedQty,
+      soldQty: item.soldQty,
+      remainingQty,
+    };
+  });
+  const totalAllocatedQty = todayItems.reduce((sum, item) => sum + item.issuedQty, 0);
+  const totalSoldQty = todayItems.reduce((sum, item) => sum + item.soldQty, 0);
+  const totalRemainingQty = todayItems.reduce((sum, item) => sum + item.remainingQty, 0);
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4">
-      <p className="text-sm text-muted-foreground">{format(new Date(), "d MMM yyyy")}</p>
+      <Tabs defaultValue="today">
+        <TabsList className="w-full">
+          <TabsTrigger value="today" className="flex-1">
+            Today
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">
+            History
+          </TabsTrigger>
+        </TabsList>
 
-      {isMyGatepassLoading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
-      ) : !myGatepass ? (
-        <p className="py-16 text-center text-sm text-muted-foreground">
-          No gate pass has been given to you for today yet.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {myGatepass.items.map((item) => {
-            const display = varietyDisplayById.get(item.varietyId);
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 rounded-2xl border bg-card p-3"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/40">
-                  <PackageIcon className="size-5 text-muted-foreground" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {display?.productName ?? "Product"}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {display?.varietyName} ({display?.unit})
-                  </p>
-                </div>
-
-                <div className="flex gap-4 text-right text-xs">
-                  <div>
-                    <p className="text-muted-foreground">Given</p>
-                    <p className="font-medium">{item.issuedQty}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Sold</p>
-                    <p className="font-medium">{item.soldQty}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Left</p>
-                    <p className="font-medium">{item.availableQty ?? item.issuedQty - item.soldQty}</p>
-                  </div>
-                </div>
+        <TabsContent value="today" className="flex flex-col gap-4">
+          {isMyGatepassLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+          ) : !myGatepass ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              No gate pass has been given to you for today yet.
+            </p>
+          ) : (
+            <>
+              <div className="md:hidden">
+                <GatepassTodayViewMobile
+                  items={todayItems}
+                  totalAllocatedQty={totalAllocatedQty}
+                  totalSoldQty={totalSoldQty}
+                  totalRemainingQty={totalRemainingQty}
+                />
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div className="hidden md:block">
+                <GatepassTodayViewDesktop
+                  items={todayItems}
+                  totalAllocatedQty={totalAllocatedQty}
+                  totalSoldQty={totalSoldQty}
+                  totalRemainingQty={totalRemainingQty}
+                />
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="history" className="flex flex-col gap-3">
+          {isMyHistoryLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+          ) : myHistory.length === 0 ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              No past gate passes found.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {myHistory.map((historyRow) => (
+                <GatepassHistoryCard
+                  key={historyRow.gatepass.id}
+                  historyRow={historyRow}
+                  onViewDetails={setDetailBusinessDate}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <GatepassDetailDrawer
+        businessDate={detailBusinessDate}
+        onOpenChange={(open) => {
+          if (!open) setDetailBusinessDate(null);
+        }}
+        varietyDisplayById={varietyDisplayById}
+      />
     </div>
   );
 }
