@@ -5,12 +5,20 @@ import { supabaseAdminClient } from "../clients/supabase-admin";
 import { badRequest, notFound, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
 import {
+  createProfileAvatarUploadUrl,
+  deleteProfileAvatar,
+  updateProfileNameAndAvatar,
+  type ProfileAvatarUploadUrlResult,
+} from "../shared/profile-avatar";
+import {
   appRoleSchema,
   createSalesmanAccountInputSchema,
   updateSalesmanAccountInputSchema,
   type AppRole,
   type AuthenticatedUser,
+  type CreateAvatarUploadUrlInput,
   type CreateSalesmanAccountInput,
+  type UpdateMyProfileInput,
   type UpdateSalesmanAccountInput,
 } from "./model";
 
@@ -115,6 +123,24 @@ class AuthService {
     return updatedProfile;
   }
 
+  public async updateMyProfile(
+    profileId: string,
+    changes: UpdateMyProfileInput,
+  ): Promise<SelectProfile | undefined> {
+    return updateProfileNameAndAvatar(profileId, changes);
+  }
+
+  public async deleteMyAvatar(profileId: string): Promise<SelectProfile | undefined> {
+    return deleteProfileAvatar(profileId);
+  }
+
+  public async createAvatarUploadUrl(
+    profileId: string,
+    input: CreateAvatarUploadUrlInput,
+  ): Promise<ProfileAvatarUploadUrlResult> {
+    return createProfileAvatarUploadUrl(profileId, input);
+  }
+
   public async deactivateSalesmanAccount(profileId: string): Promise<void> {
     await updateProfile(profileId, { status: "inactive" });
   }
@@ -125,7 +151,8 @@ class AuthService {
   }
 
   public async reactivateSalesmanAccount(profileId: string): Promise<void> {
-    await updateProfile(profileId, { status: "active" });
+    await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "none" });
+    await updateProfile(profileId, { status: "active", deletedAt: null });
   }
 }
 

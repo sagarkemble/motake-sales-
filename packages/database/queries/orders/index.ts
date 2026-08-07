@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -232,7 +232,7 @@ export async function transitionScheduledPreordersToDue(
       and(
         eq(ordersTable.type, "pre_order"),
         eq(ordersTable.status, "scheduled"),
-        lt(ordersTable.scheduledDate, businessDate),
+        lte(ordersTable.scheduledDate, businessDate),
       ),
     )
     .returning();
@@ -246,7 +246,13 @@ export async function markOrderFulfilled(
   const [fulfilledOrder] = await db
     .update(ordersTable)
     .set({ status: "fulfilled", fulfilledAt, fulfilledBy })
-    .where(and(eq(ordersTable.id, orderId), isNull(ordersTable.fulfilledAt)))
+    .where(
+      and(
+        eq(ordersTable.id, orderId),
+        eq(ordersTable.salesmanId, fulfilledBy),
+        sql`${ordersTable.status} NOT IN ('fulfilled', 'cancelled')`,
+      ),
+    )
     .returning();
   return fulfilledOrder;
 }

@@ -1,4 +1,12 @@
-import { LayoutGrid, ShoppingCart, TicketCheck, ClipboardList } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutGrid,
+  PackagePlusIcon,
+  ShoppingCart,
+  TicketCheck,
+  TicketIcon,
+  UserIcon,
+} from "lucide-react";
 
 import {
   getPageTitleForPathname as getSharedPageTitleForPathname,
@@ -15,6 +23,13 @@ export const salesmanNavItems: SalesmanNavItem[] = [
   { label: "Cart", href: "/salesman/cart", icon: ShoppingCart },
   { label: "Gate Pass", href: "/salesman/gatepass", icon: TicketCheck },
   { label: "Orders", href: "/salesman/orders", icon: ClipboardList },
+];
+
+export const salesmanQuickActions: SalesmanNavItem[] = [
+  { label: "New Order", href: "/salesman", icon: PackagePlusIcon },
+  { label: "Gate Pass", href: "/salesman/gatepass", icon: TicketIcon },
+  { label: "My Orders", href: "/salesman/orders", icon: ClipboardList },
+  { label: "My Account", href: "/salesman/account", icon: UserIcon },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

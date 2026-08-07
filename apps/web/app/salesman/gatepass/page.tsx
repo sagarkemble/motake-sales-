@@ -10,6 +10,7 @@ import { GatepassTodayViewMobile } from "~/components/salesman/gatepass/gatepass
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
+import { computeGatepassTotals } from "~/lib/gatepass-totals";
 
 const CATALOG_PAGE_SIZE = 200;
 
@@ -48,9 +49,13 @@ export default function SalesmanGatepassPage() {
       remainingQty,
     };
   });
-  const totalAllocatedQty = todayItems.reduce((sum, item) => sum + item.issuedQty, 0);
-  const totalSoldQty = todayItems.reduce((sum, item) => sum + item.soldQty, 0);
-  const totalRemainingQty = todayItems.reduce((sum, item) => sum + item.remainingQty, 0);
+  const { totalAllocatedQty, totalSoldQty, totalRemainingQty } = computeGatepassTotals(
+    todayItems.map((item) => ({
+      issuedQty: item.issuedQty,
+      soldQty: item.soldQty,
+      availableQty: item.remainingQty,
+    })),
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4">

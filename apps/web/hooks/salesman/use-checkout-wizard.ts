@@ -23,6 +23,13 @@ interface NewCustomerFormValues {
   address: string;
 }
 
+export interface PlacedOrder {
+  orderCode: string;
+  type: OrderTypeChoice;
+  totalQuantity: number;
+  placedAt: Date;
+}
+
 const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = { shopName: "", phone: "", address: "" };
 const CUSTOMER_SEARCH_PAGE_SIZE = 20;
 
@@ -65,6 +72,7 @@ export function useCheckoutWizard() {
     EMPTY_NEW_CUSTOMER_FORM,
   );
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
 
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm, 350);
 
@@ -122,6 +130,14 @@ export function useCheckoutWizard() {
     setCurrentStepNumber((stepNumber) => Math.max(1, stepNumber - 1));
   }
 
+  function goToOrdersList() {
+    router.push("/salesman/orders");
+  }
+
+  function goToHome() {
+    router.push("/salesman");
+  }
+
   async function placeOrder() {
     let customerForOrder = selectedCustomer;
 
@@ -153,24 +169,27 @@ export function useCheckoutWizard() {
     const items = cartLines.map((line) => ({ varietyId: line.varietyId, quantity: line.quantity }));
 
     try {
-      if (orderType === "book_now") {
-        await placeBookNowOrderAsync({
-          customerId: customerForOrder.id,
-          businessDate: businessDateKey,
-          idempotencyKey,
-          items,
-        });
-      } else {
-        await placePreOrderAsync({
-          customerId: customerForOrder.id,
-          scheduledDate: format(nextDayDate, "yyyy-MM-dd"),
-          idempotencyKey,
-          items,
-        });
-      }
+      const placedOrderResponse =
+        orderType === "book_now"
+          ? await placeBookNowOrderAsync({
+              customerId: customerForOrder.id,
+              businessDate: businessDateKey,
+              idempotencyKey,
+              items,
+            })
+          : await placePreOrderAsync({
+              customerId: customerForOrder.id,
+              scheduledDate: format(nextDayDate, "yyyy-MM-dd"),
+              idempotencyKey,
+              items,
+            });
       clearCart();
-      toast.success("Order placed");
-      router.push("/salesman/orders");
+      setPlacedOrder({
+        orderCode: placedOrderResponse.data.order.orderCode,
+        type: orderType,
+        totalQuantity: placedOrderResponse.data.order.totalQuantity,
+        placedAt: new Date(placedOrderResponse.data.order.placedAt),
+      });
     } catch (placeOrderError) {
       const errorMessage =
         placeOrderError instanceof Error ? placeOrderError.message : "Could not place order";
@@ -209,5 +228,8 @@ export function useCheckoutWizard() {
 
     isPlacingOrder,
     placeOrder,
+    placedOrder,
+    goToOrdersList,
+    goToHome,
   };
 }

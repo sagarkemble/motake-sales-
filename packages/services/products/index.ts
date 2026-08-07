@@ -17,7 +17,7 @@ import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
 import { conflict, notFound } from "../errors";
-import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl } from "../uploads/r2-client";
+import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl, deleteObject } from "../uploads/r2-client";
 import {
   createImageUploadUrlInputSchema,
   createProductInputSchema,
@@ -56,7 +56,26 @@ class ProductService {
     changes: UpdateProductInput,
   ): Promise<SelectProduct | undefined> {
     const parsedChanges = updateProductInputSchema.parse(changes);
-    return updateProduct(productId, parsedChanges);
+    const existingProduct = parsedChanges.imageKey !== undefined ? await getProductById(productId) : undefined;
+
+    const updatedProduct = await updateProduct(productId, parsedChanges);
+
+    if (existingProduct?.imageKey && existingProduct.imageKey !== parsedChanges.imageKey) {
+      await deleteObject(existingProduct.imageKey);
+    }
+
+    return updatedProduct;
+  }
+
+  public async deleteProductImage(productId: string): Promise<SelectProduct | undefined> {
+    const existingProduct = await getProductById(productId);
+    const updatedProduct = await updateProduct(productId, { imageKey: null, imageUrl: null });
+
+    if (existingProduct?.imageKey) {
+      await deleteObject(existingProduct.imageKey);
+    }
+
+    return updatedProduct;
   }
 
   public async deactivateProduct(productId: string): Promise<SelectProduct | undefined> {
@@ -126,7 +145,7 @@ class ProductService {
 
   public async createImageUploadUrl(input: CreateImageUploadUrlInput): Promise<ImageUploadUrlResult> {
     const parsedInput = createImageUploadUrlInputSchema.parse(input);
-    const imageKey = buildObjectKey(productImageFolderName, parsedInput.fileName);
+    const imageKey = buildObjectKey(productImageFolderName, "admin", parsedInput.fileName);
     const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
     return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
   }

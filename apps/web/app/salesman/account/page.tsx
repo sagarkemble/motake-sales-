@@ -17,8 +17,13 @@ import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
 
 export default function SalesmanAccountPage() {
-  const { mySalesmanProfile, isMySalesmanProfileLoading, updateMyProfileAsync, isUpdatingMyProfile } =
-    useSalesmen({ includeMyProfile: true });
+  const {
+    mySalesmanProfile,
+    isMySalesmanProfileLoading,
+    refetchMySalesmanProfile,
+    updateMyProfileAsync,
+    isUpdatingMyProfile,
+  } = useSalesmen({ includeMyProfile: true });
 
   const [isUpdateAvatarDialogOpen, setIsUpdateAvatarDialogOpen] = useState(false);
   const [isUpdatePhoneDialogOpen, setIsUpdatePhoneDialogOpen] = useState(false);
@@ -45,11 +50,22 @@ export default function SalesmanAccountPage() {
     }
   }
 
-  if (isMySalesmanProfileLoading || !profile || !salesman) {
+  if (isMySalesmanProfileLoading) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
         <Skeleton className="h-40 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!profile || !salesman) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-3 px-4 py-10 text-center">
+        <p className="text-sm text-muted-foreground">We could not load your profile.</p>
+        <Button variant="outline" size="sm" onClick={() => void refetchMySalesmanProfile()}>
+          Try again
+        </Button>
       </div>
     );
   }
@@ -85,7 +101,9 @@ export default function SalesmanAccountPage() {
               <Button
                 type="button"
                 size="sm"
-                disabled={!hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0}
+                disabled={
+                  !hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0
+                }
                 onClick={() => void handleSaveName()}
               >
                 {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
@@ -102,12 +120,7 @@ export default function SalesmanAccountPage() {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="account-phone">Phone number</Label>
             <div className="flex gap-2">
-              <Input
-                id="account-phone"
-                value={profile.phone ?? "Not set"}
-                readOnly
-                disabled
-              />
+              <Input id="account-phone" value={profile.phone ?? "Not set"} readOnly disabled />
               <Button
                 type="button"
                 variant="outline"
@@ -126,8 +139,14 @@ export default function SalesmanAccountPage() {
         </CardContent>
       </Card>
 
-      <UpdateAvatarDialog open={isUpdateAvatarDialogOpen} onOpenChange={setIsUpdateAvatarDialogOpen} />
-      <UpdatePhoneNumberDialog open={isUpdatePhoneDialogOpen} onOpenChange={setIsUpdatePhoneDialogOpen} />
+      <UpdateAvatarDialog
+        open={isUpdateAvatarDialogOpen}
+        onOpenChange={setIsUpdateAvatarDialogOpen}
+      />
+      <UpdatePhoneNumberDialog
+        open={isUpdatePhoneDialogOpen}
+        onOpenChange={setIsUpdatePhoneDialogOpen}
+      />
     </div>
   );
 }

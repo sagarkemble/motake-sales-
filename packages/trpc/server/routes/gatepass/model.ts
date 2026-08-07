@@ -36,6 +36,9 @@ export const gatepassItemSchema = z.object({
 export const gatepassWithItemsSchema = z.object({
   gatepass: gatepassSchema,
   items: z.array(gatepassItemSchema),
+});
+
+export const gatepassWithItemsAndNamesSchema = gatepassWithItemsSchema.extend({
   issuedByName: z.string().nullable(),
   closedByName: z.string().nullable(),
 });

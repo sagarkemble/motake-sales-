@@ -149,7 +149,7 @@ class OrderService {
 
     const fulfilledOrder = await markOrderFulfilled(orderId, fulfilledBy, new Date());
     if (!fulfilledOrder) {
-      throw notFound(`Order ${orderId} not found or already fulfilled`);
+      throw notFound(`Order ${orderId} not found, not yours, or already fulfilled`);
     }
     return fulfilledOrder;
   }

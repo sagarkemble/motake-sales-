@@ -20,14 +20,24 @@ interface UpdateAvatarDialogProps {
 
 export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogProps) {
   const { signedInUser } = useAuth();
-  const { createAvatarUploadUrlAsync, updateMyProfileAsync } = useSalesmen();
+  const { createAvatarUploadUrlAsync, updateMyProfileAsync, deleteMyAvatarAsync } = useSalesmen();
 
   async function handleUploaded(result: { imageKey: string; imageUrl: string }) {
     try {
-      await updateMyProfileAsync({ avatarKey: result.imageKey, avatarUrl: result.imageUrl });
+      await updateMyProfileAsync({ avatarKey: result.imageKey });
       toast.success("Avatar updated");
     } catch (updateError) {
       toast.error(getErrorMessage(updateError, "Could not save the avatar. Try again."));
+    }
+  }
+
+  async function handleDeleted() {
+    try {
+      await deleteMyAvatarAsync();
+      toast.success("Avatar removed");
+    } catch (deleteError) {
+      toast.error(getErrorMessage(deleteError, "Could not remove the avatar. Try again."));
+      throw deleteError;
     }
   }
 
@@ -45,6 +55,7 @@ export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogPro
           shape="circle"
           uploadButtonLabel="Upload avatar"
           onUploaded={handleUploaded}
+          onDelete={handleDeleted}
         />
       </DialogContent>
     </Dialog>

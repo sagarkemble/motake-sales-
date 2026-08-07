@@ -15,9 +15,10 @@ import { useGatepasses } from "~/hooks/use-gatepasses";
 
 interface GatepassTabProps {
   salesmanId: string;
+  isSalesmanDeleted?: boolean;
 }
 
-export function GatepassTab({ salesmanId }: GatepassTabProps) {
+export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassTabProps) {
   const { canonicalBusinessDate: businessDate, isCanonicalDateLoading } = useGatepasses();
   const { gatepasses, allotmentMatrix, isGatepassesLoading, isAllotmentMatrixLoading } =
     useGatepasses({ businessDate: businessDate || undefined, includeAdminOverview: true });
@@ -48,12 +49,14 @@ export function GatepassTab({ salesmanId }: GatepassTabProps) {
       </div>
 
       <Button
-        asChild={!todaysGatepass}
-        disabled={Boolean(todaysGatepass)}
+        asChild={!todaysGatepass && !isSalesmanDeleted}
+        disabled={Boolean(todaysGatepass) || isSalesmanDeleted}
         variant="outline"
         className="w-full rounded-full"
       >
-        {todaysGatepass ? (
+        {isSalesmanDeleted ? (
+          "Salesman deleted"
+        ) : todaysGatepass ? (
           "Already allotted today"
         ) : (
           <Link href={`/gatepass?salesmanId=${salesmanId}`}>Allot</Link>

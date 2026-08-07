@@ -81,12 +81,10 @@ export async function listSalesmenWithProfiles(
   return toPaginatedResult(rows, totalCount, pagination);
 }
 
-export async function reactivateSalesman(
-  salesmanId: string,
-): Promise<SelectProfile | undefined> {
+export async function reactivateSalesman(salesmanId: string): Promise<SelectProfile | undefined> {
   const [reactivatedProfile] = await db
     .update(profilesTable)
-    .set({ status: "active" })
+    .set({ status: "active", deletedAt: null })
     .where(eq(profilesTable.id, salesmanId))
     .returning();
   return reactivatedProfile;
@@ -153,7 +151,9 @@ export async function getSalesmanDayWiseHistory(
     )
     .groupBy(sql`date(${ordersTable.placedAt})`);
 
-  const preOrderedQtyByDate = new Map(preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]));
+  const preOrderedQtyByDate = new Map(
+    preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]),
+  );
 
   return gatepassRows.map((row) => ({
     businessDate: row.businessDate,

@@ -58,6 +58,12 @@ export function useSalesmen({
     },
   });
   const createAvatarUploadUrlMutation = trpc.salesmen.createAvatarUploadUrl.useMutation();
+  const deleteMyAvatarMutation = trpc.salesmen.deleteMyAvatar.useMutation({
+    onSuccess: () => {
+      utils.salesmen.invalidate();
+      utils.auth.me.invalidate();
+    },
+  });
 
   return {
     salesmenPage: salesmenListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
@@ -113,5 +119,10 @@ export function useSalesmen({
     createAvatarUploadUrlAsync: createAvatarUploadUrlMutation.mutateAsync,
     isCreatingAvatarUploadUrl: createAvatarUploadUrlMutation.isPending,
     createAvatarUploadUrlError: createAvatarUploadUrlMutation.error ?? null,
+
+    deleteMyAvatar: deleteMyAvatarMutation.mutate,
+    deleteMyAvatarAsync: deleteMyAvatarMutation.mutateAsync,
+    isDeletingMyAvatar: deleteMyAvatarMutation.isPending,
+    deleteMyAvatarError: deleteMyAvatarMutation.error ?? null,
   };
 }

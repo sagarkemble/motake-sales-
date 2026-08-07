@@ -4,6 +4,7 @@ import { CartEmptyState } from "~/components/salesman/cart/cart-empty-state";
 import { CheckoutViewDesktop } from "~/components/salesman/checkout/checkout-view.desktop";
 import { CheckoutViewMobile } from "~/components/salesman/checkout/checkout-view.mobile";
 import { CustomerDetailsStep } from "~/components/salesman/checkout/customer-details-step";
+import { OrderSuccessStep } from "~/components/salesman/checkout/order-success-step";
 import { OrderTypeStep } from "~/components/salesman/checkout/order-type-step";
 import { StepIndicator } from "~/components/salesman/checkout/step-indicator";
 import { VerifyProductsStep } from "~/components/salesman/checkout/verify-products-step";
@@ -11,6 +12,16 @@ import { useCheckoutWizard } from "~/hooks/salesman/use-checkout-wizard";
 
 export default function SalesmanCheckoutPage() {
   const wizard = useCheckoutWizard();
+
+  if (wizard.placedOrder) {
+    return (
+      <OrderSuccessStep
+        placedOrder={wizard.placedOrder}
+        onViewOrders={wizard.goToOrdersList}
+        onBackToHome={wizard.goToHome}
+      />
+    );
+  }
 
   if (wizard.cartLines.length === 0) {
     return <CartEmptyState />;
@@ -52,7 +63,9 @@ export default function SalesmanCheckoutPage() {
     : wizard.currentStepNumber === 1
       ? "Next: Order type"
       : "Next: Customer details";
-  const isNextDisabled = isLastStep && !wizard.isCustomerStepValid;
+  const isOrderTypeStepInvalid =
+    wizard.currentStepNumber === 2 && wizard.orderType === "book_now" && !wizard.isBookNowAllowed;
+  const isNextDisabled = isOrderTypeStepInvalid || (isLastStep && !wizard.isCustomerStepValid);
   const isNextLoading = isLastStep ? wizard.isPlacingOrder || wizard.isCreatingCustomer : false;
 
   function handleNext() {

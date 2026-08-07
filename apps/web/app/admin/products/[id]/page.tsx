@@ -123,6 +123,7 @@ export default function EditProductPage() {
       </div>
 
       <ProductForm
+        productId={productId}
         defaultValues={{
           name: product.name,
           description: product.description ?? "",

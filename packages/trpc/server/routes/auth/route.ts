@@ -6,13 +6,36 @@ import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
+  createAvatarUploadUrlInputSchema,
+  createAvatarUploadUrlOutputSchema,
   createSessionInputSchema,
   sessionUserSchema,
   signedInUserSchema,
+  updateMyProfileInputSchema,
   updatedPhoneSchema,
 } from "./model";
 
 const path = generatePath("/auth");
+
+function toSignedInUser(profile: {
+  id: string;
+  role: "admin" | "salesman";
+  name: string | null;
+  email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  status: "active" | "inactive";
+}) {
+  return {
+    id: profile.id,
+    role: profile.role,
+    name: profile.name,
+    email: profile.email,
+    phone: profile.phone,
+    avatarUrl: profile.avatarUrl,
+    status: profile.status,
+  };
+}
 
 export const authRouter = router({
   createSession: publicProcedure
@@ -68,12 +91,7 @@ export const authRouter = router({
     .query(async ({ ctx }) => {
       const profile = await authService.getProfileById(ctx.user.id);
       if (!profile) throw notFound("Profile not found");
-      return apiResponse({
-        id: profile.id,
-        role: profile.role,
-        name: profile.name,
-        avatarUrl: profile.avatarUrl,
-      });
+      return apiResponse(toSignedInUser(profile));
     }),
 
   confirmPhoneNumber: protectedProcedure
@@ -94,5 +112,61 @@ export const authRouter = router({
       const updatedProfile = await authService.confirmPhoneNumber(input.accessToken, ctx.user.id);
       setAuthentication(ctx, input.accessToken);
       return apiResponse({ id: updatedProfile.id, phone: updatedProfile.phone });
+    }),
+
+  updateMyProfile: protectedProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/me"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "Update my profile",
+        description: "Change the name or avatar of the signed-in user.",
+      },
+    })
+    .input(updateMyProfileInputSchema)
+    .output(apiResponseSchema(signedInUserSchema))
+    .mutation(async ({ ctx, input }) => {
+      const profile = await authService.updateMyProfile(ctx.user.id, input);
+      if (!profile) throw notFound("Profile not found");
+      return apiResponse(toSignedInUser(profile));
+    }),
+
+  createAvatarUploadUrl: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/me/avatar-upload-url"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "Get my avatar upload URL",
+        description: "Return a short-lived URL the browser can upload the signed-in user's avatar image to directly.",
+      },
+    })
+    .input(createAvatarUploadUrlInputSchema)
+    .output(apiResponseSchema(createAvatarUploadUrlOutputSchema))
+    .mutation(async ({ ctx, input }) => {
+      const result = await authService.createAvatarUploadUrl(ctx.user.id, input);
+      return apiResponse(result);
+    }),
+
+  deleteMyAvatar: protectedProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/me/avatar"),
+        tags: ["Auth"],
+        protect: true,
+        summary: "Delete my avatar",
+        description: "Remove the signed-in user's avatar image and clear it from their profile.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(signedInUserSchema))
+    .mutation(async ({ ctx }) => {
+      const profile = await authService.deleteMyAvatar(ctx.user.id);
+      if (!profile) throw notFound("Profile not found");
+      return apiResponse(toSignedInUser(profile));
     }),
 });

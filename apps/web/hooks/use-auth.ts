@@ -60,6 +60,13 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
   const confirmPhoneNumberMutation = trpc.auth.confirmPhoneNumber.useMutation({
     onSuccess: () => utils.auth.me.invalidate(),
   });
+  const updateMyProfileMutation = trpc.auth.updateMyProfile.useMutation({
+    onSuccess: () => utils.auth.me.invalidate(),
+  });
+  const createAvatarUploadUrlMutation = trpc.auth.createAvatarUploadUrl.useMutation();
+  const deleteMyAvatarMutation = trpc.auth.deleteMyAvatar.useMutation({
+    onSuccess: () => utils.auth.me.invalidate(),
+  });
 
   async function signInWithEmailAndPassword({ email, password }: EmailAndPasswordCredentials) {
     const { data, error } = await supabaseBrowserClient.auth.signInWithPassword({
@@ -241,5 +248,19 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
     confirmPhoneNumberChange,
     isConfirmingPhoneNumberChange,
     phoneNumberChangeError,
+
+    updateMyProfile: updateMyProfileMutation.mutate,
+    updateMyProfileAsync: updateMyProfileMutation.mutateAsync,
+    isUpdatingMyProfile: updateMyProfileMutation.isPending,
+    updateMyProfileError: updateMyProfileMutation.error ?? null,
+
+    createAvatarUploadUrlAsync: createAvatarUploadUrlMutation.mutateAsync,
+    isCreatingAvatarUploadUrl: createAvatarUploadUrlMutation.isPending,
+    createAvatarUploadUrlError: createAvatarUploadUrlMutation.error ?? null,
+
+    deleteMyAvatar: deleteMyAvatarMutation.mutate,
+    deleteMyAvatarAsync: deleteMyAvatarMutation.mutateAsync,
+    isDeletingMyAvatar: deleteMyAvatarMutation.isPending,
+    deleteMyAvatarError: deleteMyAvatarMutation.error ?? null,
   };
 }

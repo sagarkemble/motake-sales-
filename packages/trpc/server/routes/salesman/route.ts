@@ -110,6 +110,8 @@ export const salesmanRouter = router({
     .input(salesmanIdInputSchema)
     .output(apiResponseSchema(z.object({ reactivated: z.literal(true) })))
     .mutation(async ({ input }) => {
+      const profile = await authService.getProfileById(input.id);
+      if (!profile || profile.role !== "salesman") throw notFound("Salesman profile not found");
       await authService.reactivateSalesmanAccount(input.id);
       return apiResponse({ reactivated: true as const });
     }),
@@ -128,6 +130,8 @@ export const salesmanRouter = router({
     .input(salesmanIdInputSchema)
     .output(apiResponseSchema(z.object({ deleted: z.literal(true) })))
     .mutation(async ({ input }) => {
+      const profile = await authService.getProfileById(input.id);
+      if (!profile || profile.role !== "salesman") throw notFound("Salesman profile not found");
       await authService.deleteSalesmanAccount(input.id);
       return apiResponse({ deleted: true as const });
     }),
@@ -223,8 +227,27 @@ export const salesmanRouter = router({
     })
     .input(createAvatarUploadUrlInputSchema)
     .output(apiResponseSchema(createAvatarUploadUrlOutputSchema))
-    .mutation(async ({ input }) => {
-      const result = await salesmanService.createAvatarUploadUrl(input);
+    .mutation(async ({ ctx, input }) => {
+      const result = await salesmanService.createAvatarUploadUrl(ctx.user.id, input);
       return apiResponse(result);
+    }),
+
+  deleteMyAvatar: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/me/avatar"),
+        tags: ["Salesmen"],
+        protect: true,
+        summary: "Delete my avatar",
+        description: "Remove the signed-in salesman's avatar image and clear it from their profile.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(profileSchema))
+    .mutation(async ({ ctx }) => {
+      const profile = await salesmanService.deleteSalesmanAvatar(ctx.user.id);
+      if (!profile) throw notFound("Salesman profile not found");
+      return apiResponse(profile);
     }),
 });

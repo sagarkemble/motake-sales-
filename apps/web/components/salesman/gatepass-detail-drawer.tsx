@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { InfoIcon } from "lucide-react";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
@@ -50,7 +50,7 @@ export function GatepassDetailDrawer({
               <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-base font-semibold">
-                    {format(new Date(myGatepass.gatepass.businessDate), "d MMM yyyy")}
+                    {format(parseISO(myGatepass.gatepass.businessDate), "d MMM yyyy")}
                   </p>
                   <GatepassStatusBadge status={myGatepass.gatepass.status} />
                 </div>

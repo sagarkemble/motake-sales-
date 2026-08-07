@@ -4,18 +4,16 @@ import { endOfDay, format, startOfDay, subDays } from "date-fns";
 import {
   CheckCircleIcon,
   ClockIcon,
-  PackagePlusIcon,
   RotateCcwIcon,
   ShoppingCartIcon,
-  StoreIcon,
   TicketIcon,
   TriangleAlertIcon,
-  UserPlusIcon,
 } from "lucide-react";
 
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
-import { QuickActionLink } from "~/components/admin/dashboard/quick-action-link";
+import { adminQuickActions } from "~/components/admin/nav-items";
+import { QuickActionLink } from "~/components/shared/quick-action-link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/use-auth";
 import { useReports } from "~/hooks/use-reports";
@@ -49,7 +47,8 @@ export default function AdminDashboardPage() {
     dailyKpiFilters: toBusinessDateFilters(yesterday),
   });
 
-  const firstName = signedInUser?.name?.split(" ")[0] ?? "Admin";
+  const trimmedSignedInUserName = signedInUser?.name?.trim();
+  const firstName = trimmedSignedInUserName ? trimmedSignedInUserName.split(" ")[0] : "Admin";
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:gap-8 sm:p-6">
@@ -130,11 +129,14 @@ export default function AdminDashboardPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Quick actions</h2>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-          <QuickActionLink href="/gatepass" label="Allot Gate Passes" icon={TicketIcon} />
-          <QuickActionLink href="/admin/products/new" label="Add Product" icon={PackagePlusIcon} />
-          <QuickActionLink href="/admin/salesman/new" label="Add Salesman" icon={UserPlusIcon} />
-          <QuickActionLink href="/admin/customers" label="View Customers" icon={StoreIcon} />
-          <QuickActionLink href="/admin/orders" label="View Orders" icon={ShoppingCartIcon} />
+          {adminQuickActions.map((quickAction) => (
+            <QuickActionLink
+              key={quickAction.href}
+              href={quickAction.href}
+              label={quickAction.label}
+              icon={quickAction.icon}
+            />
+          ))}
         </div>
       </section>
 

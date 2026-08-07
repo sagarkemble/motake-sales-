@@ -81,6 +81,25 @@ export const productsRouter = router({
       return apiResponse(result);
     }),
 
+  deleteImage: adminProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/:id/image"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Delete a product image",
+        description: "Remove the product image and clear it from the product record. Admin only.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.deleteProductImage(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
+    }),
+
   create: adminProcedure
     .meta({
       openapi: {

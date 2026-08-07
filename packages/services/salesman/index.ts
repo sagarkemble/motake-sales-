@@ -10,19 +10,21 @@ import {
   type SalesmanDayWiseHistoryRow,
   type SalesmanWithProfile,
 } from "@repo/database/queries/salesman";
-import { updateProfile } from "@repo/database/queries/auth";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { conflict } from "../errors";
-import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl } from "../uploads/r2-client";
 import {
-  createAvatarUploadUrlInputSchema,
+  createProfileAvatarUploadUrl,
+  deleteProfileAvatar,
+  updateProfileNameAndAvatar,
+  type ProfileAvatarUploadUrlResult,
+} from "../shared/profile-avatar";
+import {
   createSalesmanInputSchema,
   listSalesmenInputSchema,
   salesmanHistoryRangeInputSchema,
   updateSalesmanCodeInputSchema,
-  updateSalesmanProfileInputSchema,
   type CreateAvatarUploadUrlInput,
   type CreateSalesmanInput,
   type ListSalesmenInput,
@@ -30,14 +32,6 @@ import {
   type UpdateSalesmanCodeInput,
   type UpdateSalesmanProfileInput,
 } from "./model";
-
-const avatarImageFolderName = "avatars";
-
-interface AvatarUploadUrlResult {
-  uploadUrl: string;
-  imageKey: string;
-  imageUrl: string;
-}
 
 class SalesmanService {
   public async createSalesman(input: CreateSalesmanInput): Promise<SelectSalesman> {
@@ -85,15 +79,18 @@ class SalesmanService {
     salesmanId: string,
     changes: UpdateSalesmanProfileInput,
   ): Promise<SelectProfile | undefined> {
-    const parsedChanges = updateSalesmanProfileInputSchema.parse(changes);
-    return updateProfile(salesmanId, parsedChanges);
+    return updateProfileNameAndAvatar(salesmanId, changes);
   }
 
-  public async createAvatarUploadUrl(input: CreateAvatarUploadUrlInput): Promise<AvatarUploadUrlResult> {
-    const parsedInput = createAvatarUploadUrlInputSchema.parse(input);
-    const imageKey = buildObjectKey(avatarImageFolderName, parsedInput.fileName);
-    const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
-    return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
+  public async deleteSalesmanAvatar(salesmanId: string): Promise<SelectProfile | undefined> {
+    return deleteProfileAvatar(salesmanId);
+  }
+
+  public async createAvatarUploadUrl(
+    salesmanId: string,
+    input: CreateAvatarUploadUrlInput,
+  ): Promise<ProfileAvatarUploadUrlResult> {
+    return createProfileAvatarUploadUrl(salesmanId, input);
   }
 
   public async getDayWiseHistory(

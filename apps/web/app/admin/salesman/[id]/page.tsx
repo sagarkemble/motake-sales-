@@ -58,7 +58,7 @@ export default function SalesmanDetailPage() {
           <SalesTab salesmanId={salesman.id} />
         </TabsContent>
         <TabsContent value="gatepass">
-          <GatepassTab salesmanId={salesman.id} />
+          <GatepassTab salesmanId={salesman.id} isSalesmanDeleted={Boolean(profile.deletedAt)} />
         </TabsContent>
       </Tabs>
 

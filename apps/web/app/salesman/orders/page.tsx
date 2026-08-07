@@ -3,22 +3,25 @@
 import { format } from "date-fns";
 import { useMemo, useState } from "react";
 
+import { isPreorderPending } from "~/lib/is-preorder-pending";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { OrderDetailSheet } from "~/components/salesman/order-detail-sheet";
 import { OrderListRow } from "~/components/salesman/order-list-row";
+import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useOrders } from "~/hooks/use-orders";
 
 const ORDERS_PAGE_SIZE = 20;
-const PREORDERS_PAGE_SIZE = 100;
+const PREORDERS_PAGE_SIZE = 20;
 
 type PreorderStatusFilter = "pending" | "fulfilled";
 
 export default function SalesmanOrdersPage() {
-  const businessDateKey = format(new Date(), "yyyy-MM-dd");
+  const { canonicalBusinessDate } = useGatepasses();
 
   const [bookNowPage, setBookNowPage] = useState(1);
+  const [preorderPage, setPreorderPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [preorderStatusFilter, setPreorderStatusFilter] = useState<PreorderStatusFilter>("pending");
 
@@ -27,17 +30,20 @@ export default function SalesmanOrdersPage() {
   });
 
   const { ordersPage: myPreordersPageData, isOrdersListLoading: isMyPreordersLoading } = useOrders({
-    listFilters: { type: "pre_order", page: 1, pageSize: PREORDERS_PAGE_SIZE },
+    listFilters: { type: "pre_order", page: preorderPage, pageSize: PREORDERS_PAGE_SIZE },
   });
 
   const { duePreorders, isDuePreordersLoading } = useOrders({
-    duePreordersDate: businessDateKey,
+    duePreordersDate: canonicalBusinessDate,
   });
 
   const isPreordersLoading = isMyPreordersLoading || isDuePreordersLoading;
 
   const allPreorderRows = useMemo(() => {
-    const rowsById = new Map<string, { order: (typeof duePreorders)[number]; customerShopName?: string }>();
+    const rowsById = new Map<
+      string,
+      { order: (typeof duePreorders)[number]; customerShopName?: string }
+    >();
     for (const order of duePreorders) rowsById.set(order.id, { order });
     for (const { order, customerShopName } of myPreordersPageData.items) {
       rowsById.set(order.id, { order, customerShopName });
@@ -45,7 +51,7 @@ export default function SalesmanOrdersPage() {
     return Array.from(rowsById.values());
   }, [duePreorders, myPreordersPageData.items]);
 
-  const pendingPreorderRows = allPreorderRows.filter(({ order }) => order.status !== "fulfilled");
+  const pendingPreorderRows = allPreorderRows.filter(({ order }) => isPreorderPending(order.status));
   const fulfilledPreorderRows = allPreorderRows.filter(({ order }) => order.status === "fulfilled");
   const visiblePreorderRows =
     preorderStatusFilter === "pending" ? pendingPreorderRows : fulfilledPreorderRows;
@@ -145,6 +151,14 @@ export default function SalesmanOrdersPage() {
                 />
               ))}
             </div>
+          )}
+
+          {myPreordersPageData.totalPages > 1 && (
+            <PaginationFooter
+              page={myPreordersPageData.page}
+              totalPages={myPreordersPageData.totalPages}
+              onPageChange={setPreorderPage}
+            />
           )}
         </TabsContent>
       </Tabs>

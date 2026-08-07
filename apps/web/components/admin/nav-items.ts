@@ -1,4 +1,13 @@
-import { LayoutDashboard, Package, ShoppingCart, Store, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  PackagePlusIcon,
+  ShoppingCart,
+  Store,
+  TicketIcon,
+  Users,
+  UserPlusIcon,
+} from "lucide-react";
 
 import {
   getPageTitleForPathname as getSharedPageTitleForPathname,
@@ -16,6 +25,14 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "Salesman", href: "/admin/salesman", icon: Users },
   { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { label: "Customers", href: "/admin/customers", icon: Store },
+];
+
+export const adminQuickActions: AdminNavItem[] = [
+  { label: "Allot Gate Passes", href: "/gatepass", icon: TicketIcon },
+  { label: "Add Product", href: "/admin/products/new", icon: PackagePlusIcon },
+  { label: "Add Salesman", href: "/admin/salesman/new", icon: UserPlusIcon },
+  { label: "View Customers", href: "/admin/customers", icon: Store },
+  { label: "View Orders", href: "/admin/orders", icon: ShoppingCart },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

@@ -18,6 +18,7 @@ import {
   type GatepassWithItems,
 } from "@repo/database/queries/gatepass";
 import { getProfileById } from "@repo/database/queries/auth";
+import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
 import { conflict, notFound } from "../errors";
@@ -45,7 +46,7 @@ function isDuplicateGatepassError(caughtError: unknown): boolean {
 
 class GatepassService {
   public getCurrentBusinessDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    return toIstBusinessDate(new Date());
   }
 
   public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithItems> {

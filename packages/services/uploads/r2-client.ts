@@ -1,6 +1,8 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
+
+import { logger } from "@repo/logger";
 
 import { env } from "../env";
 
@@ -22,9 +24,9 @@ export function getR2Client(): S3Client {
   return r2ClientInstance;
 }
 
-export function buildObjectKey(folderName: string, fileName: string): string {
+export function buildObjectKey(folderName: string, ownerId: string, fileName: string): string {
   const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  return `${folderName}/${randomUUID()}-${safeFileName}`;
+  return `${folderName}/${ownerId}/${randomUUID()}-${safeFileName}`;
 }
 
 export function buildPublicUrl(objectKey: string): string {
@@ -34,11 +36,21 @@ export function buildPublicUrl(objectKey: string): string {
 export async function createPresignedUploadUrl(
   objectKey: string,
   contentType: string,
+  contentLength?: number,
 ): Promise<string> {
   const putCommand = new PutObjectCommand({
     Bucket: env.R2_BUCKET_NAME,
     Key: objectKey,
     ContentType: contentType,
+    ...(contentLength !== undefined ? { ContentLength: contentLength } : {}),
   });
   return getSignedUrl(getR2Client(), putCommand, { expiresIn: presignedUrlExpirySeconds });
+}
+
+export async function deleteObject(objectKey: string): Promise<void> {
+  try {
+    await getR2Client().send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: objectKey }));
+  } catch (deleteError) {
+    logger.error(`Failed to delete R2 object ${objectKey}`, { error: deleteError });
+  }
 }

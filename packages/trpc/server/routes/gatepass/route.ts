@@ -15,6 +15,7 @@ import {
   gatepassItemSchema,
   gatepassSchema,
   gatepassWithItemsSchema,
+  gatepassWithItemsAndNamesSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
 } from "./model";
@@ -91,7 +92,7 @@ export const gatepassRouter = router({
       },
     })
     .input(gatepassDateInputSchema)
-    .output(apiResponseSchema(gatepassWithItemsSchema))
+    .output(apiResponseSchema(gatepassWithItemsAndNamesSchema))
     .query(async ({ ctx, input }) => {
       const gatepassWithItems = await gatepassService.getGatepassForSalesmanAndDate(
         ctx.user.id,

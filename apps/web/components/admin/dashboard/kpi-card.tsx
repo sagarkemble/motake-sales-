@@ -26,12 +26,12 @@ export function KpiCard({ label, value, icon: Icon, previousValue, className }: 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-2xl border bg-card p-3.5 transition-colors sm:p-4",
+        "flex flex-col gap-2 rounded-2xl border bg-gradient-to-b from-card to-card/60 p-3.5 shadow-sm ring-1 ring-black/[0.02] transition-colors sm:p-4",
         className,
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand ring-1 ring-brand/10">
           <Icon className="size-4" />
         </div>
         {percentChangeLabel && (

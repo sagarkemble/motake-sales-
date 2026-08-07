@@ -1,9 +1,20 @@
-import { CheckIcon, SearchIcon, StoreIcon } from "lucide-react";
+import { useState } from "react";
 
+import { CheckIcon, ChevronsUpDownIcon, StoreIcon, XIcon } from "lucide-react";
+
+import { Button } from "~/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
 
 interface CustomerOption {
   id: string;
@@ -40,6 +51,13 @@ export function CustomerDetailsStep({
   newCustomerForm,
   onNewCustomerFormChange,
 }: CustomerDetailsStepProps) {
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+
+  function handleSelectCustomer(customer: CustomerOption) {
+    onSelectCustomer(customer);
+    setIsComboboxOpen(false);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -49,70 +67,87 @@ export function CustomerDetailsStep({
         </p>
       </div>
 
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search existing customers..."
-          value={customerSearchTerm}
-          onChange={(event) => onCustomerSearchTermChange(event.target.value)}
-          className="rounded-full bg-muted/40 pl-9"
-        />
-      </div>
-
-      {customerSearchTerm && (
-        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
-          {isCustomerListLoading ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Loading</p>
-          ) : customerOptions.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No customer matches &quot;{customerSearchTerm}&quot;
-            </p>
-          ) : (
-            customerOptions.map((customer) => {
-              const isSelected = selectedCustomer?.id === customer.id;
-              return (
-                <button
-                  key={customer.id}
-                  type="button"
-                  onClick={() => onSelectCustomer(customer)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors",
-                    isSelected ? "border-brand bg-brand/5" : "border-border bg-card",
-                  )}
-                >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/40">
-                    <StoreIcon className="size-5 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{customer.shopName}</p>
-                    <p className="truncate text-xs text-muted-foreground">{customer.phone}</p>
-                  </div>
-                  {isSelected && <CheckIcon className="size-4 shrink-0 text-brand" />}
-                </button>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {selectedCustomer ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand bg-brand/5 p-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/40">
-            <StoreIcon className="size-5 text-muted-foreground" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{selectedCustomer.shopName}</p>
-            <p className="truncate text-xs text-muted-foreground">{selectedCustomer.phone}</p>
-          </div>
-          <button
+      <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+        <PopoverTrigger asChild>
+          <Button
             type="button"
-            onClick={onClearSelectedCustomer}
-            className="shrink-0 text-xs text-brand"
+            variant="outline"
+            role="combobox"
+            aria-expanded={isComboboxOpen}
+            className="h-auto justify-between rounded-full bg-muted/40 px-4 py-2 font-normal"
           >
-            Change
-          </button>
-        </div>
-      ) : (
+            {selectedCustomer ? (
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate">{selectedCustomer.shopName}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {selectedCustomer.phone}
+                </span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground">Search existing customers...</span>
+            )}
+            {selectedCustomer ? (
+              <XIcon
+                role="button"
+                aria-label="Clear selected customer"
+                className="ml-2 size-4 shrink-0 opacity-50 hover:opacity-100"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClearSelectedCustomer();
+                }}
+              />
+            ) : (
+              <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search existing customers..."
+              value={customerSearchTerm}
+              onValueChange={onCustomerSearchTermChange}
+            />
+            <CommandList className="max-h-64">
+              {isCustomerListLoading ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">Loading</p>
+              ) : (
+                <>
+                  <CommandEmpty>
+                    No customer matches &quot;{customerSearchTerm}&quot;
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {customerOptions.map((customer) => {
+                      const isSelected = selectedCustomer?.id === customer.id;
+                      return (
+                        <CommandItem
+                          key={customer.id}
+                          value={customer.id}
+                          onSelect={() => handleSelectCustomer(customer)}
+                          className="gap-3"
+                        >
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/40">
+                            <StoreIcon className="size-4 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{customer.shopName}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {customer.phone}
+                            </p>
+                          </div>
+                          {isSelected && <CheckIcon className="size-4 shrink-0 text-brand" />}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {!selectedCustomer && (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-muted-foreground">Or enter new customer details</p>
 

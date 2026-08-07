@@ -99,10 +99,12 @@ function SalesmanPageContent() {
         {isSalesmenListLoading ? (
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">No salesmen yet</p>
+          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
+            No salesmen yet
+          </p>
         ) : (
           salesmenPage.items.map(({ salesman, profile }) => {
-            const isActionsDisabled = Boolean(profile.deletedAt);
+            const isDeleted = Boolean(profile.deletedAt);
 
             return (
               <div
@@ -111,7 +113,9 @@ function SalesmanPageContent() {
                 tabIndex={0}
                 onClick={() => router.push(`/admin/salesman/${salesman.id}`)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") router.push(`/admin/salesman/${salesman.id}`);
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  router.push(`/admin/salesman/${salesman.id}`);
                 }}
                 className={`flex items-center gap-3 rounded-2xl border bg-card p-3.5 text-left shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
                   profile.deletedAt ? "opacity-60" : ""
@@ -132,7 +136,10 @@ function SalesmanPageContent() {
 
                 <div className="flex shrink-0 items-center gap-2">
                   {profile.deletedAt ? (
-                    <Badge variant="outline" className="border-transparent bg-destructive/10 text-destructive">
+                    <Badge
+                      variant="outline"
+                      className="border-transparent bg-destructive/10 text-destructive"
+                    >
                       Deleted
                     </Badge>
                   ) : (
@@ -155,8 +162,8 @@ function SalesmanPageContent() {
                         variant="ghost"
                         aria-label="Salesman actions"
                         className="size-8 shrink-0"
-                        disabled={isActionsDisabled}
                         onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
                       >
                         <MoreVerticalIcon className="size-4" />
                       </Button>

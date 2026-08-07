@@ -153,11 +153,6 @@ export const ordersRouter = router({
     .input(orderIdInputSchema)
     .output(apiResponseSchema(orderSchema))
     .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.getOrderWithItems(input.id);
-      if (!orderWithItems) throw notFound(`Order ${input.id} not found`);
-      if (orderWithItems.order.type === "book_now" && orderWithItems.order.salesmanId !== ctx.user.id) {
-        throw forbidden("Only the creator can fulfill their own Book Now order");
-      }
       const fulfilledOrder = await orderService.fulfillOrder(input.id, ctx.user.id);
       return apiResponse(fulfilledOrder);
     }),

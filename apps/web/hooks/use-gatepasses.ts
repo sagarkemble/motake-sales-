@@ -36,7 +36,7 @@ export function useGatepasses({
     {
       enabled: dateIsSet && includeMyGatepass,
       retry: (failedAttemptCount, queryError) =>
-        queryError.data?.code !== "NOT_FOUND" && failedAttemptCount < 3,
+        queryError.message !== "No gatepass for today" && failedAttemptCount < 3,
     },
   );
   const allotmentMatrixQuery = trpc.gatepasses.getAllotmentMatrix.useQuery(

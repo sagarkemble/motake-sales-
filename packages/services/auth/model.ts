@@ -27,3 +27,12 @@ export const updateSalesmanAccountInputSchema = z.object({
   password: z.string().min(8).optional(),
 });
 export type UpdateSalesmanAccountInput = z.infer<typeof updateSalesmanAccountInputSchema>;
+
+export {
+  updateProfileNameAndAvatarInputSchema as updateMyProfileInputSchema,
+  createProfileAvatarUploadUrlInputSchema as createAvatarUploadUrlInputSchema,
+  allowedAvatarImageContentTypes,
+  maxAvatarImageContentLengthBytes,
+  type UpdateProfileNameAndAvatarInput as UpdateMyProfileInput,
+  type CreateProfileAvatarUploadUrlInput as CreateAvatarUploadUrlInput,
+} from "../shared/profile-avatar";

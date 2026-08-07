@@ -27,7 +27,7 @@ interface OrderDetailSheetProps {
 export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProps) {
   const [isConfirmingFulfil, setIsConfirmingFulfil] = useState(false);
 
-  const { orderDetail, isOrderDetailLoading, fulfillOrderAsync, isFulfillingOrder } = useOrders({
+  const { orderDetail, isOrderDetailLoading, refetchOrderDetail, fulfillOrderAsync, isFulfillingOrder } = useOrders({
     detailOrderId: orderId ?? undefined,
   });
 
@@ -68,8 +68,15 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
           </DrawerHeader>
 
           <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto px-4 pb-4">
-            {isOrderDetailLoading || !orderDetail ? (
+            {isOrderDetailLoading ? (
               <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            ) : !orderDetail ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-muted-foreground">Could not load order details</p>
+                <Button type="button" variant="outline" onClick={() => refetchOrderDetail()}>
+                  Retry
+                </Button>
+              </div>
             ) : (
               <>
                 <div className="rounded-2xl border bg-muted/30 p-3">
