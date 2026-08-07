@@ -5,7 +5,6 @@ import {
   getSalesmanDayWiseHistory,
   getSalesmanWithProfileById,
   listSalesmenWithProfiles,
-  reactivateSalesman,
   updateSalesmanCode,
   type SalesmanDayWiseHistoryRow,
   type SalesmanWithProfile,
@@ -59,10 +58,6 @@ class SalesmanService {
     );
   }
 
-  public async reactivateSalesman(salesmanId: string): Promise<SelectProfile | undefined> {
-    return reactivateSalesman(salesmanId);
-  }
-
   public async updateSalesmanCode(
     salesmanId: string,
     changes: UpdateSalesmanCodeInput,
@@ -103,3 +98,8 @@ class SalesmanService {
 }
 
 export default SalesmanService;
+
+export {
+  allowedAvatarImageContentTypes,
+  createAvatarUploadUrlInputSchema,
+} from "./model";

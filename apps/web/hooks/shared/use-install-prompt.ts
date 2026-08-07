@@ -27,7 +27,12 @@ function isIosDevice() {
     return false;
   }
 
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  const userAgent = window.navigator.userAgent;
+  const isClassicIosUserAgent = /iphone|ipad|ipod/i.test(userAgent);
+  const isIpadOsReportingAsMac =
+    window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+
+  return isClassicIosUserAgent || isIpadOsReportingAsMac;
 }
 
 export function useInstallPrompt() {

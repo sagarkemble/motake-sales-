@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RouterOutputs } from "@repo/trpc/client";
 
 import { trpc } from "~/trpc/client";
@@ -34,11 +34,11 @@ export function useOrderHistory({ pageSize = 15, enabled = true }: UseOrderHisto
   const totalPages = orderHistoryQuery.data?.data.totalPages ?? 1;
   const hasMoreOrders = currentPage < totalPages;
 
-  function loadMoreOrders() {
+  const loadMoreOrders = useCallback(() => {
     if (hasMoreOrders && !orderHistoryQuery.isFetching) {
       setCurrentPage((page) => page + 1);
     }
-  }
+  }, [hasMoreOrders, orderHistoryQuery.isFetching]);
 
   return {
     orderHistory: loadedOrders,

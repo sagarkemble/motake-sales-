@@ -1,4 +1,8 @@
 import { z } from "../../schema";
+export {
+  allowedAvatarImageContentTypes,
+  createAvatarUploadUrlInputSchema,
+} from "@repo/services/salesman";
 
 export const salesmanSchema = z.object({
   id: z.string(),
@@ -65,15 +69,6 @@ export const salesmanHistoryInputSchema = z.object({
 export const updateMyProfileInputSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   avatarKey: z.string().optional(),
-});
-
-export const allowedAvatarImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
-export const maxAvatarImageContentLengthBytes = 5 * 1024 * 1024;
-
-export const createAvatarUploadUrlInputSchema = z.object({
-  fileName: z.string().min(1).max(200),
-  contentType: z.enum(allowedAvatarImageContentTypes),
-  contentLength: z.number().int().positive().max(maxAvatarImageContentLengthBytes),
 });
 
 export const createAvatarUploadUrlOutputSchema = z.object({

@@ -15,12 +15,13 @@ import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-pa
 import { adminQuickActions } from "~/components/admin/nav-items";
 import { QuickActionLink } from "~/components/shared/quick-action-link";
 import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils";
 import { useAuth } from "~/hooks/use-auth";
 import { useReports } from "~/hooks/use-reports";
 
-function KpiGridSkeleton({ count }: { count: number }) {
+function KpiGridSkeleton({ count, columnClassName }: { count: number; columnClassName: string }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className={cn("grid grid-cols-2 gap-3", columnClassName)}>
       {Array.from({ length: count }).map((_, index) => (
         <Skeleton key={index} className="h-24 rounded-2xl" />
       ))}
@@ -62,7 +63,7 @@ export default function AdminDashboardPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Today&apos;s orders</h2>
         {isTodayKpiSummaryLoading ? (
-          <KpiGridSkeleton count={3} />
+          <KpiGridSkeleton count={3} columnClassName="sm:grid-cols-3" />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <KpiCard
@@ -90,7 +91,7 @@ export default function AdminDashboardPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Today&apos;s gate passes</h2>
         {isTodayKpiSummaryLoading ? (
-          <KpiGridSkeleton count={4} />
+          <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KpiCard
