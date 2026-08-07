@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { UpdateAvatarDialog } from "~/components/admin/update-avatar-dialog";
 import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
+import { InstallAppButton } from "~/components/shared/install-app-button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -135,6 +136,8 @@ export default function AdminAccountPage() {
           </div>
         </CardContent>
       </Card>
+
+      <InstallAppButton />
 
       <UpdateAvatarDialog
         open={isUpdateAvatarDialogOpen}

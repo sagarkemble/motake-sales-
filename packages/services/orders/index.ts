@@ -92,7 +92,10 @@ class OrderService {
       }
     }
 
-    const totalQuantity = parsedInput.items.reduce((runningTotal, item) => runningTotal + item.quantity, 0);
+    const totalQuantity = parsedInput.items.reduce(
+      (runningTotal, item) => runningTotal + item.quantity,
+      0,
+    );
     return createOrderWithItems(
       {
         orderCode: generateOrderCode("PO"),
@@ -140,7 +143,7 @@ class OrderService {
 
     if (orderWithItems.order.type === "pre_order") {
       const todayBusinessDate = toIstBusinessDate(new Date());
-      if (orderWithItems.order.scheduledDate > todayBusinessDate) {
+      if (orderWithItems.order.scheduledDate! > todayBusinessDate) {
         throw badRequest(
           `Pre-order is scheduled for ${orderWithItems.order.scheduledDate} and cannot be fulfilled before that date`,
         );
@@ -169,7 +172,10 @@ class OrderService {
     return countOrdersPlacedInRange(filters, range);
   }
 
-  public async getOrderCountsPerSalesman(range: { from: Date; to: Date }): Promise<OrderCountBySalesman[]> {
+  public async getOrderCountsPerSalesman(range: {
+    from: Date;
+    to: Date;
+  }): Promise<OrderCountBySalesman[]> {
     return getOrderCountsPerSalesmanInRange(range);
   }
 }
