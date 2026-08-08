@@ -70,6 +70,7 @@ export const orderDetailSchema = z.object({
   }),
   salesmanCode: z.string(),
   salesmanName: z.string().nullable(),
+  fulfilledBySalesmanName: z.string().nullable(),
   items: z.array(orderDetailItemSchema),
 });
 

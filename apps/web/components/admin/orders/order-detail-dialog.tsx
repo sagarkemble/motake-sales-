@@ -77,6 +77,12 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                     </p>
                   </div>
                 )}
+                {orderDetail.order.fulfilledAt && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Fulfilled by</p>
+                    <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
+                  </div>
+                )}
                 {orderDetail.order.cancelledAt && (
                   <div>
                     <p className="text-xs text-muted-foreground">Cancelled at</p>
@@ -105,8 +111,11 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                       <p className="font-medium">{item.productName}</p>
                       <p className="text-xs text-muted-foreground">{item.varietyName}</p>
                     </div>
-                    <p className="font-medium">
-                      {item.quantity} {item.unit}
+                    <p className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
+                        {item.quantity}
+                      </span>
+                      <span className="text-xs text-muted-foreground">× {item.unit}</span>
                     </p>
                   </div>
                 ))}

@@ -6,8 +6,7 @@ import { Button } from "~/components/ui/button";
 import { useInstallPrompt } from "~/hooks/shared/use-install-prompt";
 
 export function InstallAppButton() {
-  const { canInstall, isInstalled, isIos, promptInstall } =
-    useInstallPrompt();
+  const { canInstall, isInstalled, isIos, promptInstall } = useInstallPrompt();
 
   if (isInstalled) {
     return null;

@@ -17,7 +17,11 @@ function SalesmanCatalogContent() {
   const [openProductId, setOpenProductId] = useState<string | null>(null);
 
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { searchTerm: debouncedSearchTerm || undefined, page: 1, pageSize: CATALOG_PAGE_SIZE },
+    listFilters: {
+      searchTerm: debouncedSearchTerm || undefined,
+      page: 1,
+      pageSize: CATALOG_PAGE_SIZE,
+    },
   });
 
   const openProduct = productsPage.items.find(({ product }) => product.id === openProductId);

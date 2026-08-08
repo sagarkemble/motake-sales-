@@ -13,9 +13,12 @@ interface UseCustomersParams {
 export function useCustomers({ listFilters, customerId, enabled = true }: UseCustomersParams = {}) {
   const utils = trpc.useUtils();
 
-  const customersListQuery = trpc.customers.list.useQuery(listFilters ?? { page: 1, pageSize: 20 }, {
-    enabled: enabled && Boolean(listFilters),
-  });
+  const customersListQuery = trpc.customers.list.useQuery(
+    listFilters ?? { page: 1, pageSize: 20 },
+    {
+      enabled: enabled && Boolean(listFilters),
+    },
+  );
   const customerQuery = trpc.customers.getById.useQuery(
     { id: customerId ?? "" },
     { enabled: enabled && Boolean(customerId) },
@@ -36,7 +39,9 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
   });
 
   return {
-    customersPage: customersListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    customersPage:
+      customersListQuery.data?.data ??
+      emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isCustomersListLoading: customersListQuery.isLoading,
     isCustomersListError: customersListQuery.isError,
     refetchCustomersList: customersListQuery.refetch,

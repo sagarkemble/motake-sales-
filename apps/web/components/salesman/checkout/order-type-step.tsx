@@ -1,5 +1,10 @@
 import { format } from "date-fns";
-import { AlertTriangleIcon, CalendarClockIcon, CheckCircle2Icon, HandCoinsIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  CalendarClockIcon,
+  CheckCircle2Icon,
+  HandCoinsIcon,
+} from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import type { OrderTypeChoice } from "~/hooks/salesman/use-checkout-wizard";
@@ -56,9 +61,7 @@ export function OrderTypeStep({
             </div>
           )}
         </div>
-        {orderType === "book_now" && (
-          <CheckCircle2Icon className="size-5 shrink-0 text-brand" />
-        )}
+        {orderType === "book_now" && <CheckCircle2Icon className="size-5 shrink-0 text-brand" />}
       </button>
 
       <button
@@ -79,9 +82,7 @@ export function OrderTypeStep({
             Order will be delivered {format(nextDayDate, "d MMM yyyy")}. Does not use gate pass.
           </p>
         </div>
-        {orderType === "pre_order" && (
-          <CheckCircle2Icon className="size-5 shrink-0 text-brand" />
-        )}
+        {orderType === "pre_order" && <CheckCircle2Icon className="size-5 shrink-0 text-brand" />}
       </button>
     </div>
   );

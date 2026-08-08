@@ -56,7 +56,9 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
   });
 
   return {
-    productsPage: productsListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    productsPage:
+      productsListQuery.data?.data ??
+      emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isProductsListLoading: productsListQuery.isLoading,
     isProductsListError: productsListQuery.isError,
     refetchProductsList: productsListQuery.refetch,

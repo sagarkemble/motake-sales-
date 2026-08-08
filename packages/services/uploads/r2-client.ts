@@ -49,7 +49,9 @@ export async function createPresignedUploadUrl(
 
 export async function deleteObject(objectKey: string): Promise<void> {
   try {
-    await getR2Client().send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: objectKey }));
+    await getR2Client().send(
+      new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: objectKey }),
+    );
   } catch (deleteError) {
     logger.error(`Failed to delete R2 object ${objectKey}`, { error: deleteError });
   }

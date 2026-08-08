@@ -51,7 +51,9 @@ export default function SalesmanOrdersPage() {
     return Array.from(rowsById.values());
   }, [duePreorders, myPreordersPageData.items]);
 
-  const pendingPreorderRows = allPreorderRows.filter(({ order }) => isPreorderPending(order.status));
+  const pendingPreorderRows = allPreorderRows.filter(({ order }) =>
+    isPreorderPending(order.status),
+  );
   const fulfilledPreorderRows = allPreorderRows.filter(({ order }) => order.status === "fulfilled");
   const visiblePreorderRows =
     preorderStatusFilter === "pending" ? pendingPreorderRows : fulfilledPreorderRows;

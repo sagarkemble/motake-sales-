@@ -1,4 +1,9 @@
-import { createProfile, getProfileById, softDeleteProfile, updateProfile } from "@repo/database/queries/auth";
+import {
+  createProfile,
+  getProfileById,
+  softDeleteProfile,
+  updateProfile,
+} from "@repo/database/queries/auth";
 import type { InsertProfile, SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { supabaseAdminClient } from "../clients/supabase-admin";
@@ -80,7 +85,10 @@ class AuthService {
     return getProfileById(profileId);
   }
 
-  public async confirmPhoneNumber(accessToken: string, expectedProfileId: string): Promise<SelectProfile> {
+  public async confirmPhoneNumber(
+    accessToken: string,
+    expectedProfileId: string,
+  ): Promise<SelectProfile> {
     const authenticatedUser = await this.verifyAccessToken(accessToken);
     if (authenticatedUser.id !== expectedProfileId) {
       throw unauthorized("Access token does not match the signed-in user");

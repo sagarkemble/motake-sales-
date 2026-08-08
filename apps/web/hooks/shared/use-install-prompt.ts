@@ -12,12 +12,9 @@ function isRunningStandalone() {
     return false;
   }
 
-  const isStandaloneDisplay = window.matchMedia(
-    "(display-mode: standalone)",
-  ).matches;
+  const isStandaloneDisplay = window.matchMedia("(display-mode: standalone)").matches;
   const isIosStandalone =
-    (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-    true;
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
   return isStandaloneDisplay || isIosStandalone;
 }
@@ -36,8 +33,7 @@ function isIosDevice() {
 }
 
 export function useInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
@@ -55,17 +51,11 @@ export function useInstallPrompt() {
       setDeferredPrompt(null);
     }
 
-    window.addEventListener(
-      "beforeinstallprompt",
-      handleBeforeInstallPrompt,
-    );
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt,
-      );
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);

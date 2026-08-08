@@ -90,6 +90,10 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
+                    <p className="text-xs text-muted-foreground">Issued by</p>
+                    <p className="font-medium">{orderDetail.salesmanName ?? orderDetail.salesmanCode}</p>
+                  </div>
+                  <div>
                     <p className="text-xs text-muted-foreground">Total quantity</p>
                     <p className="font-medium">{orderDetail.order.totalQuantity}</p>
                   </div>
@@ -115,6 +119,12 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       </p>
                     </div>
                   )}
+                  {orderDetail.order.fulfilledAt && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Fulfilled by</p>
+                      <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
+                    </div>
+                  )}
                 </div>
 
                 {orderDetail.order.notes && (
@@ -135,8 +145,11 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                         <p className="font-medium">{item.productName}</p>
                         <p className="text-xs text-muted-foreground">{item.varietyName}</p>
                       </div>
-                      <p className="font-medium">
-                        {item.quantity} {item.unit}
+                      <p className="flex items-baseline gap-1.5 whitespace-nowrap">
+                        <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
+                          {item.quantity}
+                        </span>
+                        <span className="text-xs text-muted-foreground">× {item.unit}</span>
                       </p>
                     </div>
                   ))}

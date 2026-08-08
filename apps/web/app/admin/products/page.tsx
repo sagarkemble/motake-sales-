@@ -116,7 +116,11 @@ function ProductsPageContent() {
                 disabled={Boolean(product.deletedAt)}
                 className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
               >
-                {product.deletedAt ? "Edit" : <Link href={`/admin/products/${product.id}`}>Edit</Link>}
+                {product.deletedAt ? (
+                  "Edit"
+                ) : (
+                  <Link href={`/admin/products/${product.id}`}>Edit</Link>
+                )}
               </Button>
             </div>
           ))

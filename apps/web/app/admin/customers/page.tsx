@@ -54,7 +54,9 @@ function CustomersPageContent() {
           <ListItemSkeleton count={6} />
         ) : customersPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm ? `No customers match "${debouncedSearchTerm}"` : "No customers yet"}
+            {debouncedSearchTerm
+              ? `No customers match "${debouncedSearchTerm}"`
+              : "No customers yet"}
           </p>
         ) : (
           customersPage.items.map((customer) => (

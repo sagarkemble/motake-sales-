@@ -20,10 +20,9 @@ export function QuantityStepper({
   className,
 }: QuantityStepperProps) {
   function handleNumericInput(rawValue: string) {
-    const parsedQuantity = Number.parseInt(rawValue, 10);
-    onQuantityChange(
-      Number.isNaN(parsedQuantity) ? minQuantity : Math.max(minQuantity, parsedQuantity),
-    );
+    const digitsOnly = rawValue.replace(/\D/g, "");
+    const parsedQuantity = digitsOnly === "" ? minQuantity : Number.parseInt(digitsOnly, 10);
+    onQuantityChange(Math.max(minQuantity, parsedQuantity));
   }
 
   return (
@@ -41,8 +40,9 @@ export function QuantityStepper({
       </Button>
 
       <Input
-        type="number"
+        type="text"
         inputMode="numeric"
+        pattern="[0-9]*"
         value={quantity}
         onChange={(event) => handleNumericInput(event.target.value)}
         className="h-8 w-14 rounded-lg border-input px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"

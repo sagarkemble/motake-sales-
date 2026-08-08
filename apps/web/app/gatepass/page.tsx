@@ -65,7 +65,11 @@ function GatepassPageContent() {
     listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { searchTerm: debouncedSearchTerm || undefined, page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
+    listFilters: {
+      searchTerm: debouncedSearchTerm || undefined,
+      page: 1,
+      pageSize: MAX_CATALOG_PAGE_SIZE,
+    },
   });
   const { allotGatepassAsync, isAllottingGatepass } = useGatepasses({
     businessDate: businessDateKey,
@@ -116,7 +120,11 @@ function GatepassPageContent() {
     }
 
     try {
-      await allotGatepassAsync({ salesmanId: selectedSalesmanId, businessDate: businessDateKey, items });
+      await allotGatepassAsync({
+        salesmanId: selectedSalesmanId,
+        businessDate: businessDateKey,
+        items,
+      });
       toast.success("Gate pass allotted");
       router.push(`/admin/salesman/${selectedSalesmanId}`);
     } catch (error) {

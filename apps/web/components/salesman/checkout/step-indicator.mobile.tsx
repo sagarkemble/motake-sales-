@@ -7,7 +7,10 @@ interface StepIndicatorMobileProps {
   totalStepCount: number;
 }
 
-export function StepIndicatorMobile({ currentStepNumber, totalStepCount }: StepIndicatorMobileProps) {
+export function StepIndicatorMobile({
+  currentStepNumber,
+  totalStepCount,
+}: StepIndicatorMobileProps) {
   return (
     <div className="flex items-center justify-center gap-2 px-4 pt-4">
       {Array.from({ length: totalStepCount }, (_, stepIndex) => {

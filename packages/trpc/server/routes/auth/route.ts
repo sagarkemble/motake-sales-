@@ -141,7 +141,8 @@ export const authRouter = router({
         tags: ["Auth"],
         protect: true,
         summary: "Get my avatar upload URL",
-        description: "Return a short-lived URL the browser can upload the signed-in user's avatar image to directly.",
+        description:
+          "Return a short-lived URL the browser can upload the signed-in user's avatar image to directly.",
       },
     })
     .input(createAvatarUploadUrlInputSchema)

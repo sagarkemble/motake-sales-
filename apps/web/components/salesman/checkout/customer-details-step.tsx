@@ -113,9 +113,7 @@ export function CustomerDetailsStep({
                 <p className="py-4 text-center text-sm text-muted-foreground">Loading</p>
               ) : (
                 <>
-                  <CommandEmpty>
-                    No customer matches &quot;{customerSearchTerm}&quot;
-                  </CommandEmpty>
+                  <CommandEmpty>No customer matches &quot;{customerSearchTerm}&quot;</CommandEmpty>
                   <CommandGroup>
                     {customerOptions.map((customer) => {
                       const isSelected = selectedCustomer?.id === customer.id;

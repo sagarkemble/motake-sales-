@@ -90,7 +90,10 @@ class GatepassService {
   ): Promise<
     (GatepassWithItems & { issuedByName: string | null; closedByName: string | null }) | undefined
   > {
-    const gatepassWithItems = await getGatepassWithItemsForSalesmanAndDate(salesmanId, businessDate);
+    const gatepassWithItems = await getGatepassWithItemsForSalesmanAndDate(
+      salesmanId,
+      businessDate,
+    );
     if (!gatepassWithItems) return undefined;
     const issuedByProfile = await getProfileById(gatepassWithItems.gatepass.issuedBy);
     const closedByProfile = gatepassWithItems.gatepass.closedBy

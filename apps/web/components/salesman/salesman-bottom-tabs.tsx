@@ -27,9 +27,7 @@ export function SalesmanBottomTabs() {
                 isActiveTab ? "text-brand" : "text-muted-foreground",
               )}
             >
-              {isActiveTab && (
-                <span className="absolute top-0 h-0.5 w-8 rounded-full bg-brand" />
-              )}
+              {isActiveTab && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-brand" />}
               <span className="relative">
                 <NavIcon className="size-5" />
                 {isCartTab && totalCartQuantity > 0 && (

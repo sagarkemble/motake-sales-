@@ -29,7 +29,9 @@ class ReportService {
     return getMonthlyOrderVolume(parsedRange);
   }
 
-  public async getProductWiseSalesSummary(range: DateRangeInput): Promise<ProductSalesSummaryRow[]> {
+  public async getProductWiseSalesSummary(
+    range: DateRangeInput,
+  ): Promise<ProductSalesSummaryRow[]> {
     const parsedRange = dateRangeInputSchema.parse(range);
     return getProductWiseSalesSummary(parsedRange);
   }

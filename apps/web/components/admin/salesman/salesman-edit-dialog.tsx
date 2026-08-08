@@ -25,11 +25,13 @@ import { Input } from "~/components/ui/input";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useSalesmen } from "~/hooks/use-salesmen";
 
+const minPasswordLength = 8;
+
 const salesmanEditFormSchema = z.object({
   name: z.string().min(1, "Enter a name").max(120),
   phone: z.string().min(1, "Enter a phone number").max(20),
   email: z.string().min(1, "Enter an email").email("Enter a valid email"),
-  password: z.union([z.string().length(0), z.string().min(8)]).optional(),
+  password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
 });
 
 type SalesmanEditFormValues = z.infer<typeof salesmanEditFormSchema>;
@@ -128,19 +130,29 @@ export function SalesmanEditDialog({
             <FormField
               control={form.control}
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Leave blank to keep current password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const passwordValue = field.value ?? "";
+                const remainingCharacters = minPasswordLength - passwordValue.length;
+                const showRemainingCharactersHint = passwordValue.length > 0 && remainingCharacters > 0;
+                return (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Leave blank to keep current password"
+                        {...field}
+                      />
+                    </FormControl>
+                    {showRemainingCharactersHint && (
+                      <p className="text-xs text-muted-foreground">
+                        {remainingCharacters} more character{remainingCharacters === 1 ? "" : "s"} needed
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <Button

@@ -4,7 +4,12 @@ import { getProfileById, updateProfile } from "@repo/database/queries/auth";
 import type { SelectProfile } from "@repo/database/schema";
 
 import { forbidden } from "../errors";
-import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl, deleteObject } from "../uploads/r2-client";
+import {
+  buildObjectKey,
+  buildPublicUrl,
+  createPresignedUploadUrl,
+  deleteObject,
+} from "../uploads/r2-client";
 
 const avatarImageFolderName = "avatars";
 
@@ -22,7 +27,9 @@ export const createProfileAvatarUploadUrlInputSchema = z.object({
   contentType: z.enum(allowedAvatarImageContentTypes),
   contentLength: z.number().int().positive().max(maxAvatarImageContentLengthBytes),
 });
-export type CreateProfileAvatarUploadUrlInput = z.infer<typeof createProfileAvatarUploadUrlInputSchema>;
+export type CreateProfileAvatarUploadUrlInput = z.infer<
+  typeof createProfileAvatarUploadUrlInputSchema
+>;
 
 export interface ProfileAvatarUploadUrlResult {
   uploadUrl: string;

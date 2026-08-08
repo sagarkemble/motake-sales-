@@ -100,6 +100,7 @@ export interface OrderDetail {
   };
   salesmanCode: string;
   salesmanName: string | null;
+  fulfilledBySalesmanName: string | null;
   items: OrderDetailItem[];
 }
 
@@ -138,11 +139,22 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
 
   const salesmanRow = firstOrThrow(salesmanRows, `getOrderDetailById salesman for order ${orderId}`);
 
+  let fulfilledBySalesmanName: string | null = null;
+  if (order.fulfilledBy) {
+    const fulfilledByRows = await db
+      .select({ salesmanName: profilesTable.name })
+      .from(salesmenTable)
+      .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
+      .where(eq(salesmenTable.id, order.fulfilledBy));
+    fulfilledBySalesmanName = fulfilledByRows[0]?.salesmanName ?? null;
+  }
+
   return {
     order,
     customer: firstOrThrow(customerRows, `getOrderDetailById customer for order ${orderId}`),
     salesmanCode: salesmanRow.salesmanCode,
     salesmanName: salesmanRow.salesmanName,
+    fulfilledBySalesmanName,
     items,
   };
 }

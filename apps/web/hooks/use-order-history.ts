@@ -8,16 +8,22 @@ type OrderHistoryRow = RouterOutputs["orders"]["list"]["data"]["items"][number];
 interface UseOrderHistoryParams {
   pageSize?: number;
   enabled?: boolean;
+  salesmanId?: string;
 }
 
-export function useOrderHistory({ pageSize = 15, enabled = true }: UseOrderHistoryParams = {}) {
+export function useOrderHistory({ pageSize = 15, enabled = true, salesmanId }: UseOrderHistoryParams = {}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedOrders, setLoadedOrders] = useState<OrderHistoryRow[]>([]);
 
   const orderHistoryQuery = trpc.orders.list.useQuery(
-    { page: currentPage, pageSize },
+    { page: currentPage, pageSize, salesmanId },
     { enabled, placeholderData: (previousData) => previousData },
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setLoadedOrders([]);
+  }, [salesmanId]);
 
   useEffect(() => {
     const fetchedItems = orderHistoryQuery.data?.data.items;

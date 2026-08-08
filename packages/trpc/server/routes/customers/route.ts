@@ -61,7 +61,8 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Get customer stats",
-        description: "Return lifetime order count, quantity sold, and last order date for a customer.",
+        description:
+          "Return lifetime order count, quantity sold, and last order date for a customer.",
       },
     })
     .input(customerIdInputSchema)
@@ -79,7 +80,8 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Add a customer",
-        description: "Create a customer record. Any salesman can add a customer to the shared list.",
+        description:
+          "Create a customer record. Any salesman can add a customer to the shared list.",
       },
     })
     .input(createCustomerInputSchema)

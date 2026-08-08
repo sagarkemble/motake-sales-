@@ -39,9 +39,7 @@ export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndi
               </p>
             </div>
             {!isLastStep && (
-              <div
-                className={cn("mx-2 h-0.5 flex-1", isCompletedStep ? "bg-brand" : "bg-muted")}
-              />
+              <div className={cn("mx-2 h-0.5 flex-1", isCompletedStep ? "bg-brand" : "bg-muted")} />
             )}
           </div>
         );

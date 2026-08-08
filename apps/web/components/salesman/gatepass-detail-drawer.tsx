@@ -91,7 +91,9 @@ export function GatepassDetailDrawer({
                     return (
                       <div key={item.id} className="grid grid-cols-5 gap-2 px-3 py-3 text-sm">
                         <div className="col-span-2 min-w-0">
-                          <p className="truncate font-medium">{display?.productName ?? "Product"}</p>
+                          <p className="truncate font-medium">
+                            {display?.productName ?? "Product"}
+                          </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {display?.varietyName} ({display?.unit})
                           </p>
@@ -119,8 +121,8 @@ export function GatepassDetailDrawer({
               <div className="flex gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
                 <InfoIcon className="size-4 shrink-0 text-brand" />
                 <p className="text-foreground">
-                  Sold items count includes only <span className="font-medium">Book Now orders</span>.
-                  Pre-orders are not deducted.
+                  Sold items count includes only{" "}
+                  <span className="font-medium">Book Now orders</span>. Pre-orders are not deducted.
                 </p>
               </div>
             </>

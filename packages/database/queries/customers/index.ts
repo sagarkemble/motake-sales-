@@ -1,7 +1,12 @@
 import { and, asc, count, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "../../index";
-import { customersTable, ordersTable, type InsertCustomer, type SelectCustomer } from "../../schema";
+import {
+  customersTable,
+  ordersTable,
+  type InsertCustomer,
+  type SelectCustomer,
+} from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
 import {
   buildPaginationOffsets,

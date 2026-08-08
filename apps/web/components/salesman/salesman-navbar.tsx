@@ -74,9 +74,7 @@ export function SalesmanNavbar() {
                     href={navItem.href}
                     onClick={closeDrawer}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isActiveTab
-                        ? "bg-brand/10 text-brand"
-                        : "text-foreground hover:bg-accent"
+                      isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
                     }`}
                   >
                     <NavIcon className="size-4" />

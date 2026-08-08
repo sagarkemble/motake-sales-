@@ -2,12 +2,7 @@
 
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useAuth } from "~/hooks/use-auth";

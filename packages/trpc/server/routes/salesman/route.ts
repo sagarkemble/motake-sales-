@@ -163,7 +163,8 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Get a salesman day-wise history",
-        description: "Return one row per day for the salesman order activity in the given date range.",
+        description:
+          "Return one row per day for the salesman order activity in the given date range.",
       },
     })
     .input(salesmanHistoryInputSchema)
@@ -222,7 +223,8 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Get my avatar upload URL",
-        description: "Return a short-lived URL the browser can upload the salesman's avatar image to directly.",
+        description:
+          "Return a short-lived URL the browser can upload the salesman's avatar image to directly.",
       },
     })
     .input(createAvatarUploadUrlInputSchema)
@@ -240,7 +242,8 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Delete my avatar",
-        description: "Remove the signed-in salesman's avatar image and clear it from their profile.",
+        description:
+          "Remove the signed-in salesman's avatar image and clear it from their profile.",
       },
     })
     .input(zodUndefinedModel)

@@ -71,7 +71,8 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Get a product image upload URL",
-        description: "Return a short-lived URL the browser can upload a product image to directly. Admin only.",
+        description:
+          "Return a short-lived URL the browser can upload a product image to directly. Admin only.",
       },
     })
     .input(createImageUploadUrlInputSchema)
@@ -259,7 +260,8 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Deactivate a product variety",
-        description: "Mark a product variety as inactive. The record stays for history and reports.",
+        description:
+          "Mark a product variety as inactive. The record stays for history and reports.",
       },
     })
     .input(varietyIdInputSchema)

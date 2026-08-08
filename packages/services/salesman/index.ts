@@ -46,11 +46,15 @@ class SalesmanService {
     return getSalesmanById(salesmanId);
   }
 
-  public async getSalesmanWithProfile(salesmanId: string): Promise<SalesmanWithProfile | undefined> {
+  public async getSalesmanWithProfile(
+    salesmanId: string,
+  ): Promise<SalesmanWithProfile | undefined> {
     return getSalesmanWithProfileById(salesmanId);
   }
 
-  public async listSalesmen(input: ListSalesmenInput): Promise<PaginatedResult<SalesmanWithProfile>> {
+  public async listSalesmen(
+    input: ListSalesmenInput,
+  ): Promise<PaginatedResult<SalesmanWithProfile>> {
     const parsedInput = listSalesmenInputSchema.parse(input);
     return listSalesmenWithProfiles(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
@@ -99,7 +103,4 @@ class SalesmanService {
 
 export default SalesmanService;
 
-export {
-  allowedAvatarImageContentTypes,
-  createAvatarUploadUrlInputSchema,
-} from "./model";
+export { allowedAvatarImageContentTypes, createAvatarUploadUrlInputSchema } from "./model";

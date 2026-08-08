@@ -66,7 +66,9 @@ export function useSalesmen({
   });
 
   return {
-    salesmenPage: salesmenListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    salesmenPage:
+      salesmenListQuery.data?.data ??
+      emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isSalesmenListLoading: salesmenListQuery.isLoading,
     isSalesmenListError: salesmenListQuery.isError,
     refetchSalesmenList: salesmenListQuery.refetch,

@@ -218,9 +218,7 @@ export async function getProductVarietyBySku(
   return variety;
 }
 
-export async function listVarietiesByProductId(
-  productId: string,
-): Promise<SelectProductVariety[]> {
+export async function listVarietiesByProductId(productId: string): Promise<SelectProductVariety[]> {
   return db
     .select()
     .from(productVarietiesTable)

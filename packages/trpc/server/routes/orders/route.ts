@@ -26,7 +26,8 @@ export const ordersRouter = router({
         tags: ["Orders"],
         protect: true,
         summary: "Place a Book Now order",
-        description: "Create a same-day order for a customer. The quantity is taken from the salesman gatepass.",
+        description:
+          "Create a same-day order for a customer. The quantity is taken from the salesman gatepass.",
       },
     })
     .input(placeBookNowOrderInputSchema)
@@ -47,13 +48,17 @@ export const ordersRouter = router({
         tags: ["Orders"],
         protect: true,
         summary: "Place a pre-order",
-        description: "Create an order for next-day delivery. The gatepass quantity does not change.",
+        description:
+          "Create an order for next-day delivery. The gatepass quantity does not change.",
       },
     })
     .input(placePreOrderInputSchema)
     .output(apiResponseSchema(orderWithItemsSchema))
     .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.placePreOrder({ ...input, salesmanId: ctx.user.id });
+      const orderWithItems = await orderService.placePreOrder({
+        ...input,
+        salesmanId: ctx.user.id,
+      });
       return apiResponse(orderWithItems);
     }),
 
@@ -85,7 +90,8 @@ export const ordersRouter = router({
         tags: ["Orders"],
         protect: true,
         summary: "Get an order",
-        description: "Return one order with its line items. A salesman can view only their own order.",
+        description:
+          "Return one order with its line items. A salesman can view only their own order.",
       },
     })
     .input(orderIdInputSchema)
@@ -165,7 +171,8 @@ export const ordersRouter = router({
         tags: ["Orders"],
         protect: true,
         summary: "Cancel an order",
-        description: "Cancel an order before it is fulfilled. Only the salesman who placed it can cancel it.",
+        description:
+          "Cancel an order before it is fulfilled. Only the salesman who placed it can cancel it.",
       },
     })
     .input(orderIdInputSchema)

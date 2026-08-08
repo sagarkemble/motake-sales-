@@ -68,9 +68,8 @@ export function useCheckoutWizard() {
   const [orderType, setOrderType] = useState<OrderTypeChoice>("book_now");
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
-  const [newCustomerForm, setNewCustomerForm] = useState<NewCustomerFormValues>(
-    EMPTY_NEW_CUSTOMER_FORM,
-  );
+  const [newCustomerForm, setNewCustomerForm] =
+    useState<NewCustomerFormValues>(EMPTY_NEW_CUSTOMER_FORM);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
 

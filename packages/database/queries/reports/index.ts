@@ -55,7 +55,8 @@ export async function getDailyKpiSummary(
   return {
     bookNowOrderCount: firstOrThrow(bookNowRows, "getDailyKpiSummary book now count").orderCount,
     preOrderCount: firstOrThrow(preOrderRows, "getDailyKpiSummary pre-order count").orderCount,
-    fulfilledOrderCount: firstOrThrow(fulfilledRows, "getDailyKpiSummary fulfilled count").orderCount,
+    fulfilledOrderCount: firstOrThrow(fulfilledRows, "getDailyKpiSummary fulfilled count")
+      .orderCount,
     gatepassTotals,
   };
 }
@@ -65,9 +66,15 @@ export interface MonthlyOrderVolume {
   perSalesman: OrderCountBySalesman[];
 }
 
-export async function getMonthlyOrderVolume(range: { from: Date; to: Date }): Promise<MonthlyOrderVolume> {
+export async function getMonthlyOrderVolume(range: {
+  from: Date;
+  to: Date;
+}): Promise<MonthlyOrderVolume> {
   const perSalesman = await getOrderCountsPerSalesmanInRange(range);
-  const totalOrderCount = perSalesman.reduce((runningTotal, row) => runningTotal + row.orderCount, 0);
+  const totalOrderCount = perSalesman.reduce(
+    (runningTotal, row) => runningTotal + row.orderCount,
+    0,
+  );
   return { totalOrderCount, perSalesman };
 }
 
@@ -78,9 +85,10 @@ export interface ProductSalesSummaryRow {
   totalQuantitySold: number;
 }
 
-export async function getProductWiseSalesSummary(
-  range: { from: Date; to: Date },
-): Promise<ProductSalesSummaryRow[]> {
+export async function getProductWiseSalesSummary(range: {
+  from: Date;
+  to: Date;
+}): Promise<ProductSalesSummaryRow[]> {
   return db
     .select({
       varietyId: orderItemsTable.varietyId,
@@ -97,12 +105,15 @@ export async function getProductWiseSalesSummary(
     .orderBy(desc(sql`coalesce(sum(${orderItemsTable.quantity}), 0)`));
 }
 
-export async function getAverageFulfillmentDurationSeconds(
-  range: { from: Date; to: Date },
-): Promise<number | null> {
+export async function getAverageFulfillmentDurationSeconds(range: {
+  from: Date;
+  to: Date;
+}): Promise<number | null> {
   const rows = await db
     .select({
-      averageSeconds: sql<number | null>`avg(extract(epoch from (${ordersTable.fulfilledAt} - ${ordersTable.placedAt})))::float8`,
+      averageSeconds: sql<
+        number | null
+      >`avg(extract(epoch from (${ordersTable.fulfilledAt} - ${ordersTable.placedAt})))::float8`,
     })
     .from(ordersTable)
     .where(

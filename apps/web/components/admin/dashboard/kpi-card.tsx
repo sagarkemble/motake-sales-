@@ -52,6 +52,7 @@ export function KpiCard({ label, value, icon: Icon, previousValue, className }: 
       <div>
         <p className="text-xl font-semibold leading-none sm:text-2xl">{value}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{label}</p>
+        {percentChangeLabel && <p className="text-[10px] text-muted-foreground/70">vs yesterday</p>}
       </div>
     </div>
   );

@@ -19,7 +19,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/co
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
 import { useAuth } from "~/hooks/use-auth";
-import { adminNavItems, adminQuickActions, getPageTitleForPathname, isNavItemActive } from "./nav-items";
+import {
+  adminNavItems,
+  adminQuickActions,
+  getPageTitleForPathname,
+  isNavItemActive,
+} from "./nav-items";
 
 export function AdminNavbar() {
   const currentPathname = usePathname();
@@ -61,9 +66,7 @@ export function AdminNavbar() {
                     key={navItem.href}
                     href={navItem.href}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isActiveTab
-                        ? "bg-brand/10 text-brand"
-                        : "text-foreground hover:bg-accent"
+                      isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
                     }`}
                   >
                     <NavIcon className="size-4" />

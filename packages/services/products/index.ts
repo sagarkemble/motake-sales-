@@ -17,7 +17,12 @@ import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
 import { conflict, notFound } from "../errors";
-import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl, deleteObject } from "../uploads/r2-client";
+import {
+  buildObjectKey,
+  buildPublicUrl,
+  createPresignedUploadUrl,
+  deleteObject,
+} from "../uploads/r2-client";
 import {
   createImageUploadUrlInputSchema,
   createProductInputSchema,
@@ -56,7 +61,8 @@ class ProductService {
     changes: UpdateProductInput,
   ): Promise<SelectProduct | undefined> {
     const parsedChanges = updateProductInputSchema.parse(changes);
-    const existingProduct = parsedChanges.imageKey !== undefined ? await getProductById(productId) : undefined;
+    const existingProduct =
+      parsedChanges.imageKey !== undefined ? await getProductById(productId) : undefined;
 
     const updatedProduct = await updateProduct(productId, parsedChanges);
 
@@ -91,7 +97,9 @@ class ProductService {
     return hardArchiveProduct(productId);
   }
 
-  public async listProducts(input: ListProductsInput): Promise<PaginatedResult<ProductWithVarieties>> {
+  public async listProducts(
+    input: ListProductsInput,
+  ): Promise<PaginatedResult<ProductWithVarieties>> {
     const parsedInput = listProductsInputSchema.parse(input);
     return listActiveProductsWithVarieties(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
@@ -99,7 +107,9 @@ class ProductService {
     );
   }
 
-  public async listProductsForAdmin(input: ListProductsInput): Promise<PaginatedResult<ProductWithVarieties>> {
+  public async listProductsForAdmin(
+    input: ListProductsInput,
+  ): Promise<PaginatedResult<ProductWithVarieties>> {
     const parsedInput = listProductsInputSchema.parse(input);
     return listProductsForAdminWithVarieties(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
@@ -108,7 +118,9 @@ class ProductService {
     );
   }
 
-  public async createProductVariety(input: CreateProductVarietyInput): Promise<SelectProductVariety> {
+  public async createProductVariety(
+    input: CreateProductVarietyInput,
+  ): Promise<SelectProductVariety> {
     const parsedInput = createProductVarietyInputSchema.parse(input);
     const parentProduct = await getProductById(parsedInput.productId);
     if (!parentProduct) {
@@ -139,11 +151,15 @@ class ProductService {
     return updateProductVariety(varietyId, parsedChanges);
   }
 
-  public async deactivateProductVariety(varietyId: string): Promise<SelectProductVariety | undefined> {
+  public async deactivateProductVariety(
+    varietyId: string,
+  ): Promise<SelectProductVariety | undefined> {
     return softDeleteProductVariety(varietyId);
   }
 
-  public async createImageUploadUrl(input: CreateImageUploadUrlInput): Promise<ImageUploadUrlResult> {
+  public async createImageUploadUrl(
+    input: CreateImageUploadUrlInput,
+  ): Promise<ImageUploadUrlResult> {
     const parsedInput = createImageUploadUrlInputSchema.parse(input);
     const imageKey = buildObjectKey(productImageFolderName, "admin", parsedInput.fileName);
     const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
