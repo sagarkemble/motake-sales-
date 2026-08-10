@@ -80,11 +80,14 @@ require_ci_env() {
 
 run_db_migrate() {
   echo "Running database migrations..."
-  (
-    cd "$ROOT_DIR/packages/database"
-    NODE_ENV=development pnpm install --frozen-lockfile
-    pnpm db:migrate
-  ) || echo "  warn: db:migrate failed — check DATABASE_URL"
+  if ! (
+    cd "$ROOT_DIR"
+    CI=true NODE_ENV=development pnpm install --frozen-lockfile --filter @repo/database...
+    pnpm --filter @repo/database db:migrate
+  ); then
+    echo "  warn: db:migrate failed — check DATABASE_URL and drizzle-kit install" >&2
+    return 1
+  fi
 }
 
 main() {
