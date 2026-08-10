@@ -1,4 +1,4 @@
-# Motake Caddy fragment — run ./caddy-setup.sh to generate deploy/motake.caddy
+# Motake Caddy fragment — run deploy/vps/caddy-setup.sh to generate deploy/generated/motake.caddy
 #
 # Production: copied to /etc/caddy/sites/motake.caddy
 # The script appends "import sites/motake.caddy" to /etc/caddy/Caddyfile

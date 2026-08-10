@@ -16,7 +16,16 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
   baseUrl: env.BASE_URL.concat("/api"),
 });
 
-if (env.NODE_ENV !== "production") {
+const corsAllowedOrigin = process.env.CORS_ALLOWED_ORIGIN;
+
+if (env.NODE_ENV === "production" && corsAllowedOrigin) {
+  app.use(
+    cors({
+      origin: corsAllowedOrigin,
+      credentials: true,
+    }),
+  );
+} else if (env.NODE_ENV !== "production") {
   app.use(
     cors({
       origin: true,

@@ -1,0 +1,11 @@
+# One-time sudoers for the deploy user (copy to VPS as root).
+#
+#   sudo cp deploy/vps/sudoers-deploy-bootstrap.example /etc/sudoers.d/deploy-motake
+#   sudo chmod 440 /etc/sudoers.d/deploy-motake
+#   sudo visudo -c
+#
+# Required before the first GitHub Actions deploy on a fresh VPS.
+# deploy/ci/ensure-production.sh can also create this file automatically
+# when passwordless sudo is already available.
+
+deploy ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /bin/systemctl, /usr/bin/caddy, /bin/cp, /bin/mkdir, /bin/chown, /bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee

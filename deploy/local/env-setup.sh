@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$DEPLOY_DIR/.." && pwd)"
 ENV_EXAMPLE="$ROOT_DIR/.env.example"
 ENV_FILE="$ROOT_DIR/.env"
 FORCE=false
@@ -59,53 +60,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# shellcheck disable=SC1091
+source "$DEPLOY_DIR/lib/common.sh"
+
 if [[ ! -f "$ENV_EXAMPLE" ]]; then
   echo "error: $ENV_EXAMPLE not found" >&2
   exit 1
 fi
-
-trim_whitespace() {
-  local input="$1"
-  input="${input#"${input%%[![:space:]]*}"}"
-  input="${input%"${input##*[![:space:]]}"}"
-  printf '%s' "$input"
-}
-
-normalize_pasted_value() {
-  local key="$1"
-  local value="$2"
-
-  value="${value//$'\r'/}"
-
-  if [[ "$value" == *$'\n'* ]]; then
-    echo "  note: multi-line paste detected; using the first line only." >&2
-    value="${value%%$'\n'*}"
-  fi
-
-  if [[ "$value" =~ ^${key}=(.*)$ ]]; then
-    value="${BASH_REMATCH[1]}"
-  elif [[ "$value" =~ ^[A-Za-z_][A-Za-z0-9_]*=(.*)$ ]]; then
-    echo "  note: extracted value from pasted KEY=value line." >&2
-    value="${BASH_REMATCH[1]}"
-  fi
-
-  trim_whitespace "$value"
-}
-
-drain_extra_tty_input() {
-  local extra=""
-
-  while true; do
-    if ! IFS= read -r -t 0.01 extra <&3; then
-      break
-    fi
-
-    extra="$(trim_whitespace "${extra//$'\r'/}")"
-    if [[ -n "$extra" ]]; then
-      echo "  ! ignored extra pasted input (paste one value per prompt): $extra" >&2
-    fi
-  done
-}
 
 prompt_for_value() {
   local key="$1"

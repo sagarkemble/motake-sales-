@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$ROOT_DIR/.env"
-DEPLOY_DIR="$ROOT_DIR/deploy"
-MOTAKE_FRAGMENT="$DEPLOY_DIR/motake.caddy"
-LOCAL_CADDYFILE="$DEPLOY_DIR/Caddyfile"
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib/common.sh"
+
 SYSTEM_CADDYFILE="/etc/caddy/Caddyfile"
 SYSTEM_SITES_DIR="/etc/caddy/sites"
 SYSTEM_FRAGMENT="$SYSTEM_SITES_DIR/motake.caddy"
@@ -22,23 +20,19 @@ Interactive Caddy reverse-proxy setup for production.
 This script does NOT replace /etc/caddy/Caddyfile or disturb other domains.
 It writes a motake-only fragment and extends the existing Caddy setup:
 
-  deploy/motake.caddy              — local site blocks (gitignored)
-  /etc/caddy/sites/motake.caddy    — system site blocks (production)
+  deploy/generated/motake.caddy       — local site blocks (gitignored)
+  /etc/caddy/sites/motake.caddy       — system site blocks (production)
 
 If motake is already configured, the script exits without changes.
 Use --force to reconfigure motake domains only.
 
 Prerequisites:
-  1. Run ./env-setup.sh and pnpm build first
+  1. Run deploy/local/env-setup.sh and pnpm build first
   2. DNS for your domain(s) must point to this server
   3. Ports 80 and 443 must be open
   4. Caddy installed (https://caddyserver.com/docs/install)
 
-Start apps before or after Caddy setup:
-  pnpm --filter @repo/api start    # API  (default :8001)
-  pnpm --filter web start          # Web  (default :3001)
-
-Non-interactive mode (used by deployment.sh):
+Non-interactive mode (used by deploy/vps/deploy.sh and deploy/ci/deploy.sh):
   MOTAKE_ROUTING_MODE=separate|single
   MOTAKE_FRONTEND_DOMAIN=app.example.com
   MOTAKE_API_DOMAIN=api.example.com   # required for separate mode
@@ -70,74 +64,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-trim_whitespace() {
-  local input="$1"
-  input="${input#"${input%%[![:space:]]*}"}"
-  input="${input%"${input##*[![:space:]]}"}"
-  printf '%s' "$input"
-}
-
-normalize_pasted_value() {
-  local key="$1"
-  local value="$2"
-
-  value="${value//$'\r'/}"
-
-  if [[ "$value" == *$'\n'* ]]; then
-    echo "  note: multi-line paste detected; using the first line only." >&2
-    value="${value%%$'\n'*}"
-  fi
-
-  if [[ "$value" =~ ^${key}=(.*)$ ]]; then
-    value="${BASH_REMATCH[1]}"
-  elif [[ "$value" =~ ^[A-Za-z_][A-Za-z0-9_]*=(.*)$ ]]; then
-    echo "  note: extracted value from pasted KEY=value line." >&2
-    value="${BASH_REMATCH[1]}"
-  fi
-
-  trim_whitespace "$value"
-}
-
-drain_extra_tty_input() {
-  local extra=""
-
-  while true; do
-    if ! IFS= read -r -t 0.01 extra <&3; then
-      break
-    fi
-
-    extra="$(trim_whitespace "${extra//$'\r'/}")"
-    if [[ -n "$extra" ]]; then
-      echo "  ! ignored extra pasted input (paste one value per prompt): $extra" >&2
-    fi
-  done
-}
-
-prompt_for_value() {
-  local key="$1"
-  local default="$2"
-  local value=""
-  local prompt="  $key"
-
-  if [[ -n "$default" ]]; then
-    prompt+=" [$default]"
-  fi
-  prompt+=": "
-
-  if ! IFS= read -e -r -p "$prompt" value <&3; then
-    value=""
-  fi
-
-  value="$(normalize_pasted_value "$key" "$value")"
-  drain_extra_tty_input
-
-  if [[ -z "$value" ]]; then
-    value="$default"
-  fi
-
-  REPLY="$value"
-}
 
 prompt_yes_no() {
   local question="$1"
@@ -176,47 +102,6 @@ read_env_default() {
   fi
 }
 
-validate_domain() {
-  local domain="$1"
-
-  if [[ -z "$domain" ]]; then
-    echo "error: domain cannot be empty" >&2
-    return 1
-  fi
-
-  if [[ ! "$domain" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]; then
-    echo "error: invalid domain: $domain" >&2
-    return 1
-  fi
-}
-
-validate_port() {
-  local port="$1"
-
-  if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
-    echo "error: invalid port: $port" >&2
-    return 1
-  fi
-}
-
-update_env_key() {
-  local key="$1"
-  local value="$2"
-
-  if [[ ! -f "$ENV_FILE" ]]; then
-    echo "error: $ENV_FILE not found — run ./env-setup.sh first" >&2
-    return 1
-  fi
-
-  if grep -q "^${key}=" "$ENV_FILE"; then
-    sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
-  else
-    echo "${key}=${value}" >>"$ENV_FILE"
-  fi
-
-  echo "  update .env  ${key}=${value}"
-}
-
 read_fragment_domains() {
   local file="$1"
 
@@ -241,7 +126,7 @@ domain_in_caddy_tree() {
 
   for file in \
     "$SYSTEM_CADDYFILE" \
-    "$DEPLOY_DIR"/*.caddy \
+    "$GENERATED_DIR"/*.caddy \
     "$SYSTEM_SITES_DIR"/*.caddy; do
     [[ -f "$file" ]] || continue
     [[ "$file" == "$MOTAKE_FRAGMENT" || "$file" == "$SYSTEM_FRAGMENT" ]] && continue
@@ -274,6 +159,8 @@ write_separate_domains_fragment() {
   local frontend_port="$3"
   local api_port="$4"
 
+  mkdir -p "$GENERATED_DIR"
+
   cat >"$MOTAKE_FRAGMENT" <<EOF
 ${MOTAKE_MARKER}
 # motake-domains: ${frontend_domain} ${api_domain}
@@ -299,6 +186,8 @@ write_single_domain_fragment() {
   local domain="$1"
   local frontend_port="$2"
   local api_port="$3"
+
+  mkdir -p "$GENERATED_DIR"
 
   cat >"$MOTAKE_FRAGMENT" <<EOF
 ${MOTAKE_MARKER}
@@ -417,7 +306,7 @@ install_local_fragment() {
   echo "write ${MOTAKE_FRAGMENT}"
   echo "write ${LOCAL_CADDYFILE}"
 
-  if prompt_yes_no "Start Caddy now with deploy/Caddyfile?" "y"; then
+  if prompt_yes_no "Start Caddy now with deploy/generated/Caddyfile?" "y"; then
     echo "Starting Caddy (Ctrl+C to stop)..."
     caddy run --config "$LOCAL_CADDYFILE"
   else
@@ -450,7 +339,7 @@ main() {
     exit 1
   fi
 
-  mkdir -p "$DEPLOY_DIR"
+  ensure_deploy_dirs
 
   if motake_fragment_exists || system_fragment_exists; then
     existing_domains="$(read_fragment_domains "$MOTAKE_FRAGMENT")"
@@ -488,54 +377,54 @@ main() {
     validate_port "$frontend_port"
     validate_port "$api_port"
   else
-  echo "Caddy reverse-proxy setup (extends existing config, does not replace it)"
-  echo "  Paste one value at a time with Ctrl+Shift+V, then press Enter."
-  echo
+    echo "Caddy reverse-proxy setup (extends existing config, does not replace it)"
+    echo "  Paste one value at a time with Ctrl+Shift+V, then press Enter."
+    echo
 
-  echo "Routing mode:"
-  echo "  1) Separate domains — e.g. app.example.com + api.example.com (recommended)"
-  echo "  2) Single domain     — e.g. example.com with /trpc, /api proxied to backend"
-  echo
-  prompt_for_value "routing_mode" "1"
-  routing_mode="$REPLY"
+    echo "Routing mode:"
+    echo "  1) Separate domains — e.g. app.example.com + api.example.com (recommended)"
+    echo "  2) Single domain     — e.g. example.com with /trpc, /api proxied to backend"
+    echo
+    prompt_for_value "routing_mode" "1"
+    routing_mode="$REPLY"
 
-  case "$routing_mode" in
-    1 | separate | split)
-      routing_mode="separate"
-      ;;
-    2 | single | path)
-      routing_mode="single"
-      ;;
-    *)
-      echo "error: choose 1 or 2" >&2
-      exit 1
-      ;;
-  esac
+    case "$routing_mode" in
+      1 | separate | split)
+        routing_mode="separate"
+        ;;
+      2 | single | path)
+        routing_mode="single"
+        ;;
+      *)
+        echo "error: choose 1 or 2" >&2
+        exit 1
+        ;;
+    esac
 
-  echo
-  if [[ "$routing_mode" == "separate" ]]; then
-    prompt_for_value "frontend_domain" "app.example.com"
-    frontend_domain="$REPLY"
-    validate_domain "$frontend_domain"
+    echo
+    if [[ "$routing_mode" == "separate" ]]; then
+      prompt_for_value "frontend_domain" "app.example.com"
+      frontend_domain="$REPLY"
+      validate_domain "$frontend_domain"
 
-    prompt_for_value "api_domain" "api.example.com"
-    api_domain="$REPLY"
-    validate_domain "$api_domain"
-  else
-    prompt_for_value "domain" "example.com"
-    frontend_domain="$REPLY"
-    validate_domain "$frontend_domain"
-    api_domain="$frontend_domain"
-  fi
+      prompt_for_value "api_domain" "api.example.com"
+      api_domain="$REPLY"
+      validate_domain "$api_domain"
+    else
+      prompt_for_value "domain" "example.com"
+      frontend_domain="$REPLY"
+      validate_domain "$frontend_domain"
+      api_domain="$frontend_domain"
+    fi
 
-  echo
-  prompt_for_value "frontend_port" "3001"
-  frontend_port="$REPLY"
-  validate_port "$frontend_port"
+    echo
+    prompt_for_value "frontend_port" "3001"
+    frontend_port="$REPLY"
+    validate_port "$frontend_port"
 
-  prompt_for_value "api_port" "$api_port"
-  api_port="$REPLY"
-  validate_port "$api_port"
+    prompt_for_value "api_port" "$api_port"
+    api_port="$REPLY"
+    validate_port "$api_port"
   fi
 
   check_domain_conflicts "$frontend_domain" "$api_domain"
@@ -574,7 +463,7 @@ main() {
     fi
   else
     echo
-    echo "note: no root .env found — skipping env update (run ./env-setup.sh first)"
+    echo "note: no root .env found — skipping env update (run deploy/local/env-setup.sh first)"
   fi
 
   if [[ "$NON_INTERACTIVE" != true ]]; then
@@ -589,8 +478,8 @@ main() {
   echo
 
   write_local_caddyfile
-  caddy validate --config "$LOCAL_CADDYFILE"
-  echo "valid deploy/motake.caddy"
+  (cd "$GENERATED_DIR" && caddy validate --config "$LOCAL_CADDYFILE")
+  echo "valid deploy/generated/motake.caddy"
 
   echo
   local install_target=""
@@ -598,7 +487,7 @@ main() {
   if [[ "$NON_INTERACTIVE" != true ]]; then
     echo "Install target:"
     echo "  1) System  — append import to /etc/caddy/Caddyfile + write /etc/caddy/sites/motake.caddy"
-    echo "  2) Local   — keep deploy/motake.caddy and run caddy manually"
+    echo "  2) Local   — keep deploy/generated/motake.caddy and run caddy manually"
     echo
     exec 3</dev/tty
     prompt_for_value "install_target" "1"
@@ -619,14 +508,14 @@ main() {
         exec 3<&-
       else
         write_local_caddyfile
-        caddy validate --config "$LOCAL_CADDYFILE"
+        (cd "$GENERATED_DIR" && caddy validate --config "$LOCAL_CADDYFILE")
         echo "write ${MOTAKE_FRAGMENT} (local install skipped in non-interactive mode)"
       fi
       ;;
     *)
-      echo "skip  system install (fragment saved to deploy/motake.caddy)"
+      echo "skip  system install (fragment saved to deploy/generated/motake.caddy)"
       echo "To install later on the server:"
-      echo "  sudo cp deploy/motake.caddy /etc/caddy/sites/motake.caddy"
+      echo "  sudo cp deploy/generated/motake.caddy /etc/caddy/sites/motake.caddy"
       echo "  # then append to /etc/caddy/Caddyfile:"
       echo "  import sites/motake.caddy"
       echo "  sudo systemctl reload caddy"

@@ -57,10 +57,7 @@ Thumbs.db
 *.pem
 
 # Generated deploy config
-deploy/Caddyfile
-deploy/motake.caddy
-deploy/runtime.env
-deploy/ecosystem.config.cjs
+deploy/generated/
 
 # IDE
 .idea/

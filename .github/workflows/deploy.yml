@@ -1,0 +1,116 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'deploy/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build production apps
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: pnpm build
+
+      - name: Verify build artifacts
+        run: |
+          test -f apps/api/dist/index.js
+          test -d apps/web/.next
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: motake-build
+          if-no-files-found: error
+          path: |
+            apps/api/dist
+            apps/web/.next
+            apps/web/public
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: motake-build
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          PORT: ${{ vars.MOTAKE_API_PORT || '8001' }}
+          NODE_ENV: production
+          LOGGER_LEVEL: ${{ vars.LOGGER_LEVEL || 'error' }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          CORS_ALLOWED_ORIGIN: ${{ secrets.CORS_ALLOWED_ORIGIN }}
+          MOTAKE_ROUTING_MODE: ${{ vars.MOTAKE_ROUTING_MODE || 'separate' }}
+          MOTAKE_FRONTEND_DOMAIN: ${{ vars.MOTAKE_FRONTEND_DOMAIN }}
+          MOTAKE_API_DOMAIN: ${{ vars.MOTAKE_API_DOMAIN }}
+          MOTAKE_FRONTEND_PORT: ${{ vars.MOTAKE_WEB_PORT || '3001' }}
+          MOTAKE_API_PORT: ${{ vars.MOTAKE_API_PORT || '8001' }}
+          MOTAKE_INSTALL_TARGET: system
+        run: |
+          chmod +x deploy/ci/sync-to-vps.sh
+          ./deploy/ci/sync-to-vps.sh
+
+      - name: Health check (public)
+        env:
+          FRONTEND_URL: https://${{ vars.MOTAKE_FRONTEND_DOMAIN }}
+          API_URL: https://${{ vars.MOTAKE_API_DOMAIN }}
+        run: |
+          curl -sf "${API_URL}/health"
+          curl -sfI "${FRONTEND_URL}" | head -5
