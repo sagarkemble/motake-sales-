@@ -281,7 +281,8 @@ ensure_deploy_sudoers() {
 
   sudo tee "$sudoers_file" >/dev/null <<EOF
 # Motake deploy user — Caddy + deploy bootstrap (managed by ensure-production.sh)
-deploy ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /bin/systemctl, ${caddy_bin}, /bin/cp, /bin/mkdir, /bin/chown, /bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee
+Defaults:deploy env_keep += "DEBIAN_FRONTEND"
+deploy ALL=(ALL) NOPASSWD: SETENV: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/systemctl, /bin/systemctl, ${caddy_bin}, /bin/cp, /usr/bin/cp, /bin/mkdir, /usr/bin/mkdir, /bin/chown, /usr/bin/chown, /bin/chmod, /usr/bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee, /usr/sbin/ufw, /usr/bin/env, /usr/bin/bash, /bin/bash, /usr/bin/true, /bin/true
 EOF
   sudo chmod 440 "$sudoers_file"
 }
