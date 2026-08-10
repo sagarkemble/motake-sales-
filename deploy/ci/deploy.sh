@@ -78,6 +78,15 @@ require_ci_env() {
   fi
 }
 
+run_db_migrate() {
+  echo "Running database migrations..."
+  (
+    cd "$ROOT_DIR/packages/database"
+    NODE_ENV=development pnpm install --frozen-lockfile
+    pnpm db:migrate
+  ) || echo "  warn: db:migrate failed — check DATABASE_URL"
+}
+
 main() {
   require_ci_env
 
@@ -115,22 +124,26 @@ main() {
     (cd "$ROOT_DIR" && pnpm install --frozen-lockfile 2>/dev/null || pnpm install)
 
     if [[ "$SKIP_MIGRATE" != true ]]; then
-      echo "Running database migrations..."
-      (cd "$ROOT_DIR" && pnpm db:migrate) || echo "  warn: db:migrate failed — check DATABASE_URL"
+      run_db_migrate
     fi
 
     echo "Building production apps..."
     (cd "$ROOT_DIR" && pnpm build)
   else
     echo "skip  build (--skip-build)"
+    verify_build_artifacts
+
+    echo "Installing production dependencies..."
+    (cd "$ROOT_DIR" && pnpm install --frozen-lockfile --prod)
+
     if [[ "$SKIP_MIGRATE" != true ]]; then
-      echo "Running database migrations..."
-      (cd "$ROOT_DIR" && pnpm install --frozen-lockfile 2>/dev/null || pnpm install)
-      (cd "$ROOT_DIR" && pnpm db:migrate) || echo "  warn: db:migrate failed — check DATABASE_URL"
+      run_db_migrate
     fi
   fi
 
-  verify_build_artifacts
+  if [[ "$SKIP_BUILD" != true ]]; then
+    verify_build_artifacts
+  fi
   start_pm2_apps
 
   if [[ "$SKIP_CADDY" != true ]]; then

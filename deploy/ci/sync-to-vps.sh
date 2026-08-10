@@ -80,6 +80,16 @@ echo "  Then install deploy sudoers from deploy/vps/sudoers-deploy-bootstrap.exa
 exit 1
 PREP
 
+if [[ ! -f "$ROOT_DIR/apps/api/dist/index.js" ]]; then
+  echo "error: apps/api/dist/index.js missing before rsync — download build artifacts first" >&2
+  exit 1
+fi
+
+if [[ ! -d "$ROOT_DIR/apps/web/.next" ]]; then
+  echo "error: apps/web/.next missing before rsync — download build artifacts first" >&2
+  exit 1
+fi
+
 echo "Syncing to ${REMOTE}:${VPS_APP_PATH}..."
 
 rsync -az --delete \
