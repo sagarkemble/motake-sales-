@@ -125,5 +125,13 @@ jobs:
           FRONTEND_URL: https://${{ vars.MOTAKE_FRONTEND_DOMAIN }}
           API_URL: https://${{ vars.MOTAKE_API_DOMAIN }}
         run: |
-          curl -sf "${API_URL}/health"
-          curl -sfI "${FRONTEND_URL}" | head -5
+          for attempt in $(seq 1 12); do
+            if curl -sf "${API_URL}/health" && curl -sfI "${FRONTEND_URL}" >/dev/null; then
+              curl -sfI "${FRONTEND_URL}" | head -5
+              exit 0
+            fi
+            echo "Health check attempt ${attempt} failed (TLS/DNS may still be settling), retrying in 15s..."
+            sleep 15
+          done
+          echo "error: public health check did not pass after 3 minutes" >&2
+          exit 1
