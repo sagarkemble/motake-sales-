@@ -46,7 +46,7 @@ const envSchema = z
         message: "SUPABASE_URL host must end with .supabase.co",
       });
     }
-    if (val.NODE_ENV === "production" && supabaseUrl.protocol !== "https:") {
+    if (supabaseUrl.protocol !== "https:") {
       ctx.addIssue({
         code: "custom",
         path: ["SUPABASE_URL"],

@@ -28,6 +28,7 @@ const productFormSchema = z.object({
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 
 interface ProductFormProps {
+  productId?: string;
   defaultValues?: Partial<ProductFormValues>;
   isSubmitting: boolean;
   submitLabel: string;
@@ -35,12 +36,13 @@ interface ProductFormProps {
 }
 
 export function ProductForm({
+  productId,
   defaultValues,
   isSubmitting,
   submitLabel,
   onSubmit,
 }: ProductFormProps) {
-  const { createImageUploadUrlAsync } = useProducts();
+  const { createImageUploadUrlAsync, deleteProductImageAsync } = useProducts();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -70,6 +72,13 @@ export function ProductForm({
                     onUploaded={(result) => {
                       form.setValue("imageKey", result.imageKey);
                       form.setValue("imageUrl", result.imageUrl);
+                    }}
+                    onDelete={async () => {
+                      if (productId) {
+                        await deleteProductImageAsync({ id: productId });
+                      }
+                      form.setValue("imageKey", "");
+                      form.setValue("imageUrl", "");
                     }}
                   />
                 </FormControl>

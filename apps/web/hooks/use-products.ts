@@ -26,6 +26,9 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
   );
 
   const createImageUploadUrlMutation = trpc.products.createImageUploadUrl.useMutation();
+  const deleteProductImageMutation = trpc.products.deleteImage.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
 
   const createProductMutation = trpc.products.create.useMutation({
     onSuccess: () => utils.products.invalidate(),
@@ -34,6 +37,12 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     onSuccess: () => utils.products.invalidate(),
   });
   const deactivateProductMutation = trpc.products.deactivate.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
+  const reactivateProductMutation = trpc.products.reactivate.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
+  const deleteProductMutation = trpc.products.delete.useMutation({
     onSuccess: () => utils.products.invalidate(),
   });
   const createProductVarietyMutation = trpc.products.createVariety.useMutation({
@@ -47,7 +56,9 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
   });
 
   return {
-    productsPage: productsListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    productsPage:
+      productsListQuery.data?.data ??
+      emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isProductsListLoading: productsListQuery.isLoading,
     isProductsListError: productsListQuery.isError,
     refetchProductsList: productsListQuery.refetch,
@@ -66,6 +77,11 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     isCreatingImageUploadUrl: createImageUploadUrlMutation.isPending,
     createImageUploadUrlError: createImageUploadUrlMutation.error ?? null,
 
+    deleteProductImage: deleteProductImageMutation.mutate,
+    deleteProductImageAsync: deleteProductImageMutation.mutateAsync,
+    isDeletingProductImage: deleteProductImageMutation.isPending,
+    deleteProductImageError: deleteProductImageMutation.error ?? null,
+
     createProduct: createProductMutation.mutate,
     createProductAsync: createProductMutation.mutateAsync,
     isCreatingProduct: createProductMutation.isPending,
@@ -80,6 +96,16 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     deactivateProductAsync: deactivateProductMutation.mutateAsync,
     isDeactivatingProduct: deactivateProductMutation.isPending,
     deactivateProductError: deactivateProductMutation.error ?? null,
+
+    reactivateProduct: reactivateProductMutation.mutate,
+    reactivateProductAsync: reactivateProductMutation.mutateAsync,
+    isReactivatingProduct: reactivateProductMutation.isPending,
+    reactivateProductError: reactivateProductMutation.error ?? null,
+
+    deleteProduct: deleteProductMutation.mutate,
+    deleteProductAsync: deleteProductMutation.mutateAsync,
+    isDeletingProduct: deleteProductMutation.isPending,
+    deleteProductError: deleteProductMutation.error ?? null,
 
     createProductVariety: createProductVarietyMutation.mutate,
     createProductVarietyAsync: createProductVarietyMutation.mutateAsync,

@@ -1,12 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  pgTable,
-  uuid,
-  integer,
-  timestamp,
-  uniqueIndex,
-  check,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, timestamp, uniqueIndex, check } from "drizzle-orm/pg-core";
 
 import { gatepassesTable } from "./gatepass";
 import { productVarietiesTable } from "./product-variety";
@@ -30,9 +23,7 @@ export const gatepassItemsTable = pgTable(
 
     returnedQty: integer("returned_qty").notNull().default(0),
 
-    availableQty: integer("available_qty").generatedAlwaysAs(
-      sql`issued_qty - sold_qty`
-    ),
+    availableQty: integer("available_qty").generatedAlwaysAs(sql`issued_qty - sold_qty`),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -40,21 +31,15 @@ export const gatepassItemsTable = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("gatepass_items_gatepass_variety_unique").on(
-      table.gatepassId,
-      table.varietyId
-    ),
+    uniqueIndex("gatepass_items_gatepass_variety_unique").on(table.gatepassId, table.varietyId),
     check("gatepass_items_sold_qty_check", sql`${table.soldQty} >= 0`),
-    check(
-      "gatepass_items_sold_lte_issued_check",
-      sql`${table.soldQty} <= ${table.issuedQty}`
-    ),
+    check("gatepass_items_sold_lte_issued_check", sql`${table.soldQty} <= ${table.issuedQty}`),
     check("gatepass_items_returned_qty_check", sql`${table.returnedQty} >= 0`),
     check(
       "gatepass_items_returned_lte_issued_check",
-      sql`${table.returnedQty} <= ${table.issuedQty}`
+      sql`${table.returnedQty} <= ${table.issuedQty}`,
     ),
-  ]
+  ],
 );
 
 export type SelectGatepassItem = typeof gatepassItemsTable.$inferSelect;

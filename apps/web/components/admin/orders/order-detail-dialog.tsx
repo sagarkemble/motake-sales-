@@ -4,7 +4,7 @@ import { format } from "date-fns";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useOrders } from "~/hooks/use-orders";
-import { OrderStatusBadge } from "~/components/admin/orders/order-status-badge";
+import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 
 interface OrderDetailDialogProps {
   orderId: string | null;
@@ -49,7 +49,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Salesman</p>
-                  <p className="font-medium">{orderDetail.salesmanCode}</p>
+                  <p className="font-medium">{orderDetail.salesmanName ?? orderDetail.salesmanCode}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total quantity</p>
@@ -75,6 +75,12 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                     <p className="font-medium">
                       {format(new Date(orderDetail.order.fulfilledAt), "d MMM yyyy, h:mm a")}
                     </p>
+                  </div>
+                )}
+                {orderDetail.order.fulfilledAt && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Fulfilled by</p>
+                    <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
                   </div>
                 )}
                 {orderDetail.order.cancelledAt && (
@@ -105,8 +111,11 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                       <p className="font-medium">{item.productName}</p>
                       <p className="text-xs text-muted-foreground">{item.varietyName}</p>
                     </div>
-                    <p className="font-medium">
-                      {item.quantity} {item.unit}
+                    <p className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
+                        {item.quantity}
+                      </span>
+                      <span className="text-xs text-muted-foreground">× {item.unit}</span>
                     </p>
                   </div>
                 ))}

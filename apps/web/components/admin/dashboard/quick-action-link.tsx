@@ -1,8 +1,6 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
-
 interface QuickActionLinkProps {
   href: string;
   label: string;
@@ -11,14 +9,14 @@ interface QuickActionLinkProps {
 
 export function QuickActionLink({ href, label, icon: Icon }: QuickActionLinkProps) {
   return (
-    <Button
-      asChild
-      className="w-full justify-start gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+    <Link
+      href={href}
+      className="group flex items-center gap-3 rounded-2xl border bg-card p-3.5 transition-colors hover:border-brand/40 hover:bg-brand/5"
     >
-      <Link href={href}>
-        <Icon className="size-4" />
-        {label}
-      </Link>
-    </Button>
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand transition-colors group-hover:bg-brand group-hover:text-brand-foreground">
+        <Icon className="size-5" />
+      </div>
+      <p className="text-sm font-medium">{label}</p>
+    </Link>
   );
 }

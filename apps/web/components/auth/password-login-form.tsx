@@ -3,12 +3,20 @@
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
 import { usePasswordLoginStore } from "~/lib/login-store";
+
+const minPasswordLength = 8;
+
+const passwordLoginFormSchema = z.object({
+  email: z.string().min(1, "Enter your email").email("Enter a valid email"),
+  password: z.string().min(minPasswordLength, `Password must be at least ${minPasswordLength} characters`),
+});
 
 export function PasswordLoginForm() {
   const router = useRouter();
@@ -25,14 +33,23 @@ export function PasswordLoginForm() {
   const setIsSubmitting = usePasswordLoginStore((state) => state.setIsSubmitting);
   const setFormError = usePasswordLoginStore((state) => state.setFormError);
 
+  const remainingPasswordCharacters = minPasswordLength - password.length;
+  const showRemainingPasswordCharactersHint = password.length > 0 && remainingPasswordCharacters > 0;
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (isSubmitting) return;
 
+    const parsedForm = passwordLoginFormSchema.safeParse({ email: email.trim(), password });
+    if (!parsedForm.success) {
+      setFormError(parsedForm.error.issues[0]?.message ?? "Enter a valid email and password");
+      return;
+    }
+
     setFormError(null);
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword({ email: email.trim(), password });
+      await signInWithEmailAndPassword(parsedForm.data);
       toast.success("Signed in");
       router.push("/");
     } catch {
@@ -82,6 +99,11 @@ export function PasswordLoginForm() {
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </button>
         </div>
+        {showRemainingPasswordCharactersHint && (
+          <p className="text-xs text-muted-foreground">
+            {remainingPasswordCharacters} more character{remainingPasswordCharacters === 1 ? "" : "s"} needed
+          </p>
+        )}
       </div>
 
       {formError ? (

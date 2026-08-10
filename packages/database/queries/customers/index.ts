@@ -1,7 +1,12 @@
 import { and, asc, count, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "../../index";
-import { customersTable, ordersTable, type InsertCustomer, type SelectCustomer } from "../../schema";
+import {
+  customersTable,
+  ordersTable,
+  type InsertCustomer,
+  type SelectCustomer,
+} from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
 import {
   buildPaginationOffsets,
@@ -93,18 +98,19 @@ export async function getCustomerStats(customerId: string): Promise<CustomerStat
     .select({
       totalOrderCount: count(),
       totalQuantitySold: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
-      lastOrderAt: sql<Date | null>`max(${ordersTable.placedAt})`,
+      lastOrderAt: sql<string | null>`max(${ordersTable.placedAt})`,
     })
     .from(ordersTable)
     .where(and(eq(ordersTable.customerId, customerId), ne(ordersTable.status, "cancelled")));
 
-  return (
-    statsRow ?? {
-      totalOrderCount: 0,
-      totalQuantitySold: 0,
-      lastOrderAt: null,
-    }
-  );
+  if (!statsRow) {
+    return { totalOrderCount: 0, totalQuantitySold: 0, lastOrderAt: null };
+  }
+
+  return {
+    ...statsRow,
+    lastOrderAt: statsRow.lastOrderAt ? new Date(statsRow.lastOrderAt) : null,
+  };
 }
 
 export async function softDeleteCustomer(customerId: string): Promise<SelectCustomer | undefined> {

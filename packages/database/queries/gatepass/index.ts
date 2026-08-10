@@ -43,7 +43,10 @@ export async function createGatepassWithItems(
 }
 
 export async function getGatepassById(gatepassId: string): Promise<SelectGatepass | undefined> {
-  const [gatepass] = await db.select().from(gatepassesTable).where(eq(gatepassesTable.id, gatepassId));
+  const [gatepass] = await db
+    .select()
+    .from(gatepassesTable)
+    .where(eq(gatepassesTable.id, gatepassId));
   return gatepass;
 }
 
@@ -54,7 +57,12 @@ export async function getGatepassBySalesmanAndDate(
   const [gatepass] = await db
     .select()
     .from(gatepassesTable)
-    .where(and(eq(gatepassesTable.salesmanId, salesmanId), eq(gatepassesTable.businessDate, businessDate)));
+    .where(
+      and(
+        eq(gatepassesTable.salesmanId, salesmanId),
+        eq(gatepassesTable.businessDate, businessDate),
+      ),
+    );
   return gatepass;
 }
 
@@ -80,7 +88,10 @@ export async function getGatepassItemByGatepassAndVariety(
     .select()
     .from(gatepassItemsTable)
     .where(
-      and(eq(gatepassItemsTable.gatepassId, gatepassId), eq(gatepassItemsTable.varietyId, varietyId)),
+      and(
+        eq(gatepassItemsTable.gatepassId, gatepassId),
+        eq(gatepassItemsTable.varietyId, varietyId),
+      ),
     );
   return item;
 }
@@ -120,7 +131,10 @@ export async function restoreSoldQtyOnCancellation(
     .update(gatepassItemsTable)
     .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${quantity}` })
     .where(
-      and(eq(gatepassItemsTable.id, gatepassItemId), sql`${gatepassItemsTable.soldQty} >= ${quantity}`),
+      and(
+        eq(gatepassItemsTable.id, gatepassItemId),
+        sql`${gatepassItemsTable.soldQty} >= ${quantity}`,
+      ),
     )
     .returning();
   return updatedItem;
@@ -140,7 +154,9 @@ export async function recordReturnedQtyForItem(
 
 export async function updateGatepassStatus(
   gatepassId: string,
-  changes: Partial<Pick<InsertGatepass, "status" | "closedBy" | "closedAt" | "hasDiscrepancy" | "notes">>,
+  changes: Partial<
+    Pick<InsertGatepass, "status" | "closedBy" | "closedAt" | "hasDiscrepancy" | "notes">
+  >,
 ): Promise<SelectGatepass | undefined> {
   const [updatedGatepass] = await db
     .update(gatepassesTable)
@@ -148,6 +164,28 @@ export async function updateGatepassStatus(
     .where(eq(gatepassesTable.id, gatepassId))
     .returning();
   return updatedGatepass;
+}
+
+export interface GatepassHistoryRow {
+  gatepass: SelectGatepass;
+  totalIssuedQty: number;
+  totalSoldQty: number;
+}
+
+export async function getGatepassHistoryForSalesman(
+  salesmanId: string,
+): Promise<GatepassHistoryRow[]> {
+  return db
+    .select({
+      gatepass: gatepassesTable,
+      totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
+      totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+    })
+    .from(gatepassesTable)
+    .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
+    .where(eq(gatepassesTable.salesmanId, salesmanId))
+    .groupBy(gatepassesTable.id)
+    .orderBy(desc(gatepassesTable.businessDate));
 }
 
 export interface AllotmentMatrixRow {
@@ -162,7 +200,9 @@ export interface AllotmentMatrixRow {
   returnedQty: number;
 }
 
-export async function getAllotmentMatrixForDate(businessDate: string): Promise<AllotmentMatrixRow[]> {
+export async function getAllotmentMatrixForDate(
+  businessDate: string,
+): Promise<AllotmentMatrixRow[]> {
   return db
     .select({
       salesmanId: gatepassesTable.salesmanId,
@@ -191,7 +231,9 @@ export interface GatepassEndOfDayTotals {
   discrepancyGatepassCount: number;
 }
 
-export async function getEndOfDayTotalsForDate(businessDate: string): Promise<GatepassEndOfDayTotals> {
+export async function getEndOfDayTotalsForDate(
+  businessDate: string,
+): Promise<GatepassEndOfDayTotals> {
   const itemTotalsRows = await db
     .select({
       totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
@@ -205,10 +247,15 @@ export async function getEndOfDayTotalsForDate(businessDate: string): Promise<Ga
   const discrepancyRows = await db
     .select({ discrepancyGatepassCount: count() })
     .from(gatepassesTable)
-    .where(and(eq(gatepassesTable.businessDate, businessDate), eq(gatepassesTable.hasDiscrepancy, true)));
+    .where(
+      and(eq(gatepassesTable.businessDate, businessDate), eq(gatepassesTable.hasDiscrepancy, true)),
+    );
 
   const itemTotals = firstOrThrow(itemTotalsRows, "getEndOfDayTotalsForDate item totals");
-  const { discrepancyGatepassCount } = firstOrThrow(discrepancyRows, "getEndOfDayTotalsForDate discrepancy count");
+  const { discrepancyGatepassCount } = firstOrThrow(
+    discrepancyRows,
+    "getEndOfDayTotalsForDate discrepancy count",
+  );
 
   return { ...itemTotals, discrepancyGatepassCount };
 }

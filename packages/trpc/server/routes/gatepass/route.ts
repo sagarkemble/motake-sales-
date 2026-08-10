@@ -1,18 +1,21 @@
 import { gatepassService } from "../../services";
-import { z } from "../../schema";
-import { adminProcedure, router, salesmanProcedure } from "../../trpc";
+import { z, zodUndefinedModel } from "../../schema";
+import { adminProcedure, protectedProcedure, router, salesmanProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   allotGatepassInputSchema,
   allotmentMatrixRowSchema,
+  canonicalDateSchema,
   closeGatepassInputSchema,
   gatepassDateInputSchema,
   gatepassEndOfDayTotalsSchema,
+  gatepassHistoryRowSchema,
   gatepassItemSchema,
   gatepassSchema,
   gatepassWithItemsSchema,
+  gatepassWithItemsAndNamesSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
 } from "./model";
@@ -20,6 +23,24 @@ import {
 const path = generatePath("/gatepasses");
 
 export const gatepassRouter = router({
+  getCanonicalDate: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/canonical-date"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Get canonical server business date",
+        description: "Return the canonical server business date in yyyy-MM-dd format.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(canonicalDateSchema))
+    .query(() => {
+      const businessDate = gatepassService.getCurrentBusinessDate();
+      return apiResponse({ businessDate });
+    }),
+
   allot: adminProcedure
     .meta({
       openapi: {
@@ -71,7 +92,7 @@ export const gatepassRouter = router({
       },
     })
     .input(gatepassDateInputSchema)
-    .output(apiResponseSchema(gatepassWithItemsSchema))
+    .output(apiResponseSchema(gatepassWithItemsAndNamesSchema))
     .query(async ({ ctx, input }) => {
       const gatepassWithItems = await gatepassService.getGatepassForSalesmanAndDate(
         ctx.user.id,
@@ -79,6 +100,24 @@ export const gatepassRouter = router({
       );
       if (!gatepassWithItems) throw notFound("No gatepass for today");
       return apiResponse(gatepassWithItems);
+    }),
+
+  getMyHistory: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/me/history"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Get my gatepass history",
+        description: "Return every past gatepass allotted to the signed-in salesman, newest first.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(z.array(gatepassHistoryRowSchema)))
+    .query(async ({ ctx }) => {
+      const history = await gatepassService.getGatepassHistoryForSalesman(ctx.user.id);
+      return apiResponse(history);
     }),
 
   getAllotmentMatrix: adminProcedure

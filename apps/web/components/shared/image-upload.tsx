@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -18,9 +18,11 @@ interface UploadedImageResult {
 interface ImageUploadProps {
   imageUrl: string | null;
   onUploaded: (result: UploadedImageResult) => void;
+  onDelete?: () => Promise<void>;
   requestUploadUrl: (input: {
     fileName: string;
     contentType: AcceptedContentType;
+    contentLength: number;
   }) => Promise<{ data: { uploadUrl: string; imageKey: string; imageUrl: string } }>;
   altText: string;
   shape?: "square" | "circle";
@@ -31,6 +33,7 @@ interface ImageUploadProps {
 export function ImageUpload({
   imageUrl,
   onUploaded,
+  onDelete,
   requestUploadUrl,
   altText,
   shape = "square",
@@ -40,6 +43,7 @@ export function ImageUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(imageUrl);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
 
   async function handleFileSelected(selectedFile: File | undefined) {
@@ -60,6 +64,7 @@ export function ImageUpload({
       const uploadUrlResponse = await requestUploadUrl({
         fileName: selectedFile.name,
         contentType: selectedFile.type as AcceptedContentType,
+        contentLength: selectedFile.size,
       });
       const { uploadUrl, imageKey, imageUrl: uploadedImageUrl } = uploadUrlResponse.data;
 
@@ -76,6 +81,22 @@ export function ImageUpload({
       setUploadErrorMessage("Upload failed. Try again.");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleDeleteClicked() {
+    if (!onDelete) return;
+    if (!window.confirm("Remove this image?")) return;
+
+    setUploadErrorMessage(null);
+    setIsDeleting(true);
+    try {
+      await onDelete();
+      setPreviewUrl(null);
+    } catch {
+      setUploadErrorMessage("Could not remove the image. Try again.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -108,16 +129,31 @@ export function ImageUpload({
         onChange={(changeEvent) => handleFileSelected(changeEvent.target.files?.[0])}
       />
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={isUploading}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
-        {isUploading ? "Uploading" : uploadButtonLabel}
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isUploading || isDeleting}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+          {isUploading ? "Uploading" : uploadButtonLabel}
+        </Button>
+
+        {onDelete && previewUrl && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isUploading || isDeleting}
+            onClick={handleDeleteClicked}
+          >
+            {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+            {isDeleting ? "Removing" : "Remove"}
+          </Button>
+        )}
+      </div>
 
       {uploadErrorMessage && <p className="text-sm text-destructive">{uploadErrorMessage}</p>}
     </div>

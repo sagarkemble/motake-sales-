@@ -15,11 +15,13 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 
+const minPasswordLength = 8;
+
 const salesmanFormSchema = z.object({
   name: z.string().min(1, "Enter a name").max(120),
   phone: z.string().min(1, "Enter a phone number").max(20),
   email: z.string().min(1, "Enter an email").email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(minPasswordLength, `Password must be at least ${minPasswordLength} characters`),
   salesmanCode: z.string().min(1, "Enter a salesman code").max(32),
 });
 
@@ -92,15 +94,24 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="At least 8 characters" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const remainingCharacters = minPasswordLength - field.value.length;
+              const showRemainingCharactersHint = field.value.length > 0 && remainingCharacters > 0;
+              return (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="At least 8 characters" {...field} />
+                  </FormControl>
+                  {showRemainingCharactersHint && (
+                    <p className="text-xs text-muted-foreground">
+                      {remainingCharacters} more character{remainingCharacters === 1 ? "" : "s"} needed
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <FormField

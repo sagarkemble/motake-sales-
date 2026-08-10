@@ -1,16 +1,29 @@
-import { createProfile, getProfileById, softDeleteProfile, updateProfile } from "@repo/database/queries/auth";
+import {
+  createProfile,
+  getProfileById,
+  softDeleteProfile,
+  updateProfile,
+} from "@repo/database/queries/auth";
 import type { InsertProfile, SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { supabaseAdminClient } from "../clients/supabase-admin";
 import { badRequest, notFound, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
 import {
+  createProfileAvatarUploadUrl,
+  deleteProfileAvatar,
+  updateProfileNameAndAvatar,
+  type ProfileAvatarUploadUrlResult,
+} from "../shared/profile-avatar";
+import {
   appRoleSchema,
   createSalesmanAccountInputSchema,
   updateSalesmanAccountInputSchema,
   type AppRole,
   type AuthenticatedUser,
+  type CreateAvatarUploadUrlInput,
   type CreateSalesmanAccountInput,
+  type UpdateMyProfileInput,
   type UpdateSalesmanAccountInput,
 } from "./model";
 
@@ -24,7 +37,13 @@ class AuthService {
     }
 
     const role = appRoleSchema.parse(data.user.app_metadata?.role);
-    return { id: data.user.id, email: data.user.email ?? "", phone: data.user.phone, role };
+    return {
+      id: data.user.id,
+      email: data.user.email ?? "",
+      phone: data.user.phone,
+      phoneConfirmedAt: data.user.phone_confirmed_at,
+      role,
+    };
   }
 
   public async createSalesmanAccount(
@@ -62,13 +81,20 @@ class AuthService {
     }
   }
 
-  public async confirmPhoneNumber(accessToken: string, expectedProfileId: string): Promise<SelectProfile> {
+  public async getProfileById(profileId: string): Promise<SelectProfile | undefined> {
+    return getProfileById(profileId);
+  }
+
+  public async confirmPhoneNumber(
+    accessToken: string,
+    expectedProfileId: string,
+  ): Promise<SelectProfile> {
     const authenticatedUser = await this.verifyAccessToken(accessToken);
     if (authenticatedUser.id !== expectedProfileId) {
       throw unauthorized("Access token does not match the signed-in user");
     }
-    if (!authenticatedUser.phone) {
-      throw badRequest("Phone number was not verified");
+    if (!authenticatedUser.phone || !authenticatedUser.phoneConfirmedAt) {
+      throw badRequest("Phone number was not verified by provider");
     }
 
     const updatedProfile = await updateProfile(authenticatedUser.id, {
@@ -105,9 +131,36 @@ class AuthService {
     return updatedProfile;
   }
 
+  public async updateMyProfile(
+    profileId: string,
+    changes: UpdateMyProfileInput,
+  ): Promise<SelectProfile | undefined> {
+    return updateProfileNameAndAvatar(profileId, changes);
+  }
+
+  public async deleteMyAvatar(profileId: string): Promise<SelectProfile | undefined> {
+    return deleteProfileAvatar(profileId);
+  }
+
+  public async createAvatarUploadUrl(
+    profileId: string,
+    input: CreateAvatarUploadUrlInput,
+  ): Promise<ProfileAvatarUploadUrlResult> {
+    return createProfileAvatarUploadUrl(profileId, input);
+  }
+
   public async deactivateSalesmanAccount(profileId: string): Promise<void> {
+    await updateProfile(profileId, { status: "inactive" });
+  }
+
+  public async deleteSalesmanAccount(profileId: string): Promise<void> {
     await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "876000h" });
     await softDeleteProfile(profileId);
+  }
+
+  public async reactivateSalesmanAccount(profileId: string): Promise<void> {
+    await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "none" });
+    await updateProfile(profileId, { status: "active", deletedAt: null });
   }
 }
 

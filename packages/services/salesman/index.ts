@@ -4,22 +4,27 @@ import {
   getSalesmanById,
   getSalesmanDayWiseHistory,
   getSalesmanWithProfileById,
-  listActiveSalesmenWithProfiles,
+  listSalesmenWithProfiles,
   updateSalesmanCode,
   type SalesmanDayWiseHistoryRow,
   type SalesmanWithProfile,
 } from "@repo/database/queries/salesman";
-import { updateProfile } from "@repo/database/queries/auth";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { conflict } from "../errors";
 import {
+  createProfileAvatarUploadUrl,
+  deleteProfileAvatar,
+  updateProfileNameAndAvatar,
+  type ProfileAvatarUploadUrlResult,
+} from "../shared/profile-avatar";
+import {
   createSalesmanInputSchema,
   listSalesmenInputSchema,
   salesmanHistoryRangeInputSchema,
   updateSalesmanCodeInputSchema,
-  updateSalesmanProfileInputSchema,
+  type CreateAvatarUploadUrlInput,
   type CreateSalesmanInput,
   type ListSalesmenInput,
   type SalesmanHistoryRangeInput,
@@ -41,13 +46,20 @@ class SalesmanService {
     return getSalesmanById(salesmanId);
   }
 
-  public async getSalesmanWithProfile(salesmanId: string): Promise<SalesmanWithProfile | undefined> {
+  public async getSalesmanWithProfile(
+    salesmanId: string,
+  ): Promise<SalesmanWithProfile | undefined> {
     return getSalesmanWithProfileById(salesmanId);
   }
 
-  public async listSalesmen(input: ListSalesmenInput): Promise<PaginatedResult<SalesmanWithProfile>> {
+  public async listSalesmen(
+    input: ListSalesmenInput,
+  ): Promise<PaginatedResult<SalesmanWithProfile>> {
     const parsedInput = listSalesmenInputSchema.parse(input);
-    return listActiveSalesmenWithProfiles(parsedInput);
+    return listSalesmenWithProfiles(
+      { page: parsedInput.page, pageSize: parsedInput.pageSize },
+      parsedInput.includeDeleted,
+    );
   }
 
   public async updateSalesmanCode(
@@ -66,8 +78,18 @@ class SalesmanService {
     salesmanId: string,
     changes: UpdateSalesmanProfileInput,
   ): Promise<SelectProfile | undefined> {
-    const parsedChanges = updateSalesmanProfileInputSchema.parse(changes);
-    return updateProfile(salesmanId, parsedChanges);
+    return updateProfileNameAndAvatar(salesmanId, changes);
+  }
+
+  public async deleteSalesmanAvatar(salesmanId: string): Promise<SelectProfile | undefined> {
+    return deleteProfileAvatar(salesmanId);
+  }
+
+  public async createAvatarUploadUrl(
+    salesmanId: string,
+    input: CreateAvatarUploadUrlInput,
+  ): Promise<ProfileAvatarUploadUrlResult> {
+    return createProfileAvatarUploadUrl(salesmanId, input);
   }
 
   public async getDayWiseHistory(
@@ -80,3 +102,5 @@ class SalesmanService {
 }
 
 export default SalesmanService;
+
+export { allowedAvatarImageContentTypes, createAvatarUploadUrlInputSchema } from "./model";

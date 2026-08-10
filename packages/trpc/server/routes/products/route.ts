@@ -36,8 +36,11 @@ export const productsRouter = router({
     })
     .input(listProductsInputSchema)
     .output(apiResponseSchema(paginatedProductsSchema))
-    .query(async ({ input }) => {
-      const result = await productService.listProducts(input);
+    .query(async ({ input, ctx }) => {
+      const result =
+        ctx.user?.role === "admin"
+          ? await productService.listProductsForAdmin(input)
+          : await productService.listProducts(input);
       return apiResponse(result);
     }),
 
@@ -68,7 +71,8 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Get a product image upload URL",
-        description: "Return a short-lived URL the browser can upload a product image to directly. Admin only.",
+        description:
+          "Return a short-lived URL the browser can upload a product image to directly. Admin only.",
       },
     })
     .input(createImageUploadUrlInputSchema)
@@ -76,6 +80,25 @@ export const productsRouter = router({
     .mutation(async ({ input }) => {
       const result = await productService.createImageUploadUrl(input);
       return apiResponse(result);
+    }),
+
+  deleteImage: adminProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/:id/image"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Delete a product image",
+        description: "Remove the product image and clear it from the product record. Admin only.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.deleteProductImage(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
     }),
 
   create: adminProcedure
@@ -131,6 +154,44 @@ export const productsRouter = router({
     .output(apiResponseSchema(productSchema))
     .mutation(async ({ input }) => {
       const product = await productService.deactivateProduct(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
+    }),
+
+  reactivate: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/reactivate"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Reactivate a product",
+        description: "Mark a product as active again.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.reactivateProduct(input.id);
+      if (!product) throw notFound(`Product ${input.id} not found`);
+      return apiResponse(product);
+    }),
+
+  delete: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/:id/delete"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Delete a product",
+        description: "Soft-delete an existing product.",
+      },
+    })
+    .input(productIdInputSchema)
+    .output(apiResponseSchema(productSchema))
+    .mutation(async ({ input }) => {
+      const product = await productService.deleteProduct(input.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),
@@ -199,7 +260,8 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Deactivate a product variety",
-        description: "Mark a product variety as inactive. The record stays for history and reports.",
+        description:
+          "Mark a product variety as inactive. The record stays for history and reports.",
       },
     })
     .input(varietyIdInputSchema)

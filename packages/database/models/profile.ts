@@ -14,6 +14,10 @@ export const profilesTable = pgTable("profiles", {
 
   phone: varchar("phone", { length: 20 }),
 
+  avatarKey: text("avatar_key"),
+
+  avatarUrl: text("avatar_url"),
+
   status: entityStatusEnum("status").notNull().default("active"),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

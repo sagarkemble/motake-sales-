@@ -5,6 +5,7 @@ import { trpc } from "~/trpc/client";
 import { emptyPaginatedResult } from "./shared/pagination";
 
 interface UseSalesmenParams {
+  salesmanId?: string;
   listFilters?: RouterInputs["salesmen"]["list"];
   historyFilters?: RouterInputs["salesmen"]["getHistory"];
   includeMyProfile?: boolean;
@@ -12,6 +13,7 @@ interface UseSalesmenParams {
 }
 
 export function useSalesmen({
+  salesmanId,
   listFilters,
   historyFilters,
   includeMyProfile = false,
@@ -26,6 +28,10 @@ export function useSalesmen({
     historyFilters ?? { id: "", from: "", to: "" },
     { enabled: enabled && Boolean(historyFilters?.id) },
   );
+  const salesmanByIdQuery = trpc.salesmen.getById.useQuery(
+    { id: salesmanId ?? "" },
+    { enabled: enabled && Boolean(salesmanId) },
+  );
   const mySalesmanProfileQuery = trpc.salesmen.getMyProfile.useQuery(undefined, {
     enabled: enabled && includeMyProfile,
   });
@@ -36,12 +42,33 @@ export function useSalesmen({
   const deactivateSalesmanAccountMutation = trpc.salesmen.deactivate.useMutation({
     onSuccess: () => utils.salesmen.invalidate(),
   });
+  const reactivateSalesmanAccountMutation = trpc.salesmen.reactivate.useMutation({
+    onSuccess: () => utils.salesmen.invalidate(),
+  });
+  const deleteSalesmanAccountMutation = trpc.salesmen.delete.useMutation({
+    onSuccess: () => utils.salesmen.invalidate(),
+  });
   const updateSalesmanAccountMutation = trpc.salesmen.update.useMutation({
     onSuccess: () => utils.salesmen.invalidate(),
   });
+  const updateMyProfileMutation = trpc.salesmen.updateMyProfile.useMutation({
+    onSuccess: () => {
+      utils.salesmen.invalidate();
+      utils.auth.me.invalidate();
+    },
+  });
+  const createAvatarUploadUrlMutation = trpc.salesmen.createAvatarUploadUrl.useMutation();
+  const deleteMyAvatarMutation = trpc.salesmen.deleteMyAvatar.useMutation({
+    onSuccess: () => {
+      utils.salesmen.invalidate();
+      utils.auth.me.invalidate();
+    },
+  });
 
   return {
-    salesmenPage: salesmenListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    salesmenPage:
+      salesmenListQuery.data?.data ??
+      emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isSalesmenListLoading: salesmenListQuery.isLoading,
     isSalesmenListError: salesmenListQuery.isError,
     refetchSalesmenList: salesmenListQuery.refetch,
@@ -50,6 +77,11 @@ export function useSalesmen({
     isSalesmanHistoryLoading: salesmanHistoryQuery.isLoading,
     isSalesmanHistoryError: salesmanHistoryQuery.isError,
     refetchSalesmanHistory: salesmanHistoryQuery.refetch,
+
+    salesmanById: salesmanByIdQuery.data?.data ?? null,
+    isSalesmanByIdLoading: salesmanByIdQuery.isLoading,
+    isSalesmanByIdError: salesmanByIdQuery.isError,
+    refetchSalesmanById: salesmanByIdQuery.refetch,
 
     mySalesmanProfile: mySalesmanProfileQuery.data?.data ?? null,
     isMySalesmanProfileLoading: mySalesmanProfileQuery.isLoading,
@@ -66,9 +98,33 @@ export function useSalesmen({
     isDeactivatingSalesmanAccount: deactivateSalesmanAccountMutation.isPending,
     deactivateSalesmanAccountError: deactivateSalesmanAccountMutation.error ?? null,
 
+    reactivateSalesmanAccount: reactivateSalesmanAccountMutation.mutate,
+    reactivateSalesmanAccountAsync: reactivateSalesmanAccountMutation.mutateAsync,
+    isReactivatingSalesmanAccount: reactivateSalesmanAccountMutation.isPending,
+    reactivateSalesmanAccountError: reactivateSalesmanAccountMutation.error ?? null,
+
+    deleteSalesmanAccount: deleteSalesmanAccountMutation.mutate,
+    deleteSalesmanAccountAsync: deleteSalesmanAccountMutation.mutateAsync,
+    isDeletingSalesmanAccount: deleteSalesmanAccountMutation.isPending,
+    deleteSalesmanAccountError: deleteSalesmanAccountMutation.error ?? null,
+
     updateSalesmanAccount: updateSalesmanAccountMutation.mutate,
     updateSalesmanAccountAsync: updateSalesmanAccountMutation.mutateAsync,
     isUpdatingSalesmanAccount: updateSalesmanAccountMutation.isPending,
     updateSalesmanAccountError: updateSalesmanAccountMutation.error ?? null,
+
+    updateMyProfile: updateMyProfileMutation.mutate,
+    updateMyProfileAsync: updateMyProfileMutation.mutateAsync,
+    isUpdatingMyProfile: updateMyProfileMutation.isPending,
+    updateMyProfileError: updateMyProfileMutation.error ?? null,
+
+    createAvatarUploadUrlAsync: createAvatarUploadUrlMutation.mutateAsync,
+    isCreatingAvatarUploadUrl: createAvatarUploadUrlMutation.isPending,
+    createAvatarUploadUrlError: createAvatarUploadUrlMutation.error ?? null,
+
+    deleteMyAvatar: deleteMyAvatarMutation.mutate,
+    deleteMyAvatarAsync: deleteMyAvatarMutation.mutateAsync,
+    isDeletingMyAvatar: deleteMyAvatarMutation.isPending,
+    deleteMyAvatarError: deleteMyAvatarMutation.error ?? null,
   };
 }

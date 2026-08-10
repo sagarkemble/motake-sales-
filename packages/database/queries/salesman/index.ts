@@ -55,11 +55,12 @@ export async function getSalesmanWithProfileById(
   return row;
 }
 
-export async function listActiveSalesmenWithProfiles(
+export async function listSalesmenWithProfiles(
   pagination: PaginationParams,
+  includeDeleted = false,
 ): Promise<PaginatedResult<SalesmanWithProfile>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
-  const whereClause = and(eq(profilesTable.status, "active"), isNull(profilesTable.deletedAt));
+  const whereClause = includeDeleted ? undefined : isNull(profilesTable.deletedAt);
 
   const [rows, countRows] = await Promise.all([
     db
@@ -76,8 +77,17 @@ export async function listActiveSalesmenWithProfiles(
       .where(whereClause),
   ]);
 
-  const { totalCount } = firstOrThrow(countRows, "listActiveSalesmenWithProfiles count");
+  const { totalCount } = firstOrThrow(countRows, "listSalesmenWithProfiles count");
   return toPaginatedResult(rows, totalCount, pagination);
+}
+
+export async function reactivateSalesman(salesmanId: string): Promise<SelectProfile | undefined> {
+  const [reactivatedProfile] = await db
+    .update(profilesTable)
+    .set({ status: "active", deletedAt: null })
+    .where(eq(profilesTable.id, salesmanId))
+    .returning();
+  return reactivatedProfile;
 }
 
 export async function updateSalesmanCode(
@@ -141,7 +151,9 @@ export async function getSalesmanDayWiseHistory(
     )
     .groupBy(sql`date(${ordersTable.placedAt})`);
 
-  const preOrderedQtyByDate = new Map(preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]));
+  const preOrderedQtyByDate = new Map(
+    preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]),
+  );
 
   return gatepassRows.map((row) => ({
     businessDate: row.businessDate,

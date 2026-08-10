@@ -44,7 +44,9 @@ class CustomerService {
     return getCustomerStats(customerId);
   }
 
-  public async searchCustomers(input: ListCustomersInput): Promise<PaginatedResult<SelectCustomer>> {
+  public async searchCustomers(
+    input: ListCustomersInput,
+  ): Promise<PaginatedResult<SelectCustomer>> {
     const parsedInput = listCustomersInputSchema.parse(input);
     return searchActiveCustomers(parsedInput.searchTerm, parsedInput);
   }

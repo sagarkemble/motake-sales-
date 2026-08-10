@@ -1,9 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import {
-  clearCookieFactory,
-  createCookieFactory,
-  getCookieFactory,
-} from "./utils/cookie";
+import { clearCookieFactory, createCookieFactory, getCookieFactory } from "./utils/cookie";
 
 export interface TRPCCtxUser {
   id: string;
@@ -52,9 +48,7 @@ export async function createContext({
 
     req: {
       headers: req.headers as Record<string, string | string[] | undefined>,
-      socket: req.socket
-        ? { remoteAddress: req.socket.remoteAddress ?? null }
-        : undefined,
+      socket: req.socket ? { remoteAddress: req.socket.remoteAddress ?? null } : undefined,
       ip: req.ip ?? null,
     },
 

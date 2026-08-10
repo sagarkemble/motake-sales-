@@ -22,6 +22,10 @@ export default function EditProductPage() {
     isUpdatingProduct,
     deactivateProductAsync,
     isDeactivatingProduct,
+    reactivateProductAsync,
+    isReactivatingProduct,
+    deleteProductAsync,
+    isDeletingProduct,
   } = useProducts({ productId });
 
   async function handleSubmit(values: ProductFormValues) {
@@ -42,6 +46,25 @@ export default function EditProductPage() {
     }
   }
 
+  async function handleReactivate() {
+    try {
+      await reactivateProductAsync({ id: productId });
+      toast.success("Product reactivated");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not reactivate product. Try again."));
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm("Are you sure you want to soft-delete this product?")) return;
+    try {
+      await deleteProductAsync({ id: productId });
+      toast.success("Product deleted");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not delete product. Try again."));
+    }
+  }
+
   if (isProductLoading) {
     return <div className="p-4 text-sm text-muted-foreground">Loading</div>;
   }
@@ -59,21 +82,48 @@ export default function EditProductPage() {
           <p className="text-sm font-medium">{product.name}</p>
           <p className="text-xs text-muted-foreground">Product status</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={product.status} />
+          {product.deletedAt && (
+            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
+              Deleted
+            </span>
+          )}
+          {product.status === "active" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              disabled={isDeactivatingProduct || Boolean(product.deletedAt)}
+              onClick={handleDeactivate}
+            >
+              Deactivate
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full border-brand text-brand hover:bg-brand/10"
+              disabled={isReactivatingProduct || Boolean(product.deletedAt)}
+              onClick={handleReactivate}
+            >
+              Reactivate
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full"
-            disabled={product.status === "inactive" || isDeactivatingProduct}
-            onClick={handleDeactivate}
+            className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+            disabled={isDeletingProduct || Boolean(product.deletedAt)}
+            onClick={handleDelete}
           >
-            Deactivate
+            Delete
           </Button>
         </div>
       </div>
 
       <ProductForm
+        productId={productId}
         defaultValues={{
           name: product.name,
           description: product.description ?? "",

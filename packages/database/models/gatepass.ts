@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  date,
-  timestamp,
-  text,
-  boolean,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, date, timestamp, text, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { gatepassStatusEnum } from "./enums";
 import { profilesTable } from "./profile";
@@ -45,9 +37,9 @@ export const gatepassesTable = pgTable(
   (table) => [
     uniqueIndex("gatepasses_salesman_business_date_unique").on(
       table.salesmanId,
-      table.businessDate
+      table.businessDate,
     ),
-  ]
+  ],
 );
 
 export type SelectGatepass = typeof gatepassesTable.$inferSelect;

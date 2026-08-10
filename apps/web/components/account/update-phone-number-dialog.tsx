@@ -5,12 +5,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/components/ui/input-otp";
 import { Label } from "~/components/ui/label";
@@ -139,7 +134,11 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
               >
                 <InputOTPGroup className="w-full justify-between">
                   {Array.from({ length: 6 }, (_, slotIndex) => (
-                    <InputOTPSlot key={slotIndex} index={slotIndex} className="h-12 w-12 text-base" />
+                    <InputOTPSlot
+                      key={slotIndex}
+                      index={slotIndex}
+                      className="h-12 w-12 text-base"
+                    />
                   ))}
                 </InputOTPGroup>
               </InputOTP>

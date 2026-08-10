@@ -6,6 +6,7 @@ node_modules/
 apps/web/node_modules/
 apps/api/node_modules/
 packages/*/node_modules/
+testing/
 .pnp
 .pnp.js
 .yarn/install-state.gz
@@ -16,7 +17,6 @@ files_to_zip.txt
 *.zip
 motake.zip
 files_to_zip.txt
-
 # Build outputs
 dist/
 build/
@@ -55,6 +55,12 @@ Thumbs.db
 
 # Certificates / keys
 *.pem
+
+# Generated deploy config
+deploy/Caddyfile
+deploy/motake.caddy
+deploy/runtime.env
+deploy/ecosystem.config.cjs
 
 # IDE
 .idea/

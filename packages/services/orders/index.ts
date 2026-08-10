@@ -19,6 +19,7 @@ import {
   type OrderWithItems,
 } from "@repo/database/queries/orders";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
+import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
 import type { SelectOrder } from "@repo/database/schema";
 
 import { badRequest, conflict, notFound } from "../errors";
@@ -91,7 +92,10 @@ class OrderService {
       }
     }
 
-    const totalQuantity = parsedInput.items.reduce((runningTotal, item) => runningTotal + item.quantity, 0);
+    const totalQuantity = parsedInput.items.reduce(
+      (runningTotal, item) => runningTotal + item.quantity,
+      0,
+    );
     return createOrderWithItems(
       {
         orderCode: generateOrderCode("PO"),
@@ -127,17 +131,28 @@ class OrderService {
   }
 
   public async listDuePreorders(businessDate: string): Promise<SelectOrder[]> {
+    await transitionScheduledPreordersToDue(businessDate);
     return listDuePreordersForDate(businessDate);
   }
 
-  public async transitionScheduledPreordersToDue(businessDate: string): Promise<SelectOrder[]> {
-    return transitionScheduledPreordersToDue(businessDate);
-  }
-
   public async fulfillOrder(orderId: string, fulfilledBy: string): Promise<SelectOrder> {
+    const orderWithItems = await getOrderWithItemsById(orderId);
+    if (!orderWithItems) {
+      throw notFound(`Order ${orderId} not found`);
+    }
+
+    if (orderWithItems.order.type === "pre_order") {
+      const todayBusinessDate = toIstBusinessDate(new Date());
+      if (orderWithItems.order.scheduledDate! > todayBusinessDate) {
+        throw badRequest(
+          `Pre-order is scheduled for ${orderWithItems.order.scheduledDate} and cannot be fulfilled before that date`,
+        );
+      }
+    }
+
     const fulfilledOrder = await markOrderFulfilled(orderId, fulfilledBy, new Date());
     if (!fulfilledOrder) {
-      throw notFound(`Order ${orderId} not found or already fulfilled`);
+      throw notFound(`Order ${orderId} not found, not yours, or already fulfilled`);
     }
     return fulfilledOrder;
   }
@@ -157,7 +172,10 @@ class OrderService {
     return countOrdersPlacedInRange(filters, range);
   }
 
-  public async getOrderCountsPerSalesman(range: { from: Date; to: Date }): Promise<OrderCountBySalesman[]> {
+  public async getOrderCountsPerSalesman(range: {
+    from: Date;
+    to: Date;
+  }): Promise<OrderCountBySalesman[]> {
     return getOrderCountsPerSalesmanInRange(range);
   }
 }

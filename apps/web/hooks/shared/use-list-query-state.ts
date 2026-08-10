@@ -30,7 +30,9 @@ export function useListQueryState({ withSearch = true }: UseListQueryStateParams
     const nextQueryString = nextSearchParams.toString();
     const currentQueryString = searchParams.toString();
     if (nextQueryString !== currentQueryString) {
-      router.replace(`${pathname}${nextQueryString ? `?${nextQueryString}` : ""}`, { scroll: false });
+      router.replace(`${pathname}${nextQueryString ? `?${nextQueryString}` : ""}`, {
+        scroll: false,
+      });
     }
   }, [debouncedSearchTerm, withSearch, searchTermFromUrl, searchParams, pathname, router]);
 

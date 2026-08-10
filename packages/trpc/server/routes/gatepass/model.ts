@@ -38,6 +38,17 @@ export const gatepassWithItemsSchema = z.object({
   items: z.array(gatepassItemSchema),
 });
 
+export const gatepassWithItemsAndNamesSchema = gatepassWithItemsSchema.extend({
+  issuedByName: z.string().nullable(),
+  closedByName: z.string().nullable(),
+});
+
+export const gatepassHistoryRowSchema = z.object({
+  gatepass: gatepassSchema,
+  totalIssuedQty: z.number(),
+  totalSoldQty: z.number(),
+});
+
 export const allotGatepassInputSchema = z.object({
   salesmanId: z.string().uuid(),
   businessDate: z.string(),
@@ -80,4 +91,8 @@ export const gatepassEndOfDayTotalsSchema = z.object({
   totalSoldQty: z.number(),
   totalReturnedQty: z.number(),
   discrepancyGatepassCount: z.number(),
+});
+
+export const canonicalDateSchema = z.object({
+  businessDate: z.string(),
 });

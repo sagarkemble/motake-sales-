@@ -11,14 +11,19 @@ export const updateSalesmanCodeInputSchema = z.object({
 });
 export type UpdateSalesmanCodeInput = z.infer<typeof updateSalesmanCodeInputSchema>;
 
-export const updateSalesmanProfileInputSchema = z.object({
-  name: z.string().min(1).max(120),
-});
-export type UpdateSalesmanProfileInput = z.infer<typeof updateSalesmanProfileInputSchema>;
+export {
+  updateProfileNameAndAvatarInputSchema as updateSalesmanProfileInputSchema,
+  createProfileAvatarUploadUrlInputSchema as createAvatarUploadUrlInputSchema,
+  allowedAvatarImageContentTypes,
+  maxAvatarImageContentLengthBytes,
+  type UpdateProfileNameAndAvatarInput as UpdateSalesmanProfileInput,
+  type CreateProfileAvatarUploadUrlInput as CreateAvatarUploadUrlInput,
+} from "../shared/profile-avatar";
 
 export const listSalesmenInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
+  includeDeleted: z.boolean().optional().default(false),
 });
 export type ListSalesmenInput = z.infer<typeof listSalesmenInputSchema>;
 

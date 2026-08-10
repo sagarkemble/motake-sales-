@@ -1,12 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  pgTable,
-  uuid,
-  integer,
-  timestamp,
-  uniqueIndex,
-  check,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, timestamp, uniqueIndex, check } from "drizzle-orm/pg-core";
 
 import { ordersTable } from "./order";
 import { productVarietiesTable } from "./product-variety";
@@ -31,7 +24,7 @@ export const orderItemsTable = pgTable(
   (table) => [
     uniqueIndex("order_items_order_variety_unique").on(table.orderId, table.varietyId),
     check("order_items_quantity_check", sql`${table.quantity} > 0`),
-  ]
+  ],
 );
 
 export type SelectOrderItem = typeof orderItemsTable.$inferSelect;

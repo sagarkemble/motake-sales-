@@ -2,6 +2,7 @@
 
 import { format, subDays } from "date-fns";
 
+import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { useSalesmen } from "~/hooks/use-salesmen";
 
 interface SalesTabProps {
@@ -54,6 +55,8 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
           </div>
         ))}
       </div>
+
+      <OrderHistoryPanel salesmanId={salesmanId} heading="Sales history" />
     </div>
   );
 }

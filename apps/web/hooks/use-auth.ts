@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { useState } from "react";
 
 import { supabaseBrowserClient } from "~/lib/supabase-browser-client";
+import { CART_LOCAL_STORAGE_KEY } from "~/providers/cart-provider";
 import { trpc } from "~/trpc/client";
 
 const MAGIC_LINK_SESSION_WAIT_MS = 5000;
@@ -27,6 +29,7 @@ interface ConfirmPhoneNumberChangeParams {
 
 export function useAuth({ enabled = true }: UseAuthParams = {}) {
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [oneTimePasscodeError, setOneTimePasscodeError] = useState<Error | null>(null);
   const [isSendingOneTimePasscode, setIsSendingOneTimePasscode] = useState(false);
@@ -40,14 +43,28 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
   const [isRequestingPhoneNumberChange, setIsRequestingPhoneNumberChange] = useState(false);
   const [isConfirmingPhoneNumberChange, setIsConfirmingPhoneNumberChange] = useState(false);
 
-  const signedInUserQuery = trpc.auth.me.useQuery(undefined, { enabled });
+  const signedInUserQuery = trpc.auth.me.useQuery(undefined, { enabled, retry: false });
   const createSessionMutation = trpc.auth.createSession.useMutation({
     onSuccess: () => utils.auth.me.invalidate(),
   });
   const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => utils.auth.me.invalidate(),
+    onSuccess: () => {
+      void supabaseBrowserClient.auth.signOut();
+      queryClient.clear();
+      try {
+        window.localStorage.removeItem(CART_LOCAL_STORAGE_KEY);
+      } catch {}
+      utils.auth.me.invalidate();
+    },
   });
   const confirmPhoneNumberMutation = trpc.auth.confirmPhoneNumber.useMutation({
+    onSuccess: () => utils.auth.me.invalidate(),
+  });
+  const updateMyProfileMutation = trpc.auth.updateMyProfile.useMutation({
+    onSuccess: () => utils.auth.me.invalidate(),
+  });
+  const createAvatarUploadUrlMutation = trpc.auth.createAvatarUploadUrl.useMutation();
+  const deleteMyAvatarMutation = trpc.auth.deleteMyAvatar.useMutation({
     onSuccess: () => utils.auth.me.invalidate(),
   });
 
@@ -121,19 +138,25 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
   }
 
   async function waitForMagicLinkSession(): Promise<Session> {
-    const { data } = await supabaseBrowserClient.auth.getSession();
-    if (data.session) return data.session;
+    const { data: initialData } = await supabaseBrowserClient.auth.getSession();
+    if (initialData.session) return initialData.session;
 
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         authStateSubscription.unsubscribe();
-        reject(new Error("The sign-in link is wrong or expired."));
+        void supabaseBrowserClient.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            resolve(data.session);
+          } else {
+            reject(new Error("The sign-in link is wrong or expired."));
+          }
+        });
       }, MAGIC_LINK_SESSION_WAIT_MS);
 
       const {
         data: { subscription: authStateSubscription },
       } = supabaseBrowserClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) {
+        if (session && event !== "SIGNED_OUT") {
           clearTimeout(timeoutId);
           authStateSubscription.unsubscribe();
           resolve(session);
@@ -225,5 +248,19 @@ export function useAuth({ enabled = true }: UseAuthParams = {}) {
     confirmPhoneNumberChange,
     isConfirmingPhoneNumberChange,
     phoneNumberChangeError,
+
+    updateMyProfile: updateMyProfileMutation.mutate,
+    updateMyProfileAsync: updateMyProfileMutation.mutateAsync,
+    isUpdatingMyProfile: updateMyProfileMutation.isPending,
+    updateMyProfileError: updateMyProfileMutation.error ?? null,
+
+    createAvatarUploadUrlAsync: createAvatarUploadUrlMutation.mutateAsync,
+    isCreatingAvatarUploadUrl: createAvatarUploadUrlMutation.isPending,
+    createAvatarUploadUrlError: createAvatarUploadUrlMutation.error ?? null,
+
+    deleteMyAvatar: deleteMyAvatarMutation.mutate,
+    deleteMyAvatarAsync: deleteMyAvatarMutation.mutateAsync,
+    isDeletingMyAvatar: deleteMyAvatarMutation.isPending,
+    deleteMyAvatarError: deleteMyAvatarMutation.error ?? null,
   };
 }

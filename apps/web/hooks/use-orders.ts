@@ -48,6 +48,7 @@ export function useOrders({
   });
   const fulfillOrderMutation = trpc.orders.fulfill.useMutation({
     onSuccess: () => utils.orders.invalidate(),
+    onError: () => utils.orders.invalidate(),
   });
   const cancelOrderMutation = trpc.orders.cancel.useMutation({
     onSuccess: () => {
@@ -57,7 +58,8 @@ export function useOrders({
   });
 
   return {
-    ordersPage: ordersListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
+    ordersPage:
+      ordersListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isOrdersListLoading: ordersListQuery.isLoading,
     isOrdersListError: ordersListQuery.isError,
     refetchOrdersList: ordersListQuery.refetch,

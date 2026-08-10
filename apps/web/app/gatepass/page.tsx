@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarIcon, PackageIcon, SearchIcon } from "lucide-react";
@@ -25,6 +25,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 
 const MAX_CATALOG_PAGE_SIZE = 200;
 
@@ -36,7 +37,7 @@ interface CatalogItem {
   productImageUrl: string | null;
 }
 
-export default function GatepassPage() {
+function GatepassPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedSalesmanId = searchParams.get("salesmanId") ?? "";
@@ -55,7 +56,7 @@ export default function GatepassPage() {
 
   const [selectedSalesmanId, setSelectedSalesmanId] = useState(preselectedSalesmanId);
   const [businessDate, setBusinessDate] = useState(new Date());
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [quantitiesByVarietyId, setQuantitiesByVarietyId] = useState<Record<string, number>>({});
 
   const businessDateKey = format(businessDate, "yyyy-MM-dd");
@@ -64,7 +65,11 @@ export default function GatepassPage() {
     listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
+    listFilters: {
+      searchTerm: debouncedSearchTerm || undefined,
+      page: 1,
+      pageSize: MAX_CATALOG_PAGE_SIZE,
+    },
   });
   const { allotGatepassAsync, isAllottingGatepass } = useGatepasses({
     businessDate: businessDateKey,
@@ -115,7 +120,11 @@ export default function GatepassPage() {
     }
 
     try {
-      await allotGatepassAsync({ salesmanId: selectedSalesmanId, businessDate: businessDateKey, items });
+      await allotGatepassAsync({
+        salesmanId: selectedSalesmanId,
+        businessDate: businessDateKey,
+        items,
+      });
       toast.success("Gate pass allotted");
       router.push(`/admin/salesman/${selectedSalesmanId}`);
     } catch (error) {
@@ -249,5 +258,19 @@ export default function GatepassPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function GatepassPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-dvh items-center justify-center bg-background">
+          <Spinner className="size-6 text-muted-foreground" />
+        </main>
+      }
+    >
+      <GatepassPageContent />
+    </Suspense>
   );
 }

@@ -3,9 +3,11 @@ import {
   createProductVariety,
   getProductById,
   getProductVarietyBySku,
+  hardArchiveProduct,
   listActiveProductsWithVarieties,
+  listProductsForAdminWithVarieties,
   listVarietiesByProductId,
-  softDeleteProduct,
+  reactivateProduct,
   softDeleteProductVariety,
   updateProduct,
   updateProductVariety,
@@ -15,7 +17,12 @@ import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
 import { conflict, notFound } from "../errors";
-import { buildObjectKey, buildPublicUrl, createPresignedUploadUrl } from "../uploads/r2-client";
+import {
+  buildObjectKey,
+  buildPublicUrl,
+  createPresignedUploadUrl,
+  deleteObject,
+} from "../uploads/r2-client";
 import {
   createImageUploadUrlInputSchema,
   createProductInputSchema,
@@ -54,14 +61,45 @@ class ProductService {
     changes: UpdateProductInput,
   ): Promise<SelectProduct | undefined> {
     const parsedChanges = updateProductInputSchema.parse(changes);
-    return updateProduct(productId, parsedChanges);
+    const existingProduct =
+      parsedChanges.imageKey !== undefined ? await getProductById(productId) : undefined;
+
+    const updatedProduct = await updateProduct(productId, parsedChanges);
+
+    if (existingProduct?.imageKey && existingProduct.imageKey !== parsedChanges.imageKey) {
+      await deleteObject(existingProduct.imageKey);
+    }
+
+    return updatedProduct;
+  }
+
+  public async deleteProductImage(productId: string): Promise<SelectProduct | undefined> {
+    const existingProduct = await getProductById(productId);
+    const updatedProduct = await updateProduct(productId, { imageKey: null, imageUrl: null });
+
+    if (existingProduct?.imageKey) {
+      await deleteObject(existingProduct.imageKey);
+    }
+
+    return updatedProduct;
   }
 
   public async deactivateProduct(productId: string): Promise<SelectProduct | undefined> {
-    return softDeleteProduct(productId);
+    return updateProduct(productId, { status: "inactive" });
   }
 
-  public async listProducts(input: ListProductsInput): Promise<PaginatedResult<ProductWithVarieties>> {
+  public async reactivateProduct(productId: string): Promise<SelectProduct | undefined> {
+    return reactivateProduct(productId);
+  }
+
+  public async deleteProduct(productId: string): Promise<SelectProduct | undefined> {
+    await updateProduct(productId, { status: "inactive" });
+    return hardArchiveProduct(productId);
+  }
+
+  public async listProducts(
+    input: ListProductsInput,
+  ): Promise<PaginatedResult<ProductWithVarieties>> {
     const parsedInput = listProductsInputSchema.parse(input);
     return listActiveProductsWithVarieties(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
@@ -69,7 +107,20 @@ class ProductService {
     );
   }
 
-  public async createProductVariety(input: CreateProductVarietyInput): Promise<SelectProductVariety> {
+  public async listProductsForAdmin(
+    input: ListProductsInput,
+  ): Promise<PaginatedResult<ProductWithVarieties>> {
+    const parsedInput = listProductsInputSchema.parse(input);
+    return listProductsForAdminWithVarieties(
+      { page: parsedInput.page, pageSize: parsedInput.pageSize },
+      parsedInput.searchTerm,
+      parsedInput.includeDeleted,
+    );
+  }
+
+  public async createProductVariety(
+    input: CreateProductVarietyInput,
+  ): Promise<SelectProductVariety> {
     const parsedInput = createProductVarietyInputSchema.parse(input);
     const parentProduct = await getProductById(parsedInput.productId);
     if (!parentProduct) {
@@ -100,13 +151,17 @@ class ProductService {
     return updateProductVariety(varietyId, parsedChanges);
   }
 
-  public async deactivateProductVariety(varietyId: string): Promise<SelectProductVariety | undefined> {
+  public async deactivateProductVariety(
+    varietyId: string,
+  ): Promise<SelectProductVariety | undefined> {
     return softDeleteProductVariety(varietyId);
   }
 
-  public async createImageUploadUrl(input: CreateImageUploadUrlInput): Promise<ImageUploadUrlResult> {
+  public async createImageUploadUrl(
+    input: CreateImageUploadUrlInput,
+  ): Promise<ImageUploadUrlResult> {
     const parsedInput = createImageUploadUrlInputSchema.parse(input);
-    const imageKey = buildObjectKey(productImageFolderName, parsedInput.fileName);
+    const imageKey = buildObjectKey(productImageFolderName, "admin", parsedInput.fileName);
     const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
     return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
   }

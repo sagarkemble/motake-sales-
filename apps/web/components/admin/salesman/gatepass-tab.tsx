@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
-
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -17,15 +15,15 @@ import { useGatepasses } from "~/hooks/use-gatepasses";
 
 interface GatepassTabProps {
   salesmanId: string;
+  isSalesmanDeleted?: boolean;
 }
 
-export function GatepassTab({ salesmanId }: GatepassTabProps) {
-  const businessDate = format(new Date(), "yyyy-MM-dd");
-
+export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassTabProps) {
+  const { canonicalBusinessDate: businessDate, isCanonicalDateLoading } = useGatepasses();
   const { gatepasses, allotmentMatrix, isGatepassesLoading, isAllotmentMatrixLoading } =
-    useGatepasses({ businessDate });
+    useGatepasses({ businessDate: businessDate || undefined, includeAdminOverview: true });
 
-  if (isGatepassesLoading || isAllotmentMatrixLoading) {
+  if (isCanonicalDateLoading || isGatepassesLoading || isAllotmentMatrixLoading || !businessDate) {
     return <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>;
   }
 
@@ -51,12 +49,14 @@ export function GatepassTab({ salesmanId }: GatepassTabProps) {
       </div>
 
       <Button
-        asChild={!todaysGatepass}
-        disabled={Boolean(todaysGatepass)}
+        asChild={!todaysGatepass && !isSalesmanDeleted}
+        disabled={Boolean(todaysGatepass) || isSalesmanDeleted}
         variant="outline"
         className="w-full rounded-full"
       >
-        {todaysGatepass ? (
+        {isSalesmanDeleted ? (
+          "Salesman deleted"
+        ) : todaysGatepass ? (
           "Already allotted today"
         ) : (
           <Link href={`/gatepass?salesmanId=${salesmanId}`}>Allot</Link>

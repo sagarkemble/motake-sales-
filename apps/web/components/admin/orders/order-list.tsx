@@ -5,7 +5,7 @@ import { format } from "date-fns";
 
 import { Button } from "~/components/ui/button";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
-import { OrderStatusBadge } from "~/components/admin/orders/order-status-badge";
+import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
 import { useOrders } from "~/hooks/use-orders";
 
@@ -30,33 +30,39 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
       ) : ordersPage.items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No orders yet</p>
       ) : (
-        ordersPage.items.map(({ order, customerShopName, customerPhone, salesmanCode }) => (
-          <button
-            key={order.id}
-            type="button"
-            onClick={() => setSelectedOrderId(order.id)}
-            className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{order.orderCode}</p>
-              <OrderStatusBadge status={order.status} />
-            </div>
-            <div>
-              <p className="text-sm">{customerShopName}</p>
-              <p className="text-xs text-muted-foreground">{customerPhone}</p>
-            </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Salesman {salesmanCode}</span>
-              <span>{order.totalQuantity} qty</span>
-              <span>
-                {format(
-                  new Date(orderType === "pre_order" && order.scheduledDate ? order.scheduledDate : order.placedAt),
-                  "d MMM yyyy",
-                )}
-              </span>
-            </div>
-          </button>
-        ))
+        ordersPage.items.map(
+          ({ order, customerShopName, customerPhone, salesmanCode, salesmanName }) => (
+            <button
+              key={order.id}
+              type="button"
+              onClick={() => setSelectedOrderId(order.id)}
+              className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{order.orderCode}</p>
+                <OrderStatusBadge status={order.status} />
+              </div>
+              <div>
+                <p className="text-sm">{customerShopName}</p>
+                <p className="text-xs text-muted-foreground">{customerPhone}</p>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Salesman {salesmanName ?? salesmanCode}</span>
+                <span>{order.totalQuantity} qty</span>
+                <span>
+                  {format(
+                    new Date(
+                      orderType === "pre_order" && order.scheduledDate
+                        ? order.scheduledDate
+                        : order.placedAt,
+                    ),
+                    "d MMM yyyy",
+                  )}
+                </span>
+              </div>
+            </button>
+          ),
+        )
       )}
 
       {ordersPage.totalPages > 1 && (

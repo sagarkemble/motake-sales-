@@ -29,7 +29,5 @@ export const tooManyRequests = (
     code: "TOO_MANY_REQUESTS",
     message,
     cause:
-      retryAfterMs !== undefined
-        ? Object.assign(new Error(message), { retryAfterMs })
-        : undefined,
+      retryAfterMs !== undefined ? Object.assign(new Error(message), { retryAfterMs }) : undefined,
   });

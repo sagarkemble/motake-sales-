@@ -1,0 +1,109 @@
+"use client";
+
+import { PackageIcon } from "lucide-react";
+
+import { QuantityStepper } from "~/components/shared/quantity-stepper";
+import { Button } from "~/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "~/components/ui/drawer";
+import { useCart } from "~/providers/cart-provider";
+
+interface ProductVarietyOption {
+  varietyId: string;
+  varietyName: string;
+  unit: string;
+}
+
+interface AddToCartDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  productId: string;
+  productName: string;
+  productImageUrl: string | null;
+  varieties: ProductVarietyOption[];
+}
+
+export function AddToCartDrawer({
+  open,
+  onOpenChange,
+  productId,
+  productName,
+  productImageUrl,
+  varieties,
+}: AddToCartDrawerProps) {
+  const { getQuantityForVariety, setQuantityForVariety } = useCart();
+
+  function handleQuantityChange(variety: ProductVarietyOption, quantity: number) {
+    setQuantityForVariety(
+      {
+        varietyId: variety.varietyId,
+        productId,
+        productName,
+        varietyName: variety.varietyName,
+        unit: variety.unit,
+        productImageUrl,
+      },
+      quantity,
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader className="flex flex-row items-center gap-3 text-left">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
+            {productImageUrl ? (
+              <img
+                src={productImageUrl}
+                alt={productName}
+                className="size-full object-contain p-1"
+              />
+            ) : (
+              <PackageIcon className="size-6 text-muted-foreground" />
+            )}
+          </div>
+          <DrawerTitle className="text-base">{productName}</DrawerTitle>
+        </DrawerHeader>
+
+        <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-2">
+          {varieties.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No sizes are set up for this product yet.
+            </p>
+          ) : (
+            varieties.map((variety) => (
+              <div
+                key={variety.varietyId}
+                className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{variety.varietyName}</p>
+                  <p className="text-xs text-muted-foreground">{variety.unit}</p>
+                </div>
+                <QuantityStepper
+                  quantity={getQuantityForVariety(variety.varietyId)}
+                  onQuantityChange={(quantity) => handleQuantityChange(variety, quantity)}
+                />
+              </div>
+            ))
+          )}
+        </div>
+
+        <DrawerFooter>
+          <Button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          >
+            Done
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
