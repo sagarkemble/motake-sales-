@@ -101,7 +101,9 @@ check_app_directory() {
 }
 
 check_pm2_startup() {
-  systemctl list-unit-files 2>/dev/null | grep -qE '^pm2-.*\.service'
+  local unit="pm2-${DEPLOY_USER}.service"
+  systemctl is-enabled "$unit" >/dev/null 2>&1 && return 0
+  [[ -f "/etc/systemd/system/${unit}" ]]
 }
 
 check_ufw() {
@@ -257,13 +259,17 @@ ensure_pm2_startup() {
   startup_output="$(pm2 startup systemd -u "${DEPLOY_USER}" --hp "/home/${DEPLOY_USER}" 2>&1 || true)"
   startup_cmd="$(printf '%s\n' "$startup_output" | grep -E '^sudo env' | tail -1)"
 
-  if [[ -z "$startup_cmd" ]]; then
-    echo "error: could not determine pm2 startup command" >&2
-    printf '%s\n' "$startup_output" >&2
-    return 1
+  if [[ -n "$startup_cmd" ]]; then
+    eval "$startup_cmd"
   fi
 
-  eval "$startup_cmd"
+  if check_pm2_startup; then
+    return 0
+  fi
+
+  echo "error: pm2 startup verification failed" >&2
+  printf '%s\n' "$startup_output" >&2
+  return 1
 }
 
 ensure_deploy_sudoers() {
