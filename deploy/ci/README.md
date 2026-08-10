@@ -52,8 +52,8 @@ Minimum:
 - `MOTAKE_FRONTEND_DOMAIN` — e.g. `motake-front.lunarstudio.dev`
 - `MOTAKE_API_DOMAIN` — e.g. `motake-back.lunarstudio.dev`
 - `MOTAKE_ROUTING_MODE` — `separate`
-- `MOTAKE_WEB_PORT` — `3001`
-- `MOTAKE_API_PORT` — `8001`
+- `MOTAKE_WEB_PORT` — `3000`
+- `MOTAKE_API_PORT` — `8000`
 
 ## Manual CI deploy on VPS
 

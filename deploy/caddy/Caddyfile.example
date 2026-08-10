@@ -9,10 +9,10 @@
 
 app.example.com {
 	encode gzip zstd
-	reverse_proxy localhost:3001
+	reverse_proxy localhost:3000
 }
 
 api.example.com {
 	encode gzip zstd
-	reverse_proxy localhost:8001
+	reverse_proxy localhost:8000
 }

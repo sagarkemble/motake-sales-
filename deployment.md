@@ -36,10 +36,10 @@ This document is the end-to-end implementation plan for automated **full-stack**
 │   User browser                                                          │
 │        │                                                                │
 │        ├──► https://motake-front.lunarstudio.dev                        │
-│        │         Caddy TLS → PM2 → motake-web (Next.js) :3001          │
+│        │         Caddy TLS → PM2 → motake-web (Next.js) :3000          │
 │        │                                                                │
 │        └──► https://motake-back.lunarstudio.dev/trpc                    │
-│                  Caddy TLS → PM2 → motake-api (Express + tRPC) :8001    │
+│                  Caddy TLS → PM2 → motake-api (Express + tRPC) :8000    │
 │                                                                         │
 │   Hostinger VPS  187.127.220.211  (srv1892671.hstgr.cloud)             │
 │                                                                         │
@@ -48,7 +48,7 @@ This document is the end-to-end implementation plan for automated **full-stack**
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         LOCAL DEV (unchanged)                           │
 ├─────────────────────────────────────────────────────────────────────────┤
-│   deploy/local/env-setup.sh  →  pnpm dev  (web :3001 + api :8001)       │
+│   deploy/local/env-setup.sh  →  pnpm dev  (web :3000 + api :8000)       │
 │   deploy/vps/deploy.sh       →  interactive full VPS deploy (same stack) │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -60,7 +60,7 @@ This document is the end-to-end implementation plan for automated **full-stack**
 | **Database** | Supabase PostgreSQL | `DATABASE_URL` in GitHub Secrets |
 | **Auth** | Supabase | Browser client (web) + service role (API) |
 | **TLS** | Caddy on VPS | Both subdomains |
-| **Reverse proxy** | Caddy | `motake-front` → :3001, `motake-back` → :8001 |
+| **Reverse proxy** | Caddy | `motake-front` → :3000, `motake-back` → :8000 |
 
 **Target VPS (Hostinger):**
 
@@ -232,8 +232,8 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 | `MOTAKE_FRONTEND_DOMAIN` | `motake-front.lunarstudio.dev` |
 | `MOTAKE_API_DOMAIN` | `motake-back.lunarstudio.dev` |
 | `MOTAKE_ROUTING_MODE` | `separate` |
-| `MOTAKE_WEB_PORT` | `3001` |
-| `MOTAKE_API_PORT` | `8001` |
+| `MOTAKE_WEB_PORT` | `3000` |
+| `MOTAKE_API_PORT` | `8000` |
 | `MOTAKE_INSTALL_TARGET` | `system` |
 | `NODE_ENV` | `production` |
 | `LOGGER_LEVEL` | `error` |
@@ -453,7 +453,7 @@ All scripts live under `deploy/ci/`. See [`deploy/ci/README.md`](deploy/ci/READM
 Example output:
 
 ```env
-PORT=8001
+PORT=8000
 NODE_ENV=production
 BASE_URL=https://motake-back.lunarstudio.dev
 DATABASE_URL=...
@@ -480,7 +480,7 @@ Non-interactive equivalent of `deploy/vps/deploy.sh`:
 
 ```
 1. Validate .env exists
-2. Resolve ports (3001 web, 8001 api — bump if busy)
+2. Resolve ports (3000 web, 8000 api — bump if busy)
 3. Write deploy/runtime.env
 4. Skip build if --skip-build (CI already built)
 5. Write deploy/ecosystem.config.cjs
@@ -501,8 +501,8 @@ Environment variables (no prompts):
 MOTAKE_ROUTING_MODE=separate
 MOTAKE_FRONTEND_DOMAIN=motake-front.lunarstudio.dev
 MOTAKE_API_DOMAIN=motake-back.lunarstudio.dev
-MOTAKE_FRONTEND_PORT=3001
-MOTAKE_API_PORT=8001
+MOTAKE_FRONTEND_PORT=3000
+MOTAKE_API_PORT=8000
 MOTAKE_INSTALL_TARGET=system
 ```
 
@@ -565,12 +565,12 @@ Caddy on VPS terminates TLS for **both** subdomains. Uses `deploy/vps/caddy-setu
 
 motake-front.lunarstudio.dev {
 	encode gzip zstd
-	reverse_proxy localhost:3001
+	reverse_proxy localhost:3000
 }
 
 motake-back.lunarstudio.dev {
 	encode gzip zstd
-	reverse_proxy localhost:8001
+	reverse_proxy localhost:8000
 }
 ```
 
@@ -580,8 +580,8 @@ motake-back.lunarstudio.dev {
 MOTAKE_ROUTING_MODE=separate \
 MOTAKE_FRONTEND_DOMAIN=motake-front.lunarstudio.dev \
 MOTAKE_API_DOMAIN=motake-back.lunarstudio.dev \
-MOTAKE_FRONTEND_PORT=3001 \
-MOTAKE_API_PORT=8001 \
+MOTAKE_FRONTEND_PORT=3000 \
+MOTAKE_API_PORT=8000 \
 MOTAKE_INSTALL_TARGET=system \
 MOTAKE_UPDATE_ENV=no \
 ./deploy/vps/caddy-setup.sh --non-interactive --force
@@ -633,11 +633,11 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 
 | Variable | Local dev (`.env`) | VPS production (`.env` from Secrets) |
 |----------|-------------------|--------------------------------------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8001/trpc` | `https://motake-back.lunarstudio.dev/trpc` |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/trpc` | `https://motake-back.lunarstudio.dev/trpc` |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | ✅ |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | ✅ |
-| `BASE_URL` | `http://localhost:8001` | `https://motake-back.lunarstudio.dev` |
-| `PORT` | `8001` | `8001` |
+| `BASE_URL` | `http://localhost:8000` | `https://motake-back.lunarstudio.dev` |
+| `PORT` | `8000` | `8000` |
 | `NODE_ENV` | `development` | `production` |
 | `DATABASE_URL` | ✅ | ✅ (secret) |
 | `JWT_SECRET` | ✅ | ✅ (secret) |

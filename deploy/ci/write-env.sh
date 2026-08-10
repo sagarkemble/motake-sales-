@@ -69,7 +69,7 @@ for var in "${REQUIRED_VARS[@]}"; do
   fi
 done
 
-PORT="${PORT:-8001}"
+PORT="${PORT:-8000}"
 NODE_ENV="${NODE_ENV:-production}"
 LOGGER_LEVEL="${LOGGER_LEVEL:-error}"
 CORS_ALLOWED_ORIGIN="${CORS_ALLOWED_ORIGIN:-}"

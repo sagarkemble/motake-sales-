@@ -22,6 +22,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,7 +81,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          PORT: ${{ vars.MOTAKE_API_PORT || '8001' }}
+          PORT: ${{ vars.MOTAKE_API_PORT || '8000' }}
           NODE_ENV: production
           LOGGER_LEVEL: ${{ vars.LOGGER_LEVEL || 'error' }}
           BASE_URL: ${{ secrets.BASE_URL }}
@@ -100,8 +101,8 @@ jobs:
           MOTAKE_ROUTING_MODE: ${{ vars.MOTAKE_ROUTING_MODE || 'separate' }}
           MOTAKE_FRONTEND_DOMAIN: ${{ vars.MOTAKE_FRONTEND_DOMAIN }}
           MOTAKE_API_DOMAIN: ${{ vars.MOTAKE_API_DOMAIN }}
-          MOTAKE_FRONTEND_PORT: ${{ vars.MOTAKE_WEB_PORT || '3001' }}
-          MOTAKE_API_PORT: ${{ vars.MOTAKE_API_PORT || '8001' }}
+          MOTAKE_FRONTEND_PORT: ${{ vars.MOTAKE_WEB_PORT || '3000' }}
+          MOTAKE_API_PORT: ${{ vars.MOTAKE_API_PORT || '8000' }}
           MOTAKE_INSTALL_TARGET: system
         run: |
           chmod +x deploy/ci/sync-to-vps.sh

@@ -22,8 +22,8 @@ Required environment variables:
   MOTAKE_ROUTING_MODE          separate|single
   MOTAKE_FRONTEND_DOMAIN       e.g. motake-front.lunarstudio.dev
   MOTAKE_API_DOMAIN            e.g. motake-back.lunarstudio.dev
-  MOTAKE_FRONTEND_PORT         default: 3001
-  MOTAKE_API_PORT              default: 8001
+  MOTAKE_FRONTEND_PORT         default: 3000
+  MOTAKE_API_PORT              default: 8000
   MOTAKE_INSTALL_TARGET        default: system
 
 Prerequisites:

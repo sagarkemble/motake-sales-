@@ -15,7 +15,7 @@ Usage: $(basename "$0") [--force] [--skip-build] [--skip-caddy]
 Interactive VPS deployment with PM2 + Caddy.
 
 Steps:
-  1/3  Check ports (3001 web, 8001 api) and assign free ports if busy
+  1/3  Check ports (3000 web, 8000 api) and assign free ports if busy
   2/3  Configure domains, build production apps, start/restart PM2 processes
   3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh
 

@@ -8,8 +8,8 @@ GENERATED_DIR="$DEPLOY_DIR/generated"
 PM2_DIR="$DEPLOY_DIR/pm2"
 CADDY_DIR="$DEPLOY_DIR/caddy"
 
-DEFAULT_WEB_PORT=3001
-DEFAULT_API_PORT=8001
+DEFAULT_WEB_PORT=3000
+DEFAULT_API_PORT=8000
 PM2_API_NAME="motake-api"
 PM2_WEB_NAME="motake-web"
 
@@ -308,8 +308,8 @@ run_caddy_setup() {
 }
 
 health_check_local() {
-  local api_port="${DEPLOY_API_PORT:-8001}"
-  local web_port="${DEPLOY_WEB_PORT:-3001}"
+  local api_port="${DEPLOY_API_PORT:-8000}"
+  local web_port="${DEPLOY_WEB_PORT:-3000}"
 
   echo
   echo "Health checks (localhost)..."

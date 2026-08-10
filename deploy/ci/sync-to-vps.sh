@@ -99,7 +99,7 @@ ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s <<REMOTE_SCRIPT
 set -euo pipefail
 cd "${VPS_APP_PATH}"
 
-export PORT="${PORT:-8001}"
+export PORT="${PORT:-8000}"
 export NODE_ENV="${NODE_ENV:-production}"
 export LOGGER_LEVEL="${LOGGER_LEVEL:-error}"
 export BASE_URL="${BASE_URL:?BASE_URL required}"
@@ -120,8 +120,8 @@ export CORS_ALLOWED_ORIGIN="${CORS_ALLOWED_ORIGIN:-}"
 export MOTAKE_ROUTING_MODE="${MOTAKE_ROUTING_MODE:-separate}"
 export MOTAKE_FRONTEND_DOMAIN="${MOTAKE_FRONTEND_DOMAIN:?MOTAKE_FRONTEND_DOMAIN required}"
 export MOTAKE_API_DOMAIN="${MOTAKE_API_DOMAIN:?MOTAKE_API_DOMAIN required}"
-export MOTAKE_FRONTEND_PORT="${MOTAKE_FRONTEND_PORT:-3001}"
-export MOTAKE_API_PORT="${MOTAKE_API_PORT:-8001}"
+export MOTAKE_FRONTEND_PORT="${MOTAKE_FRONTEND_PORT:-3000}"
+export MOTAKE_API_PORT="${MOTAKE_API_PORT:-8000}"
 export MOTAKE_INSTALL_TARGET="${MOTAKE_INSTALL_TARGET:-system}"
 
 chmod +x deploy/local/env-setup.sh deploy/vps/deploy.sh deploy/vps/caddy-setup.sh

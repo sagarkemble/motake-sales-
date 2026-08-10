@@ -28,8 +28,8 @@ Manual full-stack deployment to a VPS with PM2 and Caddy.
 
 | Name | App | Default port |
 |------|-----|--------------|
-| `motake-api` | Express + tRPC | 8001 |
-| `motake-web` | Next.js | 3001 |
+| `motake-api` | Express + tRPC | 8000 |
+| `motake-web` | Next.js | 3000 |
 
 Wrappers: `deploy/pm2/start-api.sh`, `deploy/pm2/start-web.sh`
 

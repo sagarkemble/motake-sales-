@@ -36,8 +36,8 @@ Non-interactive mode (used by deploy/vps/deploy.sh and deploy/ci/deploy.sh):
   MOTAKE_ROUTING_MODE=separate|single
   MOTAKE_FRONTEND_DOMAIN=app.example.com
   MOTAKE_API_DOMAIN=api.example.com   # required for separate mode
-  MOTAKE_FRONTEND_PORT=3001
-  MOTAKE_API_PORT=8001
+  MOTAKE_FRONTEND_PORT=3000
+  MOTAKE_API_PORT=8000
   MOTAKE_INSTALL_TARGET=system|local|skip
   MOTAKE_UPDATE_ENV=yes|no
 EOF
@@ -363,15 +363,15 @@ main() {
     echo
   fi
 
-  frontend_port="3001"
-  api_port="$(read_env_default PORT 8001)"
+  frontend_port="3000"
+  api_port="$(read_env_default PORT 8000)"
 
   if [[ "$NON_INTERACTIVE" == true ]]; then
     routing_mode="${MOTAKE_ROUTING_MODE:-separate}"
     frontend_domain="${MOTAKE_FRONTEND_DOMAIN:?MOTAKE_FRONTEND_DOMAIN is required}"
     api_domain="${MOTAKE_API_DOMAIN:-$frontend_domain}"
-    frontend_port="${MOTAKE_FRONTEND_PORT:-3001}"
-    api_port="${MOTAKE_API_PORT:-8001}"
+    frontend_port="${MOTAKE_FRONTEND_PORT:-3000}"
+    api_port="${MOTAKE_API_PORT:-8000}"
     validate_domain "$frontend_domain"
     validate_domain "$api_domain"
     validate_port "$frontend_port"
@@ -418,7 +418,7 @@ main() {
     fi
 
     echo
-    prompt_for_value "frontend_port" "3001"
+    prompt_for_value "frontend_port" "3000"
     frontend_port="$REPLY"
     validate_port "$frontend_port"
 
