@@ -24,6 +24,24 @@ export type K6CleanupCounts = {
 
 type ProfileRow = { id: string; email: string; role: string; name: string | null };
 
+// Drizzle expands a plain JS array into "($1, $2)::text[]", which is invalid Postgres.
+// Build a proper ARRAY[$1, $2]::type[] expression instead.
+function textArray(values: string[]) {
+  if (values.length === 0) return sql`ARRAY[]::text[]`;
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )}]::text[]`;
+}
+
+function uuidArray(values: string[]) {
+  if (values.length === 0) return sql`ARRAY[]::uuid[]`;
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )}]::uuid[]`;
+}
+
 async function listSupabaseUsersByEmails(emails: Set<string>) {
   const authUsers: Array<{ id: string; email: string }> = [];
   let page = 1;
@@ -54,7 +72,7 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
       AND (
         email ~* '^load-admin-[0-9]+@lunarstudio\\.dev$'
         OR email ~* '^load-salesman-[0-9]+@lunarstudio\\.dev$'
-        OR email = ANY(${extraEmails}::text[])
+        OR email = ANY(${textArray(extraEmails)})
       )
   `);
 
@@ -70,7 +88,7 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
         notes ILIKE '%k6%'
         OR shop_name LIKE 'Load Shop %'
         OR contact_name LIKE 'Salesman %'
-        OR (${profileIds.length} > 0 AND created_by = ANY(${profileIds}::uuid[]))
+        OR (${profileIds.length} > 0 AND created_by = ANY(${uuidArray(profileIds)}))
       )
   `);
 
@@ -82,8 +100,8 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
     FROM orders
     WHERE notes ILIKE '%k6%'
        OR idempotency_key LIKE 'k6-%'
-       OR (${customerIds.length} > 0 AND customer_id = ANY(${customerIds}::uuid[]))
-       OR (${salesmanIds.length} > 0 AND salesman_id = ANY(${salesmanIds}::uuid[]))
+       OR (${customerIds.length} > 0 AND customer_id = ANY(${uuidArray(customerIds)}))
+       OR (${salesmanIds.length} > 0 AND salesman_id = ANY(${uuidArray(salesmanIds)}))
   `);
 
   const orders = orderResult.rows as K6CleanupTargets["orders"];
@@ -92,7 +110,7 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
   const gatepassResult = await db.execute(sql`
     SELECT id, business_date, status, notes
     FROM gatepasses
-    WHERE (${salesmanIds.length} > 0 AND salesman_id = ANY(${salesmanIds}::uuid[]))
+    WHERE (${salesmanIds.length} > 0 AND salesman_id = ANY(${uuidArray(salesmanIds)}))
        OR notes ILIKE '%k6%'
   `);
 
@@ -101,7 +119,7 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
 
   const auditResult = await db.execute(sql`
     SELECT id FROM audit_logs
-    WHERE ${profileIds.length} > 0 AND actor_id = ANY(${profileIds}::uuid[])
+    WHERE ${profileIds.length} > 0 AND actor_id = ANY(${uuidArray(profileIds)})
   `);
 
   const auditLogs = auditResult.rows as K6CleanupTargets["auditLogs"];
@@ -129,21 +147,21 @@ export async function executeK6Cleanup(targets: K6CleanupTargets): Promise<K6Cle
   let orderItemsDeleted = 0;
   if (orderIds.length) {
     const result = await db.execute(
-      sql`DELETE FROM order_items WHERE order_id = ANY(${orderIds}::uuid[])`,
+      sql`DELETE FROM order_items WHERE order_id = ANY(${uuidArray(orderIds)})`,
     );
     orderItemsDeleted = result.rowCount ?? 0;
   }
 
   let ordersDeleted = 0;
   if (orderIds.length) {
-    const result = await db.execute(sql`DELETE FROM orders WHERE id = ANY(${orderIds}::uuid[])`);
+    const result = await db.execute(sql`DELETE FROM orders WHERE id = ANY(${uuidArray(orderIds)})`);
     ordersDeleted = result.rowCount ?? 0;
   }
 
   let gatepassItemsDeleted = 0;
   if (gatepassIds.length) {
     const result = await db.execute(
-      sql`DELETE FROM gatepass_items WHERE gatepass_id = ANY(${gatepassIds}::uuid[])`,
+      sql`DELETE FROM gatepass_items WHERE gatepass_id = ANY(${uuidArray(gatepassIds)})`,
     );
     gatepassItemsDeleted = result.rowCount ?? 0;
   }
@@ -151,28 +169,32 @@ export async function executeK6Cleanup(targets: K6CleanupTargets): Promise<K6Cle
   let gatepassesDeleted = 0;
   if (gatepassIds.length) {
     const result = await db.execute(
-      sql`DELETE FROM gatepasses WHERE id = ANY(${gatepassIds}::uuid[])`,
+      sql`DELETE FROM gatepasses WHERE id = ANY(${uuidArray(gatepassIds)})`,
     );
     gatepassesDeleted = result.rowCount ?? 0;
   }
 
   let auditDeleted = 0;
   if (auditIds.length) {
-    const result = await db.execute(sql`DELETE FROM audit_logs WHERE id = ANY(${auditIds}::uuid[])`);
+    const result = await db.execute(
+      sql`DELETE FROM audit_logs WHERE id = ANY(${uuidArray(auditIds)})`,
+    );
     auditDeleted = result.rowCount ?? 0;
   }
 
   let customersDeleted = 0;
   if (customerIds.length) {
     const result = await db.execute(
-      sql`DELETE FROM customers WHERE id = ANY(${customerIds}::uuid[])`,
+      sql`DELETE FROM customers WHERE id = ANY(${uuidArray(customerIds)})`,
     );
     customersDeleted = result.rowCount ?? 0;
   }
 
   let profilesDeleted = 0;
   if (profileIds.length) {
-    const result = await db.execute(sql`DELETE FROM profiles WHERE id = ANY(${profileIds}::uuid[])`);
+    const result = await db.execute(
+      sql`DELETE FROM profiles WHERE id = ANY(${uuidArray(profileIds)})`,
+    );
     profilesDeleted = result.rowCount ?? 0;
   }
 
