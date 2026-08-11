@@ -8,6 +8,7 @@
     "./customers": "./customers/index.ts",
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
+    "./k6-cleanup": "./k6-cleanup/index.ts",
     "./orders": "./orders/index.ts",
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",

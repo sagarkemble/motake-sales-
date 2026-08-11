@@ -4,11 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/**'
-      - 'packages/**'
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/trpc/**'
+      - 'packages/database/**'
+      - 'packages/services/**'
+      - 'packages/logger/**'
       - 'deploy/**'
       - 'pnpm-lock.yaml'
-      - 'package.json'
       - 'pnpm-workspace.yaml'
       - 'turbo.json'
       - '.github/workflows/deploy.yml'

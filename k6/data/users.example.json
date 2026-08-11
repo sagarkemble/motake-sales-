@@ -1,0 +1,34 @@
+{
+  "admin": {
+    "email": "load-admin-1@lunarstudio.dev",
+    "password": "Motake@Load2026"
+  },
+  "admins": [
+    {
+      "email": "load-admin-1@lunarstudio.dev",
+      "password": "Motake@Load2026",
+      "name": "Load Admin 1"
+    },
+    {
+      "email": "load-admin-2@lunarstudio.dev",
+      "password": "Motake@Load2026",
+      "name": "Load Admin 2"
+    }
+  ],
+  "salesmen": [
+    {
+      "email": "load-salesman-001@lunarstudio.dev",
+      "password": "Motake@Load2026",
+      "name": "Load Salesman 001",
+      "salesmanCode": "LS001",
+      "createdBy": "load-admin-1@lunarstudio.dev"
+    },
+    {
+      "email": "load-salesman-002@lunarstudio.dev",
+      "password": "Motake@Load2026",
+      "name": "Load Salesman 002",
+      "salesmanCode": "LS002",
+      "createdBy": "load-admin-2@lunarstudio.dev"
+    }
+  ]
+}

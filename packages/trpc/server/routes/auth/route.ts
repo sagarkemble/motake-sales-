@@ -9,6 +9,7 @@ import {
   createAvatarUploadUrlInputSchema,
   createAvatarUploadUrlOutputSchema,
   createSessionInputSchema,
+  loginInputSchema,
   sessionUserSchema,
   signedInUserSchema,
   updateMyProfileInputSchema,
@@ -38,6 +39,28 @@ function toSignedInUser(profile: {
 }
 
 export const authRouter = router({
+  login: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/login"),
+        tags: ["Auth"],
+        summary: "Sign in with email and password",
+        description:
+          "Verify credentials via Supabase, set an httpOnly session cookie, and return the user id and role.",
+      },
+    })
+    .input(loginInputSchema)
+    .output(apiResponseSchema(sessionUserSchema))
+    .mutation(async ({ ctx, input }) => {
+      const { accessToken, user } = await authService.signInWithEmailPassword(
+        input.email,
+        input.password,
+      );
+      setAuthentication(ctx, accessToken);
+      return apiResponse({ id: user.id, role: user.role });
+    }),
+
   createSession: publicProcedure
     .meta({
       openapi: {

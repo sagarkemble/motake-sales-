@@ -28,6 +28,7 @@ out/
 
 # Testing
 coverage/
+k6/data/users.json
 
 # Environment variables
 .env

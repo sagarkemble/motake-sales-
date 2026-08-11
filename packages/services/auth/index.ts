@@ -7,6 +7,7 @@ import {
 import type { InsertProfile, SelectProfile, SelectSalesman } from "@repo/database/schema";
 
 import { supabaseAdminClient } from "../clients/supabase-admin";
+import { env } from "../env";
 import { badRequest, notFound, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
 import {
@@ -44,6 +45,39 @@ class AuthService {
       phoneConfirmedAt: data.user.phone_confirmed_at,
       role,
     };
+  }
+
+  public async signInWithEmailPassword(
+    email: string,
+    password: string,
+  ): Promise<{ accessToken: string; user: AuthenticatedUser }> {
+    const supabaseAnonKey =
+      process.env.SUPABASE_ANON_KEY ??
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseAnonKey) {
+      throw badRequest("Server is missing Supabase anon key configuration");
+    }
+
+    const tokenResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabaseAnonKey,
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!tokenResponse.ok) {
+      throw unauthorized("Invalid email or password");
+    }
+
+    const tokenBody = (await tokenResponse.json()) as { access_token?: string };
+    if (!tokenBody.access_token) {
+      throw unauthorized("Invalid email or password");
+    }
+
+    const user = await this.verifyAccessToken(tokenBody.access_token);
+    return { accessToken: tokenBody.access_token, user };
   }
 
   public async createSalesmanAccount(
