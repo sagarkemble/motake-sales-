@@ -12,6 +12,7 @@
     "check-types": "turbo run check-types",
     "loadtest": "dotenv -- bash k6/run.sh",
     "seed:k6-users": "dotenv -- node scripts/seed-k6-users.mjs",
+    "tokens:k6": "dotenv -- node scripts/fetch-k6-tokens.mjs",
     "cleanup:k6": "dotenv -- node scripts/cleanup-k6-data.mjs"
   },
   "devDependencies": {

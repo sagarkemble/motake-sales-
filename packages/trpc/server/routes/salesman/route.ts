@@ -45,7 +45,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Get a salesman by ID",
@@ -82,7 +82,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "DELETE",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Deactivate a salesman",
@@ -100,7 +100,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "POST",
-        path: path("/:id/reactivate"),
+        path: path("/{id}/reactivate"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Reactivate a salesman",
@@ -120,7 +120,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "POST",
-        path: path("/:id/delete"),
+        path: path("/{id}/delete"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Delete a salesman",
@@ -140,7 +140,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Update a salesman account",
@@ -159,7 +159,7 @@ export const salesmanRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id/history"),
+        path: path("/{id}/history"),
         tags: ["Salesmen"],
         protect: true,
         summary: "Get a salesman day-wise history",

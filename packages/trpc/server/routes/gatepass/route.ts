@@ -196,7 +196,7 @@ export const gatepassRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id/verify"),
+        path: path("/{id}/verify"),
         tags: ["GatePass"],
         protect: true,
         summary: "Close a gatepass",

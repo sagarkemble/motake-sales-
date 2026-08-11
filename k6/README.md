@@ -6,15 +6,13 @@ Production-oriented load tests for the deployed Motake API (`/api/*`).
 
 1. [Install k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) **v0.47+ or v2.x**
    - Scripts use built-in modules only (`k6`, `k6/http`, `k6/data`) — no `k6/utils` (removed in k6 v2).
-2. Copy user credentials:
+2. Seed load-test users (counts come from `K6_ADMIN_VUS` / `K6_SALESMAN_VUS` in `.env`,
+   overridable with `SEED_ADMIN_COUNT` / `SEED_SALESMAN_COUNT`):
    ```bash
-   cp k6/data/users.example.json k6/data/users.json
+   pnpm seed:k6-users
    ```
-3. Fill `k6/data/users.json`:
-   - **1 admin** account (`app_metadata.role = admin`)
-   - **Up to 100 salesman** accounts (cycle if fewer than VU count)
-
-`k6/data/users.json` is gitignored.
+   This writes `k6/data/users.json` (gitignored). Access tokens are fetched automatically
+   at the start of every `pnpm loadtest` run.
 
 ## Environment
 
@@ -63,12 +61,18 @@ Customer creation is **salesman-only** (shared customer list per product rules).
 
 ## Auth
 
-All requests go through the backend only:
+All requests go through the backend only, and **no password logins happen during the test**:
 
-1. `POST /api/auth/login` with email + password → httpOnly session cookie
-2. All `/api/*` requests use the VU cookie jar
+1. `pnpm loadtest` first runs `scripts/fetch-k6-tokens.mjs`, which logs in each required user
+   once via `POST /api/auth/login` (exponential backoff + jitter on 429/5xx) and stores the
+   access tokens in `k6/data/users.json`. Only `K6_ADMIN_VUS` admins + `K6_SALESMAN_VUS`
+   salesmen are logged in, keeping well under Supabase's sign-in rate limit.
+2. Each VU exchanges its stored token via `POST /api/auth/session` → httpOnly session cookie.
+3. All `/api/*` requests reuse the VU cookie jar.
 
-No direct Supabase or database access from K6.
+Supabase access tokens expire (~1 hour), so tokens are refreshed automatically at the start
+of every `pnpm loadtest`. To skip the refresh (tokens still fresh): `K6_SKIP_TOKEN_FETCH=1 pnpm loadtest`.
+Manual refresh: `pnpm tokens:k6`.
 
 ## Notes
 

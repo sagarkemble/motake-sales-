@@ -86,7 +86,7 @@ export const ordersRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Orders"],
         protect: true,
         summary: "Get an order",
@@ -109,7 +109,7 @@ export const ordersRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id/detail"),
+        path: path("/{id}/detail"),
         tags: ["Orders"],
         protect: true,
         summary: "Get full order detail",
@@ -149,7 +149,7 @@ export const ordersRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id/fulfill"),
+        path: path("/{id}/fulfill"),
         tags: ["Orders"],
         protect: true,
         summary: "Fulfill an order",
@@ -167,7 +167,7 @@ export const ordersRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id/cancel"),
+        path: path("/{id}/cancel"),
         tags: ["Orders"],
         protect: true,
         summary: "Cancel an order",

@@ -15,6 +15,8 @@ import {
 assertConfig();
 
 export const options = {
+  // Keep each VU's session cookie across iterations (k6 wipes the jar per iteration by default)
+  noCookiesReset: true,
   scenarios: {
     salesmen_daily_workflow: {
       executor: 'ramping-vus',

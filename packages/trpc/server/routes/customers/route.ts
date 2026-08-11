@@ -38,7 +38,7 @@ export const customersRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Customers"],
         protect: true,
         summary: "Get a customer",
@@ -57,7 +57,7 @@ export const customersRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id/stats"),
+        path: path("/{id}/stats"),
         tags: ["Customers"],
         protect: true,
         summary: "Get customer stats",
@@ -95,7 +95,7 @@ export const customersRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Customers"],
         protect: true,
         summary: "Update a customer",
@@ -115,7 +115,7 @@ export const customersRouter = router({
     .meta({
       openapi: {
         method: "DELETE",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Customers"],
         protect: true,
         summary: "Deactivate a customer",

@@ -3,9 +3,16 @@ import { check } from 'k6';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
 
-export function apiGet(path, tags = {}) {
-  const res = http.get(path, { headers: JSON_HEADERS, tags });
-  check(res, { [`GET ${tags.name || path} status 2xx`]: (r) => r.status >= 200 && r.status < 300 });
+export function apiGet(path, tags = {}, acceptedStatuses = null) {
+  const params = { headers: JSON_HEADERS, tags };
+  if (acceptedStatuses) {
+    params.responseCallback = http.expectedStatuses(...acceptedStatuses);
+  }
+  const res = http.get(path, params);
+  const isOk = acceptedStatuses
+    ? (r) => acceptedStatuses.includes(r.status)
+    : (r) => r.status >= 200 && r.status < 300;
+  check(res, { [`GET ${tags.name || path} status ok`]: isOk });
   return res;
 }
 

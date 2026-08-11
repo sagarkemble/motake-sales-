@@ -31,8 +31,10 @@ const API_BASE_URL = getApiBaseUrl();
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-const ADMIN_COUNT = Number(process.env.SEED_ADMIN_COUNT || 3);
-const SALESMAN_COUNT = Number(process.env.SEED_SALESMAN_COUNT || 100);
+const ADMIN_COUNT = Number(process.env.SEED_ADMIN_COUNT || process.env.K6_ADMIN_VUS || 3);
+const SALESMAN_COUNT = Number(
+  process.env.SEED_SALESMAN_COUNT || process.env.K6_SALESMAN_VUS || 100,
+);
 const PASSWORD = process.env.SEED_USER_PASSWORD || "Motake@Load2026";
 const PROFILES_ONLY = process.env.SEED_PROFILES_ONLY === "1";
 

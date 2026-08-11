@@ -9,8 +9,8 @@ let sessionReady = false;
 
 function ensureSession() {
   if (sessionReady) return true;
-  const creds = getAdminCredentials();
-  const result = authenticateUser(creds.email, creds.password, { role: 'admin' });
+  const creds = getAdminCredentials(__VU);
+  const result = authenticateUser(creds, { role: 'admin' });
   sessionReady = result.ok;
   return sessionReady;
 }

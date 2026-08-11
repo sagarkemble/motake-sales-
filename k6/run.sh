@@ -46,4 +46,14 @@ fi
 
 export K6_API_BASE_URL="${K6_API_BASE_URL:-${API_TARGET}}"
 
+# Pre-fetch fresh access tokens (Supabase tokens expire ~1h).
+# K6 then exchanges them via POST /api/auth/session — no password logins during the test.
+if [[ "${K6_SKIP_TOKEN_FETCH:-0}" != "1" ]]; then
+  echo "Fetching access tokens for load-test users..."
+  if ! node "${ROOT_DIR}/scripts/fetch-k6-tokens.mjs"; then
+    echo "error: token pre-fetch failed — aborting load test." >&2
+    exit 1
+  fi
+fi
+
 exec k6 run k6/load-test.js "$@"

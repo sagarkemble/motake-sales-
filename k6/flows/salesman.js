@@ -10,7 +10,7 @@ let sessionReady = false;
 function ensureSession() {
   if (sessionReady) return true;
   const creds = getSalesmanCredentials(__VU);
-  const result = authenticateUser(creds.email, creds.password, { role: 'salesman' });
+  const result = authenticateUser(creds, { role: 'salesman' });
   sessionReady = result.ok;
   return sessionReady;
 }
@@ -58,10 +58,15 @@ export function salesmanFlow() {
   const canonical = parseData(canonicalRes);
   const date = canonical?.businessDate || businessDate;
 
-  const gatepassRes = apiGet(`${base}/api/gatepasses/me?businessDate=${date}`, {
-    role: 'salesman',
-    name: 'gatepass_me',
-  });
+  // 404 = no gatepass allotted for today — a valid business state, not a failure
+  const gatepassRes = apiGet(
+    `${base}/api/gatepasses/me?businessDate=${date}`,
+    {
+      role: 'salesman',
+      name: 'gatepass_me',
+    },
+    [200, 404],
+  );
   const gatepassData = parseData(gatepassRes);
 
   apiGet(`${base}/api/gatepasses/me/history`, { role: 'salesman', name: 'gatepass_history' });

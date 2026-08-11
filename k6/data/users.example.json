@@ -1,18 +1,16 @@
 {
-  "admin": {
-    "email": "load-admin-1@lunarstudio.dev",
-    "password": "Motake@Load2026"
-  },
   "admins": [
     {
       "email": "load-admin-1@lunarstudio.dev",
       "password": "Motake@Load2026",
-      "name": "Load Admin 1"
+      "name": "Load Admin 1",
+      "accessToken": "filled by scripts/fetch-k6-tokens.mjs"
     },
     {
       "email": "load-admin-2@lunarstudio.dev",
       "password": "Motake@Load2026",
-      "name": "Load Admin 2"
+      "name": "Load Admin 2",
+      "accessToken": "filled by scripts/fetch-k6-tokens.mjs"
     }
   ],
   "salesmen": [
@@ -21,14 +19,16 @@
       "password": "Motake@Load2026",
       "name": "Load Salesman 001",
       "salesmanCode": "LS001",
-      "createdBy": "load-admin-1@lunarstudio.dev"
+      "createdBy": "load-admin-1@lunarstudio.dev",
+      "accessToken": "filled by scripts/fetch-k6-tokens.mjs"
     },
     {
       "email": "load-salesman-002@lunarstudio.dev",
       "password": "Motake@Load2026",
       "name": "Load Salesman 002",
       "salesmanCode": "LS002",
-      "createdBy": "load-admin-2@lunarstudio.dev"
+      "createdBy": "load-admin-2@lunarstudio.dev",
+      "accessToken": "filled by scripts/fetch-k6-tokens.mjs"
     }
   ]
 }

@@ -48,7 +48,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Products"],
         protect: true,
         summary: "Get a product",
@@ -86,7 +86,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "DELETE",
-        path: path("/:id/image"),
+        path: path("/{id}/image"),
         tags: ["Products"],
         protect: true,
         summary: "Delete a product image",
@@ -123,7 +123,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Products"],
         protect: true,
         summary: "Update a product",
@@ -143,7 +143,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "DELETE",
-        path: path("/:id"),
+        path: path("/{id}"),
         tags: ["Products"],
         protect: true,
         summary: "Deactivate a product",
@@ -162,7 +162,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "POST",
-        path: path("/:id/reactivate"),
+        path: path("/{id}/reactivate"),
         tags: ["Products"],
         protect: true,
         summary: "Reactivate a product",
@@ -181,7 +181,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "POST",
-        path: path("/:id/delete"),
+        path: path("/{id}/delete"),
         tags: ["Products"],
         protect: true,
         summary: "Delete a product",
@@ -200,7 +200,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "GET",
-        path: path("/:productId/varieties"),
+        path: path("/{productId}/varieties"),
         tags: ["Products"],
         protect: true,
         summary: "List varieties of a product",
@@ -236,7 +236,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/varieties/:id"),
+        path: path("/varieties/{id}"),
         tags: ["Products"],
         protect: true,
         summary: "Update a product variety",
@@ -256,7 +256,7 @@ export const productsRouter = router({
     .meta({
       openapi: {
         method: "DELETE",
-        path: path("/varieties/:id"),
+        path: path("/varieties/{id}"),
         tags: ["Products"],
         protect: true,
         summary: "Deactivate a product variety",
