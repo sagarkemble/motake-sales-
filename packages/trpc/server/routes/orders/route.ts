@@ -82,6 +82,24 @@ export const ordersRouter = router({
       return apiResponse(result);
     }),
 
+  listDuePreorders: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/due-preorders"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "List pre-orders due for delivery",
+        description: "Return every pre-order due on the given business date.",
+      },
+    })
+    .input(dueDateInputSchema)
+    .output(apiResponseSchema(orderSchema.array()))
+    .query(async ({ input }) => {
+      const dueOrders = await orderService.listDuePreorders(input.businessDate);
+      return apiResponse(dueOrders);
+    }),
+
   getById: protectedProcedure
     .meta({
       openapi: {
@@ -125,24 +143,6 @@ export const ordersRouter = router({
         throw forbidden();
       }
       return apiResponse(orderDetail);
-    }),
-
-  listDuePreorders: salesmanProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: path("/due-preorders"),
-        tags: ["Orders"],
-        protect: true,
-        summary: "List pre-orders due for delivery",
-        description: "Return every pre-order due on the given business date.",
-      },
-    })
-    .input(dueDateInputSchema)
-    .output(apiResponseSchema(orderSchema.array()))
-    .query(async ({ input }) => {
-      const dueOrders = await orderService.listDuePreorders(input.businessDate);
-      return apiResponse(dueOrders);
     }),
 
   fulfill: salesmanProcedure

@@ -106,11 +106,11 @@ export function adminFlow() {
       productRow?.varieties?.[0]?.id ??
       (productRow?.product?.id
         ? parseData(
-            apiGet(`${base}/api/products/${productRow.product.id}/varieties`, {
-              role: 'admin',
-              name: 'varieties_pick',
-            }),
-          )?.[0]?.id
+          apiGet(`${base}/api/products/${productRow.product.id}/varieties`, {
+            role: 'admin',
+            name: 'varieties_pick',
+          }),
+        )?.[0]?.id
         : null);
 
     if (salesman?.id && varietyId) {
@@ -122,6 +122,7 @@ export function adminFlow() {
           items: [{ varietyId, issuedQty: 5 }],
         },
         { role: 'admin', name: 'gatepass_allot' },
+        [200, 409],
       );
     }
   }

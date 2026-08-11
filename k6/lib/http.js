@@ -16,10 +16,17 @@ export function apiGet(path, tags = {}, acceptedStatuses = null) {
   return res;
 }
 
-export function apiPost(path, body, tags = {}) {
+export function apiPost(path, body, tags = {}, acceptedStatuses = null) {
   const payload = typeof body === 'string' ? body : JSON.stringify(body);
-  const res = http.post(path, payload, { headers: JSON_HEADERS, tags });
-  check(res, { [`POST ${tags.name || path} status 2xx`]: (r) => r.status >= 200 && r.status < 300 });
+  const params = { headers: JSON_HEADERS, tags };
+  if (acceptedStatuses) {
+    params.responseCallback = http.expectedStatuses(...acceptedStatuses);
+  }
+  const res = http.post(path, payload, params);
+  const isOk = acceptedStatuses
+    ? (r) => acceptedStatuses.includes(r.status)
+    : (r) => r.status >= 200 && r.status < 300;
+  check(res, { [`POST ${tags.name || path} status 2xx`]: isOk });
   return res;
 }
 

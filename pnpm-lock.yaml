@@ -467,6 +467,9 @@ importers:
       '@repo/services':
         specifier: workspace:*
         version: link:../packages/services
+      '@supabase/supabase-js':
+        specifier: ^2.75.0
+        version: 2.112.0
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@types/pg@8.16.0)(pg@8.16.3)
@@ -480,6 +483,12 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.7(vitest@3.2.7(@types/node@22.15.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
+      dotenv-cli:
+        specifier: ^11.0.0
+        version: 11.0.0
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
       typescript:
         specifier: 5.9.2
         version: 5.9.2
