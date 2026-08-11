@@ -1,135 +1,147 @@
-# Turborepo starter
+# Motake
 
-This Turborepo starter is maintained by the Turborepo core team.
+Full-stack monorepo for the Motake dairy distribution platform.
 
-## Using this example
+| App / Package | Description |
+|---|---|
+| `apps/web` | Next.js frontend (port `3000`) |
+| `apps/api` | Express + tRPC API with a REST layer at `/api/*` (port `8000`) |
+| `packages/trpc` | tRPC routers shared between API and web |
+| `packages/services` | Business logic (auth, customers, orders, gatepasses, products, reports) |
+| `packages/database` | Drizzle ORM schema, queries, and migrations (Postgres) |
+| `packages/logger` | Shared logger |
+| `k6/` | K6 load tests (see [k6/README.md](k6/README.md)) |
+| `scripts/` | Seeding, token-fetch, and cleanup scripts for load testing |
 
-Run the following command:
+**Stack:** Node 22, pnpm, Turborepo, Next.js, Express, tRPC, Drizzle, Supabase (Auth + Postgres), Cloudflare R2.
 
-```sh
-npx create-turbo@latest
+## Local development setup
+
+### Prerequisites
+
+- **Node.js 22+**
+- **pnpm 9** (`corepack enable` or `npm i -g pnpm@9`)
+- A **Supabase project** (Auth + Postgres)
+- Optional: **Cloudflare R2** bucket for image uploads
+- Optional: **[k6](https://grafana.com/docs/k6/latest/set-up/install-k6/)** for load tests
+
+### 1. Install dependencies
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+### 2. Configure environment
 
-This Turborepo includes the following packages/apps:
+Create the root `.env` (single source of env vars, symlinked into apps/packages):
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+./deploy/local/env-setup.sh
+# or manually:
+cp .env.example .env
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Fill in at minimum:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Postgres connection string (Supabase or local) |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase key |
+| `SUPABASE_ANON_KEY` | Required by `POST /api/auth/login` (server-side password grant) |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client |
+| `JWT_SECRET` | Session signing secret |
+| `R2_*` | Cloudflare R2 credentials (image uploads) |
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### 3. Run database migrations
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm db:migrate
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 4. Start the dev servers
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+pnpm dev
 ```
 
-### Remote Caching
+- Web: http://localhost:3000
+- API: http://localhost:8000 (health: `/health`, OpenAPI docs: `/docs`)
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+Other useful commands:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+pnpm build         # build all apps/packages
+pnpm lint          # lint
+pnpm check-types   # typecheck
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## K6 load tests
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+Load tests simulate concurrent salesmen and admins against the API. They talk to the
+**backend only** — never directly to Supabase or the database. Full details in
+[k6/README.md](k6/README.md).
 
+### 1. Configure
+
+In `.env`:
+
+```bash
+K6_API_BASE_URL=https://motake-back.lunarstudio.dev   # or http://localhost:8000
+K6_SALESMAN_VUS=10    # concurrent salesman virtual users
+K6_ADMIN_VUS=2        # concurrent admin virtual users
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+### 2. Seed load-test users (once)
+
+Creates `K6_ADMIN_VUS` admins (via Supabase Auth + profiles) and `K6_SALESMAN_VUS`
+salesmen (via the admin API), and writes credentials to `k6/data/users.json` (gitignored):
+
+```bash
+pnpm seed:k6-users
 ```
 
-## Useful Links
+### 3. Run the load test
 
-Learn more about the power of Turborepo:
+```bash
+pnpm loadtest
+```
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+This automatically:
+
+1. Fetches fresh access tokens for every load-test user via `POST /api/auth/login`
+   (exponential backoff on rate limits; Supabase tokens expire ~1h, so this runs every time).
+2. Runs k6 — each virtual user creates a session once via `POST /api/auth/session`
+   and reuses the httpOnly cookie for all requests.
+
+Smoke run (short + light):
+
+```bash
+K6_SALESMAN_VUS=5 K6_ADMIN_VUS=2 K6_RAMP_UP=10s K6_HOLD_DURATION=30s K6_RAMP_DOWN=5s pnpm loadtest
+```
+
+Useful variations:
+
+```bash
+pnpm tokens:k6                        # refresh tokens manually
+K6_SKIP_TOKEN_FETCH=1 pnpm loadtest   # skip token refresh (tokens still fresh)
+```
+
+### 4. Clean up test data
+
+Removes load-test users, customers, orders, and gatepasses via the backend
+(`POST /api/admin/k6-cleanup`):
+
+```bash
+pnpm cleanup:k6                      # dry run — shows what would be deleted
+CLEANUP_CONFIRM=1 pnpm cleanup:k6    # actually delete
+```
+
+## Deployment
+
+Pushes to `main` that touch `apps/**`, `packages/**`, or `deploy/**` trigger the
+[Deploy to VPS](.github/workflows/deploy.yml) workflow (build on GitHub Actions,
+rsync artifacts to the VPS, PM2 + Caddy). Documentation-only changes do not deploy.
+
+- Frontend: https://motake-front.lunarstudio.dev
+- API: https://motake-back.lunarstudio.dev
