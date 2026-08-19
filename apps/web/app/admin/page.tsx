@@ -67,7 +67,7 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <KpiCard
-              label="Book now"
+              label="Orders"
               value={todayKpiSummary?.bookNowOrderCount ?? 0}
               previousValue={yesterdayKpiSummary?.bookNowOrderCount}
               icon={ShoppingCartIcon}

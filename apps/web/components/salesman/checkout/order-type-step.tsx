@@ -46,7 +46,7 @@ export function OrderTypeStep({
           <HandCoinsIcon className="size-4" />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-medium">Normal order</p>
+          <p className="text-sm font-medium">Order</p>
           <p className="text-xs text-muted-foreground">
             Deliver now and collect payment from customer.
           </p>

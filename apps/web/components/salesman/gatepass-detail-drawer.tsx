@@ -122,7 +122,7 @@ export function GatepassDetailDrawer({
                 <InfoIcon className="size-4 shrink-0 text-brand" />
                 <p className="text-foreground">
                   Sold items count includes only{" "}
-                  <span className="font-medium">Book Now orders</span>. Pre-orders are not deducted.
+                  <span className="font-medium">orders</span>. Pre-orders are not deducted.
                 </p>
               </div>
             </>

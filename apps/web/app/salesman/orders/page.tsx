@@ -63,7 +63,7 @@ export default function SalesmanOrdersPage() {
       <Tabs defaultValue="book_now">
         <TabsList className="w-full">
           <TabsTrigger value="book_now" className="flex-1">
-            Book Now
+            Orders
           </TabsTrigger>
           <TabsTrigger value="pre_order" className="flex-1">
             Pre-orders
@@ -75,7 +75,7 @@ export default function SalesmanOrdersPage() {
             <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
           ) : bookNowOrdersPage.items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              You have not placed any Book Now orders yet.
+              You have not placed any orders yet.
             </p>
           ) : (
             bookNowOrdersPage.items.map(({ order, customerShopName }) => (

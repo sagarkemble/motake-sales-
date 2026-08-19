@@ -106,7 +106,7 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Note: Only Book Now orders deduct from Gate Pass.
+        Note: Only orders deduct from Gate Pass.
       </p>
     </div>
   );

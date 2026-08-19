@@ -11,7 +11,7 @@ interface OrderSuccessStepProps {
 }
 
 const ORDER_TYPE_LABELS: Record<PlacedOrder["type"], string> = {
-  book_now: "Normal order",
+  book_now: "Order",
   pre_order: "Pre-order",
 };
 

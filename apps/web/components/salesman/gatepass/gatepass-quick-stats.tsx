@@ -13,7 +13,7 @@ export function GatepassQuickStats({
 }: GatepassQuickStatsProps) {
   const stats = [
     { label: "Total items allocated", value: totalAllocatedQty, icon: Grid2x2Icon },
-    { label: "Sold items (Book Now)", value: totalSoldQty, icon: ShoppingCartIcon },
+    { label: "Sold items (Orders)", value: totalSoldQty, icon: ShoppingCartIcon },
     { label: "Remaining items", value: totalRemainingQty, icon: PackageIcon },
   ];
 

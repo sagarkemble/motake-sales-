@@ -12,7 +12,7 @@ export default function AdminOrdersPage() {
             Pre-Orders
           </TabsTrigger>
           <TabsTrigger value="book_now" className="flex-1">
-            Book Now
+            Orders
           </TabsTrigger>
         </TabsList>
 
