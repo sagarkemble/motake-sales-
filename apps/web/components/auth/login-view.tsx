@@ -1,8 +1,5 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { MagicLinkLoginForm } from "./magic-link-login-form";
-import { OtpLoginForm } from "./otp-login-form";
 import { PasswordLoginForm } from "./password-login-form";
 
 export function LoginView() {
@@ -18,23 +15,7 @@ export function LoginView() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <Tabs defaultValue="password">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="password">Password</TabsTrigger>
-              <TabsTrigger value="email">Email</TabsTrigger>
-              <TabsTrigger value="phone">OTP</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="password" className="mt-5">
-              <PasswordLoginForm />
-            </TabsContent>
-            <TabsContent value="email" className="mt-5">
-              <MagicLinkLoginForm />
-            </TabsContent>
-            <TabsContent value="phone" className="mt-5">
-              <OtpLoginForm />
-            </TabsContent>
-          </Tabs>
+          <PasswordLoginForm />
         </div>
       </div>
     </main>
