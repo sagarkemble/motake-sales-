@@ -15,7 +15,7 @@ export function QuickActionLink({ href, label, icon: Icon, className }: QuickAct
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-3 overflow-hidden rounded-2xl border bg-gradient-to-b from-card to-card/60 p-3.5 shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5",
+        "group relative flex items-center gap-3 overflow-hidden rounded-2xl border bg-card p-3.5 shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5",
         className,
       )}
     >

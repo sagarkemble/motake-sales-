@@ -5,18 +5,22 @@ import { useState } from "react";
 
 import { GatepassDetailDrawer } from "~/components/salesman/gatepass-detail-drawer";
 import { GatepassHistoryCard } from "~/components/salesman/gatepass-history-card";
+import { HandoverDialog } from "~/components/salesman/gatepass/handover-dialog";
 import { GatepassTodayViewDesktop } from "~/components/salesman/gatepass/gatepass-today-view.desktop";
 import { GatepassTodayViewMobile } from "~/components/salesman/gatepass/gatepass-today-view.mobile";
+import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { computeGatepassTotals } from "~/lib/gatepass-totals";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 
 const CATALOG_PAGE_SIZE = 200;
 
 export default function SalesmanGatepassPage() {
   const businessDateKey = format(new Date(), "yyyy-MM-dd");
   const [detailBusinessDate, setDetailBusinessDate] = useState<string | null>(null);
+  const [isHandoverDialogOpen, setIsHandoverDialogOpen] = useState(false);
 
   const { myGatepass, isMyGatepassLoading, myHistory, isMyHistoryLoading } = useGatepasses({
     businessDate: businessDateKey,
@@ -70,8 +74,17 @@ export default function SalesmanGatepassPage() {
         </TabsList>
 
         <TabsContent value="today" className="flex flex-col gap-4">
+          <Button
+            type="button"
+            disabled={myGatepass?.gatepass.status !== "active"}
+            onClick={() => setIsHandoverDialogOpen(true)}
+            className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          >
+            Handover
+          </Button>
+
           {isMyGatepassLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            <ListItemSkeleton count={4} />
           ) : !myGatepass ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               No gate pass has been given to you for today yet.
@@ -100,7 +113,7 @@ export default function SalesmanGatepassPage() {
 
         <TabsContent value="history" className="flex flex-col gap-3">
           {isMyHistoryLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            <ListItemSkeleton count={5} />
           ) : myHistory.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               No past gate passes found.
@@ -126,6 +139,15 @@ export default function SalesmanGatepassPage() {
         }}
         varietyDisplayById={varietyDisplayById}
       />
+
+      {myGatepass && (
+        <HandoverDialog
+          open={isHandoverDialogOpen}
+          onOpenChange={setIsHandoverDialogOpen}
+          gatepassId={myGatepass.gatepass.id}
+          items={todayItems}
+        />
+      )}
     </div>
   );
 }

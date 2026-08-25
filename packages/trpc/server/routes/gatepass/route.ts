@@ -18,6 +18,7 @@ import {
   gatepassWithItemsAndNamesSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
+  submitHandoverInputSchema,
 } from "./model";
 
 const path = generatePath("/gatepasses");
@@ -190,6 +191,28 @@ export const gatepassRouter = router({
     .mutation(async ({ input }) => {
       const item = await gatepassService.recordSale(input);
       return apiResponse(item);
+    }),
+
+  submitHandover: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/{gatepassId}/handover"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Submit end-of-day handover",
+        description:
+          "Return all remaining stock for the signed-in salesman's own gatepass, then move it to pending verification.",
+      },
+    })
+    .input(submitHandoverInputSchema)
+    .output(apiResponseSchema(gatepassWithItemsSchema))
+    .mutation(async ({ ctx, input }) => {
+      const gatepassWithItems = await gatepassService.submitHandover({
+        gatepassId: input.gatepassId,
+        salesmanId: ctx.user.id,
+      });
+      return apiResponse(gatepassWithItems);
     }),
 
   verify: adminProcedure

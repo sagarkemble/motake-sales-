@@ -1,0 +1,28 @@
+"use client";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+
+interface PaymentScannerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function PaymentScannerDialog({ open, onOpenChange }: PaymentScannerDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl font-semibold">Scan to pay</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex justify-center">
+          <img
+            src="https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=400&h=400&fit=crop"
+            alt="Company UPI payment QR code"
+            className="size-64 rounded-2xl border border-border object-cover shadow-sm"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -87,7 +87,7 @@ export function AdminNavbar() {
                     <Link
                       key={quickAction.href}
                       href={quickAction.href}
-                      className="flex flex-col items-start gap-2 rounded-xl border bg-gradient-to-b from-card to-card/60 p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
+                      className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
                     >
                       <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                         <QuickActionIcon className="size-4" />
@@ -101,7 +101,9 @@ export function AdminNavbar() {
           </SheetContent>
         </Sheet>
 
-        <p className="text-sm font-semibold text-foreground md:hidden">{pageTitle}</p>
+        <p className="font-display text-base font-semibold text-foreground md:hidden">
+          {pageTitle}
+        </p>
 
         <nav className="hidden items-center gap-1 md:flex">
           {adminNavItems.map((navItem) => {

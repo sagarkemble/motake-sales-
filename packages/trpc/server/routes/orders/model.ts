@@ -36,12 +36,18 @@ export const orderWithItemsSchema = z.object({
   items: z.array(orderItemSchema),
 });
 
+export const orderItemPreviewSchema = z.object({
+  productName: z.string(),
+  imageUrl: z.string().nullable(),
+});
+
 export const orderListRowSchema = z.object({
   order: orderSchema,
   customerShopName: z.string(),
   customerPhone: z.string(),
   salesmanCode: z.string(),
   salesmanName: z.string().nullable(),
+  itemPreviews: z.array(orderItemPreviewSchema),
 });
 
 export const paginatedOrdersSchema = z.object({

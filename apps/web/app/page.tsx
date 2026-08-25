@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { Spinner } from "~/components/ui/spinner";
+import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 import { useAuth } from "~/hooks/use-auth";
 
 export default function Home() {
@@ -19,9 +19,5 @@ export default function Home() {
     router.replace(signedInUser.role === "admin" ? "/admin" : "/salesman");
   }, [signedInUser, isSignedInUserLoading, isSignedInUserError, router]);
 
-  return (
-    <main className="flex min-h-dvh items-center justify-center bg-background">
-      <Spinner className="size-6 text-muted-foreground" />
-    </main>
-  );
+  return <PageSplashSkeleton />;
 }

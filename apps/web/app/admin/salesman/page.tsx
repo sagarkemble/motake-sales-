@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MoreVerticalIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
@@ -122,6 +122,7 @@ function SalesmanPageContent() {
                 }`}
               >
                 <Avatar className="size-11 shrink-0 border">
+                  <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.name ?? "Salesman"} />
                   <AvatarFallback className="bg-brand/10 text-sm font-semibold text-brand">
                     {getNameInitials(profile.name, "S")}
                   </AvatarFallback>

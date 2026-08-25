@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { Spinner } from "~/components/ui/spinner";
+import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 import { useAuth } from "~/hooks/use-auth";
 import { CartProvider } from "~/providers/cart-provider";
 import { SalesmanBottomTabs } from "./salesman-bottom-tabs";
@@ -24,16 +24,12 @@ export function SalesmanShell({ children }: { children: React.ReactNode }) {
   }, [signedInUser, isSignedInUserLoading, isSignedInUserError, isSalesman, router]);
 
   if (isSignedInUserLoading || !isSalesman) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-background">
-        <Spinner className="size-6 text-muted-foreground" />
-      </main>
-    );
+    return <PageSplashSkeleton />;
   }
 
   return (
     <CartProvider>
-      <div className="flex min-h-dvh flex-col bg-background">
+      <div className="bg-dairy-doodle flex min-h-dvh flex-col bg-background">
         <SalesmanNavbar />
         <main className="flex-1 pb-20">{children}</main>
         <SalesmanBottomTabs />

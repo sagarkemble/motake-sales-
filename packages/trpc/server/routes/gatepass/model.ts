@@ -81,6 +81,10 @@ export const recordReturnInputSchema = z.object({
   returnedQty: z.number().int().min(0),
 });
 
+export const submitHandoverInputSchema = z.object({
+  gatepassId: z.string().uuid(),
+});
+
 export const closeGatepassInputSchema = z.object({
   id: z.string().uuid(),
   notes: z.string().optional(),

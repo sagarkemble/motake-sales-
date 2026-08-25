@@ -72,7 +72,7 @@ export default function AdminAccountPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
-      <Card className="bg-gradient-to-b from-card to-card/60">
+      <Card className="bg-card">
         <CardContent className="flex flex-col items-center gap-3">
           <Avatar className="size-24 ring-4 ring-brand/10">
             <AvatarImage src={signedInUser.avatarUrl ?? undefined} alt="Avatar" />

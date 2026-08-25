@@ -6,8 +6,9 @@ import { InboxIcon } from "lucide-react";
 
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
-import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
-import { Spinner } from "~/components/ui/spinner";
+import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useOrderHistory } from "~/hooks/use-order-history";
 
 interface OrderHistoryPanelProps {
@@ -52,7 +53,7 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-border">
-          {orderHistory.map(({ order, customerShopName, customerPhone, salesmanCode, salesmanName }) => (
+          {orderHistory.map(({ order, customerShopName, customerPhone, salesmanCode, salesmanName, itemPreviews }) => (
             <button
               key={order.id}
               type="button"
@@ -69,8 +70,11 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
                   {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
-                <p className="text-sm font-medium">{order.totalQuantity} qty</p>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">{order.totalQuantity} qty</p>
+                  <OrderItemAvatars itemPreviews={itemPreviews} size="sm" />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(order.placedAt), "d MMM, h:mm a")}
                 </p>
@@ -81,8 +85,16 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
       )}
 
       {hasMoreOrders && (
-        <div ref={loadMoreSentinelRef} className="flex justify-center py-2">
-          {isLoadingMoreOrders && <Spinner className="size-4 text-muted-foreground" />}
+        <div ref={loadMoreSentinelRef} className="flex flex-col gap-3 py-2">
+          {isLoadingMoreOrders && (
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-2.5 w-1/3" />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

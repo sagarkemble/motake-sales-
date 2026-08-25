@@ -27,9 +27,19 @@ export function SalesmanBottomTabs() {
                 isActiveTab ? "text-brand" : "text-muted-foreground",
               )}
             >
-              {isActiveTab && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-brand" />}
+              <span
+                className={cn(
+                  "absolute top-0 h-0.5 w-8 origin-center rounded-full bg-brand transition-all duration-[var(--duration-base)] ease-[var(--ease-standard)]",
+                  isActiveTab ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0",
+                )}
+              />
               <span className="relative">
-                <NavIcon className="size-5" />
+                <NavIcon
+                  className={cn(
+                    "size-5 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                    isActiveTab && "scale-110",
+                  )}
+                />
                 {isCartTab && totalCartQuantity > 0 && (
                   <span className="absolute -right-2 -top-2 flex size-4 items-center justify-center rounded-full bg-brand text-[10px] font-semibold text-brand-foreground ring-2 ring-background">
                     {totalCartQuantity > 9 ? "9+" : totalCartQuantity}

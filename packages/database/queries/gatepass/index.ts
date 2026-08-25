@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -150,6 +150,77 @@ export async function recordReturnedQtyForItem(
     .where(eq(gatepassItemsTable.id, gatepassItemId))
     .returning();
   return updatedItem;
+}
+
+export type SubmitHandoverOutcome =
+  | { status: "success"; gatepass: GatepassWithItems }
+  | { status: "not_found" }
+  | { status: "forbidden" }
+  | { status: "not_active" };
+
+export async function submitHandoverForGatepass(
+  gatepassId: string,
+  salesmanId: string,
+): Promise<SubmitHandoverOutcome> {
+  return db.transaction(async (tx) => {
+    const lockedGatepassRows = await tx
+      .select()
+      .from(gatepassesTable)
+      .where(eq(gatepassesTable.id, gatepassId))
+      .for("update");
+    const lockedGatepass = lockedGatepassRows[0];
+    if (!lockedGatepass) {
+      return { status: "not_found" };
+    }
+    if (lockedGatepass.salesmanId !== salesmanId) {
+      return { status: "forbidden" };
+    }
+    if (lockedGatepass.status !== "active") {
+      return { status: "not_active" };
+    }
+
+    const lockedItems = await tx
+      .select()
+      .from(gatepassItemsTable)
+      .where(eq(gatepassItemsTable.gatepassId, gatepassId))
+      .for("update");
+
+    const itemsWithRemainingStock = lockedItems.filter(
+      (item) => item.issuedQty - item.soldQty > 0,
+    );
+    const itemsAlreadySettled = lockedItems.filter((item) => item.issuedQty - item.soldQty === 0);
+
+    let handedOverItems: SelectGatepassItem[] = [];
+    if (itemsWithRemainingStock.length > 0) {
+      const returnedQtyPerItem = itemsWithRemainingStock.map(
+        (item) => sql`when ${gatepassItemsTable.id} = ${item.id} then ${item.issuedQty - item.soldQty}`,
+      );
+      handedOverItems = await tx
+        .update(gatepassItemsTable)
+        .set({
+          returnedQty: sql`case ${sql.join(returnedQtyPerItem, sql` `)} else ${gatepassItemsTable.returnedQty} end`,
+        })
+        .where(
+          inArray(
+            gatepassItemsTable.id,
+            itemsWithRemainingStock.map((item) => item.id),
+          ),
+        )
+        .returning();
+    }
+
+    const updatedGatepassRows = await tx
+      .update(gatepassesTable)
+      .set({ status: "pending_verification" })
+      .where(eq(gatepassesTable.id, gatepassId))
+      .returning();
+    const updatedGatepass = firstOrThrow(updatedGatepassRows, "submitHandoverForGatepass");
+
+    return {
+      status: "success",
+      gatepass: { gatepass: updatedGatepass, items: [...handedOverItems, ...itemsAlreadySettled] },
+    };
+  });
 }
 
 export async function updateGatepassStatus(

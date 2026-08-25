@@ -7,7 +7,7 @@ import { SearchIcon, StoreIcon, XIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
-import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { useCustomers } from "~/hooks/use-customers";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 
@@ -25,7 +25,7 @@ function CustomersPageContent() {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-base font-semibold">Customers</h1>
         <p className="text-xs text-muted-foreground">
-          {isCustomersListLoading ? "Loading" : `${customersPage.totalCount} total`}
+          {isCustomersListLoading ? "Loading…" : `${customersPage.totalCount} total`}
         </p>
       </div>
 

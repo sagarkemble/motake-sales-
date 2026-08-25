@@ -8,9 +8,13 @@ import { BackHeader } from "~/components/admin/products/back-header";
 import { GatepassTab } from "~/components/admin/salesman/gatepass-tab";
 import { SalesTab } from "~/components/admin/salesman/sales-tab";
 import { SalesmanEditDialog } from "~/components/admin/salesman/salesman-edit-dialog";
+import { VerificationTab } from "~/components/admin/salesman/verification-tab";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 
 export default function SalesmanDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,7 +26,7 @@ export default function SalesmanDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (isSalesmanByIdLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading</div>;
+    return <DetailPageSkeleton />;
   }
 
   if (!salesmanEntry) {
@@ -36,6 +40,14 @@ export default function SalesmanDetailPage() {
       <BackHeader
         href="/admin/salesman"
         title={profile.name ?? "Salesman"}
+        avatar={
+          <Avatar className="size-9 shrink-0 border">
+            <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.name ?? "Salesman"} />
+            <AvatarFallback className="bg-brand/10 text-xs font-semibold text-brand">
+              {getNameInitials(profile.name, "S")}
+            </AvatarFallback>
+          </Avatar>
+        }
         actions={
           <Button
             size="icon"
@@ -53,12 +65,16 @@ export default function SalesmanDetailPage() {
         <TabsList className="w-full">
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="gatepass">Gate Pass</TabsTrigger>
+          <TabsTrigger value="verification">Verification</TabsTrigger>
         </TabsList>
         <TabsContent value="sales">
           <SalesTab salesmanId={salesman.id} />
         </TabsContent>
         <TabsContent value="gatepass">
           <GatepassTab salesmanId={salesman.id} isSalesmanDeleted={Boolean(profile.deletedAt)} />
+        </TabsContent>
+        <TabsContent value="verification">
+          <VerificationTab salesmanId={salesman.id} />
         </TabsContent>
       </Tabs>
 

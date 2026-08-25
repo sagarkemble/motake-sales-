@@ -1,10 +1,10 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/use-auth";
 
 export default function AuthCallbackPage() {
@@ -34,7 +34,7 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-4 text-center">
-      <Loader2Icon className="size-6 animate-spin text-brand" />
+      <Skeleton className="size-10 rounded-full" />
       <p className="text-sm text-muted-foreground">Signing you in...</p>
     </main>
   );

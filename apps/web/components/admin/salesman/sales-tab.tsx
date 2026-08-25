@@ -4,6 +4,7 @@ import { format, subDays } from "date-fns";
 
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
 
 interface SalesTabProps {
   salesmanId: string;
@@ -22,7 +23,7 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
   const { salesmanHistory, isSalesmanHistoryLoading } = useSalesmen({ historyFilters });
 
   if (isSalesmanHistoryLoading) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>;
+    return <StatGridSkeleton count={6} />;
   }
 
   const totalAllotted = salesmanHistory.reduce((total, day) => total + day.allottedQty, 0);

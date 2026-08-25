@@ -19,13 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Spinner } from "~/components/ui/spinner";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useAuth } from "~/hooks/use-auth";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 
 const MAX_CATALOG_PAGE_SIZE = 200;
 
@@ -133,11 +134,7 @@ function GatepassPageContent() {
   }
 
   if (isSignedInUserLoading || !isAdmin) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-background">
-        <Spinner className="size-6 text-muted-foreground" />
-      </main>
-    );
+    return <PageSplashSkeleton />;
   }
 
   return (
@@ -174,7 +171,7 @@ function GatepassPageContent() {
         <label className="text-sm font-medium">Select Salesman *</label>
         <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
           <SelectTrigger className="h-11 w-full rounded-xl bg-muted/40">
-            <SelectValue placeholder={isSalesmenListLoading ? "Loading" : "Select salesman"} />
+            <SelectValue placeholder={isSalesmenListLoading ? "Loading…" : "Select salesman"} />
           </SelectTrigger>
           <SelectContent>
             {salesmenPage.items.map(({ salesman, profile }) => (
@@ -206,7 +203,7 @@ function GatepassPageContent() {
 
         <div className="flex flex-col gap-2">
           {isProductsListLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            <ListItemSkeleton count={6} />
           ) : visibleCatalogItems.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">No items found</p>
           ) : (
@@ -263,13 +260,7 @@ function GatepassPageContent() {
 
 export default function GatepassPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-dvh items-center justify-center bg-background">
-          <Spinner className="size-6 text-muted-foreground" />
-        </main>
-      }
-    >
+    <Suspense fallback={<PageSplashSkeleton />}>
       <GatepassPageContent />
     </Suspense>
   );

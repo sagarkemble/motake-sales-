@@ -26,7 +26,7 @@ export function KpiCard({ label, value, icon: Icon, previousValue, className }: 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-2xl border bg-gradient-to-b from-card to-card/60 p-3.5 shadow-sm ring-1 ring-black/[0.02] transition-colors sm:p-4",
+        "flex flex-col gap-2 rounded-2xl border bg-card p-3.5 shadow-sm ring-1 ring-black/[0.02] transition-colors sm:p-4",
         className,
       )}
     >

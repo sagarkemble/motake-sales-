@@ -169,12 +169,46 @@ export interface OrderListFilters {
   placedTo?: Date;
 }
 
+export interface OrderItemPreview {
+  productName: string;
+  imageUrl: string | null;
+}
+
 export interface OrderListRow {
   order: SelectOrder;
   customerShopName: string;
   customerPhone: string;
   salesmanCode: string;
   salesmanName: string | null;
+  itemPreviews: OrderItemPreview[];
+}
+
+async function attachItemPreviews(rows: Omit<OrderListRow, "itemPreviews">[]): Promise<OrderListRow[]> {
+  if (rows.length === 0) return [];
+
+  const orderIds = rows.map((row) => row.order.id);
+  const itemRows = await db
+    .selectDistinct({
+      orderId: orderItemsTable.orderId,
+      productName: productsTable.name,
+      imageUrl: productsTable.imageUrl,
+    })
+    .from(orderItemsTable)
+    .innerJoin(productVarietiesTable, eq(orderItemsTable.varietyId, productVarietiesTable.id))
+    .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
+    .where(inArray(orderItemsTable.orderId, orderIds));
+
+  const itemPreviewsByOrderId = new Map<string, OrderItemPreview[]>();
+  for (const itemRow of itemRows) {
+    const existingItemPreviews = itemPreviewsByOrderId.get(itemRow.orderId) ?? [];
+    existingItemPreviews.push({ productName: itemRow.productName, imageUrl: itemRow.imageUrl });
+    itemPreviewsByOrderId.set(itemRow.orderId, existingItemPreviews);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    itemPreviews: (itemPreviewsByOrderId.get(row.order.id) ?? []).slice(0, 4),
+  }));
 }
 
 export async function listOrders(
@@ -217,7 +251,8 @@ export async function listOrders(
   ]);
 
   const { totalCount } = firstOrThrow(countRows, "listOrders count");
-  return toPaginatedResult(rows, totalCount, pagination);
+  const rowsWithItemPreviews = await attachItemPreviews(rows);
+  return toPaginatedResult(rowsWithItemPreviews, totalCount, pagination);
 }
 
 export async function listDuePreordersForDate(businessDate: string): Promise<SelectOrder[]> {

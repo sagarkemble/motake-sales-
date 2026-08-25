@@ -10,6 +10,7 @@ import { VarietyTable } from "~/components/admin/products/variety-table";
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 
 export default function EditProductPage() {
   const params = useParams<{ id: string }>();
@@ -66,7 +67,7 @@ export default function EditProductPage() {
   }
 
   if (isProductLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading</div>;
+    return <DetailPageSkeleton />;
   }
 
   if (!product) {

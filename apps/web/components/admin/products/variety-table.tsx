@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import {
   VarietyFormDialog,
   type VarietyFormValues,
@@ -82,7 +83,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
 
       <div className="flex flex-col gap-2">
         {isProductVarietiesLoading ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Loading</p>
+          <ListItemSkeleton count={4} />
         ) : productVarieties.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">No varieties yet</p>
         ) : (

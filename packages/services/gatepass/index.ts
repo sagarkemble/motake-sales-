@@ -11,6 +11,7 @@ import {
   listGatepassItemsByGatepassId,
   recordReturnedQtyForItem,
   restoreSoldQtyOnCancellation,
+  submitHandoverForGatepass,
   updateGatepassStatus,
   type AllotmentMatrixRow,
   type GatepassEndOfDayTotals,
@@ -21,16 +22,18 @@ import { getProfileById } from "@repo/database/queries/auth";
 import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
-import { conflict, notFound } from "../errors";
+import { conflict, forbidden, notFound } from "../errors";
 import {
   allotGatepassInputSchema,
   closeGatepassInputSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
+  submitHandoverInputSchema,
   type AllotGatepassInput,
   type CloseGatepassInput,
   type RecordReturnInput,
   type RecordSaleInput,
+  type SubmitHandoverInput,
 } from "./model";
 
 const GATEPASS_UNIQUE_VIOLATION_CODE = "23505";
@@ -151,6 +154,22 @@ class GatepassService {
       throw notFound(`Gatepass item ${parsedInput.gatepassItemId} not found`);
     }
     return updatedItem;
+  }
+
+  public async submitHandover(input: SubmitHandoverInput): Promise<GatepassWithItems> {
+    const parsedInput = submitHandoverInputSchema.parse(input);
+    const outcome = await submitHandoverForGatepass(parsedInput.gatepassId, parsedInput.salesmanId);
+
+    if (outcome.status === "not_found") {
+      throw notFound(`Gatepass ${parsedInput.gatepassId} not found`);
+    }
+    if (outcome.status === "forbidden") {
+      throw forbidden("This gatepass does not belong to you");
+    }
+    if (outcome.status === "not_active") {
+      throw conflict(`Gatepass ${parsedInput.gatepassId} is not active`);
+    }
+    return outcome.gatepass;
   }
 
   public async closeGatepass(

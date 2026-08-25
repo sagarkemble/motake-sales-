@@ -18,6 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { useOrders } from "~/hooks/use-orders";
+import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 
 interface OrderDetailSheetProps {
   orderId: string | null;
@@ -69,7 +70,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
           <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto px-4 pb-4">
             {isOrderDetailLoading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+              <CardDetailSkeleton />
             ) : !orderDetail ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <p className="text-sm text-muted-foreground">Could not load order details</p>

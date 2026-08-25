@@ -108,7 +108,7 @@ export function SalesmanNavbar() {
                       key={quickAction.href}
                       href={quickAction.href}
                       onClick={closeDrawer}
-                      className="flex flex-col items-start gap-2 rounded-xl border bg-gradient-to-b from-card to-card/60 p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
+                      className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
                     >
                       <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                         <QuickActionIcon className="size-4" />
@@ -134,7 +134,7 @@ export function SalesmanNavbar() {
         </Sheet>
 
         <div className="leading-tight">
-          <p className="text-sm font-bold text-foreground">Motake</p>
+          <p className="font-display text-base font-semibold text-foreground">Motake</p>
           <p className="text-xs text-muted-foreground">Salesman</p>
         </div>
       </div>

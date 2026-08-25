@@ -26,6 +26,12 @@ export const recordReturnInputSchema = z.object({
 });
 export type RecordReturnInput = z.infer<typeof recordReturnInputSchema>;
 
+export const submitHandoverInputSchema = z.object({
+  gatepassId: z.string().uuid(),
+  salesmanId: z.string().uuid(),
+});
+export type SubmitHandoverInput = z.infer<typeof submitHandoverInputSchema>;
+
 export const closeGatepassInputSchema = z.object({
   closedBy: z.string().uuid(),
   notes: z.string().optional(),

@@ -6,7 +6,8 @@ import { format } from "date-fns";
 import { Button } from "~/components/ui/button";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
-import { ListItemSkeleton } from "~/components/admin/shared/list-item-skeleton";
+import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { useOrders } from "~/hooks/use-orders";
 
 interface OrderListProps {
@@ -31,7 +32,7 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
         <p className="py-8 text-center text-sm text-muted-foreground">No orders yet</p>
       ) : (
         ordersPage.items.map(
-          ({ order, customerShopName, customerPhone, salesmanCode, salesmanName }) => (
+          ({ order, customerShopName, customerPhone, salesmanCode, salesmanName, itemPreviews }) => (
             <button
               key={order.id}
               type="button"
@@ -39,7 +40,10 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
               className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{order.orderCode}</p>
+                <div className="flex items-center gap-2">
+                  <OrderItemAvatars itemPreviews={itemPreviews} />
+                  <p className="text-sm font-medium">{order.orderCode}</p>
+                </div>
                 <OrderStatusBadge status={order.status} />
               </div>
               <div>

@@ -4,6 +4,7 @@ import { format } from "date-fns";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useOrders } from "~/hooks/use-orders";
+import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 
 interface OrderDetailDialogProps {
@@ -31,7 +32,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
         </DialogHeader>
 
         {isOrderDetailLoading || !orderDetail ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+          <CardDetailSkeleton />
         ) : (
           <>
             <div className="flex flex-col gap-4">

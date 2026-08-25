@@ -11,6 +11,7 @@ import { OrderDetailSheet } from "~/components/salesman/order-detail-sheet";
 import { OrderListRow } from "~/components/salesman/order-list-row";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useOrders } from "~/hooks/use-orders";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 
 const ORDERS_PAGE_SIZE = 20;
 const PREORDERS_PAGE_SIZE = 20;
@@ -72,7 +73,7 @@ export default function SalesmanOrdersPage() {
 
         <TabsContent value="book_now" className="flex flex-col gap-3">
           {isBookNowLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               You have not placed any orders yet.
@@ -129,7 +130,7 @@ export default function SalesmanOrdersPage() {
           </div>
 
           {isPreordersLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading</p>
+            <ListItemSkeleton count={5} />
           ) : visiblePreorderRows.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               {preorderStatusFilter === "pending"

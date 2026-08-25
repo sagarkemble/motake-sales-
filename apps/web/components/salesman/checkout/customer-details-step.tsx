@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { CheckIcon, ChevronsUpDownIcon, StoreIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, QrCodeIcon, StoreIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -15,6 +15,8 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
+import { PaymentScannerDialog } from "~/components/salesman/checkout/payment-scanner-dialog";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface CustomerOption {
   id: string;
@@ -52,6 +54,7 @@ export function CustomerDetailsStep({
   onNewCustomerFormChange,
 }: CustomerDetailsStepProps) {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   function handleSelectCustomer(customer: CustomerOption) {
     onSelectCustomer(customer);
@@ -66,6 +69,19 @@ export function CustomerDetailsStep({
           Select an existing customer or enter new customer details.
         </p>
       </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="group h-14 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:border-brand/50 hover:bg-accent/70"
+        onClick={() => setIsScannerOpen(true)}
+      >
+        <QrCodeIcon className="size-6 transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] group-hover:scale-110 group-hover:rotate-6" />
+        Open payment scanner
+      </Button>
+
+      <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
 
       <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
         <PopoverTrigger asChild>
@@ -110,7 +126,14 @@ export function CustomerDetailsStep({
             />
             <CommandList className="max-h-64">
               {isCustomerListLoading ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">Loading</p>
+                <div className="flex flex-col gap-3 p-2">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <Skeleton className="size-8 shrink-0 rounded-lg" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <>
                   <CommandEmpty>No customer matches &quot;{customerSearchTerm}&quot;</CommandEmpty>

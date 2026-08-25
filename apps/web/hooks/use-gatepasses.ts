@@ -60,6 +60,9 @@ export function useGatepasses({
   const verifyGatepassMutation = trpc.gatepasses.verify.useMutation({
     onSuccess: () => utils.gatepasses.invalidate(),
   });
+  const submitHandoverMutation = trpc.gatepasses.submitHandover.useMutation({
+    onSuccess: () => utils.gatepasses.invalidate(),
+  });
 
   return {
     canonicalBusinessDate: canonicalDateQuery.data?.data.businessDate ?? "",
@@ -109,5 +112,10 @@ export function useGatepasses({
     verifyGatepassAsync: verifyGatepassMutation.mutateAsync,
     isVerifyingGatepass: verifyGatepassMutation.isPending,
     verifyGatepassError: verifyGatepassMutation.error ?? null,
+
+    submitHandover: submitHandoverMutation.mutate,
+    submitHandoverAsync: submitHandoverMutation.mutateAsync,
+    isSubmittingHandover: submitHandoverMutation.isPending,
+    submitHandoverError: submitHandoverMutation.error ?? null,
   };
 }

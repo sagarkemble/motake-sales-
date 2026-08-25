@@ -5,7 +5,7 @@ import { InfoIcon } from "lucide-react";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
-import { Spinner } from "~/components/ui/spinner";
+import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 
 interface VarietyDisplay {
@@ -42,9 +42,7 @@ export function GatepassDetailDrawer({
 
         <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-6">
           {isMyGatepassLoading || !myGatepass ? (
-            <div className="flex justify-center py-10">
-              <Spinner className="size-6 text-muted-foreground" />
-            </div>
+            <CardDetailSkeleton />
           ) : (
             <>
               <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
