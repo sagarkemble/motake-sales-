@@ -8,8 +8,14 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
+import { formatInrCompact } from "~/lib/format-money";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+
+function getFromPrice(varieties: { unitPrice: number }[]): number | null {
+  if (varieties.length === 0) return null;
+  return Math.min(...varieties.map((variety) => variety.unitPrice));
+}
 
 function ProductsPageContent() {
   const pageSize = 20;
@@ -73,7 +79,9 @@ function ProductsPageContent() {
             {debouncedSearchTerm ? `No products match "${debouncedSearchTerm}"` : "No products yet"}
           </p>
         ) : (
-          productsPage.items.map(({ product, varieties }) => (
+          productsPage.items.map(({ product, varieties }) => {
+            const fromPrice = getFromPrice(varieties);
+            return (
             <div
               key={product.id}
               className={`flex flex-col gap-2.5 rounded-3xl border bg-card p-3 shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
@@ -107,6 +115,11 @@ function ProductsPageContent() {
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {varieties.length} {varieties.length === 1 ? "variety" : "varieties"}
                 </p>
+                {fromPrice !== null && (
+                  <p className="mt-0.5 text-xs font-semibold text-brand">
+                    {varieties.length === 1 ? formatInrCompact(fromPrice) : `from ${formatInrCompact(fromPrice)}`}
+                  </p>
+                )}
               </div>
 
               <Button
@@ -123,7 +136,8 @@ function ProductsPageContent() {
                 )}
               </Button>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

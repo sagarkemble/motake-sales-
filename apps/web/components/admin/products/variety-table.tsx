@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { formatInr } from "~/lib/format-money";
 import { useProducts } from "~/hooks/use-products";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import {
@@ -101,6 +102,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
                 <p className="text-xs text-muted-foreground">
                   {variety.sku} &middot; {variety.unit}
                 </p>
+                <p className="text-xs font-medium text-brand">{formatInr(variety.unitPrice)}</p>
               </div>
 
               <StatusBadge status={variety.status} />
@@ -134,7 +136,16 @@ export function VarietyTable({ productId }: VarietyTableProps) {
       <VarietyFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        defaultValues={editingVariety ?? undefined}
+        defaultValues={
+          editingVariety
+            ? {
+                sku: editingVariety.sku,
+                name: editingVariety.name,
+                unit: editingVariety.unit,
+                unitPrice: editingVariety.unitPrice,
+              }
+            : undefined
+        }
         isSubmitting={isCreatingProductVariety || isUpdatingProductVariety}
         onSubmit={handleSubmit}
       />

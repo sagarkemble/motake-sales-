@@ -4,6 +4,7 @@ import { endOfDay, format, startOfDay, subDays } from "date-fns";
 import {
   CheckCircleIcon,
   ClockIcon,
+  IndianRupeeIcon,
   RotateCcwIcon,
   ShoppingCartIcon,
   TicketIcon,
@@ -15,6 +16,7 @@ import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-pa
 import { adminQuickActions } from "~/components/admin/nav-items";
 import { QuickActionLink } from "~/components/shared/quick-action-link";
 import { Skeleton } from "~/components/ui/skeleton";
+import { formatInrCompact } from "~/lib/format-money";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/hooks/use-auth";
 import { useReports } from "~/hooks/use-reports";
@@ -63,9 +65,9 @@ export default function AdminDashboardPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Today&apos;s orders</h2>
         {isTodayKpiSummaryLoading ? (
-          <KpiGridSkeleton count={3} columnClassName="sm:grid-cols-3" />
+          <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KpiCard
               label="Orders"
               value={todayKpiSummary?.bookNowOrderCount ?? 0}
@@ -83,6 +85,13 @@ export default function AdminDashboardPage() {
               value={todayKpiSummary?.fulfilledOrderCount ?? 0}
               previousValue={yesterdayKpiSummary?.fulfilledOrderCount}
               icon={CheckCircleIcon}
+            />
+            <KpiCard
+              label="Sales value"
+              value={formatInrCompact(todayKpiSummary?.salesValue ?? 0)}
+              numericValue={todayKpiSummary?.salesValue ?? 0}
+              previousValue={yesterdayKpiSummary?.salesValue}
+              icon={IndianRupeeIcon}
             />
           </div>
         )}

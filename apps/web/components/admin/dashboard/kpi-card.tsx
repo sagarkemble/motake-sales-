@@ -4,9 +4,11 @@ import { cn } from "~/lib/utils";
 
 interface KpiCardProps {
   label: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
   previousValue?: number;
+  /** Used for vs-yesterday % when `value` is a formatted string. */
+  numericValue?: number;
   className?: string;
 }
 
@@ -17,11 +19,21 @@ function getPercentChangeLabel(value: number, previousValue: number): string | n
   return `${percentChange > 0 ? "+" : ""}${percentChange}%`;
 }
 
-export function KpiCard({ label, value, icon: Icon, previousValue, className }: KpiCardProps) {
-  const hasPreviousValue = previousValue !== undefined;
-  const percentChangeLabel = hasPreviousValue ? getPercentChangeLabel(value, previousValue) : null;
-  const isIncrease = hasPreviousValue && value > previousValue;
-  const isDecrease = hasPreviousValue && value < previousValue;
+export function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  previousValue,
+  numericValue,
+  className,
+}: KpiCardProps) {
+  const comparableValue = numericValue ?? (typeof value === "number" ? value : undefined);
+  const hasPreviousValue = previousValue !== undefined && comparableValue !== undefined;
+  const percentChangeLabel = hasPreviousValue
+    ? getPercentChangeLabel(comparableValue, previousValue)
+    : null;
+  const isIncrease = hasPreviousValue && comparableValue > previousValue;
+  const isDecrease = hasPreviousValue && comparableValue < previousValue;
 
   return (
     <div

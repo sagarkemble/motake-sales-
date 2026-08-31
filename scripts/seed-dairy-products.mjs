@@ -24,13 +24,13 @@ const ADMIN_PASSWORD =
   process.env.SEED_ADMIN_PASSWORD || process.env.K6_ADMIN_PASSWORD || "team@lunarstudio.dev";
 
 const LIQUID_VARIETIES = [
-  { name: "Half Liter", unit: "L", skuSuffix: "500ML" },
-  { name: "1 Liter", unit: "L", skuSuffix: "1L" },
+  { name: "Half Liter", unit: "L", skuSuffix: "500ML", unitPrice: 28 },
+  { name: "1 Liter", unit: "L", skuSuffix: "1L", unitPrice: 55 },
 ];
 
 const SOLID_VARIETIES = [
-  { name: "Half Kg", unit: "kg", skuSuffix: "500G" },
-  { name: "1 Kg", unit: "kg", skuSuffix: "1KG" },
+  { name: "Half Kg", unit: "kg", skuSuffix: "500G", unitPrice: 180 },
+  { name: "1 Kg", unit: "kg", skuSuffix: "1KG", unitPrice: 350 },
 ];
 
 const PRODUCTS = [
@@ -171,6 +171,7 @@ async function seedProduct(cookie, productDef) {
       sku: `MOTAKE-${productDef.code}-${variety.skuSuffix}`,
       name: variety.name,
       unit: variety.unit,
+      unitPrice: variety.unitPrice,
     });
     createdVarieties.push(created);
   }

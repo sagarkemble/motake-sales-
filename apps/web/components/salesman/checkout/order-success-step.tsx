@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { CheckIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { formatInr } from "~/lib/format-money";
 import type { PlacedOrder } from "~/hooks/salesman/use-checkout-wizard";
 
 interface OrderSuccessStepProps {
@@ -39,6 +40,10 @@ export function OrderSuccessStep({
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Total items</p>
           <p className="text-sm font-medium">{placedOrder.totalQuantity}</p>
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Total amount</p>
+          <p className="text-sm font-semibold text-brand">{formatInr(placedOrder.totalAmount)}</p>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Order type</p>

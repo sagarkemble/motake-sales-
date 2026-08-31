@@ -84,4 +84,6 @@ export const salesmanDayWiseHistoryRowSchema = z.object({
   soldQty: z.number(),
   returnedQty: z.number(),
   preOrderedQty: z.number(),
+  soldAmount: z.number(),
+  preOrderedAmount: z.number(),
 });

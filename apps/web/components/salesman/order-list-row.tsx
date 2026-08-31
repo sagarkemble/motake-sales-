@@ -1,6 +1,7 @@
 import { ClipboardListIcon } from "lucide-react";
 
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { formatInrCompact } from "~/lib/format-money";
 
 type OrderStatus = "confirmed" | "scheduled" | "due" | "fulfilled" | "cancelled";
 
@@ -9,6 +10,7 @@ interface OrderListRowProps {
   orderCode: string;
   timestampLabel: string;
   totalQuantity: number;
+  totalAmount: number;
   status: OrderStatus;
   onClick: () => void;
 }
@@ -18,6 +20,7 @@ export function OrderListRow({
   orderCode,
   timestampLabel,
   totalQuantity,
+  totalAmount,
   status,
   onClick,
 }: OrderListRowProps) {
@@ -36,6 +39,7 @@ export function OrderListRow({
         <p className="truncate text-xs text-muted-foreground">
           {orderCode} · {timestampLabel} · {totalQuantity} items
         </p>
+        <p className="text-xs font-semibold text-brand">{formatInrCompact(totalAmount)}</p>
       </div>
 
       <OrderStatusBadge status={status} className="shrink-0" />

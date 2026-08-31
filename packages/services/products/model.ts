@@ -24,6 +24,7 @@ export const createProductVarietyInputSchema = z.object({
   sku: z.string().min(1).max(64),
   name: z.string().min(1).max(120),
   unit: z.string().min(1).max(32),
+  unitPrice: z.number().min(0),
 });
 export type CreateProductVarietyInput = z.infer<typeof createProductVarietyInputSchema>;
 

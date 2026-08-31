@@ -86,6 +86,7 @@ export default function SalesmanOrdersPage() {
                 orderCode={order.orderCode}
                 timestampLabel={format(new Date(order.placedAt), "d MMM, h:mm a")}
                 totalQuantity={order.totalQuantity}
+                totalAmount={order.totalAmount}
                 status={order.status}
                 onClick={() => setSelectedOrderId(order.id)}
               />
@@ -149,6 +150,7 @@ export default function SalesmanOrdersPage() {
                     "d MMM yyyy",
                   )}
                   totalQuantity={order.totalQuantity}
+                  totalAmount={order.totalAmount}
                   status={order.status}
                   onClick={() => setSelectedOrderId(order.id)}
                 />

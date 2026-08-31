@@ -90,6 +90,7 @@ export async function updateCustomer(
 export interface CustomerStats {
   totalOrderCount: number;
   totalQuantitySold: number;
+  lifetimeValue: number;
   lastOrderAt: Date | null;
 }
 
@@ -98,13 +99,14 @@ export async function getCustomerStats(customerId: string): Promise<CustomerStat
     .select({
       totalOrderCount: count(),
       totalQuantitySold: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
+      lifetimeValue: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
       lastOrderAt: sql<string | null>`max(${ordersTable.placedAt})`,
     })
     .from(ordersTable)
     .where(and(eq(ordersTable.customerId, customerId), ne(ordersTable.status, "cancelled")));
 
   if (!statsRow) {
-    return { totalOrderCount: 0, totalQuantitySold: 0, lastOrderAt: null };
+    return { totalOrderCount: 0, totalQuantitySold: 0, lifetimeValue: 0, lastOrderAt: null };
   }
 
   return {

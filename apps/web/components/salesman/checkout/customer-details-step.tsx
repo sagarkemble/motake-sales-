@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { Textarea } from "~/components/ui/textarea";
 import { PaymentScannerDialog } from "~/components/salesman/checkout/payment-scanner-dialog";
 import { Skeleton } from "~/components/ui/skeleton";
+import { formatInr } from "~/lib/format-money";
 
 interface CustomerOption {
   id: string;
@@ -40,6 +41,7 @@ interface CustomerDetailsStepProps {
   onClearSelectedCustomer: () => void;
   newCustomerForm: NewCustomerFormValues;
   onNewCustomerFormChange: (fieldValues: Partial<NewCustomerFormValues>) => void;
+  totalCartAmount: number;
 }
 
 export function CustomerDetailsStep({
@@ -52,6 +54,7 @@ export function CustomerDetailsStep({
   onClearSelectedCustomer,
   newCustomerForm,
   onNewCustomerFormChange,
+  totalCartAmount,
 }: CustomerDetailsStepProps) {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -204,6 +207,11 @@ export function CustomerDetailsStep({
           </div>
         </div>
       )}
+
+      <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
+        <span className="text-muted-foreground">Place order for</span>
+        <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
+      </div>
     </div>
   );
 }

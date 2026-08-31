@@ -2,13 +2,14 @@
 
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
-import { CalendarIcon, PackageIcon, ShoppingCartIcon } from "lucide-react";
+import { CalendarIcon, IndianRupeeIcon, PackageIcon, ShoppingCartIcon } from "lucide-react";
 
 import { BackHeader } from "~/components/admin/products/back-header";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderList } from "~/components/admin/orders/order-list";
 import { Skeleton } from "~/components/ui/skeleton";
+import { formatInrCompact } from "~/lib/format-money";
 import { useCustomers } from "~/hooks/use-customers";
 
 export default function CustomerDetailPage() {
@@ -70,7 +71,12 @@ export default function CustomerDetailPage() {
               value={customerStats?.totalOrderCount ?? 0}
               icon={ShoppingCartIcon}
             />
-            <div className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card p-3 sm:col-span-1">
+            <KpiCard
+              label="Lifetime value"
+              value={formatInrCompact(customerStats?.lifetimeValue ?? 0)}
+              icon={IndianRupeeIcon}
+            />
+            <div className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card p-3 sm:col-span-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
                 <CalendarIcon className="size-4" />
               </div>

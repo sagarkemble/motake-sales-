@@ -27,6 +27,7 @@ export interface PlacedOrder {
   orderCode: string;
   type: OrderTypeChoice;
   totalQuantity: number;
+  totalAmount: number;
   placedAt: Date;
 }
 
@@ -59,7 +60,8 @@ function getBookNowBlockReasons(
 
 export function useCheckoutWizard() {
   const router = useRouter();
-  const { cartLines, totalCartQuantity, setQuantityForVariety, removeLine, clearCart } = useCart();
+  const { cartLines, totalCartQuantity, totalCartAmount, setQuantityForVariety, removeLine, clearCart } =
+    useCart();
 
   const businessDateKey = format(new Date(), "yyyy-MM-dd");
   const nextDayDate = addDays(new Date(), 1);
@@ -187,6 +189,7 @@ export function useCheckoutWizard() {
         orderCode: placedOrderResponse.data.order.orderCode,
         type: orderType,
         totalQuantity: placedOrderResponse.data.order.totalQuantity,
+        totalAmount: placedOrderResponse.data.order.totalAmount,
         placedAt: new Date(placedOrderResponse.data.order.placedAt),
       });
     } catch (placeOrderError) {
@@ -199,6 +202,7 @@ export function useCheckoutWizard() {
   return {
     cartLines,
     totalCartQuantity,
+    totalCartAmount,
     onCartQuantityChange: setQuantityForVariety,
     onCartLineRemove: removeLine,
 

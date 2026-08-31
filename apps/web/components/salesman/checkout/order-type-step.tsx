@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
+import { formatInr } from "~/lib/format-money";
 import type { OrderTypeChoice } from "~/hooks/salesman/use-checkout-wizard";
 
 interface OrderTypeStepProps {
@@ -15,6 +16,7 @@ interface OrderTypeStepProps {
   isBookNowAllowed: boolean;
   bookNowBlockReasons: string[];
   nextDayDate: Date;
+  totalCartAmount: number;
 }
 
 export function OrderTypeStep({
@@ -23,6 +25,7 @@ export function OrderTypeStep({
   isBookNowAllowed,
   bookNowBlockReasons,
   nextDayDate,
+  totalCartAmount,
 }: OrderTypeStepProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -84,6 +87,11 @@ export function OrderTypeStep({
         </div>
         {orderType === "pre_order" && <CheckCircle2Icon className="size-5 shrink-0 text-brand" />}
       </button>
+
+      <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
+        <span className="text-muted-foreground">Amount to collect</span>
+        <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,13 @@
       "when": 1786001203266,
       "tag": "0001_soft_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787716755053,
+      "tag": "0002_lively_callisto",
+      "breakpoints": true
     }
   ]
 }

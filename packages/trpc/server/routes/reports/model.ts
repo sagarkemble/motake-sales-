@@ -10,6 +10,7 @@ export const dailyKpiSummarySchema = z.object({
   bookNowOrderCount: z.number(),
   preOrderCount: z.number(),
   fulfilledOrderCount: z.number(),
+  salesValue: z.number(),
   gatepassTotals: z.object({
     totalIssuedQty: z.number(),
     totalSoldQty: z.number(),
@@ -39,4 +40,5 @@ export const productSalesSummaryRowSchema = z.object({
   productName: z.string(),
   varietyName: z.string(),
   totalQuantitySold: z.number(),
+  totalAmountSold: z.number(),
 });

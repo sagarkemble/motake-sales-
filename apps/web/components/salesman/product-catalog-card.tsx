@@ -3,6 +3,7 @@
 import { PackageIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { formatInrCompact } from "~/lib/format-money";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductCatalogCardProps {
@@ -10,6 +11,7 @@ interface ProductCatalogCardProps {
   productName: string;
   productImageUrl: string | null;
   varietyCount: number;
+  fromPrice: number | null;
   onAddToCart: () => void;
 }
 
@@ -18,6 +20,7 @@ export function ProductCatalogCard({
   productName,
   productImageUrl,
   varietyCount,
+  fromPrice,
   onAddToCart,
 }: ProductCatalogCardProps) {
   const { cartLines } = useCart();
@@ -48,6 +51,11 @@ export function ProductCatalogCard({
         <p className="text-xs text-muted-foreground">
           {varietyCount} {varietyCount === 1 ? "size" : "sizes"}
         </p>
+        {fromPrice !== null && (
+          <p className="text-xs font-semibold text-brand">
+            {varietyCount === 1 ? formatInrCompact(fromPrice) : `from ${formatInrCompact(fromPrice)}`}
+          </p>
+        )}
       </div>
 
       <Button

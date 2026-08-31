@@ -7,7 +7,8 @@ import type { CartLine } from "~/providers/cart-provider";
 import { useCart } from "~/providers/cart-provider";
 
 export default function SalesmanCartPage() {
-  const { cartLines, totalCartQuantity, setQuantityForVariety, removeLine } = useCart();
+  const { cartLines, totalCartQuantity, totalCartAmount, setQuantityForVariety, removeLine } =
+    useCart();
 
   if (cartLines.length === 0) {
     return <CartEmptyState />;
@@ -21,6 +22,7 @@ export default function SalesmanCartPage() {
         productName: cartLine.productName,
         varietyName: cartLine.varietyName,
         unit: cartLine.unit,
+        unitPrice: cartLine.unitPrice,
         productImageUrl: cartLine.productImageUrl,
       },
       quantity,
@@ -33,6 +35,7 @@ export default function SalesmanCartPage() {
         <CartViewMobile
           cartLines={cartLines}
           totalCartQuantity={totalCartQuantity}
+          totalCartAmount={totalCartAmount}
           onQuantityChange={handleQuantityChange}
           onRemove={removeLine}
         />
@@ -41,6 +44,7 @@ export default function SalesmanCartPage() {
         <CartViewDesktop
           cartLines={cartLines}
           totalCartQuantity={totalCartQuantity}
+          totalCartAmount={totalCartAmount}
           onQuantityChange={handleQuantityChange}
           onRemove={removeLine}
         />

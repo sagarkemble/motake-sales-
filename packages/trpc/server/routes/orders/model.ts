@@ -11,6 +11,7 @@ export const orderSchema = z.object({
   salesmanId: z.string(),
   customerId: z.string(),
   totalQuantity: z.number(),
+  totalAmount: z.number(),
   scheduledDate: z.string().nullable(),
   placedAt: z.date(),
   fulfilledAt: z.date().nullable(),
@@ -28,6 +29,7 @@ export const orderItemSchema = z.object({
   orderId: z.string(),
   varietyId: z.string(),
   quantity: z.number(),
+  unitPrice: z.number(),
   createdAt: z.date(),
 });
 
@@ -64,6 +66,8 @@ export const orderDetailItemSchema = z.object({
   varietyName: z.string(),
   unit: z.string(),
   quantity: z.number(),
+  unitPrice: z.number(),
+  imageUrl: z.string().nullable(),
 });
 
 export const orderDetailSchema = z.object({

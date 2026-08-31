@@ -42,6 +42,7 @@ function mapGatepassDeductionError(caughtError: unknown) {
   const message = caughtError instanceof Error ? caughtError.message : "Failed to place order";
   if (message.includes("No active gatepass")) return badRequest(message);
   if (message.includes("not allotted or insufficient")) return conflict(message);
+  if (message.includes("missing or inactive")) return badRequest(message);
   return caughtError;
 }
 
@@ -92,10 +93,6 @@ class OrderService {
       }
     }
 
-    const totalQuantity = parsedInput.items.reduce(
-      (runningTotal, item) => runningTotal + item.quantity,
-      0,
-    );
     return createOrderWithItems(
       {
         orderCode: generateOrderCode("PO"),
@@ -103,7 +100,6 @@ class OrderService {
         status: "scheduled",
         salesmanId: parsedInput.salesmanId,
         customerId: parsedInput.customerId,
-        totalQuantity,
         scheduledDate: parsedInput.scheduledDate,
         placedAt: new Date(),
         idempotencyKey: parsedInput.idempotencyKey,

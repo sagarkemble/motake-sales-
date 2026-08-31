@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
+import { formatInr } from "~/lib/format-money";
 import type { CartLine } from "~/providers/cart-provider";
 import { CartItemRow } from "./cart-item-row";
 
 interface CartViewDesktopProps {
   cartLines: CartLine[];
   totalCartQuantity: number;
+  totalCartAmount: number;
   onQuantityChange: (cartLine: CartLine, quantity: number) => void;
   onRemove: (varietyId: string) => void;
 }
@@ -14,6 +16,7 @@ interface CartViewDesktopProps {
 export function CartViewDesktop({
   cartLines,
   totalCartQuantity,
+  totalCartAmount,
   onQuantityChange,
   onRemove,
 }: CartViewDesktopProps) {
@@ -37,6 +40,10 @@ export function CartViewDesktop({
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Total items</span>
             <span className="font-medium text-foreground">{totalCartQuantity}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Grand total</span>
+            <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
           </div>
           <Button
             asChild

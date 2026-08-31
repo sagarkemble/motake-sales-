@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { PackageIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { useOrders } from "~/hooks/use-orders";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
+import { formatInr, lineTotal } from "~/lib/format-money";
 
 interface OrderDetailSheetProps {
   orderId: string | null;
@@ -98,6 +100,12 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     <p className="text-xs text-muted-foreground">Total quantity</p>
                     <p className="font-medium">{orderDetail.order.totalQuantity}</p>
                   </div>
+                  <div className="col-span-2 rounded-xl bg-brand/5 p-3">
+                    <p className="text-xs text-muted-foreground">Total amount</p>
+                    <p className="text-lg font-semibold text-brand">
+                      {formatInr(orderDetail.order.totalAmount)}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Placed at</p>
                     <p className="font-medium">
@@ -140,18 +148,34 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   {orderDetail.items.map((item) => (
                     <div
                       key={item.varietyId}
-                      className="flex items-center justify-between rounded-xl border p-3 text-sm"
+                      className="flex items-center gap-3 rounded-xl border p-3 text-sm"
                     >
-                      <div>
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-xs text-muted-foreground">{item.varietyName}</p>
+                      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.productName}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <PackageIcon className="size-5 text-muted-foreground" />
+                        )}
                       </div>
-                      <p className="flex items-baseline gap-1.5 whitespace-nowrap">
-                        <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
-                          {item.quantity}
-                        </span>
-                        <span className="text-xs text-muted-foreground">× {item.unit}</span>
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{item.productName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{item.varietyName}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="flex items-baseline justify-end gap-1.5 whitespace-nowrap">
+                          <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
+                            {item.quantity}
+                          </span>
+                          <span className="text-xs text-muted-foreground">× {item.unit}</span>
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-brand">
+                          {formatInr(lineTotal(item.unitPrice, item.quantity))}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>

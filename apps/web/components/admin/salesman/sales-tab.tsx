@@ -3,6 +3,7 @@
 import { format, subDays } from "date-fns";
 
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
+import { formatInrCompact } from "~/lib/format-money";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
 
@@ -23,13 +24,18 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
   const { salesmanHistory, isSalesmanHistoryLoading } = useSalesmen({ historyFilters });
 
   if (isSalesmanHistoryLoading) {
-    return <StatGridSkeleton count={6} />;
+    return <StatGridSkeleton count={8} />;
   }
 
   const totalAllotted = salesmanHistory.reduce((total, day) => total + day.allottedQty, 0);
   const totalSold = salesmanHistory.reduce((total, day) => total + day.soldQty, 0);
   const totalReturned = salesmanHistory.reduce((total, day) => total + day.returnedQty, 0);
   const totalPreOrdered = salesmanHistory.reduce((total, day) => total + day.preOrderedQty, 0);
+  const totalSoldAmount = salesmanHistory.reduce((total, day) => total + day.soldAmount, 0);
+  const totalPreOrderedAmount = salesmanHistory.reduce(
+    (total, day) => total + day.preOrderedAmount,
+    0,
+  );
   const activeDayCount = salesmanHistory.filter(
     (day) => day.gatepassStatus !== null && day.gatepassStatus !== "not_issued",
   ).length;
@@ -37,9 +43,11 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
 
   const kpiCards = [
     { label: "Items sold", value: totalSold },
+    { label: "Sales value", value: formatInrCompact(totalSoldAmount) },
     { label: "Items allotted", value: totalAllotted },
     { label: "Items returned", value: totalReturned },
     { label: "Pre-orders", value: totalPreOrdered },
+    { label: "Pre-order value", value: formatInrCompact(totalPreOrderedAmount) },
     { label: "Active days", value: activeDayCount },
     { label: "Sell-through rate", value: `${sellThroughRate}%` },
   ];

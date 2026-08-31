@@ -3,6 +3,7 @@
 import { PackageIcon, Trash2Icon } from "lucide-react";
 
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
+import { formatInr, lineTotal } from "~/lib/format-money";
 import type { CartLine } from "~/providers/cart-provider";
 
 interface CartItemRowProps {
@@ -30,6 +31,10 @@ export function CartItemRow({ cartLine, onQuantityChange, onRemove }: CartItemRo
         <p className="truncate text-sm font-medium">{cartLine.productName}</p>
         <p className="truncate text-xs text-muted-foreground">
           {cartLine.varietyName} ({cartLine.unit})
+        </p>
+        <p className="text-xs font-medium text-brand">
+          {formatInr(cartLine.unitPrice)} × {cartLine.quantity} ={" "}
+          {formatInr(lineTotal(cartLine.unitPrice, cartLine.quantity))}
         </p>
       </div>
 

@@ -10,6 +10,7 @@ export interface DailyKpiSummary {
   bookNowOrderCount: number;
   preOrderCount: number;
   fulfilledOrderCount: number;
+  salesValue: number;
   gatepassTotals: GatepassEndOfDayTotals;
 }
 
@@ -50,6 +51,19 @@ export async function getDailyKpiSummary(
       ),
     );
 
+  const salesValueRows = await db
+    .select({
+      salesValue: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
+    })
+    .from(ordersTable)
+    .where(
+      and(
+        sql`${ordersTable.status} <> 'cancelled'`,
+        gte(ordersTable.placedAt, placedRange.from),
+        lte(ordersTable.placedAt, placedRange.to),
+      ),
+    );
+
   const gatepassTotals = await getEndOfDayTotalsForDate(businessDate);
 
   return {
@@ -57,6 +71,7 @@ export async function getDailyKpiSummary(
     preOrderCount: firstOrThrow(preOrderRows, "getDailyKpiSummary pre-order count").orderCount,
     fulfilledOrderCount: firstOrThrow(fulfilledRows, "getDailyKpiSummary fulfilled count")
       .orderCount,
+    salesValue: firstOrThrow(salesValueRows, "getDailyKpiSummary sales value").salesValue,
     gatepassTotals,
   };
 }
@@ -83,6 +98,7 @@ export interface ProductSalesSummaryRow {
   productName: string;
   varietyName: string;
   totalQuantitySold: number;
+  totalAmountSold: number;
 }
 
 export async function getProductWiseSalesSummary(range: {
@@ -95,6 +111,7 @@ export async function getProductWiseSalesSummary(range: {
       productName: productsTable.name,
       varietyName: productVarietiesTable.name,
       totalQuantitySold: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
+      totalAmountSold: sql<number>`coalesce(sum(${orderItemsTable.unitPrice} * ${orderItemsTable.quantity}), 0)::float8`,
     })
     .from(orderItemsTable)
     .innerJoin(ordersTable, eq(orderItemsTable.orderId, ordersTable.id))

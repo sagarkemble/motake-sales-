@@ -43,6 +43,7 @@ export const customerIdInputSchema = z.object({ id: z.string().uuid() });
 export const customerStatsSchema = z.object({
   totalOrderCount: z.number(),
   totalQuantitySold: z.number(),
+  lifetimeValue: z.number(),
   lastOrderAt: z.date().nullable(),
 });
 

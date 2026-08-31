@@ -8,6 +8,7 @@ import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { formatInrCompact } from "~/lib/format-money";
 import { useOrders } from "~/hooks/use-orders";
 
 interface OrderListProps {
@@ -39,20 +40,29 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
               onClick={() => setSelectedOrderId(order.id)}
               className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
                   <OrderItemAvatars itemPreviews={itemPreviews} />
-                  <p className="text-sm font-medium">{order.orderCode}</p>
+                  <p className="truncate text-sm font-medium">{order.orderCode}</p>
                 </div>
-                <OrderStatusBadge status={order.status} />
+                <OrderStatusBadge status={order.status} className="shrink-0" />
               </div>
-              <div>
-                <p className="text-sm">{customerShopName}</p>
-                <p className="text-xs text-muted-foreground">{customerPhone}</p>
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm">{customerShopName}</p>
+                  <p className="text-xs text-muted-foreground">{customerPhone}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold text-brand">
+                    {formatInrCompact(order.totalAmount)}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-bold">{order.totalQuantity} qty</p>
+                </div>
               </div>
+
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Salesman {salesmanName ?? salesmanCode}</span>
-                <span>{order.totalQuantity} qty</span>
                 <span>
                   {format(
                     new Date(

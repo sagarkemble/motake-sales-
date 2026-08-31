@@ -29,6 +29,7 @@ const varietyFormSchema = z.object({
   sku: z.string().min(1, "Enter a SKU").max(64),
   name: z.string().min(1, "Enter a variety name").max(120),
   unit: z.string().min(1, "Enter a unit, e.g. kg or box").max(32),
+  unitPrice: z.number().min(0, "Price must be 0 or more"),
 });
 
 export type VarietyFormValues = z.infer<typeof varietyFormSchema>;
@@ -50,11 +51,11 @@ export function VarietyFormDialog({
 }: VarietyFormDialogProps) {
   const form = useForm<VarietyFormValues>({
     resolver: zodResolver(varietyFormSchema),
-    defaultValues: defaultValues ?? { sku: "", name: "", unit: "" },
+    defaultValues: defaultValues ?? { sku: "", name: "", unit: "", unitPrice: 0 },
   });
 
   useEffect(() => {
-    if (open) form.reset(defaultValues ?? { sku: "", name: "", unit: "" });
+    if (open) form.reset(defaultValues ?? { sku: "", name: "", unit: "", unitPrice: 0 });
   }, [open, defaultValues, form]);
 
   async function handleFormSubmit(values: VarietyFormValues) {
@@ -119,6 +120,35 @@ export function VarietyFormDialog({
                   <FormLabel>Unit</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. kg" className="rounded-xl bg-muted/40" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="unitPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit price (₹)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      className="rounded-xl bg-muted/40"
+                      value={field.value}
+                      onChange={(event) =>
+                        field.onChange(
+                          event.target.value === "" ? 0 : Number(event.target.value),
+                        )
+                      }
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

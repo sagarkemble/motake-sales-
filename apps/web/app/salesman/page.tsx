@@ -56,16 +56,23 @@ function SalesmanCatalogContent() {
             {debouncedSearchTerm ? `No products match "${debouncedSearchTerm}"` : "No products yet"}
           </p>
         ) : (
-          productsPage.items.map(({ product, varieties }) => (
-            <ProductCatalogCard
-              key={product.id}
-              productId={product.id}
-              productName={product.name}
-              productImageUrl={product.imageUrl}
-              varietyCount={varieties.length}
-              onAddToCart={() => setOpenProductId(product.id)}
-            />
-          ))
+          productsPage.items.map(({ product, varieties }) => {
+            const fromPrice =
+              varieties.length === 0
+                ? null
+                : Math.min(...varieties.map((variety) => variety.unitPrice));
+            return (
+              <ProductCatalogCard
+                key={product.id}
+                productId={product.id}
+                productName={product.name}
+                productImageUrl={product.imageUrl}
+                varietyCount={varieties.length}
+                fromPrice={fromPrice}
+                onAddToCart={() => setOpenProductId(product.id)}
+              />
+            );
+          })
         )}
       </div>
 
@@ -80,6 +87,7 @@ function SalesmanCatalogContent() {
             varietyId: variety.id,
             varietyName: variety.name,
             unit: variety.unit,
+            unitPrice: variety.unitPrice,
           }))}
         />
       )}

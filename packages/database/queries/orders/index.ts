@@ -12,7 +12,6 @@ import {
   profilesTable,
   salesmenTable,
   type InsertOrder,
-  type InsertOrderItem,
   type SelectOrder,
   type SelectOrderItem,
 } from "../../schema";
@@ -30,20 +29,79 @@ export interface OrderWithItems {
   items: SelectOrderItem[];
 }
 
+export interface OrderLineQuantityInput {
+  varietyId: string;
+  quantity: number;
+}
+
+interface PricedOrderLine {
+  varietyId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+function roundMoney(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
+async function resolvePricedOrderLines(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  lineItems: OrderLineQuantityInput[],
+): Promise<{ pricedLines: PricedOrderLine[]; totalQuantity: number; totalAmount: number }> {
+  const varietyIds = [...new Set(lineItems.map((lineItem) => lineItem.varietyId))];
+  const varietyRows = await tx
+    .select({
+      id: productVarietiesTable.id,
+      unitPrice: productVarietiesTable.unitPrice,
+      status: productVarietiesTable.status,
+      deletedAt: productVarietiesTable.deletedAt,
+    })
+    .from(productVarietiesTable)
+    .where(inArray(productVarietiesTable.id, varietyIds));
+
+  const varietyById = new Map(varietyRows.map((variety) => [variety.id, variety]));
+  const pricedLines: PricedOrderLine[] = [];
+  let totalQuantity = 0;
+  let totalAmount = 0;
+
+  for (const lineItem of lineItems) {
+    const variety = varietyById.get(lineItem.varietyId);
+    if (!variety || variety.deletedAt || variety.status !== "active") {
+      throw new Error(`Variety ${lineItem.varietyId} is missing or inactive`);
+    }
+    const unitPrice = Number(variety.unitPrice);
+    const lineTotal = roundMoney(unitPrice * lineItem.quantity);
+    pricedLines.push({
+      varietyId: lineItem.varietyId,
+      quantity: lineItem.quantity,
+      unitPrice,
+    });
+    totalQuantity += lineItem.quantity;
+    totalAmount = roundMoney(totalAmount + lineTotal);
+  }
+
+  return { pricedLines, totalQuantity, totalAmount };
+}
+
 export async function createOrderWithItems(
-  newOrder: InsertOrder,
-  lineItems: Array<Pick<InsertOrderItem, "varietyId" | "quantity">>,
+  newOrder: Omit<InsertOrder, "totalQuantity" | "totalAmount">,
+  lineItems: OrderLineQuantityInput[],
 ): Promise<OrderWithItems> {
   return db.transaction(async (tx) => {
-    const insertedOrderRows = await tx.insert(ordersTable).values(newOrder).returning();
+    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(tx, lineItems);
+    const insertedOrderRows = await tx
+      .insert(ordersTable)
+      .values({ ...newOrder, totalQuantity, totalAmount })
+      .returning();
     const createdOrder = firstOrThrow(insertedOrderRows, "createOrderWithItems");
     const createdItems = await tx
       .insert(orderItemsTable)
       .values(
-        lineItems.map((lineItem) => ({
+        pricedLines.map((lineItem) => ({
           orderId: createdOrder.id,
           varietyId: lineItem.varietyId,
           quantity: lineItem.quantity,
+          unitPrice: lineItem.unitPrice,
         })),
       )
       .returning();
@@ -88,6 +146,8 @@ export interface OrderDetailItem {
   varietyName: string;
   unit: string;
   quantity: number;
+  unitPrice: number;
+  imageUrl: string | null;
 }
 
 export interface OrderDetail {
@@ -131,6 +191,8 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
       varietyName: productVarietiesTable.name,
       unit: productVarietiesTable.unit,
       quantity: orderItemsTable.quantity,
+      unitPrice: orderItemsTable.unitPrice,
+      imageUrl: productsTable.imageUrl,
     })
     .from(orderItemsTable)
     .innerJoin(productVarietiesTable, eq(orderItemsTable.varietyId, productVarietiesTable.id))
@@ -378,6 +440,11 @@ export async function createBookNowOrderWithGatepassDeduction(
   params: CreateBookNowOrderParams,
 ): Promise<OrderWithItems> {
   return db.transaction(async (tx) => {
+    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(
+      tx,
+      params.items,
+    );
+
     const [salesmanGatepass] = await tx
       .select()
       .from(gatepassesTable)
@@ -393,7 +460,7 @@ export async function createBookNowOrderWithGatepassDeduction(
       throw new Error("No active gatepass for this salesman today");
     }
 
-    for (const lineItem of params.items) {
+    for (const lineItem of pricedLines) {
       const [deductedGatepassItem] = await tx
         .update(gatepassItemsTable)
         .set({ soldQty: sql`${gatepassItemsTable.soldQty} + ${lineItem.quantity}` })
@@ -411,7 +478,6 @@ export async function createBookNowOrderWithGatepassDeduction(
       }
     }
 
-    const totalQuantity = params.items.reduce((runningTotal, item) => runningTotal + item.quantity, 0);
     const insertedOrderRows = await tx
       .insert(ordersTable)
       .values({
@@ -421,6 +487,7 @@ export async function createBookNowOrderWithGatepassDeduction(
         salesmanId: params.salesmanId,
         customerId: params.customerId,
         totalQuantity,
+        totalAmount,
         placedAt: new Date(),
         idempotencyKey: params.idempotencyKey,
         notes: params.notes,
@@ -431,10 +498,11 @@ export async function createBookNowOrderWithGatepassDeduction(
     const createdItems = await tx
       .insert(orderItemsTable)
       .values(
-        params.items.map((lineItem) => ({
+        pricedLines.map((lineItem) => ({
           orderId: createdOrder.id,
           varietyId: lineItem.varietyId,
           quantity: lineItem.quantity,
+          unitPrice: lineItem.unitPrice,
         })),
       )
       .returning();

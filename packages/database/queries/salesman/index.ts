@@ -4,7 +4,6 @@ import { db } from "../../index";
 import {
   gatepassItemsTable,
   gatepassesTable,
-  orderItemsTable,
   ordersTable,
   profilesTable,
   salesmenTable,
@@ -109,6 +108,8 @@ export interface SalesmanDayWiseHistoryRow {
   soldQty: number;
   returnedQty: number;
   preOrderedQty: number;
+  soldAmount: number;
+  preOrderedAmount: number;
 }
 
 export async function getSalesmanDayWiseHistory(
@@ -137,30 +138,70 @@ export async function getSalesmanDayWiseHistory(
   const preOrderRows = await db
     .select({
       businessDate: sql<string>`date(${ordersTable.placedAt})`,
-      preOrderedQty: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
+      preOrderedQty: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
+      preOrderedAmount: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
     })
     .from(ordersTable)
-    .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
     .where(
       and(
         eq(ordersTable.salesmanId, salesmanId),
         eq(ordersTable.type, "pre_order"),
+        sql`${ordersTable.status} <> 'cancelled'`,
         gte(ordersTable.placedAt, sql`${dateRange.from}::date`),
         lte(ordersTable.placedAt, sql`(${dateRange.to}::date + interval '1 day')`),
       ),
     )
     .groupBy(sql`date(${ordersTable.placedAt})`);
 
-  const preOrderedQtyByDate = new Map(
-    preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]),
+  const bookNowAmountRows = await db
+    .select({
+      businessDate: sql<string>`date(${ordersTable.placedAt})`,
+      soldAmount: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
+    })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.salesmanId, salesmanId),
+        eq(ordersTable.type, "book_now"),
+        sql`${ordersTable.status} <> 'cancelled'`,
+        gte(ordersTable.placedAt, sql`${dateRange.from}::date`),
+        lte(ordersTable.placedAt, sql`(${dateRange.to}::date + interval '1 day')`),
+      ),
+    )
+    .groupBy(sql`date(${ordersTable.placedAt})`);
+
+  const preOrderedByDate = new Map(
+    preOrderRows.map((row) => [
+      row.businessDate,
+      { preOrderedQty: row.preOrderedQty, preOrderedAmount: row.preOrderedAmount },
+    ]),
+  );
+  const soldAmountByDate = new Map(
+    bookNowAmountRows.map((row) => [row.businessDate, row.soldAmount]),
   );
 
-  return gatepassRows.map((row) => ({
-    businessDate: row.businessDate,
-    gatepassStatus: row.status,
-    allottedQty: row.allottedQty,
-    soldQty: row.soldQty,
-    returnedQty: row.returnedQty,
-    preOrderedQty: preOrderedQtyByDate.get(row.businessDate) ?? 0,
-  }));
+  const dates = new Set<string>([
+    ...gatepassRows.map((row) => row.businessDate),
+    ...preOrderedByDate.keys(),
+    ...soldAmountByDate.keys(),
+  ]);
+
+  const gatepassByDate = new Map(gatepassRows.map((row) => [row.businessDate, row]));
+
+  return [...dates]
+    .sort()
+    .map((businessDate) => {
+      const gatepassRow = gatepassByDate.get(businessDate);
+      const preOrderRow = preOrderedByDate.get(businessDate);
+      return {
+        businessDate,
+        gatepassStatus: gatepassRow?.status ?? null,
+        allottedQty: gatepassRow?.allottedQty ?? 0,
+        soldQty: gatepassRow?.soldQty ?? 0,
+        returnedQty: gatepassRow?.returnedQty ?? 0,
+        preOrderedQty: preOrderRow?.preOrderedQty ?? 0,
+        soldAmount: soldAmountByDate.get(businessDate) ?? 0,
+        preOrderedAmount: preOrderRow?.preOrderedAmount ?? 0,
+      };
+    });
 }
