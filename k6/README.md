@@ -51,23 +51,48 @@ K6_SALESMAN_VUS=5 K6_ADMIN_VUS=2 K6_HOLD_DURATION=30s pnpm loadtest
 
 | Action | Role | Endpoint | Frequency |
 |--------|------|----------|-----------|
-| Create customer | Salesman | `POST /api/customers/` | ~25% of iterations |
+| Shop photo upload URL | Salesman / Admin | `POST /api/customers/shop-photo-upload-url` | before every customer create |
+| Create customer (with photo) | Salesman | `POST /api/customers/` | ~25% of iterations |
+| Create customer (with photo) | Admin | `POST /api/customers/` | ~8% |
 | Book-now order | Salesman | `POST /api/orders/book-now` | ~10% (when stock + customer exist) |
 | Fulfill order | Salesman | `PATCH /api/orders/:id/fulfill` | ~5% |
-| Update customer | Admin | `PATCH /api/customers/:id` | ~5% |
+| Update customer (+ replace photo) | Admin | `PATCH /api/customers/:id` | ~8% |
+| Remove shop photo | Admin | `DELETE /api/customers/:id/shop-photo` | ~3% |
 | Allot gatepass | Admin | `POST /api/gatepasses/allot` | ~5% |
 
-Customer creation is **salesman-only** (shared customer list per product rules). Admins list and update customers but do not create them.
+A **shop photo is required** to create a customer: every create first requests a presigned
+upload URL, then sends the returned `shopPhotoKey`. Photo **replace/remove is admin-only**;
+salesmen can create with a photo but cannot mutate it afterwards.
+
+### Shop photo edge cases (negative / authorization)
+
+These low-frequency branches send intentionally invalid input and assert the rejection status
+(via `http.expectedStatuses`), so an expected 4xx counts as a pass rather than a failed check:
+
+| Check tag | Role | Expected | What it verifies |
+|-----------|------|----------|------------------|
+| `customer_shop_photo_bad_type` | Salesman / Admin | 400 | Unsupported content type (`image/gif`) is rejected |
+| `customer_shop_photo_too_large` | Salesman / Admin | 400 | File over the 5 MB cap is rejected |
+| `customer_create_no_photo` | Salesman | 400 | Create without `shopPhotoKey` is rejected (photo required) |
+| `customer_create_forged_key` | Salesman | 403 | A `shopPhotoKey` owned by another user is rejected |
+| `customer_update_forbidden` | Salesman | 403 | Salesman cannot `PATCH` a customer photo (admin only) |
+| `customer_delete_photo_forbidden` | Salesman | 403 | Salesman cannot delete a customer photo (admin only) |
+| `customer_delete_photo` | Admin | 200 | Photo cleared via delete endpoint (`shopPhotoUrl`/`shopPhotoKey` null) |
+| `customer_clear_photo` | Admin | 200 | Photo cleared via `PATCH shopPhotoKey:null` (nullable path) |
+
+Positive assertions also confirm that created customers carry a non-empty `shopPhotoUrl`, and
+that customer lists, order lists (`customerShopPhotoUrl`), and order details expose the photo field.
 
 ## Auth
 
-All requests go through the backend only, and **no password logins happen during the test**:
+All requests go through the backend only, and **no password or session logins happen during the test**:
 
 1. `pnpm loadtest` first runs `scripts/fetch-k6-tokens.mjs`, which logs in each required user
    once via `POST /api/auth/login` (exponential backoff + jitter on 429/5xx) and stores the
    access tokens in `k6/data/users.json`. Only `K6_ADMIN_VUS` admins + `K6_SALESMAN_VUS`
    salesmen are logged in, keeping well under Supabase's sign-in rate limit.
-2. Each VU exchanges its stored token via `POST /api/auth/session` → httpOnly session cookie.
+2. Each VU plants its stored token into the cookie jar as `authentication-token` (no
+   `POST /api/auth/session`).
 3. All `/api/*` requests reuse the VU cookie jar.
 
 Supabase access tokens expire (~1 hour), so tokens are refreshed automatically at the start

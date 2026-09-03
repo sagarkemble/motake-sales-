@@ -131,15 +131,23 @@ class OrderService {
     return listDuePreordersForDate(businessDate);
   }
 
-  public async fulfillOrder(orderId: string, fulfilledBy: string): Promise<SelectOrder> {
+  public async fulfillOrder(
+    orderId: string,
+    fulfilledBy: string,
+    options: { allowBeforeScheduledDate?: boolean } = {},
+  ): Promise<SelectOrder> {
     const orderWithItems = await getOrderWithItemsById(orderId);
     if (!orderWithItems) {
       throw notFound(`Order ${orderId} not found`);
     }
 
-    if (orderWithItems.order.type === "pre_order") {
+    if (
+      orderWithItems.order.type === "pre_order" &&
+      !options.allowBeforeScheduledDate &&
+      orderWithItems.order.scheduledDate
+    ) {
       const todayBusinessDate = toIstBusinessDate(new Date());
-      if (orderWithItems.order.scheduledDate! > todayBusinessDate) {
+      if (orderWithItems.order.scheduledDate > todayBusinessDate) {
         throw badRequest(
           `Pre-order is scheduled for ${orderWithItems.order.scheduledDate} and cannot be fulfilled before that date`,
         );
@@ -148,7 +156,7 @@ class OrderService {
 
     const fulfilledOrder = await markOrderFulfilled(orderId, fulfilledBy, new Date());
     if (!fulfilledOrder) {
-      throw notFound(`Order ${orderId} not found, not yours, or already fulfilled`);
+      throw notFound(`Order ${orderId} not found or already fulfilled`);
     }
     return fulfilledOrder;
   }

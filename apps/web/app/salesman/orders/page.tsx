@@ -43,11 +43,15 @@ export default function SalesmanOrdersPage() {
   const allPreorderRows = useMemo(() => {
     const rowsById = new Map<
       string,
-      { order: (typeof duePreorders)[number]; customerShopName?: string }
+      {
+        order: (typeof duePreorders)[number];
+        customerShopName?: string;
+        customerShopPhotoUrl?: string | null;
+      }
     >();
     for (const order of duePreorders) rowsById.set(order.id, { order });
-    for (const { order, customerShopName } of myPreordersPageData.items) {
-      rowsById.set(order.id, { order, customerShopName });
+    for (const { order, customerShopName, customerShopPhotoUrl } of myPreordersPageData.items) {
+      rowsById.set(order.id, { order, customerShopName, customerShopPhotoUrl });
     }
     return Array.from(rowsById.values());
   }, [duePreorders, myPreordersPageData.items]);
@@ -79,10 +83,11 @@ export default function SalesmanOrdersPage() {
               You have not placed any orders yet.
             </p>
           ) : (
-            bookNowOrdersPage.items.map(({ order, customerShopName }) => (
+            bookNowOrdersPage.items.map(({ order, customerShopName, customerShopPhotoUrl }) => (
               <OrderListRow
                 key={order.id}
                 primaryLabel={customerShopName}
+                shopPhotoUrl={customerShopPhotoUrl}
                 orderCode={order.orderCode}
                 timestampLabel={format(new Date(order.placedAt), "d MMM, h:mm a")}
                 totalQuantity={order.totalQuantity}
@@ -140,10 +145,11 @@ export default function SalesmanOrdersPage() {
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {visiblePreorderRows.map(({ order, customerShopName }) => (
+              {visiblePreorderRows.map(({ order, customerShopName, customerShopPhotoUrl }) => (
                 <OrderListRow
                   key={order.id}
                   primaryLabel={customerShopName ?? order.orderCode}
+                  shopPhotoUrl={customerShopPhotoUrl}
                   orderCode={order.orderCode}
                   timestampLabel={format(
                     new Date(order.fulfilledAt ?? order.scheduledDate ?? order.placedAt),

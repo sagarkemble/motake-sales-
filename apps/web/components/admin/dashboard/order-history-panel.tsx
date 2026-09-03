@@ -8,6 +8,7 @@ import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useOrderHistory } from "~/hooks/use-order-history";
 
@@ -53,22 +54,39 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-border">
-          {orderHistory.map(({ order, customerShopName, customerPhone, salesmanCode, salesmanName, itemPreviews }) => (
+          {orderHistory.map(
+            ({
+              order,
+              customerShopName,
+              customerPhone,
+              customerShopPhotoUrl,
+              salesmanCode,
+              salesmanName,
+              itemPreviews,
+            }) => (
             <button
               key={order.id}
               type="button"
               onClick={() => setSelectedOrderId(order.id)}
               className="flex items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-accent/50"
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium">{customerShopName}</p>
-                  <OrderStatusBadge status={order.status} className="shrink-0" />
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <ShopPhotoThumbnail
+                  shopPhotoUrl={customerShopPhotoUrl}
+                  shopName={customerShopName}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium">{customerShopName}</p>
+                    <OrderStatusBadge status={order.status} className="shrink-0" />
+                  </div>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {order.orderCode}
+                    {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
+                    {customerPhone ? ` · ${customerPhone}` : ""}
+                  </p>
                 </div>
-                <p className="truncate text-xs text-muted-foreground">
-                  {order.orderCode}
-                  {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
-                </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <div className="flex items-center gap-2">

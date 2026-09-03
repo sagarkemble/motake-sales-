@@ -15,12 +15,15 @@ interface SelectedCustomer {
   id: string;
   shopName: string;
   phone: string;
+  shopPhotoUrl?: string | null;
 }
 
 interface NewCustomerFormValues {
   shopName: string;
   phone: string;
   address: string;
+  shopPhotoKey: string;
+  shopPhotoUrl: string;
 }
 
 export interface PlacedOrder {
@@ -31,7 +34,13 @@ export interface PlacedOrder {
   placedAt: Date;
 }
 
-const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = { shopName: "", phone: "", address: "" };
+const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
+  shopName: "",
+  phone: "",
+  address: "",
+  shopPhotoKey: "",
+  shopPhotoUrl: "",
+};
 const CUSTOMER_SEARCH_PAGE_SIZE = 20;
 
 function getBookNowBlockReasons(
@@ -102,7 +111,8 @@ export function useCheckoutWizard() {
   const isNewCustomerFormFilled =
     newCustomerForm.shopName.trim().length > 0 &&
     newCustomerForm.phone.trim().length > 0 &&
-    newCustomerForm.address.trim().length > 0;
+    newCustomerForm.address.trim().length > 0 &&
+    newCustomerForm.shopPhotoKey.trim().length > 0;
   const isCustomerStepValid = Boolean(selectedCustomer) || isNewCustomerFormFilled;
 
   function selectExistingCustomer(customer: SelectedCustomer) {
@@ -148,11 +158,13 @@ export function useCheckoutWizard() {
           shopName: newCustomerForm.shopName.trim(),
           phone: newCustomerForm.phone.trim(),
           address: newCustomerForm.address.trim(),
+          shopPhotoKey: newCustomerForm.shopPhotoKey,
         });
         customerForOrder = {
           id: createdCustomerResponse.data.id,
           shopName: createdCustomerResponse.data.shopName,
           phone: createdCustomerResponse.data.phone,
+          shopPhotoUrl: createdCustomerResponse.data.shopPhotoUrl,
         };
         setSelectedCustomer(customerForOrder);
       } catch (createCustomerError) {

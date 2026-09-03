@@ -145,7 +145,7 @@ export const ordersRouter = router({
       return apiResponse(orderDetail);
     }),
 
-  fulfill: salesmanProcedure
+  fulfill: protectedProcedure
     .meta({
       openapi: {
         method: "PATCH",
@@ -153,17 +153,25 @@ export const ordersRouter = router({
         tags: ["Orders"],
         protect: true,
         summary: "Fulfill an order",
-        description: "Mark an order as delivered to the customer.",
+        description:
+          "Mark an order as delivered to the customer. Salesmen can fulfil their own orders; admins can fulfil any order.",
       },
     })
     .input(orderIdInputSchema)
     .output(apiResponseSchema(orderSchema))
     .mutation(async ({ ctx, input }) => {
-      const fulfilledOrder = await orderService.fulfillOrder(input.id, ctx.user.id);
+      const orderWithItems = await orderService.getOrderWithItems(input.id);
+      if (!orderWithItems) throw notFound(`Order ${input.id} not found`);
+      if (ctx.user.role === "salesman" && orderWithItems.order.salesmanId !== ctx.user.id) {
+        throw forbidden("You can only fulfil your own order");
+      }
+      const fulfilledOrder = await orderService.fulfillOrder(input.id, ctx.user.id, {
+        allowBeforeScheduledDate: ctx.user.role === "admin",
+      });
       return apiResponse(fulfilledOrder);
     }),
 
-  cancel: salesmanProcedure
+  cancel: protectedProcedure
     .meta({
       openapi: {
         method: "PATCH",
@@ -172,7 +180,7 @@ export const ordersRouter = router({
         protect: true,
         summary: "Cancel an order",
         description:
-          "Cancel an order before it is fulfilled. Only the salesman who placed it can cancel it.",
+          "Cancel an order before it is fulfilled. Salesmen can cancel their own orders; admins can cancel any open order.",
       },
     })
     .input(orderIdInputSchema)
@@ -180,7 +188,7 @@ export const ordersRouter = router({
     .mutation(async ({ ctx, input }) => {
       const orderWithItems = await orderService.getOrderWithItems(input.id);
       if (!orderWithItems) throw notFound(`Order ${input.id} not found`);
-      if (orderWithItems.order.salesmanId !== ctx.user.id) {
+      if (ctx.user.role === "salesman" && orderWithItems.order.salesmanId !== ctx.user.id) {
         throw forbidden("You can only cancel your own order");
       }
       const cancelledOrder = await orderService.cancelOrder(input.id, ctx.user.id);

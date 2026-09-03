@@ -8,6 +8,7 @@ import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { formatInrCompact } from "~/lib/format-money";
 import { useOrders } from "~/hooks/use-orders";
 
@@ -33,7 +34,15 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
         <p className="py-8 text-center text-sm text-muted-foreground">No orders yet</p>
       ) : (
         ordersPage.items.map(
-          ({ order, customerShopName, customerPhone, salesmanCode, salesmanName, itemPreviews }) => (
+          ({
+            order,
+            customerShopName,
+            customerPhone,
+            customerShopPhotoUrl,
+            salesmanCode,
+            salesmanName,
+            itemPreviews,
+          }) => (
             <button
               key={order.id}
               type="button"
@@ -49,15 +58,22 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
               </div>
 
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm">{customerShopName}</p>
-                  <p className="text-xs text-muted-foreground">{customerPhone}</p>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <ShopPhotoThumbnail
+                    shopPhotoUrl={customerShopPhotoUrl}
+                    shopName={customerShopName}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">{customerShopName}</p>
+                    <p className="truncate text-xs text-muted-foreground">{customerPhone}</p>
+                  </div>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-semibold text-brand">
                     {formatInrCompact(order.totalAmount)}
                   </p>
-                  <p className="text-xs text-muted-foreground font-bold">{order.totalQuantity} qty</p>
+                  <p className="text-xs font-bold text-muted-foreground">{order.totalQuantity} qty</p>
                 </div>
               </div>
 

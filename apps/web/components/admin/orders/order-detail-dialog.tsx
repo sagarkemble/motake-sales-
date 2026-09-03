@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { useOrders } from "~/hooks/use-orders";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { formatInr, lineTotal } from "~/lib/format-money";
 
 interface OrderDetailDialogProps {
@@ -38,15 +39,22 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
         ) : (
           <>
             <div className="flex flex-col gap-4">
-              <div className="rounded-2xl border bg-muted/30 p-3">
-                <p className="text-sm font-medium">{orderDetail.customer.shopName}</p>
-                {orderDetail.customer.contactName && (
-                  <p className="text-xs text-muted-foreground">
-                    {orderDetail.customer.contactName}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">{orderDetail.customer.phone}</p>
-                <p className="text-xs text-muted-foreground">{orderDetail.customer.address}</p>
+              <div className="flex items-start gap-3 rounded-2xl border bg-muted/30 p-3">
+                <ShopPhotoThumbnail
+                  shopPhotoUrl={orderDetail.customer.shopPhotoUrl}
+                  shopName={orderDetail.customer.shopName}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{orderDetail.customer.shopName}</p>
+                  {orderDetail.customer.contactName && (
+                    <p className="text-xs text-muted-foreground">
+                      {orderDetail.customer.contactName}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">{orderDetail.customer.phone}</p>
+                  <p className="text-xs text-muted-foreground">{orderDetail.customer.address}</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">

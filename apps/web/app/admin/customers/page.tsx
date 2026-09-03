@@ -1,13 +1,15 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SearchIcon, StoreIcon, XIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { useCustomers } from "~/hooks/use-customers";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 
@@ -15,38 +17,66 @@ function CustomersPageContent() {
   const router = useRouter();
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   const { customersPage, isCustomersListLoading } = useCustomers({
-    listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize },
+    listFilters: {
+      searchTerm: debouncedSearchTerm || undefined,
+      page,
+      pageSize,
+      includeInactive,
+    },
   });
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search by shop, contact, or phone"
+            className="rounded-full bg-muted/40 pl-9 pr-9"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <XIcon className="size-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          asChild
+          size="icon"
+          className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          <Link href="/admin/customers/new" aria-label="New customer">
+            <PlusIcon />
+          </Link>
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-base font-semibold">Customers</h1>
         <p className="text-xs text-muted-foreground">
           {isCustomersListLoading ? "Loading…" : `${customersPage.totalCount} total`}
         </p>
-      </div>
-
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search by shop, contact, or phone"
-          className="rounded-full bg-muted/40 pl-9 pr-9"
-        />
-        {searchTerm && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => setSearchTerm("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <XIcon className="size-4" />
-          </button>
-        )}
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={includeInactive}
+            onChange={(event) => {
+              setIncludeInactive(event.target.checked);
+              setPage(1);
+            }}
+            className="rounded border-gray-300"
+          />
+          Show inactive customers
+        </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -70,9 +100,12 @@ function CustomersPageContent() {
               }}
               className="flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
-                <StoreIcon className="size-5 text-muted-foreground" />
-              </div>
+              <ShopPhotoThumbnail
+                shopPhotoUrl={customer.shopPhotoUrl}
+                shopName={customer.shopName}
+                size="md"
+                shape="circle"
+              />
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{customer.shopName}</p>

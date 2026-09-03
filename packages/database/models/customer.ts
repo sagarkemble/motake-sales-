@@ -19,6 +19,10 @@ export const customersTable = pgTable(
 
     notes: text("notes"),
 
+    shopPhotoKey: text("shop_photo_key"),
+
+    shopPhotoUrl: text("shop_photo_url"),
+
     createdBy: uuid("created_by")
       .notNull()
       .references(() => profilesTable.id),

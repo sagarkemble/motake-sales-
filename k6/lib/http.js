@@ -30,10 +30,30 @@ export function apiPost(path, body, tags = {}, acceptedStatuses = null) {
   return res;
 }
 
-export function apiPatch(path, body, tags = {}) {
+export function apiPatch(path, body, tags = {}, acceptedStatuses = null) {
   const payload = typeof body === 'string' ? body : JSON.stringify(body);
-  const res = http.patch(path, payload, { headers: JSON_HEADERS, tags });
-  check(res, { [`PATCH ${tags.name || path} status 2xx`]: (r) => r.status >= 200 && r.status < 300 });
+  const params = { headers: JSON_HEADERS, tags };
+  if (acceptedStatuses) {
+    params.responseCallback = http.expectedStatuses(...acceptedStatuses);
+  }
+  const res = http.patch(path, payload, params);
+  const isOk = acceptedStatuses
+    ? (r) => acceptedStatuses.includes(r.status)
+    : (r) => r.status >= 200 && r.status < 300;
+  check(res, { [`PATCH ${tags.name || path} status ok`]: isOk });
+  return res;
+}
+
+export function apiDelete(path, tags = {}, acceptedStatuses = null) {
+  const params = { headers: JSON_HEADERS, tags };
+  if (acceptedStatuses) {
+    params.responseCallback = http.expectedStatuses(...acceptedStatuses);
+  }
+  const res = http.del(path, null, params);
+  const isOk = acceptedStatuses
+    ? (r) => acceptedStatuses.includes(r.status)
+    : (r) => r.status >= 200 && r.status < 300;
+  check(res, { [`DELETE ${tags.name || path} status ok`]: isOk });
   return res;
 }
 

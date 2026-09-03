@@ -2,42 +2,46 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { API_BASE_URL } from './config.js';
 
+const AUTH_COOKIE_NAME = 'authentication-token';
+
 /**
- * Create a backend session from a pre-fetched Supabase access token
- * (stored in users.json by scripts/fetch-k6-tokens.mjs).
- * No password login happens during the test — the httpOnly session
- * cookie is set on the VU cookie jar and reused for all requests.
+ * Authenticate this VU from a pre-fetched Supabase access token in users.json
+ * (written by scripts/fetch-k6-tokens.mjs).
+ *
+ * Plants the token directly into the VU cookie jar — no /api/auth/session
+ * (or password login) during the test. secure:false so k6 sends the cookie
+ * over http://localhost (k6/Go cookiejar drops Secure cookies on non-HTTPS).
  */
 export function authenticateUser(user, tags = {}) {
-  if (!user.accessToken) {
+  if (!user?.accessToken) {
     console.error(
-      `No accessToken for ${user.email}. Run: dotenv -- node scripts/fetch-k6-tokens.mjs`,
+      `No accessToken for ${user?.email ?? 'unknown'}. Run: pnpm tokens:k6`,
     );
     return { ok: false };
   }
 
-  const sessionRes = http.post(
-    `${API_BASE_URL}/api/auth/session`,
-    JSON.stringify({ accessToken: user.accessToken }),
+  const jar = http.cookieJar();
+  jar.set(API_BASE_URL, AUTH_COOKIE_NAME, user.accessToken, {
+    path: '/',
+    secure: false,
+    http_only: true,
+  });
+
+  const cookies = jar.cookiesForURL(API_BASE_URL);
+  const planted =
+    Array.isArray(cookies[AUTH_COOKIE_NAME]) &&
+    cookies[AUTH_COOKIE_NAME].includes(user.accessToken);
+
+  check(
+    { planted, role: tags.role || 'unknown' },
     {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      tags: { ...tags, step: 'create_session' },
+      'access token loaded into jar': (r) => r.planted === true,
     },
   );
 
-  const sessionOk = check(sessionRes, {
-    'session status 200': (r) => r.status === 200,
-    'session success flag': (r) => {
-      try {
-        return r.json('success') === true;
-      } catch {
-        return false;
-      }
-    },
-  });
+  if (!planted) {
+    console.error(`Failed to plant access token for ${user.email} into cookie jar`);
+  }
 
-  return { ok: sessionOk };
+  return { ok: planted };
 }

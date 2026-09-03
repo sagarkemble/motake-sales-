@@ -7,10 +7,16 @@ import { emptyPaginatedResult } from "./shared/pagination";
 interface UseCustomersParams {
   listFilters?: RouterInputs["customers"]["list"];
   customerId?: string;
+  loadOpenOrders?: boolean;
   enabled?: boolean;
 }
 
-export function useCustomers({ listFilters, customerId, enabled = true }: UseCustomersParams = {}) {
+export function useCustomers({
+  listFilters,
+  customerId,
+  loadOpenOrders = false,
+  enabled = true,
+}: UseCustomersParams = {}) {
   const utils = trpc.useUtils();
 
   const customersListQuery = trpc.customers.list.useQuery(
@@ -27,14 +33,28 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
     { id: customerId ?? "" },
     { enabled: enabled && Boolean(customerId) },
   );
+  const openOrdersQuery = trpc.customers.listOpenOrders.useQuery(
+    { id: customerId ?? "" },
+    { enabled: enabled && Boolean(customerId) && loadOpenOrders },
+  );
 
   const createCustomerMutation = trpc.customers.create.useMutation({
     onSuccess: () => utils.customers.list.invalidate(),
+  });
+  const createShopPhotoUploadUrlMutation = trpc.customers.createShopPhotoUploadUrl.useMutation();
+  const deleteCustomerShopPhotoMutation = trpc.customers.deleteShopPhoto.useMutation({
+    onSuccess: () => utils.customers.invalidate(),
   });
   const updateCustomerMutation = trpc.customers.update.useMutation({
     onSuccess: () => utils.customers.invalidate(),
   });
   const deactivateCustomerMutation = trpc.customers.deactivate.useMutation({
+    onSuccess: () => {
+      utils.customers.invalidate();
+      utils.orders.invalidate();
+    },
+  });
+  const reactivateCustomerMutation = trpc.customers.reactivate.useMutation({
     onSuccess: () => utils.customers.invalidate(),
   });
 
@@ -56,10 +76,23 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
     isCustomerStatsError: customerStatsQuery.isError,
     refetchCustomerStats: customerStatsQuery.refetch,
 
+    openOrders: openOrdersQuery.data?.data ?? [],
+    isOpenOrdersLoading: openOrdersQuery.isLoading,
+    isOpenOrdersError: openOrdersQuery.isError,
+    refetchOpenOrders: openOrdersQuery.refetch,
+
     createCustomer: createCustomerMutation.mutate,
     createCustomerAsync: createCustomerMutation.mutateAsync,
     isCreatingCustomer: createCustomerMutation.isPending,
     createCustomerError: createCustomerMutation.error ?? null,
+
+    createShopPhotoUploadUrlAsync: createShopPhotoUploadUrlMutation.mutateAsync,
+    isCreatingShopPhotoUploadUrl: createShopPhotoUploadUrlMutation.isPending,
+    createShopPhotoUploadUrlError: createShopPhotoUploadUrlMutation.error ?? null,
+
+    deleteCustomerShopPhotoAsync: deleteCustomerShopPhotoMutation.mutateAsync,
+    isDeletingCustomerShopPhoto: deleteCustomerShopPhotoMutation.isPending,
+    deleteCustomerShopPhotoError: deleteCustomerShopPhotoMutation.error ?? null,
 
     updateCustomer: updateCustomerMutation.mutate,
     updateCustomerAsync: updateCustomerMutation.mutateAsync,
@@ -70,5 +103,10 @@ export function useCustomers({ listFilters, customerId, enabled = true }: UseCus
     deactivateCustomerAsync: deactivateCustomerMutation.mutateAsync,
     isDeactivatingCustomer: deactivateCustomerMutation.isPending,
     deactivateCustomerError: deactivateCustomerMutation.error ?? null,
+
+    reactivateCustomer: reactivateCustomerMutation.mutate,
+    reactivateCustomerAsync: reactivateCustomerMutation.mutateAsync,
+    isReactivatingCustomer: reactivateCustomerMutation.isPending,
+    reactivateCustomerError: reactivateCustomerMutation.error ?? null,
   };
 }

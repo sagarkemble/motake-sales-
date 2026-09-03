@@ -157,6 +157,7 @@ export interface OrderDetail {
     contactName: string | null;
     phone: string;
     address: string;
+    shopPhotoUrl: string | null;
   };
   salesmanCode: string;
   salesmanName: string | null;
@@ -174,6 +175,7 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
       contactName: customersTable.contactName,
       phone: customersTable.phone,
       address: customersTable.address,
+      shopPhotoUrl: customersTable.shopPhotoUrl,
     })
     .from(customersTable)
     .where(eq(customersTable.id, order.customerId));
@@ -204,11 +206,10 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
   let fulfilledBySalesmanName: string | null = null;
   if (order.fulfilledBy) {
     const fulfilledByRows = await db
-      .select({ salesmanName: profilesTable.name })
-      .from(salesmenTable)
-      .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
-      .where(eq(salesmenTable.id, order.fulfilledBy));
-    fulfilledBySalesmanName = fulfilledByRows[0]?.salesmanName ?? null;
+      .select({ name: profilesTable.name })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, order.fulfilledBy));
+    fulfilledBySalesmanName = fulfilledByRows[0]?.name ?? null;
   }
 
   return {
@@ -219,6 +220,54 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
     fulfilledBySalesmanName,
     items,
   };
+}
+
+const OPEN_ORDER_STATUSES = ["scheduled", "due", "confirmed"] as const;
+
+export interface OpenOrderSummary {
+  id: string;
+  orderCode: string;
+  type: SelectOrder["type"];
+  status: SelectOrder["status"];
+  totalQuantity: number;
+  totalAmount: number;
+  scheduledDate: string | null;
+  placedAt: Date;
+}
+
+export async function listOpenOrdersByCustomerId(customerId: string): Promise<OpenOrderSummary[]> {
+  return db
+    .select({
+      id: ordersTable.id,
+      orderCode: ordersTable.orderCode,
+      type: ordersTable.type,
+      status: ordersTable.status,
+      totalQuantity: ordersTable.totalQuantity,
+      totalAmount: ordersTable.totalAmount,
+      scheduledDate: ordersTable.scheduledDate,
+      placedAt: ordersTable.placedAt,
+    })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.customerId, customerId),
+        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+      ),
+    )
+    .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt));
+}
+
+export async function countOpenOrdersByCustomerId(customerId: string): Promise<number> {
+  const [countRow] = await db
+    .select({ totalCount: count() })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.customerId, customerId),
+        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+      ),
+    );
+  return countRow?.totalCount ?? 0;
 }
 
 export interface OrderListFilters {
@@ -240,6 +289,7 @@ export interface OrderListRow {
   order: SelectOrder;
   customerShopName: string;
   customerPhone: string;
+  customerShopPhotoUrl: string | null;
   salesmanCode: string;
   salesmanName: string | null;
   itemPreviews: OrderItemPreview[];
@@ -294,6 +344,7 @@ export async function listOrders(
         order: ordersTable,
         customerShopName: customersTable.shopName,
         customerPhone: customersTable.phone,
+        customerShopPhotoUrl: customersTable.shopPhotoUrl,
         salesmanCode: salesmenTable.salesmanCode,
         salesmanName: profilesTable.name,
       })
@@ -358,7 +409,6 @@ export async function markOrderFulfilled(
     .where(
       and(
         eq(ordersTable.id, orderId),
-        eq(ordersTable.salesmanId, fulfilledBy),
         sql`${ordersTable.status} NOT IN ('fulfilled', 'cancelled')`,
       ),
     )

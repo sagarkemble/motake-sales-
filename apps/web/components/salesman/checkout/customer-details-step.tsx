@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { CheckIcon, ChevronsUpDownIcon, QrCodeIcon, StoreIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, QrCodeIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -16,19 +16,25 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
 import { PaymentScannerDialog } from "~/components/salesman/checkout/payment-scanner-dialog";
+import { ImageUpload } from "~/components/shared/image-upload";
+import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Skeleton } from "~/components/ui/skeleton";
 import { formatInr } from "~/lib/format-money";
+import { useCustomers } from "~/hooks/use-customers";
 
 interface CustomerOption {
   id: string;
   shopName: string;
   phone: string;
+  shopPhotoUrl?: string | null;
 }
 
 interface NewCustomerFormValues {
   shopName: string;
   phone: string;
   address: string;
+  shopPhotoKey: string;
+  shopPhotoUrl: string;
 }
 
 interface CustomerDetailsStepProps {
@@ -58,6 +64,7 @@ export function CustomerDetailsStep({
 }: CustomerDetailsStepProps) {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const { createShopPhotoUploadUrlAsync } = useCustomers();
 
   function handleSelectCustomer(customer: CustomerOption) {
     onSelectCustomer(customer);
@@ -97,6 +104,11 @@ export function CustomerDetailsStep({
           >
             {selectedCustomer ? (
               <span className="flex min-w-0 items-center gap-2">
+                <ShopPhotoThumbnail
+                  shopPhotoUrl={selectedCustomer.shopPhotoUrl}
+                  shopName={selectedCustomer.shopName}
+                  size="sm"
+                />
                 <span className="truncate">{selectedCustomer.shopName}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {selectedCustomer.phone}
@@ -150,9 +162,11 @@ export function CustomerDetailsStep({
                           onSelect={() => handleSelectCustomer(customer)}
                           className="gap-3"
                         >
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/40">
-                            <StoreIcon className="size-4 text-muted-foreground" />
-                          </div>
+                          <ShopPhotoThumbnail
+                            shopPhotoUrl={customer.shopPhotoUrl}
+                            shopName={customer.shopName}
+                            size="sm"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{customer.shopName}</p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -174,6 +188,32 @@ export function CustomerDetailsStep({
       {!selectedCustomer && (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-muted-foreground">Or enter new customer details</p>
+
+          <div className="rounded-2xl border bg-card p-3">
+            <Label className="mb-2 block">Shop photo *</Label>
+            <ImageUpload
+              imageUrl={newCustomerForm.shopPhotoUrl || null}
+              requestUploadUrl={createShopPhotoUploadUrlAsync}
+              altText="Shop"
+              shape="square"
+              uploadButtonLabel="Upload shop photo"
+              onUploaded={(result) =>
+                onNewCustomerFormChange({
+                  shopPhotoKey: result.imageKey,
+                  shopPhotoUrl: result.imageUrl,
+                })
+              }
+              onDelete={
+                newCustomerForm.shopPhotoUrl
+                  ? async () =>
+                      onNewCustomerFormChange({
+                        shopPhotoKey: "",
+                        shopPhotoUrl: "",
+                      })
+                  : undefined
+              }
+            />
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="new-customer-shop-name">Shop name</Label>

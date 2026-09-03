@@ -45,7 +45,7 @@ export const ordersTable = pgTable(
 
     fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
 
-    fulfilledBy: uuid("fulfilled_by").references(() => salesmenTable.id),
+    fulfilledBy: uuid("fulfilled_by").references(() => profilesTable.id),
 
     idempotencyKey: varchar("idempotency_key", { length: 128 }).unique(),
 

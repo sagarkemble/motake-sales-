@@ -4,8 +4,8 @@
  *
  * Logs in each required user once via the backend (POST /api/auth/login),
  * extracts the access token from the session cookie, and stores it in
- * k6/data/users.json. K6 then exchanges the stored token via
- * POST /api/auth/session instead of performing password logins.
+ * k6/data/users.json. K6 plants that token into the VU cookie jar directly
+ * (no /api/auth/session or password login during the load test).
  *
  * Only fetches tokens for the users the test will use:
  *   K6_ADMIN_VUS admins + K6_SALESMAN_VUS salesmen (defaults: all).

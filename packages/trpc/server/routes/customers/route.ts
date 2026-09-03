@@ -1,14 +1,18 @@
 import { customerService } from "../../services";
-import { adminProcedure, protectedProcedure, router, salesmanProcedure } from "../../trpc";
+import { adminProcedure, protectedProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
+import { z } from "../../schema";
 import {
   createCustomerInputSchema,
+  createShopPhotoUploadUrlInputSchema,
+  createShopPhotoUploadUrlOutputSchema,
   customerIdInputSchema,
   customerSchema,
   customerStatsSchema,
   listCustomersInputSchema,
+  openOrderSummarySchema,
   paginatedCustomersSchema,
   updateCustomerInputSchema,
 } from "./model";
@@ -29,8 +33,12 @@ export const customersRouter = router({
     })
     .input(listCustomersInputSchema)
     .output(apiResponseSchema(paginatedCustomersSchema))
-    .query(async ({ input }) => {
-      const result = await customerService.searchCustomers(input);
+    .query(async ({ ctx, input }) => {
+      const includeInactive = ctx.user.role === "admin" && Boolean(input.includeInactive);
+      const result = await customerService.searchCustomers({
+        ...input,
+        includeInactive,
+      });
       return apiResponse(result);
     }),
 
@@ -47,9 +55,12 @@ export const customersRouter = router({
     })
     .input(customerIdInputSchema)
     .output(apiResponseSchema(customerSchema))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const customer = await customerService.getCustomerById(input.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
+      if (ctx.user.role !== "admin" && customer.deletedAt) {
+        throw notFound(`Customer ${input.id} not found`);
+      }
       return apiResponse(customer);
     }),
 
@@ -72,7 +83,45 @@ export const customersRouter = router({
       return apiResponse(stats);
     }),
 
-  create: salesmanProcedure
+  listOpenOrders: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/{id}/open-orders"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "List open orders for a customer",
+        description:
+          "Return orders that must be closed or cancelled before the customer can be deactivated.",
+      },
+    })
+    .input(customerIdInputSchema)
+    .output(apiResponseSchema(z.array(openOrderSummarySchema)))
+    .query(async ({ input }) => {
+      const openOrders = await customerService.listOpenOrders(input.id);
+      return apiResponse(openOrders);
+    }),
+
+  createShopPhotoUploadUrl: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/shop-photo-upload-url"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "Get a shop photo upload URL",
+        description:
+          "Return a short-lived URL the browser can upload a customer shop photo to directly. Admin or salesman.",
+      },
+    })
+    .input(createShopPhotoUploadUrlInputSchema)
+    .output(apiResponseSchema(createShopPhotoUploadUrlOutputSchema))
+    .mutation(async ({ ctx, input }) => {
+      const result = await customerService.createShopPhotoUploadUrl(ctx.user.id, input);
+      return apiResponse(result);
+    }),
+
+  create: protectedProcedure
     .meta({
       openapi: {
         method: "POST",
@@ -81,7 +130,7 @@ export const customersRouter = router({
         protect: true,
         summary: "Add a customer",
         description:
-          "Create a customer record. Any salesman can add a customer to the shared list.",
+          "Create a customer record with a required shop photo. Admin or salesman can add to the shared list.",
       },
     })
     .input(createCustomerInputSchema)
@@ -99,7 +148,7 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Update a customer",
-        description: "Change the details of an existing customer. Admin only.",
+        description: "Change the details of an existing customer, including shop photo. Admin only.",
       },
     })
     .input(customerIdInputSchema.extend(updateCustomerInputSchema.shape))
@@ -111,6 +160,25 @@ export const customersRouter = router({
       return apiResponse(customer);
     }),
 
+  deleteShopPhoto: adminProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/{id}/shop-photo"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "Delete a customer shop photo",
+        description: "Remove the shop photo from a customer. Admin only.",
+      },
+    })
+    .input(customerIdInputSchema)
+    .output(apiResponseSchema(customerSchema))
+    .mutation(async ({ input }) => {
+      const customer = await customerService.deleteCustomerShopPhoto(input.id);
+      if (!customer) throw notFound(`Customer ${input.id} not found`);
+      return apiResponse(customer);
+    }),
+
   deactivate: adminProcedure
     .meta({
       openapi: {
@@ -119,7 +187,8 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Deactivate a customer",
-        description: "Mark a customer as inactive. The record stays for history and reports.",
+        description:
+          "Mark a customer as inactive after all open orders are closed or cancelled. The record stays for history and reports.",
       },
     })
     .input(customerIdInputSchema)
@@ -127,6 +196,24 @@ export const customersRouter = router({
     .mutation(async ({ input }) => {
       const customer = await customerService.deactivateCustomer(input.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
+      return apiResponse(customer);
+    }),
+
+  reactivate: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/{id}/reactivate"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "Reactivate a customer",
+        description: "Restore an inactive customer to the active list. Admin only.",
+      },
+    })
+    .input(customerIdInputSchema)
+    .output(apiResponseSchema(customerSchema))
+    .mutation(async ({ input }) => {
+      const customer = await customerService.reactivateCustomer(input.id);
       return apiResponse(customer);
     }),
 });

@@ -21,10 +21,7 @@ export async function createCustomer(newCustomer: InsertCustomer): Promise<Selec
 }
 
 export async function getCustomerById(customerId: string): Promise<SelectCustomer | undefined> {
-  const [customer] = await db
-    .select()
-    .from(customersTable)
-    .where(and(eq(customersTable.id, customerId), isNull(customersTable.deletedAt)));
+  const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, customerId));
   return customer;
 }
 
@@ -46,9 +43,10 @@ export async function listActiveCustomersByIds(customerIds: string[]): Promise<S
     .where(and(inArray(customersTable.id, customerIds), isNull(customersTable.deletedAt)));
 }
 
-export async function searchActiveCustomers(
+export async function searchCustomers(
   searchTerm: string | undefined,
   pagination: PaginationParams,
+  options: { includeInactive?: boolean } = {},
 ): Promise<PaginatedResult<SelectCustomer>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
   const searchClause = searchTerm
@@ -58,7 +56,10 @@ export async function searchActiveCustomers(
         ilike(customersTable.phone, `%${searchTerm}%`),
       )
     : undefined;
-  const whereClause = and(isNull(customersTable.deletedAt), searchClause);
+  const whereClause = and(
+    options.includeInactive ? undefined : isNull(customersTable.deletedAt),
+    searchClause,
+  );
 
   const [items, countRows] = await Promise.all([
     db
@@ -71,8 +72,16 @@ export async function searchActiveCustomers(
     db.select({ totalCount: count() }).from(customersTable).where(whereClause),
   ]);
 
-  const { totalCount } = firstOrThrow(countRows, "searchActiveCustomers count");
+  const { totalCount } = firstOrThrow(countRows, "searchCustomers count");
   return toPaginatedResult(items, totalCount, pagination);
+}
+
+/** @deprecated Prefer searchCustomers — kept for callers that expect the old name */
+export async function searchActiveCustomers(
+  searchTerm: string | undefined,
+  pagination: PaginationParams,
+): Promise<PaginatedResult<SelectCustomer>> {
+  return searchCustomers(searchTerm, pagination, { includeInactive: false });
 }
 
 export async function updateCustomer(
@@ -122,4 +131,13 @@ export async function softDeleteCustomer(customerId: string): Promise<SelectCust
     .where(eq(customersTable.id, customerId))
     .returning();
   return deletedCustomer;
+}
+
+export async function reactivateCustomer(customerId: string): Promise<SelectCustomer | undefined> {
+  const [reactivatedCustomer] = await db
+    .update(customersTable)
+    .set({ deletedAt: null, status: "active" })
+    .where(eq(customersTable.id, customerId))
+    .returning();
+  return reactivatedCustomer;
 }

@@ -7,6 +7,8 @@ export const customerSchema = z.object({
   phone: z.string(),
   address: z.string(),
   notes: z.string().nullable(),
+  shopPhotoKey: z.string().nullable(),
+  shopPhotoUrl: z.string().nullable(),
   createdBy: z.string(),
   status: z.enum(["active", "inactive"]),
   createdAt: z.date(),
@@ -28,6 +30,7 @@ export const createCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20),
   address: z.string().min(1),
   notes: z.string().optional(),
+  shopPhotoKey: z.string().min(1),
 });
 
 export const updateCustomerInputSchema = z.object({
@@ -36,6 +39,7 @@ export const updateCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20).optional(),
   address: z.string().min(1).optional(),
   notes: z.string().optional(),
+  shopPhotoKey: z.string().min(1).nullable().optional(),
 });
 
 export const customerIdInputSchema = z.object({ id: z.string().uuid() });
@@ -49,6 +53,30 @@ export const customerStatsSchema = z.object({
 
 export const listCustomersInputSchema = z.object({
   searchTerm: z.string().optional(),
+  includeInactive: z.boolean().optional().default(false),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
+});
+
+export const openOrderSummarySchema = z.object({
+  id: z.string(),
+  orderCode: z.string(),
+  type: z.enum(["book_now", "pre_order"]),
+  status: z.enum(["confirmed", "scheduled", "due", "fulfilled", "cancelled"]),
+  totalQuantity: z.number(),
+  totalAmount: z.number(),
+  scheduledDate: z.string().nullable(),
+  placedAt: z.date(),
+});
+
+export const createShopPhotoUploadUrlInputSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  contentLength: z.number().int().positive().max(5 * 1024 * 1024),
+});
+
+export const createShopPhotoUploadUrlOutputSchema = z.object({
+  uploadUrl: z.string(),
+  imageKey: z.string(),
+  imageUrl: z.string(),
 });
