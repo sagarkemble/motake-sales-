@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, uuid, date, timestamp, text, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { gatepassStatusEnum } from "./enums";
@@ -27,6 +28,10 @@ export const gatepassesTable = pgTable(
 
     hasDiscrepancy: boolean("has_discrepancy").notNull().default(false),
 
+    discrepancyReason: text("discrepancy_reason"),
+
+    handoverSubmittedAt: timestamp("handover_submitted_at", { withTimezone: true }),
+
     notes: text("notes"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -35,10 +40,12 @@ export const gatepassesTable = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("gatepasses_salesman_business_date_unique").on(
-      table.salesmanId,
-      table.businessDate,
-    ),
+    // A salesman may hold multiple gatepasses on the same business date (e.g. hand over the
+    // first, then get re-allotted a fresh one), but only ONE may be `active` at any time so
+    // that book-now and handover always resolve to a single, unambiguous gatepass.
+    uniqueIndex("gatepasses_salesman_active_business_date_unique")
+      .on(table.salesmanId, table.businessDate)
+      .where(sql`${table.status} = 'active'`),
   ],
 );
 

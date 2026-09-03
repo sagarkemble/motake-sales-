@@ -44,8 +44,8 @@ K6_SALESMAN_VUS=5 K6_ADMIN_VUS=2 K6_HOLD_DURATION=30s pnpm loadtest
 
 | Scenario | VUs | Flow |
 |----------|-----|------|
-| `salesmen_daily_workflow` | 10 | Login → gatepass → catalog → customers → orders → **create customer (25%)** → optional book-now / fulfill |
-| `admin_dashboard_workflow` | 2 | Login → reports → gatepass oversight → lists → optional customer update / gatepass allot |
+| `salesmen_daily_workflow` | 10 | Login → gatepass → catalog → customers → orders → **create customer (25%)** → **handover reconciliation (~23%)** → optional book-now / fulfill |
+| `admin_dashboard_workflow` | 2 | Login → reports → gatepass oversight → lists → optional customer update → **approve / flag handovers (~28%)** → gatepass allot |
 
 ### Write operations
 
@@ -58,6 +58,11 @@ K6_SALESMAN_VUS=5 K6_ADMIN_VUS=2 K6_HOLD_DURATION=30s pnpm loadtest
 | Fulfill order | Salesman | `PATCH /api/orders/:id/fulfill` | ~5% |
 | Update customer (+ replace photo) | Admin | `PATCH /api/customers/:id` | ~8% |
 | Remove shop photo | Admin | `DELETE /api/customers/:id/shop-photo` | ~3% |
+| Submit handover — full return | Salesman | `POST /api/gatepasses/:id/handover` | ~5% (when gatepass active) |
+| Submit handover — partial + short reason | Salesman | `POST /api/gatepasses/:id/handover` | ~3% (when gatepass active) |
+| Approve handover | Admin | `PATCH /api/gatepasses/:id/verify` | ~6% (when one is pending) |
+| Flag handover as discrepancy | Admin | `PATCH /api/gatepasses/:id/flag` | ~6% (when one is pending) |
+| Re-allot gatepass (multiple/day) | Admin | `POST /api/gatepasses/allot` | ~6% (salesman with no active gatepass) |
 | Allot gatepass | Admin | `POST /api/gatepasses/allot` | ~5% |
 
 A **shop photo is required** to create a customer: every create first requests a presigned
@@ -82,6 +87,56 @@ These low-frequency branches send intentionally invalid input and assert the rej
 
 Positive assertions also confirm that created customers carry a non-empty `shopPhotoUrl`, and
 that customer lists, order lists (`customerShopPhotoUrl`), and order details expose the photo field.
+
+### Handover reconciliation
+
+The end-of-day handover is a state machine (`active → pending_verification → closed`). The
+salesman declares what is actually being returned per item — defaulting to the amount due back
+(`issued − sold`) — and must give a reason for any shortfall. The admin then either **approves**
+(closes clean) or **flags a discrepancy** (closes with a reason for follow-up).
+
+A salesman may hold **multiple gatepasses on the same business date**, but only **one active at a
+time** (enforced by a partial unique index on `(salesman_id, business_date) WHERE status = 'active'`).
+The real-world flow is sequential: get stock → sell → hand over → get re-allotted a fresh gatepass.
+So a handed-over/closed gatepass is frozen (a second handover returns `409`), and re-allotment is
+only allowed once the salesman has **no active gatepass** (allotting while one is active returns `409`).
+
+Because a gatepass can only be handed over once and both scenarios run concurrently, the
+happy-path branches accept the realistic set of outcomes (e.g. `409` when another VU already
+handed over / closed it) and only run their success assertions on a `200`. The negative branches
+assert the rejection status directly.
+
+**Salesman — `POST /api/gatepasses/:id/handover`:**
+
+| Check tag | Expected | What it verifies |
+|-----------|----------|------------------|
+| `handover_full` | 200 / 409 / 404 | Full return moves the gatepass to `pending_verification` with `handoverSubmittedAt` set |
+| `handover_partial` | 200 / 409 / 404 | Partial return with a `shortReason` on one item is accepted |
+| `handover_short_no_reason` | 400 / 409 / 404 | A shortfall without a reason is rejected |
+| `handover_over_return` | 400 / 409 / 404 | Returning more than is due back (`> issued − sold`) is rejected |
+| `handover_foreign_item` | 400 / 409 / 404 | A `gatepassItemId` not on this gatepass is rejected |
+| `handover_not_found` | 404 | Handover against an unknown gatepass id is not found |
+| `handover_not_active_resubmit` | 409 | A non-active (handed-over / closed) gatepass cannot be handed over again |
+| `handover_verify_forbidden` | 401 / 403 | Salesman cannot `PATCH …/verify` (admin only) |
+| `handover_flag_forbidden` | 401 / 403 | Salesman cannot `PATCH …/flag` (admin only) |
+
+**Admin — `PATCH /api/gatepasses/:id/verify` and `/flag`:**
+
+| Check tag | Expected | What it verifies |
+|-----------|----------|------------------|
+| `handover_approve` | 200 / 409 | Approving a pending handover closes it with `hasDiscrepancy=false` |
+| `handover_flag` | 200 / 409 | Flagging closes it with `hasDiscrepancy=true` + non-empty `discrepancyReason` |
+| `handover_approve_not_pending` | 409 | Approving a gatepass that is not awaiting verification is rejected |
+| `handover_flag_no_reason` | 400 | Flagging with an empty `reason` is rejected by validation |
+| `handover_verify_not_found` | 404 | Verifying an unknown gatepass id is not found |
+| `handover_flag_not_found` | 404 | Flagging an unknown gatepass id is not found |
+| `gatepass_reallot_after_handover` | 200 / 409 | Re-allotting to a salesman with **no active** gatepass creates a fresh, distinct active gatepass (multiple/day) |
+| `gatepass_allot_active_conflict` | 409 / 200 | Allotting while the salesman already holds an **active** gatepass is rejected (one active/day) |
+| `gatepass_discrepancies` | 200 | Admin discrepancy dashboard data (`GET /api/gatepasses/discrepancies`) returns flagged gatepasses with salesman, reason, and issued/sold/returned/short totals |
+
+Positive assertions also confirm the salesman's own gatepass items expose the new
+`returnedQty` / `shortReason` / `shortNote` fields, and that returned items stay within
+`0 ≤ returnedQty ≤ issued − sold`.
 
 ## Auth
 

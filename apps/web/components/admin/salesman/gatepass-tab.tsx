@@ -36,7 +36,12 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
     );
   }
 
-  const todaysGatepass = gatepasses.find((gatepass) => gatepass.salesmanId === salesmanId);
+  // A salesman may hold several gatepasses on the same day (one at a time). Surface the active
+  // one if present, otherwise the most recent (list is newest-first).
+  const salesmanGatepasses = gatepasses.filter((gatepass) => gatepass.salesmanId === salesmanId);
+  const activeGatepass = salesmanGatepasses.find((gatepass) => gatepass.status === "active");
+  const todaysGatepass = activeGatepass ?? salesmanGatepasses[0];
+  const hasActiveGatepass = Boolean(activeGatepass);
   const allocatedItems = allotmentMatrix.filter((row) => row.salesmanId === salesmanId);
 
   const isHandedOver =
@@ -67,17 +72,19 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
       </div>
 
       <Button
-        asChild={!todaysGatepass && !isSalesmanDeleted}
-        disabled={Boolean(todaysGatepass) || isSalesmanDeleted}
+        asChild={!hasActiveGatepass && !isSalesmanDeleted}
+        disabled={hasActiveGatepass || isSalesmanDeleted}
         variant="outline"
         className="w-full rounded-full"
       >
         {isSalesmanDeleted ? (
           "Salesman deleted"
-        ) : todaysGatepass ? (
+        ) : hasActiveGatepass ? (
           "Already allotted today"
         ) : (
-          <Link href={`/gatepass?salesmanId=${salesmanId}`}>Allot</Link>
+          <Link href={`/gatepass?salesmanId=${salesmanId}`}>
+            {todaysGatepass ? "Allot again" : "Allot"}
+          </Link>
         )}
       </Button>
 
@@ -114,8 +121,8 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allocatedItems.map((item) => (
-                <TableRow key={item.varietyId}>
+              {allocatedItems.map((item, index) => (
+                <TableRow key={`${item.varietyId}-${index}`}>
                   <TableCell>{item.productName}</TableCell>
                   <TableCell>{item.varietyName}</TableCell>
                   <TableCell className="text-right">{item.issuedQty}</TableCell>

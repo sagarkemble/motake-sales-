@@ -1,19 +1,20 @@
 import {
   createGatepassWithItems,
+  getActiveGatepassBySalesmanAndDate,
   getAllotmentMatrixForDate,
+  getDiscrepancyGatepassesForDate,
   getEndOfDayTotalsForDate,
-  getGatepassBySalesmanAndDate,
   getGatepassById,
   getGatepassHistoryForSalesman,
   getGatepassWithItemsForSalesmanAndDate,
   incrementSoldQtyIfAvailable,
   listGatepassesForDate,
-  listGatepassItemsByGatepassId,
   recordReturnedQtyForItem,
   restoreSoldQtyOnCancellation,
   submitHandoverForGatepass,
   updateGatepassStatus,
   type AllotmentMatrixRow,
+  type DiscrepancyGatepassRow,
   type GatepassEndOfDayTotals,
   type GatepassHistoryRow,
   type GatepassWithItems,
@@ -22,15 +23,17 @@ import { getProfileById } from "@repo/database/queries/auth";
 import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
-import { conflict, forbidden, notFound } from "../errors";
+import { badRequest, conflict, forbidden, notFound } from "../errors";
 import {
   allotGatepassInputSchema,
   closeGatepassInputSchema,
+  flagGatepassInputSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
   submitHandoverInputSchema,
   type AllotGatepassInput,
   type CloseGatepassInput,
+  type FlagGatepassInput,
   type RecordReturnInput,
   type RecordSaleInput,
   type SubmitHandoverInput,
@@ -54,13 +57,15 @@ class GatepassService {
 
   public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithItems> {
     const parsedInput = allotGatepassInputSchema.parse(input);
-    const existingGatepass = await getGatepassBySalesmanAndDate(
+    // A salesman can be re-allotted a fresh gatepass on the same day, but only once their
+    // current one is no longer active (handed over / closed). Block only on an active gatepass.
+    const activeGatepass = await getActiveGatepassBySalesmanAndDate(
       parsedInput.salesmanId,
       parsedInput.businessDate,
     );
-    if (existingGatepass) {
+    if (activeGatepass) {
       throw conflict(
-        `Gatepass already allotted for salesman ${parsedInput.salesmanId} on ${parsedInput.businessDate}`,
+        `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
       );
     }
     try {
@@ -76,7 +81,7 @@ class GatepassService {
     } catch (insertError) {
       if (isDuplicateGatepassError(insertError)) {
         throw conflict(
-          `Gatepass already allotted for salesman ${parsedInput.salesmanId} on ${parsedInput.businessDate}`,
+          `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
         );
       }
       throw insertError;
@@ -158,7 +163,11 @@ class GatepassService {
 
   public async submitHandover(input: SubmitHandoverInput): Promise<GatepassWithItems> {
     const parsedInput = submitHandoverInputSchema.parse(input);
-    const outcome = await submitHandoverForGatepass(parsedInput.gatepassId, parsedInput.salesmanId);
+    const outcome = await submitHandoverForGatepass(
+      parsedInput.gatepassId,
+      parsedInput.salesmanId,
+      parsedInput.items,
+    );
 
     if (outcome.status === "not_found") {
       throw notFound(`Gatepass ${parsedInput.gatepassId} not found`);
@@ -169,6 +178,9 @@ class GatepassService {
     if (outcome.status === "not_active") {
       throw conflict(`Gatepass ${parsedInput.gatepassId} is not active`);
     }
+    if (outcome.status === "invalid") {
+      throw badRequest(outcome.message);
+    }
     return outcome.gatepass;
   }
 
@@ -177,19 +189,47 @@ class GatepassService {
     input: CloseGatepassInput,
   ): Promise<SelectGatepass | undefined> {
     const parsedInput = closeGatepassInputSchema.parse(input);
-    const items = await listGatepassItemsByGatepassId(gatepassId);
-    const hasDiscrepancy = items.some((item) => item.issuedQty !== item.soldQty + item.returnedQty);
+    const gatepass = await getGatepassById(gatepassId);
+    if (!gatepass) return undefined;
+    if (gatepass.status !== "pending_verification") {
+      throw conflict("Only gatepasses awaiting verification can be approved");
+    }
     return updateGatepassStatus(gatepassId, {
       status: "closed",
       closedBy: parsedInput.closedBy,
       closedAt: new Date(),
-      hasDiscrepancy,
+      hasDiscrepancy: false,
+      discrepancyReason: null,
+      notes: parsedInput.notes,
+    });
+  }
+
+  public async flagGatepassDiscrepancy(
+    gatepassId: string,
+    input: FlagGatepassInput,
+  ): Promise<SelectGatepass | undefined> {
+    const parsedInput = flagGatepassInputSchema.parse(input);
+    const gatepass = await getGatepassById(gatepassId);
+    if (!gatepass) return undefined;
+    if (gatepass.status !== "pending_verification") {
+      throw conflict("Only gatepasses awaiting verification can be flagged");
+    }
+    return updateGatepassStatus(gatepassId, {
+      status: "closed",
+      closedBy: parsedInput.closedBy,
+      closedAt: new Date(),
+      hasDiscrepancy: true,
+      discrepancyReason: parsedInput.reason,
       notes: parsedInput.notes,
     });
   }
 
   public async getEndOfDayTotals(businessDate: string): Promise<GatepassEndOfDayTotals> {
     return getEndOfDayTotalsForDate(businessDate);
+  }
+
+  public async getDiscrepancies(businessDate: string): Promise<DiscrepancyGatepassRow[]> {
+    return getDiscrepancyGatepassesForDate(businessDate);
   }
 }
 

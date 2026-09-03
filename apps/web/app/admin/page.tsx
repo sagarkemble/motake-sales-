@@ -11,6 +11,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 
+import { DiscrepancyPanel } from "~/components/admin/dashboard/discrepancy-panel";
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { adminQuickActions } from "~/components/admin/nav-items";
@@ -134,6 +135,10 @@ export default function AdminDashboardPage() {
             />
           </div>
         )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <DiscrepancyPanel businessDate={format(today, "yyyy-MM-dd")} />
       </section>
 
       <section className="flex flex-col gap-3">

@@ -9,6 +9,7 @@ interface UseGatepassesParams {
   includeMyGatepass?: boolean;
   includeMyHistory?: boolean;
   includeAdminOverview?: boolean;
+  includeDiscrepancies?: boolean;
   enabled?: boolean;
 }
 
@@ -17,6 +18,7 @@ export function useGatepasses({
   includeMyGatepass = false,
   includeMyHistory = false,
   includeAdminOverview = false,
+  includeDiscrepancies = false,
   enabled = true,
 }: UseGatepassesParams = {}) {
   const utils = trpc.useUtils();
@@ -47,6 +49,10 @@ export function useGatepasses({
     { businessDate: businessDate ?? "" },
     { enabled: dateIsSet && includeAdminOverview },
   );
+  const discrepanciesQuery = trpc.gatepasses.getDiscrepancies.useQuery(
+    { businessDate: businessDate ?? "" },
+    { enabled: dateIsSet && (includeDiscrepancies || includeAdminOverview) },
+  );
 
   const allotGatepassMutation = trpc.gatepasses.allot.useMutation({
     onSuccess: () => utils.gatepasses.invalidate(),
@@ -58,6 +64,9 @@ export function useGatepasses({
     onSuccess: () => utils.gatepasses.invalidate(),
   });
   const verifyGatepassMutation = trpc.gatepasses.verify.useMutation({
+    onSuccess: () => utils.gatepasses.invalidate(),
+  });
+  const flagGatepassMutation = trpc.gatepasses.flagDiscrepancy.useMutation({
     onSuccess: () => utils.gatepasses.invalidate(),
   });
   const submitHandoverMutation = trpc.gatepasses.submitHandover.useMutation({
@@ -93,6 +102,11 @@ export function useGatepasses({
     isEndOfDayTotalsError: endOfDayTotalsQuery.isError,
     refetchEndOfDayTotals: endOfDayTotalsQuery.refetch,
 
+    discrepancies: discrepanciesQuery.data?.data ?? [],
+    isDiscrepanciesLoading: discrepanciesQuery.isLoading,
+    isDiscrepanciesError: discrepanciesQuery.isError,
+    refetchDiscrepancies: discrepanciesQuery.refetch,
+
     allotGatepass: allotGatepassMutation.mutate,
     allotGatepassAsync: allotGatepassMutation.mutateAsync,
     isAllottingGatepass: allotGatepassMutation.isPending,
@@ -112,6 +126,11 @@ export function useGatepasses({
     verifyGatepassAsync: verifyGatepassMutation.mutateAsync,
     isVerifyingGatepass: verifyGatepassMutation.isPending,
     verifyGatepassError: verifyGatepassMutation.error ?? null,
+
+    flagGatepassDiscrepancy: flagGatepassMutation.mutate,
+    flagGatepassDiscrepancyAsync: flagGatepassMutation.mutateAsync,
+    isFlaggingGatepass: flagGatepassMutation.isPending,
+    flagGatepassError: flagGatepassMutation.error ?? null,
 
     submitHandover: submitHandoverMutation.mutate,
     submitHandoverAsync: submitHandoverMutation.mutateAsync,

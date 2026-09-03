@@ -495,6 +495,9 @@ export async function createBookNowOrderWithGatepassDeduction(
       params.items,
     );
 
+    // A salesman may hold several gatepasses on the same day, but only one is ever `active`.
+    // Deduct from that active gatepass explicitly (there is at most one, enforced by a partial
+    // unique index) rather than an arbitrary row for the salesman/date.
     const [salesmanGatepass] = await tx
       .select()
       .from(gatepassesTable)
@@ -502,11 +505,12 @@ export async function createBookNowOrderWithGatepassDeduction(
         and(
           eq(gatepassesTable.salesmanId, params.salesmanId),
           eq(gatepassesTable.businessDate, params.businessDate),
+          eq(gatepassesTable.status, "active"),
         ),
       )
       .for("update");
 
-    if (!salesmanGatepass || salesmanGatepass.status !== "active") {
+    if (!salesmanGatepass) {
       throw new Error("No active gatepass for this salesman today");
     }
 

@@ -3,6 +3,9 @@ import { check } from 'k6';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
 
+/** A syntactically valid UUID that will never match a real row — for not-found tests. */
+export const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
 export function apiGet(path, tags = {}, acceptedStatuses = null) {
   const params = { headers: JSON_HEADERS, tags };
   if (acceptedStatuses) {

@@ -11,6 +11,14 @@ export const gatepassStatusEnum = pgEnum("gatepass_status", [
   "closed",
 ]);
 
+export const gatepassShortReasonEnum = pgEnum("gatepass_short_reason", [
+  "damaged",
+  "expired",
+  "lost",
+  "leaked",
+  "other",
+]);
+
 export const orderTypeEnum = pgEnum("order_type", ["book_now", "pre_order"]);
 
 export const orderStatusEnum = pgEnum("order_status", [

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
-import { pgTable, uuid, integer, timestamp, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, timestamp, text, uniqueIndex, check } from "drizzle-orm/pg-core";
 
+import { gatepassShortReasonEnum } from "./enums";
 import { gatepassesTable } from "./gatepass";
 import { productVarietiesTable } from "./product-variety";
 
@@ -24,6 +25,10 @@ export const gatepassItemsTable = pgTable(
     returnedQty: integer("returned_qty").notNull().default(0),
 
     availableQty: integer("available_qty").generatedAlwaysAs(sql`issued_qty - sold_qty`),
+
+    shortReason: gatepassShortReasonEnum("short_reason"),
+
+    shortNote: text("short_note"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

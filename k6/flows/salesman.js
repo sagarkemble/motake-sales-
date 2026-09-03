@@ -2,13 +2,35 @@ import { check, sleep } from 'k6';
 import { randomIntBetween } from '../lib/random.js';
 import { API_BASE_URL } from '../lib/config.js';
 import { authenticateUser } from '../lib/auth.js';
-import { apiDelete, apiGet, apiPatch, apiPost, parseData, todayIsoDate } from '../lib/http.js';
+import {
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiPost,
+  parseData,
+  todayIsoDate,
+  NIL_UUID,
+} from '../lib/http.js';
 import { getSalesmanCredentials } from '../lib/users.js';
 import {
+  assertGatepassItemHandoverShape,
+  assertHandoverItemsConsistent,
+  assertHandoverSubmitted,
   assertOrderMoney,
   assertShopPhoto,
   assertVarietyPrices,
 } from '../lib/pricing.js';
+
+/** Items eligible for return: those with stock still on the salesman. */
+function returnableGatepassItems(gatepassItems) {
+  return (gatepassItems ?? []).filter(
+    (item) => (item.availableQty ?? item.issuedQty - item.soldQty) > 0,
+  );
+}
+
+function remainingOf(item) {
+  return item.availableQty ?? item.issuedQty - item.soldQty;
+}
 
 let sessionReady = false;
 
@@ -73,6 +95,9 @@ export function salesmanFlow() {
     [200, 404],
   );
   const gatepassData = parseData(gatepassRes);
+  const myGatepass = gatepassData?.gatepass ?? null;
+  const isActiveGatepass = myGatepass?.status === 'active';
+  assertGatepassItemHandoverShape(gatepassData?.items?.[0]);
 
   apiGet(`${base}/api/gatepasses/me/history`, { role: 'salesman', name: 'gatepass_history' });
 
@@ -214,6 +239,128 @@ export function salesmanFlow() {
     }
   }
 
+  const gatepassId = myGatepass?.id ?? null;
+  const returnable = returnableGatepassItems(gatepassData?.items);
+
+  // 42–46% — happy path: hand over the full return, then it awaits approval
+  if (actionRoll > 41 && actionRoll <= 46 && isActiveGatepass && gatepassId) {
+    const items = returnable.map((item) => ({
+      gatepassItemId: item.id,
+      returnedQty: remainingOf(item),
+    }));
+    const handoverRes = apiPost(
+      `${base}/api/gatepasses/${gatepassId}/handover`,
+      { items },
+      { role: 'salesman', name: 'handover_full' },
+      [200, 409, 404],
+    );
+    if (handoverRes.status === 200) {
+      const payload = parseData(handoverRes);
+      assertHandoverSubmitted(payload?.gatepass);
+      assertHandoverItemsConsistent(payload?.items);
+    }
+  }
+
+  // 47–49% — happy path: partial return with a shortfall reason on one item
+  if (actionRoll > 46 && actionRoll <= 49 && isActiveGatepass && gatepassId && returnable.length > 0) {
+    const items = returnable.map((item, index) => {
+      const remaining = remainingOf(item);
+      if (index === 0 && remaining >= 1) {
+        return {
+          gatepassItemId: item.id,
+          returnedQty: remaining - 1,
+          shortReason: 'damaged',
+          shortNote: 'k6 damaged in transit',
+        };
+      }
+      return { gatepassItemId: item.id, returnedQty: remaining };
+    });
+    const handoverRes = apiPost(
+      `${base}/api/gatepasses/${gatepassId}/handover`,
+      { items },
+      { role: 'salesman', name: 'handover_partial' },
+      [200, 409, 404],
+    );
+    if (handoverRes.status === 200) {
+      const payload = parseData(handoverRes);
+      assertHandoverSubmitted(payload?.gatepass);
+      assertHandoverItemsConsistent(payload?.items);
+    }
+  }
+
+  // 50–52% — shortfall without a reason is rejected (400 when still active)
+  if (actionRoll > 49 && actionRoll <= 52 && isActiveGatepass && gatepassId && returnable.length > 0) {
+    const target = returnable[0];
+    const remaining = remainingOf(target);
+    if (remaining >= 1) {
+      apiPost(
+        `${base}/api/gatepasses/${gatepassId}/handover`,
+        { items: [{ gatepassItemId: target.id, returnedQty: remaining - 1 }] },
+        { role: 'salesman', name: 'handover_short_no_reason' },
+        [400, 409, 404],
+      );
+    }
+  }
+
+  // 53–55% — returning more than is due back is rejected (400 when still active)
+  if (actionRoll > 52 && actionRoll <= 55 && isActiveGatepass && gatepassId && returnable.length > 0) {
+    const target = returnable[0];
+    apiPost(
+      `${base}/api/gatepasses/${gatepassId}/handover`,
+      { items: [{ gatepassItemId: target.id, returnedQty: remainingOf(target) + 5 }] },
+      { role: 'salesman', name: 'handover_over_return' },
+      [400, 409, 404],
+    );
+  }
+
+  // 56–58% — a gatepass item id from another gatepass is rejected (400 when still active)
+  if (actionRoll > 55 && actionRoll <= 58 && isActiveGatepass && gatepassId) {
+    apiPost(
+      `${base}/api/gatepasses/${gatepassId}/handover`,
+      { items: [{ gatepassItemId: NIL_UUID, returnedQty: 0 }] },
+      { role: 'salesman', name: 'handover_foreign_item' },
+      [400, 409, 404],
+    );
+  }
+
+  // 59–61% — handover against an unknown gatepass is not found (404)
+  if (actionRoll > 58 && actionRoll <= 61) {
+    apiPost(
+      `${base}/api/gatepasses/${NIL_UUID}/handover`,
+      { items: [] },
+      { role: 'salesman', name: 'handover_not_found' },
+      [404],
+    );
+  }
+
+  // 62–64% — a non-active gatepass cannot be handed over again. A salesman may hold several
+  // gatepasses per day, but once one leaves `active` (handed over / closed) it is frozen — the
+  // salesman must be re-allotted a fresh gatepass rather than resubmitting the old one.
+  if (actionRoll > 61 && actionRoll <= 63 && myGatepass && !isActiveGatepass && gatepassId) {
+    apiPost(
+      `${base}/api/gatepasses/${gatepassId}/handover`,
+      { items: [] },
+      { role: 'salesman', name: 'handover_not_active_resubmit' },
+      [409],
+    );
+  }
+
+  // 64–66% — salesmen cannot approve or flag gatepasses (admin only)
+  if (actionRoll > 63 && actionRoll <= 66) {
+    apiPatch(
+      `${base}/api/gatepasses/${gatepassId ?? NIL_UUID}/verify`,
+      {},
+      { role: 'salesman', name: 'handover_verify_forbidden' },
+      [401, 403],
+    );
+    apiPatch(
+      `${base}/api/gatepasses/${gatepassId ?? NIL_UUID}/flag`,
+      { reason: 'k6 salesman flag attempt' },
+      { role: 'salesman', name: 'handover_flag_forbidden' },
+      [401, 403],
+    );
+  }
+
   // 10% — book-now when gatepass has stock
   if (actionRoll > 85) {
     const variety = pickVariety(productsPayload);
@@ -231,7 +378,9 @@ export function salesmanFlow() {
 
     const availableItem = gatepassData?.items?.find((item) => (item.availableQty ?? 0) > 0);
 
-    if (varietyId && customerId && availableItem) {
+    // Only an active gatepass can absorb a sale; once handed over it moves to pending/closed.
+    // Accept 400/409 defensively in case a concurrent VU hands the gatepass over mid-iteration.
+    if (varietyId && customerId && availableItem && isActiveGatepass) {
       const bookNowRes = apiPost(
         `${base}/api/orders/book-now`,
         {
@@ -242,8 +391,11 @@ export function salesmanFlow() {
           items: [{ varietyId, quantity: 1 }],
         },
         { role: 'salesman', name: 'order_book_now' },
+        [200, 400, 409],
       );
-      assertOrderMoney(parseData(bookNowRes)?.order);
+      if (bookNowRes.status === 200) {
+        assertOrderMoney(parseData(bookNowRes)?.order);
+      }
     }
   }
 

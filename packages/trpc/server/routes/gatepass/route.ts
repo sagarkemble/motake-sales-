@@ -9,6 +9,8 @@ import {
   allotmentMatrixRowSchema,
   canonicalDateSchema,
   closeGatepassInputSchema,
+  discrepancyGatepassRowSchema,
+  flagGatepassInputSchema,
   gatepassDateInputSchema,
   gatepassEndOfDayTotalsSchema,
   gatepassHistoryRowSchema,
@@ -157,6 +159,25 @@ export const gatepassRouter = router({
       return apiResponse(totals);
     }),
 
+  getDiscrepancies: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/discrepancies"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "List flagged discrepancy gatepasses",
+        description:
+          "Return every gatepass flagged as a discrepancy for the given business date, with the salesman, reason, who closed it, and per-gatepass issued/sold/returned/short quantities.",
+      },
+    })
+    .input(gatepassDateInputSchema)
+    .output(apiResponseSchema(z.array(discrepancyGatepassRowSchema)))
+    .query(async ({ input }) => {
+      const discrepancies = await gatepassService.getDiscrepancies(input.businessDate);
+      return apiResponse(discrepancies);
+    }),
+
   recordReturn: adminProcedure
     .meta({
       openapi: {
@@ -202,7 +223,7 @@ export const gatepassRouter = router({
         protect: true,
         summary: "Submit end-of-day handover",
         description:
-          "Return all remaining stock for the signed-in salesman's own gatepass, then move it to pending verification.",
+          "Declare the quantity returned for each remaining item (with a reason for any shortfall), then move the signed-in salesman's own gatepass to pending verification.",
       },
     })
     .input(submitHandoverInputSchema)
@@ -211,6 +232,7 @@ export const gatepassRouter = router({
       const gatepassWithItems = await gatepassService.submitHandover({
         gatepassId: input.gatepassId,
         salesmanId: ctx.user.id,
+        items: input.items,
       });
       return apiResponse(gatepassWithItems);
     }),
@@ -222,8 +244,9 @@ export const gatepassRouter = router({
         path: path("/{id}/verify"),
         tags: ["GatePass"],
         protect: true,
-        summary: "Close a gatepass",
-        description: "Verify the sold and returned counts, then close the gatepass for the day.",
+        summary: "Approve and close a gatepass",
+        description:
+          "Accept the salesman's declared sold and returned counts, then close the gatepass with no discrepancy.",
       },
     })
     .input(closeGatepassInputSchema)
@@ -235,5 +258,29 @@ export const gatepassRouter = router({
       });
       if (!closedGatepass) throw notFound(`Gatepass ${input.id} not found`);
       return apiResponse(closedGatepass);
+    }),
+
+  flagDiscrepancy: adminProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/{id}/flag"),
+        tags: ["GatePass"],
+        protect: true,
+        summary: "Flag a gatepass as a discrepancy",
+        description:
+          "Close the gatepass but mark it as a discrepancy with a reason, for follow-up with the salesman.",
+      },
+    })
+    .input(flagGatepassInputSchema)
+    .output(apiResponseSchema(gatepassSchema))
+    .mutation(async ({ ctx, input }) => {
+      const flaggedGatepass = await gatepassService.flagGatepassDiscrepancy(input.id, {
+        closedBy: ctx.user.id,
+        reason: input.reason,
+        notes: input.notes,
+      });
+      if (!flaggedGatepass) throw notFound(`Gatepass ${input.id} not found`);
+      return apiResponse(flaggedGatepass);
     }),
 });

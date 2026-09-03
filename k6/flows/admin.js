@@ -11,10 +11,14 @@ import {
   parseData,
   isoDateTimeDaysAgo,
   todayIsoDate,
+  NIL_UUID,
 } from '../lib/http.js';
 import { getAdminCredentials } from '../lib/users.js';
 import {
   assertDailySalesValue,
+  assertDiscrepancyRow,
+  assertGatepassApproved,
+  assertGatepassFlagged,
   assertLifetimeValue,
   assertOrderDetailMoney,
   assertOrderMoney,
@@ -65,10 +69,50 @@ export function adminFlow() {
     { role: 'admin', name: 'reports_product_sales' },
   );
 
-  apiGet(`${base}/api/gatepasses/?businessDate=${businessDate}`, {
+  const gatepassesRes = apiGet(`${base}/api/gatepasses/?businessDate=${businessDate}`, {
     role: 'admin',
     name: 'gatepasses_list',
   });
+  const allGatepasses = parseData(gatepassesRes) ?? [];
+  const pendingGatepass = allGatepasses.find((g) => g.status === 'pending_verification') ?? null;
+  const nonPendingGatepass =
+    allGatepasses.find((g) => g.status === 'active' || g.status === 'closed') ?? null;
+
+  // Multiple gatepasses per salesman per day are allowed (one active at a time). Group today's
+  // gatepasses by salesman so we can exercise re-allotment and the active-gatepass conflict.
+  const gatepassesBySalesman = new Map();
+  for (const g of allGatepasses) {
+    const list = gatepassesBySalesman.get(g.salesmanId) ?? [];
+    list.push(g);
+    gatepassesBySalesman.set(g.salesmanId, list);
+  }
+  let salesmanWithActiveGatepass = null; // { id, list } — currently holds an active gatepass
+  let salesmanWithoutActiveGatepass = null; // { id, list } — has ≥1 gatepass today, none active
+  for (const [salesmanId, list] of gatepassesBySalesman) {
+    const hasActive = list.some((g) => g.status === 'active');
+    if (hasActive && !salesmanWithActiveGatepass) {
+      salesmanWithActiveGatepass = { id: salesmanId, list };
+    }
+    if (!hasActive && !salesmanWithoutActiveGatepass) {
+      salesmanWithoutActiveGatepass = { id: salesmanId, list };
+    }
+  }
+
+  // Resolve any allottable varietyId (needed by the allot / re-allot branches below).
+  function resolveAdminVarietyId() {
+    const productsPickRes = apiGet(`${base}/api/products/?page=1&pageSize=5`, {
+      role: 'admin',
+      name: 'products_pick',
+    });
+    const productRow = parseData(productsPickRes)?.items?.[0];
+    if (productRow?.varieties?.[0]?.id) return productRow.varieties[0].id;
+    if (!productRow?.product?.id) return null;
+    const varietiesRes = apiGet(`${base}/api/products/${productRow.product.id}/varieties`, {
+      role: 'admin',
+      name: 'varieties_pick',
+    });
+    return parseData(varietiesRes)?.[0]?.id ?? null;
+  }
 
   apiGet(`${base}/api/gatepasses/allotment-matrix?businessDate=${businessDate}`, {
     role: 'admin',
@@ -79,6 +123,13 @@ export function adminFlow() {
     role: 'admin',
     name: 'gatepass_eod',
   });
+
+  // Discrepancy dashboard data: flagged gatepasses with salesman, reason, and qty totals.
+  const discrepanciesRes = apiGet(
+    `${base}/api/gatepasses/discrepancies?businessDate=${businessDate}`,
+    { role: 'admin', name: 'gatepass_discrepancies' },
+  );
+  assertDiscrepancyRow(parseData(discrepanciesRes)?.[0]);
 
   apiGet(`${base}/api/salesmen/?page=1&pageSize=20`, { role: 'admin', name: 'salesmen_list' });
 
@@ -304,6 +355,122 @@ export function adminFlow() {
       );
       assertShopPhotoCleared(parseData(clearRes));
       touchedCustomerId = customer.id;
+    }
+  }
+
+  // 37–42% — approve a handover awaiting verification (→ closed, no discrepancy)
+  if (actionRoll > 36 && actionRoll <= 42 && pendingGatepass?.id) {
+    const verifyRes = apiPatch(
+      `${base}/api/gatepasses/${pendingGatepass.id}/verify`,
+      {},
+      { role: 'admin', name: 'handover_approve' },
+      [200, 409],
+    );
+    if (verifyRes.status === 200) {
+      assertGatepassApproved(parseData(verifyRes));
+    }
+  }
+
+  // 43–48% — flag a handover as a discrepancy with a reason (→ closed, discrepancy)
+  if (actionRoll > 42 && actionRoll <= 48 && pendingGatepass?.id) {
+    const flagRes = apiPatch(
+      `${base}/api/gatepasses/${pendingGatepass.id}/flag`,
+      { reason: 'k6 returned count does not match reported shortfall' },
+      { role: 'admin', name: 'handover_flag' },
+      [200, 409],
+    );
+    if (flagRes.status === 200) {
+      assertGatepassFlagged(parseData(flagRes));
+    }
+  }
+
+  // 49–52% — approving a gatepass that is not pending is rejected (409)
+  if (actionRoll > 48 && actionRoll <= 52 && nonPendingGatepass?.id) {
+    apiPatch(
+      `${base}/api/gatepasses/${nonPendingGatepass.id}/verify`,
+      {},
+      { role: 'admin', name: 'handover_approve_not_pending' },
+      [409],
+    );
+  }
+
+  // 53–56% — flagging with an empty reason is rejected by validation (400)
+  if (actionRoll > 52 && actionRoll <= 56) {
+    const targetId = nonPendingGatepass?.id ?? pendingGatepass?.id ?? NIL_UUID;
+    apiPatch(
+      `${base}/api/gatepasses/${targetId}/flag`,
+      { reason: '' },
+      { role: 'admin', name: 'handover_flag_no_reason' },
+      [400],
+    );
+  }
+
+  // 57–60% — verifying an unknown gatepass is not found (404)
+  if (actionRoll > 56 && actionRoll <= 60) {
+    apiPatch(
+      `${base}/api/gatepasses/${NIL_UUID}/verify`,
+      {},
+      { role: 'admin', name: 'handover_verify_not_found' },
+      [404],
+    );
+  }
+
+  // 61–64% — flagging an unknown gatepass is not found (404)
+  if (actionRoll > 60 && actionRoll <= 64) {
+    apiPatch(
+      `${base}/api/gatepasses/${NIL_UUID}/flag`,
+      { reason: 'k6 flag missing gatepass' },
+      { role: 'admin', name: 'handover_flag_not_found' },
+      [404],
+    );
+  }
+
+  // 64–70% — re-allot a fresh gatepass to a salesman whose current one is no longer active
+  // (already handed over / closed). This is the core "multiple gatepasses per day" happy path.
+  if (actionRoll > 64 && actionRoll <= 70 && salesmanWithoutActiveGatepass) {
+    const varietyId = resolveAdminVarietyId();
+    if (varietyId) {
+      const reallotRes = apiPost(
+        `${base}/api/gatepasses/allot`,
+        {
+          salesmanId: salesmanWithoutActiveGatepass.id,
+          businessDate,
+          items: [{ varietyId, issuedQty: 3 }],
+        },
+        { role: 'admin', name: 'gatepass_reallot_after_handover' },
+        // 200 = fresh gatepass; 409 = a concurrent VU re-allotted first (now active again).
+        [200, 409],
+      );
+      if (reallotRes.status === 200) {
+        const created = parseData(reallotRes)?.gatepass;
+        const existingIds = new Set(salesmanWithoutActiveGatepass.list.map((g) => g.id));
+        check(created, {
+          're-allotted gatepass is active': (g) => g?.status === 'active',
+          're-allotted gatepass is a new distinct record': (g) =>
+            Boolean(g?.id) && !existingIds.has(g.id),
+          're-allotted gatepass same salesman/date': (g) =>
+            g?.salesmanId === salesmanWithoutActiveGatepass.id && g?.businessDate === businessDate,
+        });
+      }
+    }
+  }
+
+  // 70–76% — allotting while the salesman already holds an ACTIVE gatepass is rejected: only one
+  // active gatepass per salesman per day is permitted.
+  if (actionRoll > 70 && actionRoll <= 76 && salesmanWithActiveGatepass) {
+    const varietyId = resolveAdminVarietyId();
+    if (varietyId) {
+      apiPost(
+        `${base}/api/gatepasses/allot`,
+        {
+          salesmanId: salesmanWithActiveGatepass.id,
+          businessDate,
+          items: [{ varietyId, issuedQty: 3 }],
+        },
+        { role: 'admin', name: 'gatepass_allot_active_conflict' },
+        // 409 = active gatepass present (expected); 200 only if it was closed out concurrently.
+        [409, 200],
+      );
     }
   }
 
