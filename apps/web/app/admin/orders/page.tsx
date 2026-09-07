@@ -2,17 +2,20 @@
 
 import { OrderList } from "~/components/admin/orders/order-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function AdminOrdersPage() {
+  const tx = useTranslate();
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4">
       <Tabs defaultValue="pre_order">
         <TabsList className="w-full">
           <TabsTrigger value="pre_order" className="flex-1">
-            Pre-Orders
+            {tx("Pre-Orders")}
           </TabsTrigger>
           <TabsTrigger value="book_now" className="flex-1">
-            Orders
+            {tx("Orders")}
           </TabsTrigger>
         </TabsList>
 

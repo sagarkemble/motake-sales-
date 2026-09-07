@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "~/components/ui/badge";
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 interface StatusBadgeProps {
@@ -7,19 +10,23 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const tx = useTranslate();
   const isActive = status === "active";
+  const label = isActive ? "Active" : "Inactive";
+
   return (
     <Badge
       variant="outline"
       className={cn(
-        "capitalize",
+        "max-w-[7.5rem] truncate",
         isActive
           ? "border-transparent bg-brand/10 text-brand"
           : "border-transparent bg-muted text-muted-foreground",
         className,
       )}
+      title={tx(label)}
     >
-      {status}
+      {tx(label)}
     </Badge>
   );
 }

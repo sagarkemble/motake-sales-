@@ -9,10 +9,12 @@ import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
 import { Input } from "~/components/ui/input";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useProducts } from "~/hooks/use-products";
+import { useTranslate } from "~/hooks/use-translate";
 
 const CATALOG_PAGE_SIZE = 40;
 
 function SalesmanCatalogContent() {
+  const tx = useTranslate();
   const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [openProductId, setOpenProductId] = useState<string | null>(null);
 
@@ -39,7 +41,7 @@ function SalesmanCatalogContent() {
         {searchTerm && (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={tx("Clear search")}
             onClick={() => setSearchTerm("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
@@ -53,7 +55,9 @@ function SalesmanCatalogContent() {
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm ? `No products match "${debouncedSearchTerm}"` : "No products yet"}
+            {debouncedSearchTerm
+              ? `No products match "${debouncedSearchTerm}"`
+              : tx("No products yet")}
           </p>
         ) : (
           productsPage.items.map(({ product, varieties }) => {

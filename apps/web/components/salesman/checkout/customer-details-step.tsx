@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 import { CheckIcon, ChevronsUpDownIcon, QrCodeIcon, XIcon } from "lucide-react";
@@ -19,8 +21,9 @@ import { PaymentScannerDialog } from "~/components/salesman/checkout/payment-sca
 import { ImageUpload } from "~/components/shared/image-upload";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Skeleton } from "~/components/ui/skeleton";
-import { formatInr } from "~/lib/format-money";
 import { useCustomers } from "~/hooks/use-customers";
+import { useFormatMoney } from "~/hooks/use-format-money";
+import { useTranslate } from "~/hooks/use-translate";
 
 interface CustomerOption {
   id: string;
@@ -62,6 +65,8 @@ export function CustomerDetailsStep({
   onNewCustomerFormChange,
   totalCartAmount,
 }: CustomerDetailsStepProps) {
+  const tx = useTranslate();
+  const { formatInr } = useFormatMoney();
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const { createShopPhotoUploadUrlAsync } = useCustomers();
@@ -74,9 +79,9 @@ export function CustomerDetailsStep({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-base font-semibold">Customer details</p>
+        <p className="text-base font-semibold">{tx("Customer details")}</p>
         <p className="text-sm text-muted-foreground">
-          Select an existing customer or enter new customer details.
+          {tx("Select an existing customer or enter new customer details.")}
         </p>
       </div>
 
@@ -88,7 +93,7 @@ export function CustomerDetailsStep({
         onClick={() => setIsScannerOpen(true)}
       >
         <QrCodeIcon className="size-6 transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] group-hover:scale-110 group-hover:rotate-6" />
-        Open payment scanner
+        {tx("Open payment scanner")}
       </Button>
 
       <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
@@ -115,12 +120,12 @@ export function CustomerDetailsStep({
                 </span>
               </span>
             ) : (
-              <span className="text-muted-foreground">Search existing customers...</span>
+              <span className="text-muted-foreground">{tx("Search existing customers...")}</span>
             )}
             {selectedCustomer ? (
               <XIcon
                 role="button"
-                aria-label="Clear selected customer"
+                aria-label={tx("Clear selected customer")}
                 className="ml-2 size-4 shrink-0 opacity-50 hover:opacity-100"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -135,7 +140,7 @@ export function CustomerDetailsStep({
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search existing customers..."
+              placeholder={tx("Search existing customers...")}
               value={customerSearchTerm}
               onValueChange={onCustomerSearchTermChange}
             />
@@ -151,7 +156,9 @@ export function CustomerDetailsStep({
                 </div>
               ) : (
                 <>
-                  <CommandEmpty>No customer matches &quot;{customerSearchTerm}&quot;</CommandEmpty>
+                  <CommandEmpty>
+                    {tx('No customer matches "{term}"', { term: customerSearchTerm })}
+                  </CommandEmpty>
                   <CommandGroup>
                     {customerOptions.map((customer) => {
                       const isSelected = selectedCustomer?.id === customer.id;
@@ -187,16 +194,18 @@ export function CustomerDetailsStep({
 
       {!selectedCustomer && (
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-muted-foreground">Or enter new customer details</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {tx("Or enter new customer details")}
+          </p>
 
           <div className="rounded-2xl border bg-card p-3">
-            <Label className="mb-2 block">Shop photo *</Label>
+            <Label className="mb-2 block">{tx("Shop photo *")}</Label>
             <ImageUpload
               imageUrl={newCustomerForm.shopPhotoUrl || null}
               requestUploadUrl={createShopPhotoUploadUrlAsync}
               altText="Shop"
               shape="square"
-              uploadButtonLabel="Upload shop photo"
+              uploadButtonLabel={tx("Upload shop photo")}
               onUploaded={(result) =>
                 onNewCustomerFormChange({
                   shopPhotoKey: result.imageKey,
@@ -216,31 +225,31 @@ export function CustomerDetailsStep({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-shop-name">Shop name</Label>
+            <Label htmlFor="new-customer-shop-name">{tx("Shop name")}</Label>
             <Input
               id="new-customer-shop-name"
-              placeholder="Enter shop name"
+              placeholder={tx("Enter shop name")}
               value={newCustomerForm.shopName}
               onChange={(event) => onNewCustomerFormChange({ shopName: event.target.value })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-phone">Phone number</Label>
+            <Label htmlFor="new-customer-phone">{tx("Phone number")}</Label>
             <Input
               id="new-customer-phone"
               type="tel"
-              placeholder="Enter phone number"
+              placeholder={tx("Enter phone number")}
               value={newCustomerForm.phone}
               onChange={(event) => onNewCustomerFormChange({ phone: event.target.value })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-address">Address</Label>
+            <Label htmlFor="new-customer-address">{tx("Address")}</Label>
             <Textarea
               id="new-customer-address"
-              placeholder="Enter full address"
+              placeholder={tx("Enter full address")}
               value={newCustomerForm.address}
               onChange={(event) => onNewCustomerFormChange({ address: event.target.value })}
             />
@@ -249,7 +258,7 @@ export function CustomerDetailsStep({
       )}
 
       <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">Place order for</span>
+        <span className="text-muted-foreground">{tx("Place order for")}</span>
         <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
       </div>
     </div>

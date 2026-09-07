@@ -9,8 +9,10 @@ import { OrderTypeStep } from "~/components/salesman/checkout/order-type-step";
 import { StepIndicator } from "~/components/salesman/checkout/step-indicator";
 import { VerifyProductsStep } from "~/components/salesman/checkout/verify-products-step";
 import { useCheckoutWizard } from "~/hooks/salesman/use-checkout-wizard";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function SalesmanCheckoutPage() {
+  const tx = useTranslate();
   const wizard = useCheckoutWizard();
 
   if (wizard.placedOrder) {
@@ -62,10 +64,10 @@ export default function SalesmanCheckoutPage() {
 
   const isLastStep = wizard.currentStepNumber === 3;
   const nextButtonLabel = isLastStep
-    ? "Place order"
+    ? tx("Place order")
     : wizard.currentStepNumber === 1
-      ? "Next: Order type"
-      : "Next: Customer details";
+      ? tx("Next: Order type")
+      : tx("Next: Customer details");
   const isOrderTypeStepInvalid =
     wizard.currentStepNumber === 2 && wizard.orderType === "book_now" && !wizard.isBookNowAllowed;
   const isNextDisabled = isOrderTypeStepInvalid || (isLastStep && !wizard.isCustomerStepValid);

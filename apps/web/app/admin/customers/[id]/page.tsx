@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { useState } from "react";
 import { CalendarIcon, IndianRupeeIcon, PackageIcon, ShoppingCartIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -14,11 +13,16 @@ import { DeactivateCustomerDialog } from "~/components/admin/customers/deactivat
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { formatInrCompact } from "~/lib/format-money";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useCustomers } from "~/hooks/use-customers";
+import { useFormatDate } from "~/hooks/use-format-date";
+import { useFormatMoney } from "~/hooks/use-format-money";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function CustomerDetailPage() {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
+  const { formatInrCompact } = useFormatMoney();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const router = useRouter();
@@ -38,9 +42,9 @@ export default function CustomerDetailPage() {
   async function handleReactivate() {
     try {
       await reactivateCustomerAsync({ id: customerId });
-      toast.success("Customer reactivated");
+      toast.success(tx("Customer reactivated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not reactivate customer. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not reactivate customer. Try again.")));
     }
   }
 
@@ -151,8 +155,8 @@ export default function CustomerDetailPage() {
               <div>
                 <p className="text-sm font-semibold leading-none">
                   {customerStats?.lastOrderAt
-                    ? format(new Date(customerStats.lastOrderAt), "d MMM yyyy")
-                    : "No orders yet"}
+                    ? formatDate(new Date(customerStats.lastOrderAt), "d MMM yyyy")
+                    : tx("No orders yet")}
                 </p>
                 <p className="text-xs text-muted-foreground">Last order</p>
               </div>

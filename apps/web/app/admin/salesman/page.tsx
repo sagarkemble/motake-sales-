@@ -20,8 +20,10 @@ import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+import { useTranslate } from "~/hooks/use-translate";
 
 function SalesmanPageContent() {
+  const tx = useTranslate();
   const router = useRouter();
   const pageSize = 20;
   const { page, setPage } = useListQueryState({ withSearch: false });
@@ -43,18 +45,18 @@ function SalesmanPageContent() {
   async function handleDeactivate(salesmanId: string) {
     try {
       await deactivateSalesmanAccountAsync({ id: salesmanId });
-      toast.success("Salesman deactivated");
+      toast.success(tx("Salesman deactivated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not deactivate salesman. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not deactivate salesman. Try again.")));
     }
   }
 
   async function handleReactivate(salesmanId: string) {
     try {
       await reactivateSalesmanAccountAsync({ id: salesmanId });
-      toast.success("Salesman reactivated");
+      toast.success(tx("Salesman reactivated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not reactivate salesman. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not reactivate salesman. Try again.")));
     }
   }
 
@@ -62,9 +64,9 @@ function SalesmanPageContent() {
     if (!window.confirm("Are you sure you want to soft-delete this salesman?")) return;
     try {
       await deleteSalesmanAccountAsync({ id: salesmanId });
-      toast.success("Salesman deleted");
+      toast.success(tx("Salesman deleted"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not delete salesman. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not delete salesman. Try again.")));
     }
   }
 
@@ -77,7 +79,7 @@ function SalesmanPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/salesman/new" aria-label="New salesman">
+          <Link href="/admin/salesman/new" aria-label={tx("New salesman")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -100,7 +102,7 @@ function SalesmanPageContent() {
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            No salesmen yet
+            {tx("No salesmen yet")}
           </p>
         ) : (
           salesmenPage.items.map(({ salesman, profile }) => {
@@ -161,7 +163,7 @@ function SalesmanPageContent() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        aria-label="Salesman actions"
+                        aria-label={tx("Salesman actions")}
                         className="size-8 shrink-0"
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}

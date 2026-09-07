@@ -2,6 +2,7 @@
 
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -9,16 +10,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { usePasswordLoginStore } from "~/lib/login-store";
 
 const minPasswordLength = 8;
 
-const passwordLoginFormSchema = z.object({
-  email: z.string().min(1, "Enter your email").email("Enter a valid email"),
-  password: z.string().min(minPasswordLength, `Password must be at least ${minPasswordLength} characters`),
-});
-
 export function PasswordLoginForm() {
+  const tx = useTranslate();
   const router = useRouter();
   const { signInWithEmailAndPassword } = useAuth({ enabled: false });
 
@@ -33,6 +31,15 @@ export function PasswordLoginForm() {
   const setIsSubmitting = usePasswordLoginStore((state) => state.setIsSubmitting);
   const setFormError = usePasswordLoginStore((state) => state.setFormError);
 
+  const passwordLoginFormSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().min(1, tx("Enter your email")).email(tx("Enter a valid email")),
+        password: z.string().min(minPasswordLength, tx("Password must be at least 8 characters")),
+      }),
+    [tx],
+  );
+
   const remainingPasswordCharacters = minPasswordLength - password.length;
   const showRemainingPasswordCharactersHint = password.length > 0 && remainingPasswordCharacters > 0;
 
@@ -42,7 +49,7 @@ export function PasswordLoginForm() {
 
     const parsedForm = passwordLoginFormSchema.safeParse({ email: email.trim(), password });
     if (!parsedForm.success) {
-      setFormError(parsedForm.error.issues[0]?.message ?? "Enter a valid email and password");
+      setFormError(parsedForm.error.issues[0]?.message ?? tx("Enter a valid email and password"));
       return;
     }
 
@@ -50,10 +57,10 @@ export function PasswordLoginForm() {
     setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(parsedForm.data);
-      toast.success("Signed in");
+      toast.success(tx("Signed in"));
       router.push("/");
     } catch {
-      setFormError("Wrong email or password. Try again.");
+      setFormError(tx("Wrong email or password. Try again."));
       setPassword("");
     } finally {
       setIsSubmitting(false);
@@ -63,7 +70,7 @@ export function PasswordLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password-email">Email</Label>
+        <Label htmlFor="password-email">{tx("Email")}</Label>
         <Input
           id="password-email"
           type="email"
@@ -78,13 +85,13 @@ export function PasswordLoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password-password">Password</Label>
+        <Label htmlFor="password-password">{tx("Password")}</Label>
         <div className="relative">
           <Input
             id="password-password"
             type={isPasswordVisible ? "text" : "password"}
             autoComplete="current-password"
-            placeholder="Enter your password"
+            placeholder={tx("Enter your password")}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
@@ -93,7 +100,7 @@ export function PasswordLoginForm() {
           <button
             type="button"
             onClick={toggleIsPasswordVisible}
-            aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+            aria-label={isPasswordVisible ? tx("Hide password") : tx("Show password")}
             className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground"
           >
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
@@ -101,7 +108,8 @@ export function PasswordLoginForm() {
         </div>
         {showRemainingPasswordCharactersHint && (
           <p className="text-xs text-muted-foreground">
-            {remainingPasswordCharacters} more character{remainingPasswordCharacters === 1 ? "" : "s"} needed
+            {remainingPasswordCharacters} more character{remainingPasswordCharacters === 1 ? "" : "s"}{" "}
+            needed
           </p>
         )}
       </div>
@@ -118,7 +126,7 @@ export function PasswordLoginForm() {
         className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
       >
         {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
-        Sign in
+        {tx("Sign in")}
       </Button>
     </form>
   );

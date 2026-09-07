@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { useTranslate } from "~/hooks/use-translate";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ export function VarietyFormDialog({
   isSubmitting,
   onSubmit,
 }: VarietyFormDialogProps) {
+  const tx = useTranslate();
   const form = useForm<VarietyFormValues>({
     resolver: zodResolver(varietyFormSchema),
     defaultValues: defaultValues ?? { sku: "", name: "", unit: "", unitPrice: 0 },
@@ -62,7 +64,7 @@ export function VarietyFormDialog({
     try {
       await onSubmit(values);
     } catch (error) {
-      const errorMessage = getErrorMessage(error, "Could not save variety. Try again.");
+      const errorMessage = getErrorMessage(error, tx("Could not save variety. Try again."));
       if (errorMessage.toLowerCase().includes("sku")) {
         form.setError("sku", { message: errorMessage });
       } else {

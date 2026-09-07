@@ -12,8 +12,10 @@ import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { useCustomers } from "~/hooks/use-customers";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+import { useTranslate } from "~/hooks/use-translate";
 
 function CustomersPageContent() {
+  const tx = useTranslate();
   const router = useRouter();
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
@@ -42,7 +44,7 @@ function CustomersPageContent() {
           {searchTerm && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={tx("Clear search")}
               onClick={() => setSearchTerm("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
@@ -55,7 +57,7 @@ function CustomersPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/customers/new" aria-label="New customer">
+          <Link href="/admin/customers/new" aria-label={tx("New customer")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -86,7 +88,7 @@ function CustomersPageContent() {
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
               ? `No customers match "${debouncedSearchTerm}"`
-              : "No customers yet"}
+              : tx("No customers yet")}
           </p>
         ) : (
           customersPage.items.map((customer) => (

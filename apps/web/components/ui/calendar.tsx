@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useLocale } from "next-intl";
 import { DayPicker, getDefaultClassNames, type DayButton } from "react-day-picker";
 
 import { cn } from "~/lib/utils";
 import { Button, buttonVariants } from "~/components/ui/button";
+import { resolveAppLocale } from "~/locale/config";
 
 function Calendar({
   className,
@@ -19,6 +21,8 @@ function Calendar({
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"];
 }) {
+  const appLocale = resolveAppLocale(useLocale());
+  const intlLocale = appLocale === "mr" ? "mr-IN" : "en-IN";
   const defaultClassNames = getDefaultClassNames();
 
   return (
@@ -32,7 +36,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString("default", { month: "short" }),
+        formatMonthDropdown: (date) => date.toLocaleString(intlLocale, { month: "short" }),
         ...formatters,
       }}
       classNames={{

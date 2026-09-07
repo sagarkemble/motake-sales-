@@ -1,9 +1,10 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { ChevronRightIcon } from "lucide-react";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { useFormatDate } from "~/hooks/use-format-date";
 import type { GatepassHistoryRow } from "~/hooks/use-gatepasses";
 
 interface GatepassHistoryCardProps {
@@ -12,13 +13,14 @@ interface GatepassHistoryCardProps {
 }
 
 export function GatepassHistoryCard({ historyRow, onViewDetails }: GatepassHistoryCardProps) {
+  const formatDate = useFormatDate();
   const { gatepass, totalIssuedQty, totalSoldQty } = historyRow;
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">
-          {format(parseISO(gatepass.businessDate), "d MMM yyyy")}
+          {formatDate(parseISO(gatepass.businessDate), "d MMM yyyy")}
         </p>
         <GatepassStatusBadge status={gatepass.status} />
       </div>

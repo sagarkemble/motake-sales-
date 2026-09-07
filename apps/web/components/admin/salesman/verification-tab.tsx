@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -25,7 +24,9 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Textarea } from "~/components/ui/textarea";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
+import { useTranslate } from "~/hooks/use-translate";
 import { TableRowsSkeleton } from "~/components/shared/table-rows-skeleton";
 
 interface VerificationTabProps {
@@ -33,6 +34,8 @@ interface VerificationTabProps {
 }
 
 export function VerificationTab({ salesmanId }: VerificationTabProps) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { canonicalBusinessDate: businessDate, isCanonicalDateLoading } = useGatepasses();
   const {
     gatepasses,
@@ -87,17 +90,17 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
   );
 
   const submittedAt = pendingGatepass.handoverSubmittedAt
-    ? format(new Date(pendingGatepass.handoverSubmittedAt), "d MMM, p")
+    ? formatDate(new Date(pendingGatepass.handoverSubmittedAt), "d MMM, p")
     : null;
 
   async function handleApproveAndClose() {
     if (!pendingGatepass) return;
     try {
       await verifyGatepassAsync({ id: pendingGatepass.id });
-      toast.success("Gate pass approved and closed");
+      toast.success(tx("Gate pass approved and closed"));
     } catch (verifyError) {
       const errorMessage =
-        verifyError instanceof Error ? verifyError.message : "Could not close gate pass";
+        verifyError instanceof Error ? verifyError.message : tx("Could not close gate pass");
       toast.error(errorMessage);
     }
   }
@@ -108,12 +111,12 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
     if (!reason) return;
     try {
       await flagGatepassDiscrepancyAsync({ id: pendingGatepass.id, reason });
-      toast.success("Gate pass flagged as a discrepancy");
+      toast.success(tx("Gate pass flagged as a discrepancy"));
       setIsFlagOpen(false);
       setFlagReason("");
     } catch (flagError) {
       const errorMessage =
-        flagError instanceof Error ? flagError.message : "Could not flag gate pass";
+        flagError instanceof Error ? flagError.message : tx("Could not flag gate pass");
       toast.error(errorMessage);
     }
   }

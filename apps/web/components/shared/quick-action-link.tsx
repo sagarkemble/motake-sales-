@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 interface QuickActionLinkProps {
@@ -11,6 +14,8 @@ interface QuickActionLinkProps {
 }
 
 export function QuickActionLink({ href, label, icon: Icon, className }: QuickActionLinkProps) {
+  const tx = useTranslate();
+
   return (
     <Link
       href={href}
@@ -23,7 +28,7 @@ export function QuickActionLink({ href, label, icon: Icon, className }: QuickAct
       <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand ring-1 ring-brand/10 transition-colors group-hover:bg-brand group-hover:text-brand-foreground">
         <Icon className="size-5" />
       </div>
-      <p className="relative text-sm font-medium">{label}</p>
+      <p className="relative text-sm font-medium">{tx(label)}</p>
     </Link>
   );
 }

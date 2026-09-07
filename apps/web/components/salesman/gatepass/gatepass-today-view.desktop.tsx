@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslate } from "~/hooks/use-translate";
+
 import { GatepassInfoBanner } from "./gatepass-info-banner";
 import { GatepassQuickStats } from "./gatepass-quick-stats";
 import { GatepassTodayHeaderCard } from "./gatepass-today-header-card";
@@ -25,6 +29,8 @@ export function GatepassTodayViewDesktop({
   totalSoldQty,
   totalRemainingQty,
 }: GatepassTodayViewDesktopProps) {
+  const tx = useTranslate();
+
   return (
     <div className="flex flex-col gap-4">
       <GatepassTodayHeaderCard
@@ -40,10 +46,10 @@ export function GatepassTodayViewDesktop({
 
       <div className="flex flex-col divide-y rounded-2xl border bg-card">
         <div className="grid grid-cols-5 gap-2 px-4 py-2 text-xs text-muted-foreground">
-          <p className="col-span-2">Item</p>
-          <p className="text-right">Allocated</p>
-          <p className="text-right">Sold</p>
-          <p className="text-right">Remaining</p>
+          <p className="col-span-2">{tx("Item")}</p>
+          <p className="text-right">{tx("Allocated")}</p>
+          <p className="text-right">{tx("Sold")}</p>
+          <p className="text-right">{tx("Remaining")}</p>
         </div>
         {items.map((item) => (
           <div key={item.id} className="grid grid-cols-5 gap-2 px-4 py-3 text-sm">

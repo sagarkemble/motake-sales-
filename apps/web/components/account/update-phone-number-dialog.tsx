@@ -10,6 +10,7 @@ import { Input } from "~/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/components/ui/input-otp";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { createOtpLoginStore } from "~/lib/login-store";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -22,6 +23,7 @@ interface UpdatePhoneNumberDialogProps {
 }
 
 export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumberDialogProps) {
+  const tx = useTranslate();
   const { requestPhoneNumberChange, confirmPhoneNumberChange } = useAuth({ enabled: false });
 
   const step = usePhoneUpdateStore((state) => state.step);
@@ -80,9 +82,9 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
       await requestPhoneNumberChange(fullPhoneNumber());
       goToPasscodeStep();
       startResendCooldown();
-      toast.success("Code sent by SMS");
+      toast.success(tx("Code sent by SMS"));
     } catch {
-      setFormError("Couldn't send a code. Check the number and try again.");
+      setFormError(tx("Couldn't send a code. Check the number and try again."));
     } finally {
       setIsSending(false);
     }
@@ -101,10 +103,10 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
     setIsVerifying(true);
     try {
       await confirmPhoneNumberChange({ phone: fullPhoneNumber(), passcode });
-      toast.success("Phone number updated");
+      toast.success(tx("Phone number updated"));
       handleOpenChange(false);
     } catch {
-      setFormError("That code is wrong or expired.");
+      setFormError(tx("That code is wrong or expired."));
       setPasscode("");
     } finally {
       setIsVerifying(false);
@@ -115,13 +117,13 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Update phone number</DialogTitle>
+          <DialogTitle>{tx("Update phone number")}</DialogTitle>
         </DialogHeader>
 
         {step === "enter-passcode" ? (
           <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="phone-update-passcode">6-digit code</Label>
+              <Label htmlFor="phone-update-passcode">{tx("6-digit code")}</Label>
               <p className="text-sm text-muted-foreground">Sent to +91 {contactValue}</p>
               <InputOTP
                 id="phone-update-passcode"
@@ -156,7 +158,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
               className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
             >
               {isVerifying ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Verify and update
+              {tx("Verify and update")}
             </Button>
 
             <div className="flex items-center justify-between text-sm">
@@ -165,7 +167,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
                 onClick={goToContactStep}
                 className="text-muted-foreground hover:text-foreground"
               >
-                Change number
+                {tx("Change number")}
               </button>
               <button
                 type="button"
@@ -173,14 +175,14 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
                 onClick={() => void sendPasscode()}
                 className="text-brand disabled:text-muted-foreground disabled:opacity-60"
               >
-                {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : "Resend code"}
+                {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("Resend code")}
               </button>
             </div>
           </form>
         ) : (
           <form onSubmit={handleSendPasscode} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="phone-update-contact">New phone number</Label>
+              <Label htmlFor="phone-update-contact">{tx("New phone number")}</Label>
               <div className="flex h-10 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
                 <span className="text-sm text-muted-foreground">+91</span>
                 <Input
@@ -188,7 +190,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel"
-                  placeholder="10-digit mobile number"
+                  placeholder={tx("10-digit mobile number")}
                   value={contactValue}
                   onChange={(event) =>
                     setContactValue(event.target.value.replace(/\D/g, "").slice(0, 10))
@@ -211,7 +213,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
               className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
             >
               {isSending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Send code
+              {tx("Send code")}
             </Button>
           </form>
         )}

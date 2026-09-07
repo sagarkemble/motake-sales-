@@ -7,18 +7,20 @@ import { BackHeader } from "~/components/admin/products/back-header";
 import { ProductForm, type ProductFormValues } from "~/components/admin/products/product-form";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function NewProductPage() {
+  const tx = useTranslate();
   const router = useRouter();
   const { createProductAsync, isCreatingProduct } = useProducts();
 
   async function handleSubmit(values: ProductFormValues) {
     try {
       const response = await createProductAsync(values);
-      toast.success("Product created");
+      toast.success(tx("Product created"));
       router.push(`/admin/products/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not create product. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not create product. Try again.")));
     }
   }
 

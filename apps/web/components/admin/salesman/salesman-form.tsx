@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,18 +15,17 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { useTranslate } from "~/hooks/use-translate";
 
 const minPasswordLength = 8;
 
-const salesmanFormSchema = z.object({
-  name: z.string().min(1, "Enter a name").max(120),
-  phone: z.string().min(1, "Enter a phone number").max(20),
-  email: z.string().min(1, "Enter an email").email("Enter a valid email"),
-  password: z.string().min(minPasswordLength, `Password must be at least ${minPasswordLength} characters`),
-  salesmanCode: z.string().min(1, "Enter a salesman code").max(32),
-});
-
-export type SalesmanFormValues = z.infer<typeof salesmanFormSchema>;
+export type SalesmanFormValues = {
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
+  salesmanCode: string;
+};
 
 interface SalesmanFormProps {
   isSubmitting: boolean;
@@ -34,6 +34,20 @@ interface SalesmanFormProps {
 }
 
 export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFormProps) {
+  const tx = useTranslate();
+
+  const salesmanFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, tx("Enter a name")).max(120),
+        phone: z.string().min(1, tx("Enter a phone number")).max(20),
+        email: z.string().min(1, tx("Enter an email")).email(tx("Enter a valid email")),
+        password: z.string().min(minPasswordLength, tx("Password must be at least 8 characters")),
+        salesmanCode: z.string().min(1, tx("Enter a salesman code")).max(32),
+      }),
+    [tx],
+  );
+
   const form = useForm<SalesmanFormValues>({
     resolver: zodResolver(salesmanFormSchema),
     defaultValues: {

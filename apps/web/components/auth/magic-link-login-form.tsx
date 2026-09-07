@@ -8,11 +8,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { useMagicLinkLoginStore } from "~/lib/login-store";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function MagicLinkLoginForm() {
+  const tx = useTranslate();
   const { sendMagicLink } = useAuth({ enabled: false });
 
   const step = useMagicLinkLoginStore((state) => state.step);
@@ -55,9 +57,9 @@ export function MagicLinkLoginForm() {
       await sendMagicLink(email.trim());
       goToLinkSentStep();
       startResendCooldown();
-      toast.success("Sign-in link sent to your email");
+      toast.success(tx("Sign-in link sent to your email"));
     } catch {
-      setFormError("Couldn't send the link. Check the email and try again.");
+      setFormError(tx("Couldn't send the link. Check the email and try again."));
     } finally {
       setIsSending(false);
     }
@@ -75,7 +77,7 @@ export function MagicLinkLoginForm() {
           <MailCheckIcon className="size-6" />
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">Check your email</p>
+          <p className="text-sm font-medium text-foreground">{tx("Check your email")}</p>
           <p className="text-sm text-muted-foreground">
             We sent a sign-in link to {email}. Open it on this device to sign in.
           </p>
@@ -93,7 +95,7 @@ export function MagicLinkLoginForm() {
             onClick={goToEmailStep}
             className="text-muted-foreground hover:text-foreground"
           >
-            Change email
+            {tx("Change email")}
           </button>
           <button
             type="button"
@@ -101,7 +103,7 @@ export function MagicLinkLoginForm() {
             onClick={() => void sendLink()}
             className="text-brand disabled:text-muted-foreground disabled:opacity-60"
           >
-            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : "Resend link"}
+            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("Resend link")}
           </button>
         </div>
       </div>
@@ -111,7 +113,7 @@ export function MagicLinkLoginForm() {
   return (
     <form onSubmit={handleSendLink} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="magic-link-email">Email</Label>
+        <Label htmlFor="magic-link-email">{tx("Email")}</Label>
         <Input
           id="magic-link-email"
           type="email"
@@ -137,7 +139,7 @@ export function MagicLinkLoginForm() {
         className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
       >
         {isSending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-        Send sign-in link
+        {tx("Send sign-in link")}
       </Button>
     </form>
   );

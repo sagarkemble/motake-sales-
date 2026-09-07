@@ -21,10 +21,12 @@ import {
 } from "~/components/ui/select";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useAuth } from "~/hooks/use-auth";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 
@@ -39,6 +41,8 @@ interface CatalogItem {
 }
 
 function GatepassPageContent() {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedSalesmanId = searchParams.get("salesmanId") ?? "";
@@ -109,14 +113,14 @@ function GatepassPageContent() {
 
   async function handleAllotGatepass() {
     if (!selectedSalesmanId) {
-      toast.error("Select a salesman");
+      toast.error(tx("Select a salesman"));
       return;
     }
     const items = Object.entries(quantitiesByVarietyId)
       .filter(([, issuedQty]) => issuedQty > 0)
       .map(([varietyId, issuedQty]) => ({ varietyId, issuedQty }));
     if (items.length === 0) {
-      toast.error("Set a quantity for at least one item");
+      toast.error(tx("Set a quantity for at least one item"));
       return;
     }
 
@@ -126,10 +130,10 @@ function GatepassPageContent() {
         businessDate: businessDateKey,
         items,
       });
-      toast.success("Gate pass allotted");
+      toast.success(tx("Gate pass allotted"));
       router.push(`/admin/salesman/${selectedSalesmanId}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not allot gate pass. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not allot gate pass. Try again.")));
     }
   }
 
@@ -141,11 +145,11 @@ function GatepassPageContent() {
     <div className="flex flex-col gap-5 px-4 py-4 pb-28">
       <BackHeader
         href={preselectedSalesmanId ? `/admin/salesman/${preselectedSalesmanId}` : "/admin"}
-        title="Allot Gate Pass"
+        title={tx("Allot Gate Pass")}
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Date</label>
+        <label className="text-sm font-medium">{tx("Date")}</label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -153,7 +157,7 @@ function GatepassPageContent() {
               variant="outline"
               className="h-11 justify-between rounded-xl bg-muted/40 font-normal"
             >
-              {format(businessDate, "d MMM yyyy")}
+              {formatDate(businessDate, "d MMM yyyy")}
               <CalendarIcon className="size-4 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
@@ -168,10 +172,12 @@ function GatepassPageContent() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Select Salesman *</label>
+        <label className="text-sm font-medium">{tx("Select Salesman *")}</label>
         <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
           <SelectTrigger className="h-11 w-full rounded-xl bg-muted/40">
-            <SelectValue placeholder={isSalesmenListLoading ? "Loading…" : "Select salesman"} />
+            <SelectValue
+              placeholder={isSalesmenListLoading ? tx("Loading…") : tx("Select salesman")}
+            />
           </SelectTrigger>
           <SelectContent>
             {salesmenPage.items.map(({ salesman, profile }) => (
@@ -232,7 +238,7 @@ function GatepassPageContent() {
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs text-muted-foreground">Qty</span>
+                  <span className="text-xs text-muted-foreground">{tx("Qty")}</span>
                   <QuantityStepper
                     quantity={quantitiesByVarietyId[item.varietyId] ?? 0}
                     onQuantityChange={(quantity) => handleQuantityChange(item.varietyId, quantity)}
@@ -249,9 +255,9 @@ function GatepassPageContent() {
           type="button"
           disabled={isAllottingGatepass}
           onClick={() => void handleAllotGatepass()}
-          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          className="h-auto min-h-11 w-full whitespace-normal rounded-full bg-brand py-2.5 text-brand-foreground hover:bg-brand/90"
         >
-          {isAllottingGatepass ? "Allotting" : "Allot Gate Pass"}
+          {isAllottingGatepass ? tx("Allotting") : tx("Allot Gate Pass")}
         </Button>
       </div>
     </div>

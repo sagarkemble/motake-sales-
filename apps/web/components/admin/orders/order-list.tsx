@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
 
 import { Button } from "~/components/ui/button";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
@@ -9,8 +8,10 @@ import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
-import { formatInrCompact } from "~/lib/format-money";
+import { useFormatDate } from "~/hooks/use-format-date";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
+import { useTranslate } from "~/hooks/use-translate";
 
 interface OrderListProps {
   orderType?: "book_now" | "pre_order";
@@ -18,6 +19,9 @@ interface OrderListProps {
 }
 
 export function OrderList({ orderType, customerId }: OrderListProps) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
+  const { formatInrCompact } = useFormatMoney();
   const [page, setPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const pageSize = 20;
@@ -31,7 +35,7 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
       {isOrdersListLoading ? (
         <ListItemSkeleton count={5} />
       ) : ordersPage.items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No orders yet</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{tx("No orders yet")}</p>
       ) : (
         ordersPage.items.map(
           ({
@@ -73,14 +77,18 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
                   <p className="text-sm font-semibold text-brand">
                     {formatInrCompact(order.totalAmount)}
                   </p>
-                  <p className="text-xs font-bold text-muted-foreground">{order.totalQuantity} qty</p>
+                  <p className="text-xs font-bold text-muted-foreground">
+                    {order.totalQuantity} {tx("qty")}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Salesman {salesmanName ?? salesmanCode}</span>
+                <span className="min-w-0 truncate">
+                  {tx("Salesman")} {salesmanName ?? salesmanCode}
+                </span>
                 <span>
-                  {format(
+                  {formatDate(
                     new Date(
                       orderType === "pre_order" && order.scheduledDate
                         ? order.scheduledDate

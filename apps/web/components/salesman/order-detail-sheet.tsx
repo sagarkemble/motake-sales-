@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { PackageIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,10 +17,13 @@ import {
 import { Button } from "~/components/ui/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { useFormatDate } from "~/hooks/use-format-date";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
+import { useTranslate } from "~/hooks/use-translate";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
-import { formatInr, lineTotal } from "~/lib/format-money";
+import { lineTotal } from "~/lib/format-money";
 
 interface OrderDetailSheetProps {
   orderId: string | null;
@@ -29,6 +31,9 @@ interface OrderDetailSheetProps {
 }
 
 export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProps) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
+  const { formatInr } = useFormatMoney();
   const [isConfirmingFulfil, setIsConfirmingFulfil] = useState(false);
 
   const { orderDetail, isOrderDetailLoading, refetchOrderDetail, fulfillOrderAsync, isFulfillingOrder } = useOrders({
@@ -44,10 +49,10 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     if (!orderId) return;
     try {
       await fulfillOrderAsync({ id: orderId });
-      toast.success("Order marked as fulfilled");
+      toast.success(tx("Order marked as fulfilled"));
     } catch (fulfilOrderError) {
       const errorMessage =
-        fulfilOrderError instanceof Error ? fulfilOrderError.message : "Could not fulfil order";
+        fulfilOrderError instanceof Error ? fulfilOrderError.message : tx("Could not fulfil order");
       toast.error(errorMessage);
     } finally {
       setIsConfirmingFulfil(false);
@@ -117,14 +122,14 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   <div>
                     <p className="text-xs text-muted-foreground">Placed at</p>
                     <p className="font-medium">
-                      {format(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
+                      {formatDate(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
                     </p>
                   </div>
                   {orderDetail.order.scheduledDate && (
                     <div>
                       <p className="text-xs text-muted-foreground">Scheduled for</p>
                       <p className="font-medium">
-                        {format(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
+                        {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
                       </p>
                     </div>
                   )}
@@ -132,7 +137,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     <div>
                       <p className="text-xs text-muted-foreground">Fulfilled at</p>
                       <p className="font-medium">
-                        {format(new Date(orderDetail.order.fulfilledAt), "d MMM yyyy, h:mm a")}
+                        {formatDate(new Date(orderDetail.order.fulfilledAt), "d MMM yyyy, h:mm a")}
                       </p>
                     </div>
                   )}

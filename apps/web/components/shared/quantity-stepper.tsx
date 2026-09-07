@@ -4,6 +4,7 @@ import { MinusIcon, PlusIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 interface QuantityStepperProps {
@@ -19,6 +20,8 @@ export function QuantityStepper({
   minQuantity = 0,
   className,
 }: QuantityStepperProps) {
+  const tx = useTranslate();
+
   function handleNumericInput(rawValue: string) {
     const digitsOnly = rawValue.replace(/\D/g, "");
     const parsedQuantity = digitsOnly === "" ? minQuantity : Number.parseInt(digitsOnly, 10);
@@ -34,7 +37,7 @@ export function QuantityStepper({
         className="size-8 shrink-0 rounded-full"
         disabled={quantity <= minQuantity}
         onClick={() => onQuantityChange(Math.max(minQuantity, quantity - 1))}
-        aria-label="Decrease quantity"
+        aria-label={tx("Decrease quantity")}
       >
         <MinusIcon className="size-3.5" />
       </Button>
@@ -54,7 +57,7 @@ export function QuantityStepper({
         size="icon"
         className="size-8 shrink-0 rounded-full"
         onClick={() => onQuantityChange(quantity + 1)}
-        aria-label="Increase quantity"
+        aria-label={tx("Increase quantity")}
       >
         <PlusIcon className="size-3.5" />
       </Button>

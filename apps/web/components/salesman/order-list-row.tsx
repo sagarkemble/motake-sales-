@@ -49,7 +49,7 @@ export function OrderListRow({
         <p className="text-xs font-semibold text-brand">{formatInrCompact(totalAmount)}</p>
       </div>
 
-      <OrderStatusBadge status={status} className="shrink-0" />
+      <OrderStatusBadge status={status} className="max-w-[7.5rem] shrink-0" />
     </button>
   );
 }

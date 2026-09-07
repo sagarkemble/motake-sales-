@@ -8,9 +8,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
-import { formatInrCompact } from "~/lib/format-money";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
+import { useTranslate } from "~/hooks/use-translate";
 
 function getFromPrice(varieties: { unitPrice: number }[]): number | null {
   if (varieties.length === 0) return null;
@@ -18,6 +19,8 @@ function getFromPrice(varieties: { unitPrice: number }[]): number | null {
 }
 
 function ProductsPageContent() {
+  const tx = useTranslate();
+  const { formatInrCompact } = useFormatMoney();
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeDeleted, setIncludeDeleted] = useState(false);
@@ -40,7 +43,7 @@ function ProductsPageContent() {
           {searchTerm && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={tx("Clear search")}
               onClick={() => setSearchTerm("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
@@ -53,7 +56,7 @@ function ProductsPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/products/new" aria-label="New product">
+          <Link href="/admin/products/new" aria-label={tx("New product")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -76,7 +79,9 @@ function ProductsPageContent() {
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm ? `No products match "${debouncedSearchTerm}"` : "No products yet"}
+            {debouncedSearchTerm
+              ? `No products match "${debouncedSearchTerm}"`
+              : tx("No products yet")}
           </p>
         ) : (
           productsPage.items.map(({ product, varieties }) => {

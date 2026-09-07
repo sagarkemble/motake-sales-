@@ -12,12 +12,14 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
+import { useTranslate } from "~/hooks/use-translate";
 import { computeGatepassTotals } from "~/lib/gatepass-totals";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 
 const CATALOG_PAGE_SIZE = 200;
 
 export default function SalesmanGatepassPage() {
+  const tx = useTranslate();
   const businessDateKey = format(new Date(), "yyyy-MM-dd");
   const [detailBusinessDate, setDetailBusinessDate] = useState<string | null>(null);
   const [isHandoverDialogOpen, setIsHandoverDialogOpen] = useState(false);
@@ -66,10 +68,10 @@ export default function SalesmanGatepassPage() {
       <Tabs defaultValue="today">
         <TabsList className="w-full">
           <TabsTrigger value="today" className="flex-1">
-            Today
+            {tx("Today")}
           </TabsTrigger>
           <TabsTrigger value="history" className="flex-1">
-            History
+            {tx("History")}
           </TabsTrigger>
         </TabsList>
 
@@ -80,7 +82,7 @@ export default function SalesmanGatepassPage() {
             onClick={() => setIsHandoverDialogOpen(true)}
             className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            Handover
+            {tx("Handover")}
           </Button>
 
           {isMyGatepassLoading ? (

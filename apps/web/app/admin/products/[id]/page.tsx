@@ -10,9 +10,11 @@ import { VarietyTable } from "~/components/admin/products/variety-table";
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
+import { useTranslate } from "~/hooks/use-translate";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 
 export default function EditProductPage() {
+  const tx = useTranslate();
   const params = useParams<{ id: string }>();
   const productId = params.id;
 
@@ -32,27 +34,27 @@ export default function EditProductPage() {
   async function handleSubmit(values: ProductFormValues) {
     try {
       await updateProductAsync({ id: productId, ...values });
-      toast.success("Product updated");
+      toast.success(tx("Product updated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not update product. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not update product. Try again.")));
     }
   }
 
   async function handleDeactivate() {
     try {
       await deactivateProductAsync({ id: productId });
-      toast.success("Product deactivated");
+      toast.success(tx("Product deactivated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not deactivate product. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not deactivate product. Try again.")));
     }
   }
 
   async function handleReactivate() {
     try {
       await reactivateProductAsync({ id: productId });
-      toast.success("Product reactivated");
+      toast.success(tx("Product reactivated"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not reactivate product. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not reactivate product. Try again.")));
     }
   }
 
@@ -60,9 +62,9 @@ export default function EditProductPage() {
     if (!window.confirm("Are you sure you want to soft-delete this product?")) return;
     try {
       await deleteProductAsync({ id: productId });
-      toast.success("Product deleted");
+      toast.success(tx("Product deleted"));
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not delete product. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not delete product. Try again.")));
     }
   }
 
