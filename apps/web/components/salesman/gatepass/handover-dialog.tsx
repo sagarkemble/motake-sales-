@@ -62,14 +62,16 @@ const WIZARD_STEPS = [
 ] as const;
 
 function StepHeader({ currentStep }: { currentStep: number }) {
+  const tx = useTranslate();
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-start gap-1">
       {WIZARD_STEPS.map(({ step, label }, index) => {
         const isDone = step < currentStep;
         const isActive = step === currentStep;
         return (
-          <div key={step} className="flex flex-1 items-center gap-2">
-            <div className="flex items-center gap-2">
+          <div key={step} className="flex min-w-0 flex-1 items-start gap-1">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
               <span
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
@@ -82,15 +84,15 @@ function StepHeader({ currentStep }: { currentStep: number }) {
               </span>
               <span
                 className={cn(
-                  "text-xs font-medium",
+                  "w-full text-center text-[10px] leading-tight font-medium",
                   isActive ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {label}
+                {tx(label)}
               </span>
             </div>
             {index < WIZARD_STEPS.length - 1 && (
-              <span className="h-px flex-1 bg-border" aria-hidden />
+              <span className="mt-3 h-px min-w-2 flex-1 bg-border" aria-hidden />
             )}
           </div>
         );
@@ -365,35 +367,35 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {step > 1 && (
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 rounded-full"
+                className="h-auto min-h-10 w-full whitespace-normal rounded-full py-2 sm:flex-1"
                 onClick={() => setStep((prev) => prev - 1)}
               >
-                Back
+                {tx("Back")}
               </Button>
             )}
             {step < 3 ? (
               <Button
                 type="button"
-                className="flex-1 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                className="h-auto min-h-10 w-full whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90 sm:flex-1"
                 disabled={step === 2 && !allDifferencesExplained}
                 onClick={() => setStep((prev) => prev + 1)}
               >
                 {step === 1 && totalShort > 0
-                  ? `Next: explain ${totalShort} short`
-                  : "Next: review"}
+                  ? tx("Next: explain {count} short", { count: totalShort })
+                  : tx("Next: review")}
               </Button>
             ) : (
               <Button
                 type="button"
-                className="flex-1 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                className="h-auto min-h-10 w-full whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90 sm:flex-1"
                 onClick={() => setIsConfirmOpen(true)}
               >
-                Send for Approval
+                {tx("Send for Approval")}
               </Button>
             )}
           </div>
@@ -403,17 +405,22 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Send for approval?</AlertDialogTitle>
+            <AlertDialogTitle>{tx("Send for approval?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              The owner will review your declared returns
-              {totalShort > 0 ? ` and the ${totalShort} short unit(s) you reported` : ""}. You
-              cannot change this after you submit it.
+              {totalShort > 0
+                ? tx(
+                    "The owner will review your declared returns and the {count} short unit(s) you reported. You cannot change this after you submit it.",
+                    { count: totalShort },
+                  )
+                : tx(
+                    "The owner will review your declared returns. You cannot change this after you submit it.",
+                  )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmittingHandover}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmittingHandover}>{tx("Cancel")}</AlertDialogCancel>
             <AlertDialogAction disabled={isSubmittingHandover} onClick={handleConfirmSubmit}>
-              {isSubmittingHandover ? "Sending..." : "Send"}
+              {isSubmittingHandover ? tx("Sending...") : tx("Send")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

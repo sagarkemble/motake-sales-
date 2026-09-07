@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "~/components/ui/badge";
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 type GatepassStatus = "not_issued" | "active" | "pending_verification" | "closed";
@@ -23,9 +26,19 @@ const gatepassStatusStyles: Record<GatepassStatus, string> = {
 };
 
 export function GatepassStatusBadge({ status, className }: GatepassStatusBadgeProps) {
+  const tx = useTranslate();
+
   return (
-    <Badge variant="outline" className={cn(gatepassStatusStyles[status], className)}>
-      {gatepassStatusLabels[status]}
+    <Badge
+      variant="outline"
+      className={cn(
+        "max-w-[8.5rem] truncate",
+        gatepassStatusStyles[status],
+        className,
+      )}
+      title={tx(gatepassStatusLabels[status])}
+    >
+      {tx(gatepassStatusLabels[status])}
     </Badge>
   );
 }

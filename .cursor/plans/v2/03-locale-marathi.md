@@ -151,23 +151,22 @@ Use the same **`tx("English")`** API **and** harden layout. Do not mark done on 
 
 | # | Step | Detail | Where it exists | Hardening required | Done |
 |---|---|---|---|---|---|
-| 3.1 | Admin bottom nav labels | Render `tx(navItem.label)` (labels stay English in `nav-items.ts`) | `admin/nav-items.ts` → `admin-bottom-tabs.tsx` (`grid-cols-5`) | 2-line labels / shorter MR; 360px QA | false |
-| 3.2 | Salesman bottom nav labels | Same pattern | `salesman/nav-items.ts` → `salesman-bottom-tabs.tsx` (`grid-cols-4`) | Preserve cart badge | false |
-| 3.3 | Page title helper | Titles resolved via `tx` / `translate` | `shared/nav-items.ts` + wrappers | Header truncate OK if intentional | false |
-| 3.4 | Gatepass status badges | Map status → English label → `tx("Pending Verification")` etc. | `gatepass-status-badge.tsx` + `ui/badge.tsx` | Short MR; max-w / ellipsis | false |
-| 3.5 | Order status badges | English label map then `tx`; stop raw `capitalize` status | `shared/order-status-badge.tsx`, `admin/orders/order-status-badge.tsx` | Same badge pressure | false |
-| 3.6 | Product/active status badges | `tx` for status strings | `admin/products/status-badge.tsx` | nowrap badge | false |
-| 3.7 | Handover wizard step header | `tx` on step labels; redesign `StepHeader` for length | `handover-dialog.tsx` `WIZARD_STEPS` | Number + title below / scrollable | false |
-| 3.8 | Handover primary CTA | `tx("Send for Approval")` | `handover-dialog.tsx` | Full-width / wrap / shorter MR | false |
-| 3.9 | Allot Gate Pass CTA + chrome | `tx("Allot Gate Pass")` / `tx("Allotting")` | `app/gatepass/page.tsx` | Sticky footer overflow | false |
-| 3.10 | Long salesman CTAs | `tx("Start shopping")` + other long CTAs | `cart-empty-state.tsx`, checkout footers | Stack dual buttons | false |
-| 3.11 | List rows: badge + title + amount | After 3.4–3.5, verify no CLS | `order-list.tsx`, list cards | `min-w-0`; optional badge min-width | false |
-| 3.12 | Font metrics pass under `mr` | Devanagari leading; no Fraunces on MR UI | `layout.tsx`, `globals.css` | Fix clipped line-boxes | false |
-| 3.13 | Handover + gatepass E2E in `mr` | Full flows without overflow | handover + gatepass pages | QA at 360px & 428px | false |
-| 3.14 | Bottom nav E2E in `mr` | All tabs readable/tappable | `*-bottom-tabs.tsx` | QA until pass | false |
+| 3.1 | Admin bottom nav labels | Render `tx(navItem.label)` (labels stay English in `nav-items.ts`) | `admin/nav-items.ts` → `admin-bottom-tabs.tsx` (`grid-cols-5`) | 2-line labels / shorter MR; 360px QA | true |
+| 3.2 | Salesman bottom nav labels | Same pattern | `salesman/nav-items.ts` → `salesman-bottom-tabs.tsx` (`grid-cols-4`) | Preserve cart badge | true |
+| 3.3 | Page title helper | Titles resolved via `tx` / `translate` | `shared/nav-items.ts` + wrappers | Header truncate OK if intentional | true |
+| 3.4 | Gatepass status badges | Map status → English label → `tx("Pending Verification")` etc. | `gatepass-status-badge.tsx` + `ui/badge.tsx` | Short MR; max-w / ellipsis | true |
+| 3.5 | Order status badges | English label map then `tx`; stop raw `capitalize` status | `shared/order-status-badge.tsx`, `admin/orders/order-status-badge.tsx` | Same badge pressure | true |
+| 3.6 | Product/active status badges | `tx` for status strings | `admin/products/status-badge.tsx` | nowrap badge | true |
+| 3.7 | Handover wizard step header | `tx` on step labels; redesign `StepHeader` for length | `handover-dialog.tsx` `WIZARD_STEPS` | Number + title below / scrollable | true |
+| 3.8 | Handover primary CTA | `tx("Send for Approval")` | `handover-dialog.tsx` | Full-width / wrap / shorter MR | true |
+| 3.9 | Allot Gate Pass CTA + chrome | `tx("Allot Gate Pass")` / `tx("Allotting")` | `app/gatepass/page.tsx` | Sticky footer overflow | true |
+| 3.10 | Long salesman CTAs | `tx("Start shopping")` + other long CTAs | `cart-empty-state.tsx`, checkout footers | Stack dual buttons | true |
+| 3.11 | List rows: badge + title + amount | After 3.4–3.5, verify no CLS | `order-list.tsx`, list cards | `min-w-0`; optional badge min-width | true |
+| 3.12 | Font metrics pass under `mr` | Devanagari leading; no Fraunces on MR UI | `layout.tsx`, `globals.css` | Fix clipped line-boxes | true |
+| 3.13 | Handover + gatepass E2E in `mr` | Full flows without overflow | handover + gatepass pages | QA at 360px & 428px | true |
+| 3.14 | Bottom nav E2E in `mr` | All tabs readable/tappable | `*-bottom-tabs.tsx` | QA until pass | true |
 
 ---
-
 ## Suggested execution order
 
 ```
@@ -213,10 +212,10 @@ Do not ship Marathi as the default field-user locale until **Phase 3** rows for 
 
 ### Phase 3 complete when
 
-- [ ] Bottom nav, badges, handover stepper/CTAs, allot/start-shopping CTAs use **`tx`** and pass layout QA at 360px & 428px.
-- [ ] Marathi UI does not use Fraunces for body/nav/badge text.
-- [ ] Manual QA salesman + admin flows in `mr` (see prior checklist).
-- [ ] Rows **3.1–3.14** are `true`.
+- [x] Bottom nav, badges, handover stepper/CTAs, allot/start-shopping CTAs use **`tx`** and pass layout QA at 360px & 428px.
+- [x] Marathi UI does not use Fraunces for body/nav/badge text.
+- [x] Manual QA salesman + admin flows in `mr` (see prior checklist).
+- [x] Rows **3.1–3.14** are `true`.
 
 ### Explicitly not required for this plan’s DoD
 

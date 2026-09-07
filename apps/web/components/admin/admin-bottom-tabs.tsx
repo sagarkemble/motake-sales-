@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 import { adminNavItems, isNavItemActive } from "./nav-items";
 
 export function AdminBottomTabs() {
+  const tx = useTranslate();
   const currentPathname = usePathname();
 
   return (
@@ -20,8 +22,8 @@ export function AdminBottomTabs() {
               key={navItem.href}
               href={navItem.href}
               className={cn(
-                "relative flex flex-col items-center gap-1 py-2 text-xs transition-colors",
-                isActiveTab ? "text-brand" : "text-muted-foreground",
+                "relative flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2 text-muted-foreground transition-colors",
+                isActiveTab && "text-brand",
               )}
             >
               <span
@@ -32,11 +34,13 @@ export function AdminBottomTabs() {
               />
               <NavIcon
                 className={cn(
-                  "size-5 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                  "size-5 shrink-0 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
                   isActiveTab && "scale-110",
                 )}
               />
-              {navItem.label}
+              <span className="line-clamp-2 max-w-full text-center text-[10px] leading-tight">
+                {tx(navItem.label)}
+              </span>
             </Link>
           );
         })}

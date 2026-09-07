@@ -84,7 +84,9 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Salesman {salesmanName ?? salesmanCode}</span>
+                <span className="min-w-0 truncate">
+                  {tx("Salesman")} {salesmanName ?? salesmanCode}
+                </span>
                 <span>
                   {formatDate(
                     new Date(

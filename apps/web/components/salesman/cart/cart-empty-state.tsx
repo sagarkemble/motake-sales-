@@ -18,7 +18,7 @@ export function CartEmptyState() {
         <p className="text-sm font-medium">{tx("Your cart is empty")}</p>
         <p className="text-xs text-muted-foreground">{tx("Add some products to get started.")}</p>
       </div>
-      <Button asChild className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90">
+      <Button asChild className="h-auto min-h-10 whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90">
         <Link href="/salesman">{tx("Start shopping")}</Link>
       </Button>
     </div>

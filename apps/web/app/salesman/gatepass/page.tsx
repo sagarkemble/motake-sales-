@@ -82,7 +82,7 @@ export default function SalesmanGatepassPage() {
             onClick={() => setIsHandoverDialogOpen(true)}
             className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            Handover
+            {tx("Handover")}
           </Button>
 
           {isMyGatepassLoading ? (

@@ -81,7 +81,7 @@ export function SalesmanNavbar() {
                     }`}
                   >
                     <NavIcon className="size-4" />
-                    {navItem.label}
+                    {tx(navItem.label)}
                   </Link>
                 );
               })}

@@ -73,7 +73,7 @@ export function AdminNavbar() {
                     }`}
                   >
                     <NavIcon className="size-4" />
-                    {navItem.label}
+                    {tx(navItem.label)}
                   </Link>
                 );
               })}
@@ -105,7 +105,7 @@ export function AdminNavbar() {
         </Sheet>
 
         <p className="font-display text-base font-semibold text-foreground md:hidden">
-          {pageTitle}
+          {pageTitle === "Motake" ? pageTitle : tx(pageTitle)}
         </p>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -121,7 +121,7 @@ export function AdminNavbar() {
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 }`}
               >
-                {navItem.label}
+                {navItem.label === "Motake" ? navItem.label : tx(navItem.label)}
               </Link>
             );
           })}
