@@ -18,18 +18,17 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { useCustomers } from "~/hooks/use-customers";
+import { useTranslate } from "~/hooks/use-translate";
 
-const customerFormSchema = z.object({
-  shopName: z.string().min(1, "Enter a shop name").max(200),
-  contactName: z.string().max(120).optional(),
-  phone: z.string().min(1, "Enter a phone number").max(20),
-  address: z.string().min(1, "Enter an address"),
-  notes: z.string().optional(),
-  shopPhotoKey: z.string(),
-  shopPhotoUrl: z.string(),
-});
-
-export type CustomerFormValues = z.infer<typeof customerFormSchema>;
+export type CustomerFormValues = {
+  shopName: string;
+  contactName?: string;
+  phone: string;
+  address: string;
+  notes?: string;
+  shopPhotoKey: string;
+  shopPhotoUrl: string;
+};
 
 interface CustomerFormProps {
   customerId?: string;
@@ -48,20 +47,31 @@ export function CustomerForm({
   requireShopPhoto = true,
   onSubmit,
 }: CustomerFormProps) {
+  const tx = useTranslate();
   const { createShopPhotoUploadUrlAsync, deleteCustomerShopPhotoAsync } = useCustomers();
 
   const formSchema = useMemo(
     () =>
-      customerFormSchema.superRefine((values, context) => {
-        if (requireShopPhoto && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Add a shop photo",
-            path: ["shopPhotoUrl"],
-          });
-        }
-      }),
-    [requireShopPhoto],
+      z
+        .object({
+          shopName: z.string().min(1, tx("Enter a shop name")).max(200),
+          contactName: z.string().max(120).optional(),
+          phone: z.string().min(1, tx("Enter a phone number")).max(20),
+          address: z.string().min(1, tx("Enter an address")),
+          notes: z.string().optional(),
+          shopPhotoKey: z.string(),
+          shopPhotoUrl: z.string(),
+        })
+        .superRefine((values, context) => {
+          if (requireShopPhoto && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: tx("Add a shop photo"),
+              path: ["shopPhotoUrl"],
+            });
+          }
+        }),
+    [requireShopPhoto, tx],
   );
 
   const form = useForm<CustomerFormValues>({

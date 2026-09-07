@@ -14,9 +14,11 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { useTranslate } from "~/hooks/use-translate";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 
 export default function SalesmanDetailPage() {
+  const tx = useTranslate();
   const params = useParams<{ id: string }>();
   const salesmanId = params.id;
 
@@ -53,7 +55,7 @@ export default function SalesmanDetailPage() {
             size="icon"
             variant="outline"
             className="size-9 shrink-0 rounded-full"
-            aria-label="Edit salesman"
+            aria-label={tx("Edit salesman")}
             onClick={() => setIsEditDialogOpen(true)}
           >
             <PencilIcon className="size-4" />
@@ -63,9 +65,9 @@ export default function SalesmanDetailPage() {
 
       <Tabs defaultValue="sales">
         <TabsList className="w-full">
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="gatepass">Gate Pass</TabsTrigger>
-          <TabsTrigger value="verification">Verification</TabsTrigger>
+          <TabsTrigger value="sales">{tx("Sales")}</TabsTrigger>
+          <TabsTrigger value="gatepass">{tx("Gate Pass")}</TabsTrigger>
+          <TabsTrigger value="verification">{tx("Verification")}</TabsTrigger>
         </TabsList>
         <TabsContent value="sales">
           <SalesTab salesmanId={salesman.id} />

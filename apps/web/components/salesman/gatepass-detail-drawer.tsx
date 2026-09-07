@@ -1,12 +1,14 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { InfoIcon } from "lucide-react";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
+import { useTranslate } from "~/hooks/use-translate";
 
 interface VarietyDisplay {
   productName: string;
@@ -25,6 +27,8 @@ export function GatepassDetailDrawer({
   onOpenChange,
   varietyDisplayById,
 }: GatepassDetailDrawerProps) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { myGatepass, isMyGatepassLoading } = useGatepasses({
     businessDate: businessDate ?? undefined,
     includeMyGatepass: Boolean(businessDate),
@@ -48,7 +52,7 @@ export function GatepassDetailDrawer({
               <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-base font-semibold">
-                    {format(parseISO(myGatepass.gatepass.businessDate), "d MMM yyyy")}
+                    {formatDate(parseISO(myGatepass.gatepass.businessDate), "d MMM yyyy")}
                   </p>
                   <GatepassStatusBadge status={myGatepass.gatepass.status} />
                 </div>
@@ -57,7 +61,7 @@ export function GatepassDetailDrawer({
                   <div>
                     <p className="text-muted-foreground">Issued At</p>
                     <p className="font-medium">
-                      {format(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, hh:mm a")}
+                      {formatDate(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, hh:mm a")}
                     </p>
                   </div>
                   <div>
@@ -78,10 +82,10 @@ export function GatepassDetailDrawer({
 
                 <div className="flex flex-col divide-y rounded-2xl border bg-card">
                   <div className="grid grid-cols-5 gap-2 px-3 py-2 text-xs text-muted-foreground">
-                    <p className="col-span-2">Item</p>
-                    <p className="text-right">Allocated</p>
-                    <p className="text-right">Sold</p>
-                    <p className="text-right">Remaining</p>
+                    <p className="col-span-2">{tx("Item")}</p>
+                    <p className="text-right">{tx("Allocated")}</p>
+                    <p className="text-right">{tx("Sold")}</p>
+                    <p className="text-right">{tx("Remaining")}</p>
                   </div>
                   {myGatepass.items.map((item) => {
                     const display = varietyDisplayById.get(item.varietyId);
@@ -119,8 +123,7 @@ export function GatepassDetailDrawer({
               <div className="flex gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
                 <InfoIcon className="size-4 shrink-0 text-brand" />
                 <p className="text-foreground">
-                  Sold items count includes only{" "}
-                  <span className="font-medium">orders</span>. Pre-orders are not deducted.
+                  {tx("Sold items count includes only orders. Pre-orders are not deducted.")}
                 </p>
               </div>
             </>

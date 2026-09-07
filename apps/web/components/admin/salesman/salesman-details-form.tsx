@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,12 +15,11 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { useTranslate } from "~/hooks/use-translate";
 
-const salesmanDetailsFormSchema = z.object({
-  name: z.string().min(1, "Enter a name").max(120),
-});
-
-export type SalesmanDetailsFormValues = z.infer<typeof salesmanDetailsFormSchema>;
+export type SalesmanDetailsFormValues = {
+  name: string;
+};
 
 interface SalesmanDetailsFormProps {
   defaultValues: SalesmanDetailsFormValues;
@@ -32,6 +32,16 @@ export function SalesmanDetailsForm({
   isSubmitting,
   onSubmit,
 }: SalesmanDetailsFormProps) {
+  const tx = useTranslate();
+
+  const salesmanDetailsFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, tx("Enter a name")).max(120),
+      }),
+    [tx],
+  );
+
   const form = useForm<SalesmanDetailsFormValues>({
     resolver: zodResolver(salesmanDetailsFormSchema),
     defaultValues,

@@ -3,7 +3,8 @@
 import { PackageIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { formatInrCompact } from "~/lib/format-money";
+import { useFormatMoney } from "~/hooks/use-format-money";
+import { useTranslate } from "~/hooks/use-translate";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductCatalogCardProps {
@@ -23,6 +24,8 @@ export function ProductCatalogCard({
   fromPrice,
   onAddToCart,
 }: ProductCatalogCardProps) {
+  const tx = useTranslate();
+  const { formatInrCompact } = useFormatMoney();
   const { cartLines } = useCart();
 
   const quantityInCartForProduct = cartLines
@@ -41,7 +44,7 @@ export function ProductCatalogCard({
         )}
         {quantityInCartForProduct > 0 && (
           <span className="absolute right-2 top-2 flex min-w-6 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-xs font-semibold text-brand-foreground">
-            {quantityInCartForProduct} in cart
+            {quantityInCartForProduct} {tx("in cart")}
           </span>
         )}
       </div>
@@ -49,11 +52,13 @@ export function ProductCatalogCard({
       <div className="flex-1">
         <p className="truncate text-sm font-medium">{productName}</p>
         <p className="text-xs text-muted-foreground">
-          {varietyCount} {varietyCount === 1 ? "size" : "sizes"}
+          {varietyCount} {tx(varietyCount === 1 ? "size" : "sizes")}
         </p>
         {fromPrice !== null && (
           <p className="text-xs font-semibold text-brand">
-            {varietyCount === 1 ? formatInrCompact(fromPrice) : `from ${formatInrCompact(fromPrice)}`}
+            {varietyCount === 1
+              ? formatInrCompact(fromPrice)
+              : tx("from {price}", { price: formatInrCompact(fromPrice) })}
           </p>
         )}
       </div>
@@ -63,7 +68,7 @@ export function ProductCatalogCard({
         onClick={onAddToCart}
         className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
       >
-        Add to Cart
+        {tx("Add to Cart")}
       </Button>
     </div>
   );

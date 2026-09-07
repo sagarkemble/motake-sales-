@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
+import { LanguageSwitcher } from "~/components/shared/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,9 +17,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
+import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
-import { useAuth } from "~/hooks/use-auth";
 import {
   adminNavItems,
   adminQuickActions,
@@ -27,6 +29,7 @@ import {
 } from "./nav-items";
 
 export function AdminNavbar() {
+  const tx = useTranslate();
   const currentPathname = usePathname();
   const router = useRouter();
   const { signedInUser, logoutAsync } = useAuth();
@@ -40,7 +43,7 @@ export function AdminNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, "Could not log out. Try again."));
+      toast.error(getErrorMessage(logoutError, tx("Could not log out. Try again.")));
     }
   }
 
@@ -49,7 +52,7 @@ export function AdminNavbar() {
       <div className="flex items-center gap-6">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Open menu" className="md:hidden">
+            <Button variant="ghost" size="icon" aria-label={tx("Open menu")} className="md:hidden">
               <MenuIcon className="size-5" />
             </Button>
           </SheetTrigger>
@@ -78,7 +81,7 @@ export function AdminNavbar() {
 
             <div className="mt-4 border-t border-border px-4 pt-4">
               <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Quick actions
+                {tx("Quick actions")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {adminQuickActions.map((quickAction) => {
@@ -92,7 +95,7 @@ export function AdminNavbar() {
                       <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                         <QuickActionIcon className="size-4" />
                       </span>
-                      {quickAction.label}
+                      {tx(quickAction.label)}
                     </Link>
                   );
                 })}
@@ -125,32 +128,35 @@ export function AdminNavbar() {
         </nav>
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button aria-label="Open account menu">
-            <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
-              <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
-              <AvatarFallback>{avatarInitial}</AvatarFallback>
-            </Avatar>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link href="/admin/account">
-              <UserIcon className="size-4" />
-              Profile
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
-            <SmartphoneIcon className="size-4" />
-            Update phone number
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleLogout}>
-            <LogOutIcon className="size-4" />
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-1.5">
+        <LanguageSwitcher />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button aria-label={tx("Open account menu")}>
+              <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
+                <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
+                <AvatarFallback>{avatarInitial}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href="/admin/account">
+                <UserIcon className="size-4" />
+                {tx("Profile")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
+              <SmartphoneIcon className="size-4" />
+              {tx("Update phone number")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleLogout}>
+              <LogOutIcon className="size-4" />
+              {tx("Logout")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <UpdatePhoneNumberDialog
         open={isUpdatePhoneDialogOpen}

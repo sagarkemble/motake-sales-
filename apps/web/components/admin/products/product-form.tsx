@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -17,15 +18,14 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { useProducts } from "~/hooks/use-products";
+import { useTranslate } from "~/hooks/use-translate";
 
-const productFormSchema = z.object({
-  name: z.string().min(1, "Enter a product name").max(200),
-  description: z.string().optional(),
-  imageKey: z.string().optional(),
-  imageUrl: z.string().optional(),
-});
-
-export type ProductFormValues = z.infer<typeof productFormSchema>;
+export type ProductFormValues = {
+  name: string;
+  description?: string;
+  imageKey?: string;
+  imageUrl?: string;
+};
 
 interface ProductFormProps {
   productId?: string;
@@ -42,7 +42,20 @@ export function ProductForm({
   submitLabel,
   onSubmit,
 }: ProductFormProps) {
+  const tx = useTranslate();
   const { createImageUploadUrlAsync, deleteProductImageAsync } = useProducts();
+
+  const productFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, tx("Enter a product name")).max(200),
+        description: z.string().optional(),
+        imageKey: z.string().optional(),
+        imageUrl: z.string().optional(),
+      }),
+    [tx],
+  );
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {

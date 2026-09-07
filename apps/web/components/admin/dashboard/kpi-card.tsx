@@ -1,5 +1,8 @@
+"use client";
+
 import { ArrowDownIcon, ArrowUpIcon, type LucideIcon } from "lucide-react";
 
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 interface KpiCardProps {
@@ -27,6 +30,7 @@ export function KpiCard({
   numericValue,
   className,
 }: KpiCardProps) {
+  const tx = useTranslate();
   const comparableValue = numericValue ?? (typeof value === "number" ? value : undefined);
   const hasPreviousValue = previousValue !== undefined && comparableValue !== undefined;
   const percentChangeLabel = hasPreviousValue
@@ -34,6 +38,8 @@ export function KpiCard({
     : null;
   const isIncrease = hasPreviousValue && comparableValue > previousValue;
   const isDecrease = hasPreviousValue && comparableValue < previousValue;
+  const displayPercentLabel =
+    percentChangeLabel === "New" ? tx("New") : percentChangeLabel;
 
   return (
     <div
@@ -46,7 +52,7 @@ export function KpiCard({
         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand ring-1 ring-brand/10">
           <Icon className="size-4" />
         </div>
-        {percentChangeLabel && (
+        {displayPercentLabel && (
           <span
             className={cn(
               "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
@@ -57,14 +63,16 @@ export function KpiCard({
           >
             {isIncrease && <ArrowUpIcon className="size-2.5" />}
             {isDecrease && <ArrowDownIcon className="size-2.5" />}
-            {percentChangeLabel}
+            {displayPercentLabel}
           </span>
         )}
       </div>
       <div>
         <p className="text-xl font-semibold leading-none sm:text-2xl">{value}</p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">{label}</p>
-        {percentChangeLabel && <p className="text-[10px] text-muted-foreground/70">vs yesterday</p>}
+        <p className="mt-1 truncate text-xs text-muted-foreground">{tx(label)}</p>
+        {percentChangeLabel && (
+          <p className="text-[10px] text-muted-foreground/70">{tx("vs yesterday")}</p>
+        )}
       </div>
     </div>
   );

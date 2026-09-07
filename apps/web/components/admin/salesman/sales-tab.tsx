@@ -5,6 +5,7 @@ import { format, subDays } from "date-fns";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { formatInrCompact } from "~/lib/format-money";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { useTranslate } from "~/hooks/use-translate";
 import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
 
 interface SalesTabProps {
@@ -14,6 +15,7 @@ interface SalesTabProps {
 const HISTORY_DAYS = 30;
 
 export function SalesTab({ salesmanId }: SalesTabProps) {
+  const tx = useTranslate();
   const today = new Date();
   const historyFilters = {
     id: salesmanId,
@@ -59,7 +61,7 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
       <div className="grid grid-cols-2 gap-3">
         {kpiCards.map((card) => (
           <div key={card.label} className="rounded-2xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{card.label}</p>
+            <p className="text-xs text-muted-foreground">{tx(card.label)}</p>
             <p className="text-xl font-semibold">{card.value}</p>
           </div>
         ))}

@@ -14,11 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
-import { useAuth } from "~/hooks/use-auth";
 
 export default function AdminAccountPage() {
+  const tx = useTranslate();
   const {
     signedInUser,
     isSignedInUserLoading,
@@ -44,9 +46,9 @@ export default function AdminAccountPage() {
 
     try {
       await updateMyProfileAsync({ name: trimmedName });
-      toast.success("Name updated");
+      toast.success(tx("Name updated"));
     } catch (updateError) {
-      toast.error(getErrorMessage(updateError, "Could not save the name. Try again."));
+      toast.error(getErrorMessage(updateError, tx("Could not save the name. Try again.")));
     }
   }
 
@@ -62,9 +64,9 @@ export default function AdminAccountPage() {
   if (!signedInUser) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-3 px-4 py-10 text-center">
-        <p className="text-sm text-muted-foreground">We could not load your profile.</p>
+        <p className="text-sm text-muted-foreground">{tx("We could not load your profile.")}</p>
         <Button variant="outline" size="sm" onClick={() => void refetchSignedInUser()}>
-          Try again
+          {tx("Try again")}
         </Button>
       </div>
     );
@@ -82,24 +84,24 @@ export default function AdminAccountPage() {
             {signedInUser.role}
           </Badge>
           <Button variant="outline" size="sm" onClick={() => setIsUpdateAvatarDialogOpen(true)}>
-            Change avatar
+            {tx("Change avatar")}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Profile details</CardTitle>
+          <CardTitle>{tx("Profile details")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-name">Name</Label>
+            <Label htmlFor="account-name">{tx("Name")}</Label>
             <div className="flex gap-2">
               <Input
                 id="account-name"
                 value={nameInputValue}
                 onChange={(event) => setNameInputValue(event.target.value)}
-                placeholder="Your name"
+                placeholder={tx("Your name")}
               />
               <Button
                 type="button"
@@ -110,27 +112,32 @@ export default function AdminAccountPage() {
                 onClick={() => void handleSaveName()}
               >
                 {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                Save
+                {tx("Save")}
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-email">Email</Label>
+            <Label htmlFor="account-email">{tx("Email")}</Label>
             <Input id="account-email" value={signedInUser.email} readOnly disabled />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-phone">Phone number</Label>
+            <Label htmlFor="account-phone">{tx("Phone number")}</Label>
             <div className="flex gap-2">
-              <Input id="account-phone" value={signedInUser.phone ?? "Not set"} readOnly disabled />
+              <Input
+                id="account-phone"
+                value={signedInUser.phone ?? tx("Not set")}
+                readOnly
+                disabled
+              />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsUpdatePhoneDialogOpen(true)}
               >
-                Change
+                {tx("Change")}
               </Button>
             </div>
           </div>

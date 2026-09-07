@@ -4,8 +4,10 @@ import { Download, Share } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useInstallPrompt } from "~/hooks/shared/use-install-prompt";
+import { useTranslate } from "~/hooks/use-translate";
 
 export function InstallAppButton() {
+  const tx = useTranslate();
   const { canInstall, isInstalled, isIos, promptInstall } = useInstallPrompt();
 
   if (isInstalled) {
@@ -16,7 +18,7 @@ export function InstallAppButton() {
     return (
       <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
         <Share className="size-4" />
-        <span>Tap Share, then Add to Home Screen, to install this app.</span>
+        <span>{tx("Tap Share, then Add to Home Screen, to install this app.")}</span>
       </div>
     );
   }
@@ -28,7 +30,7 @@ export function InstallAppButton() {
   return (
     <Button onClick={promptInstall} variant="outline">
       <Download className="size-4" />
-      Install App
+      {tx("Install App")}
     </Button>
   );
 }

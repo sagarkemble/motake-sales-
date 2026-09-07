@@ -1,14 +1,15 @@
 "use client";
 
-import { format } from "date-fns";
 import { PackageIcon } from "lucide-react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { useFormatDate } from "~/hooks/use-format-date";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
-import { formatInr, lineTotal } from "~/lib/format-money";
+import { lineTotal } from "~/lib/format-money";
 
 interface OrderDetailDialogProps {
   orderId: string | null;
@@ -16,6 +17,8 @@ interface OrderDetailDialogProps {
 }
 
 export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogProps) {
+  const formatDate = useFormatDate();
+  const { formatInr } = useFormatMoney();
   const { orderDetail, isOrderDetailLoading } = useOrders({ detailOrderId: orderId ?? undefined });
 
   return (
@@ -75,14 +78,14 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                 <div>
                   <p className="text-xs text-muted-foreground">Placed at</p>
                   <p className="font-medium">
-                    {format(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
+                    {formatDate(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
                   </p>
                 </div>
                 {orderDetail.order.scheduledDate && (
                   <div>
                     <p className="text-xs text-muted-foreground">Scheduled for</p>
                     <p className="font-medium">
-                      {format(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
+                      {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
                     </p>
                   </div>
                 )}
@@ -90,7 +93,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                   <div>
                     <p className="text-xs text-muted-foreground">Fulfilled at</p>
                     <p className="font-medium">
-                      {format(new Date(orderDetail.order.fulfilledAt), "d MMM yyyy, h:mm a")}
+                      {formatDate(new Date(orderDetail.order.fulfilledAt), "d MMM yyyy, h:mm a")}
                     </p>
                   </div>
                 )}
@@ -104,7 +107,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                   <div>
                     <p className="text-xs text-muted-foreground">Cancelled at</p>
                     <p className="font-medium">
-                      {format(new Date(orderDetail.order.cancelledAt), "d MMM yyyy, h:mm a")}
+                      {formatDate(new Date(orderDetail.order.cancelledAt), "d MMM yyyy, h:mm a")}
                     </p>
                   </div>
                 )}

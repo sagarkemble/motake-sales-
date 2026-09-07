@@ -6,15 +6,18 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { LanguageSwitcher } from "~/components/shared/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
+import { useAuth } from "~/hooks/use-auth";
+import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
-import { useAuth } from "~/hooks/use-auth";
 import { isNavItemActive, salesmanNavItems, salesmanQuickActions } from "./nav-items";
 
 export function SalesmanNavbar() {
+  const tx = useTranslate();
   const currentPathname = usePathname();
   const router = useRouter();
   const { signedInUser, logoutAsync } = useAuth();
@@ -33,7 +36,7 @@ export function SalesmanNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, "Could not log out. Try again."));
+      toast.error(getErrorMessage(logoutError, tx("Could not log out. Try again.")));
     }
   }
 
@@ -42,7 +45,7 @@ export function SalesmanNavbar() {
       <div className="flex items-center gap-3">
         <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Open menu">
+            <Button variant="ghost" size="icon" aria-label={tx("Open menu")}>
               <MenuIcon className="size-5" />
             </Button>
           </SheetTrigger>
@@ -58,7 +61,7 @@ export function SalesmanNavbar() {
                   <AvatarFallback>{avatarInitial}</AvatarFallback>
                 </Avatar>
                 <div className="text-left leading-tight">
-                  <SheetTitle className="text-sm">{signedInUser?.name ?? "Salesman"}</SheetTitle>
+                  <SheetTitle className="text-sm">{signedInUser?.name ?? tx("Salesman")}</SheetTitle>
                   <p className="text-xs text-muted-foreground">{signedInUser?.email}</p>
                 </div>
               </Link>
@@ -92,13 +95,13 @@ export function SalesmanNavbar() {
                 }`}
               >
                 <UserIcon className="size-4" />
-                Account
+                {tx("Account")}
               </Link>
             </nav>
 
             <div className="mt-4 border-t border-border px-4 pt-4">
               <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Quick actions
+                {tx("Quick actions")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {salesmanQuickActions.map((quickAction) => {
@@ -113,7 +116,7 @@ export function SalesmanNavbar() {
                       <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                         <QuickActionIcon className="size-4" />
                       </span>
-                      {quickAction.label}
+                      {tx(quickAction.label)}
                     </Link>
                   );
                 })}
@@ -127,7 +130,7 @@ export function SalesmanNavbar() {
                 className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOutIcon className="size-4" />
-                Logout
+                {tx("Logout")}
               </button>
             </div>
           </SheetContent>
@@ -135,16 +138,19 @@ export function SalesmanNavbar() {
 
         <div className="leading-tight">
           <p className="font-display text-base font-semibold text-foreground">Motake</p>
-          <p className="text-xs text-muted-foreground">Salesman</p>
+          <p className="text-xs text-muted-foreground">{tx("Salesman")}</p>
         </div>
       </div>
 
-      <Link href="/salesman/account" aria-label="Open account">
-        <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
-          <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
-          <AvatarFallback>{avatarInitial}</AvatarFallback>
-        </Avatar>
-      </Link>
+      <div className="flex items-center gap-1.5">
+        <LanguageSwitcher />
+        <Link href="/salesman/account" aria-label={tx("Open account")}>
+          <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
+            <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
+            <AvatarFallback>{avatarInitial}</AvatarFallback>
+          </Avatar>
+        </Link>
+      </div>
     </header>
   );
 }

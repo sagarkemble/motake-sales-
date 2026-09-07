@@ -7,6 +7,7 @@ import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { useCustomers } from "~/hooks/use-customers";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useOrders } from "~/hooks/use-orders";
+import { useTranslate } from "~/hooks/use-translate";
 import { useCart } from "~/providers/cart-provider";
 
 export type OrderTypeChoice = "book_now" | "pre_order";
@@ -68,6 +69,7 @@ function getBookNowBlockReasons(
 }
 
 export function useCheckoutWizard() {
+  const tx = useTranslate();
   const router = useRouter();
   const { cartLines, totalCartQuantity, totalCartAmount, setQuantityForVariety, removeLine, clearCart } =
     useCart();
@@ -171,7 +173,7 @@ export function useCheckoutWizard() {
         const errorMessage =
           createCustomerError instanceof Error
             ? createCustomerError.message
-            : "Could not save customer";
+            : tx("Could not save customer");
         toast.error(errorMessage);
         return;
       }
@@ -206,7 +208,7 @@ export function useCheckoutWizard() {
       });
     } catch (placeOrderError) {
       const errorMessage =
-        placeOrderError instanceof Error ? placeOrderError.message : "Could not place order";
+        placeOrderError instanceof Error ? placeOrderError.message : tx("Could not place order");
       toast.error(errorMessage);
     }
   }

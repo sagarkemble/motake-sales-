@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,8 +16,10 @@ import {
 import { Button } from "~/components/ui/button";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { useCustomers } from "~/hooks/use-customers";
+import { useFormatDate } from "~/hooks/use-format-date";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
-import { formatInrCompact } from "~/lib/format-money";
+import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 
 interface DeactivateCustomerDialogProps {
@@ -34,6 +35,9 @@ export function DeactivateCustomerDialog({
   onOpenChange,
   onDeactivated,
 }: DeactivateCustomerDialogProps) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
+  const { formatInrCompact } = useFormatMoney();
   const [resolvingOrderId, setResolvingOrderId] = useState<string | null>(null);
   const [initialOpenCount, setInitialOpenCount] = useState(0);
 
@@ -74,10 +78,10 @@ export function DeactivateCustomerDialog({
     setResolvingOrderId(orderId);
     try {
       await fulfillOrderAsync({ id: orderId });
-      toast.success("Order closed");
+      toast.success(tx("Order closed"));
       await refetchOpenOrders();
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not close order. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not close order. Try again.")));
     } finally {
       setResolvingOrderId(null);
     }
@@ -87,10 +91,10 @@ export function DeactivateCustomerDialog({
     setResolvingOrderId(orderId);
     try {
       await cancelOrderAsync({ id: orderId });
-      toast.success("Order cancelled");
+      toast.success(tx("Order cancelled"));
       await refetchOpenOrders();
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not cancel order. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not cancel order. Try again.")));
     } finally {
       setResolvingOrderId(null);
     }
@@ -109,7 +113,7 @@ export function DeactivateCustomerDialog({
       }
     }
     setResolvingOrderId(null);
-    toast.success("All open orders closed");
+    toast.success(tx("All open orders closed"));
     await refetchOpenOrders();
   }
 
@@ -126,18 +130,18 @@ export function DeactivateCustomerDialog({
       }
     }
     setResolvingOrderId(null);
-    toast.success("All open orders cancelled");
+    toast.success(tx("All open orders cancelled"));
     await refetchOpenOrders();
   }
 
   async function handleDeactivate() {
     try {
       await deactivateCustomerAsync({ id: customerId });
-      toast.success("Customer deactivated");
+      toast.success(tx("Customer deactivated"));
       onOpenChange(false);
       onDeactivated?.();
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not deactivate customer. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not deactivate customer. Try again.")));
       await refetchOpenOrders();
     }
   }
@@ -174,13 +178,13 @@ export function DeactivateCustomerDialog({
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {order.type === "pre_order" ? "Pre-order" : "Book now"}
+                    {order.type === "pre_order" ? tx("Pre-order") : tx("Book now")}
                     {order.scheduledDate
-                      ? ` · ${format(new Date(order.scheduledDate), "d MMM yyyy")}`
-                      : ` · ${format(new Date(order.placedAt), "d MMM yyyy")}`}
+                      ? ` · ${formatDate(new Date(order.scheduledDate), "d MMM yyyy")}`
+                      : ` · ${formatDate(new Date(order.placedAt), "d MMM yyyy")}`}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {order.totalQuantity} qty · {formatInrCompact(order.totalAmount)}
+                    {order.totalQuantity} {tx("qty")} · {formatInrCompact(order.totalAmount)}
                   </p>
                   <div className="mt-2 flex gap-2">
                     <Button

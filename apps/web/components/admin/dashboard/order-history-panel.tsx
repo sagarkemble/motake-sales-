@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
 import { InboxIcon } from "lucide-react";
 
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
@@ -10,7 +9,9 @@ import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useOrderHistory } from "~/hooks/use-order-history";
+import { useTranslate } from "~/hooks/use-translate";
 
 interface OrderHistoryPanelProps {
   salesmanId?: string;
@@ -18,6 +19,8 @@ interface OrderHistoryPanelProps {
 }
 
 export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: OrderHistoryPanelProps = {}) {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { orderHistory, isOrderHistoryLoading, isLoadingMoreOrders, hasMoreOrders, loadMoreOrders } =
     useOrderHistory({ pageSize: 15, salesmanId });
 
@@ -50,7 +53,7 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
       ) : orderHistory.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">
           <InboxIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No orders yet</p>
+          <p className="text-sm text-muted-foreground">{tx("No orders yet")}</p>
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-border">
@@ -94,7 +97,7 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
                   <OrderItemAvatars itemPreviews={itemPreviews} size="sm" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(order.placedAt), "d MMM, h:mm a")}
+                  {formatDate(new Date(order.placedAt), "d MMM, h:mm a")}
                 </p>
               </div>
             </button>

@@ -11,8 +11,10 @@ import {
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useCustomers } from "~/hooks/use-customers";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function EditCustomerPage() {
+  const tx = useTranslate();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const router = useRouter();
@@ -32,10 +34,10 @@ export default function EditCustomerPage() {
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey || null,
       });
-      toast.success("Customer updated");
+      toast.success(tx("Customer updated"));
       router.push(`/admin/customers/${customerId}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not update customer. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not update customer. Try again.")));
     }
   }
 

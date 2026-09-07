@@ -25,6 +25,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { useGatepasses } from "~/hooks/use-gatepasses";
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 const SHORT_REASONS = [
@@ -99,6 +100,7 @@ function StepHeader({ currentStep }: { currentStep: number }) {
 }
 
 export function HandoverDialog({ open, onOpenChange, gatepassId, items }: HandoverDialogProps) {
+  const tx = useTranslate();
   const [step, setStep] = useState(1);
   const [returnedByItem, setReturnedByItem] = useState<Record<string, number>>({});
   const [reasonByItem, setReasonByItem] = useState<Record<string, ShortReasonValue>>({});
@@ -153,13 +155,13 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
 
     try {
       await submitHandoverAsync({ gatepassId, items: payloadItems });
-      toast.success("Handover sent for approval");
+      toast.success(tx("Handover sent for approval"));
       handleOpenChange(false);
     } catch (submitHandoverError) {
       const errorMessage =
         submitHandoverError instanceof Error
           ? submitHandoverError.message
-          : "Could not submit handover";
+          : tx("Could not submit handover");
       toast.error(errorMessage);
     } finally {
       setIsConfirmOpen(false);
@@ -282,7 +284,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
                                     : "border-input bg-background text-foreground hover:bg-muted",
                                 )}
                               >
-                                {reason.label}
+                                {tx(reason.label)}
                               </button>
                             );
                           })}

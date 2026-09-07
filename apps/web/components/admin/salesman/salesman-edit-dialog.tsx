@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,17 +24,16 @@ import {
 import { Input } from "~/components/ui/input";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useSalesmen } from "~/hooks/use-salesmen";
+import { useTranslate } from "~/hooks/use-translate";
 
 const minPasswordLength = 8;
 
-const salesmanEditFormSchema = z.object({
-  name: z.string().min(1, "Enter a name").max(120),
-  phone: z.string().min(1, "Enter a phone number").max(20),
-  email: z.string().min(1, "Enter an email").email("Enter a valid email"),
-  password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
-});
-
-type SalesmanEditFormValues = z.infer<typeof salesmanEditFormSchema>;
+type SalesmanEditFormValues = {
+  name: string;
+  phone: string;
+  email: string;
+  password?: string;
+};
 
 interface SalesmanEditDialogProps {
   open: boolean;
@@ -49,7 +48,19 @@ export function SalesmanEditDialog({
   salesmanId,
   defaultValues,
 }: SalesmanEditDialogProps) {
+  const tx = useTranslate();
   const { updateSalesmanAccountAsync, isUpdatingSalesmanAccount } = useSalesmen();
+
+  const salesmanEditFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, tx("Enter a name")).max(120),
+        phone: z.string().min(1, tx("Enter a phone number")).max(20),
+        email: z.string().min(1, tx("Enter an email")).email(tx("Enter a valid email")),
+        password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
+      }),
+    [tx],
+  );
 
   const form = useForm<SalesmanEditFormValues>({
     resolver: zodResolver(salesmanEditFormSchema),
@@ -69,10 +80,10 @@ export function SalesmanEditDialog({
         email: values.email,
         password: values.password ? values.password : undefined,
       });
-      toast.success("Salesman updated");
+      toast.success(tx("Salesman updated"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not update salesman. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not update salesman. Try again.")));
     }
   }
 

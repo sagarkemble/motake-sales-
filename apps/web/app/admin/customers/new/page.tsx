@@ -10,8 +10,10 @@ import {
 } from "~/components/admin/customers/customer-form";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useCustomers } from "~/hooks/use-customers";
+import { useTranslate } from "~/hooks/use-translate";
 
 export default function NewCustomerPage() {
+  const tx = useTranslate();
   const router = useRouter();
   const { createCustomerAsync, isCreatingCustomer } = useCustomers();
 
@@ -25,10 +27,10 @@ export default function NewCustomerPage() {
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey,
       });
-      toast.success("Customer created");
+      toast.success(tx("Customer created"));
       router.push(`/admin/customers/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not create customer. Try again."));
+      toast.error(getErrorMessage(error, tx("Could not create customer. Try again.")));
     }
   }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { useMemo, useState } from "react";
 
 import { isPreorderPending } from "~/lib/is-preorder-pending";
@@ -9,8 +8,10 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { OrderDetailSheet } from "~/components/salesman/order-detail-sheet";
 import { OrderListRow } from "~/components/salesman/order-list-row";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useOrders } from "~/hooks/use-orders";
+import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 
 const ORDERS_PAGE_SIZE = 20;
@@ -19,6 +20,8 @@ const PREORDERS_PAGE_SIZE = 20;
 type PreorderStatusFilter = "pending" | "fulfilled";
 
 export default function SalesmanOrdersPage() {
+  const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { canonicalBusinessDate } = useGatepasses();
 
   const [bookNowPage, setBookNowPage] = useState(1);
@@ -68,10 +71,10 @@ export default function SalesmanOrdersPage() {
       <Tabs defaultValue="book_now">
         <TabsList className="w-full">
           <TabsTrigger value="book_now" className="flex-1">
-            Orders
+            {tx("Orders")}
           </TabsTrigger>
           <TabsTrigger value="pre_order" className="flex-1">
-            Pre-orders
+            {tx("Pre-orders")}
           </TabsTrigger>
         </TabsList>
 
@@ -80,7 +83,7 @@ export default function SalesmanOrdersPage() {
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              You have not placed any orders yet.
+              {tx("You have not placed any orders yet.")}
             </p>
           ) : (
             bookNowOrdersPage.items.map(({ order, customerShopName, customerShopPhotoUrl }) => (
@@ -89,7 +92,7 @@ export default function SalesmanOrdersPage() {
                 primaryLabel={customerShopName}
                 shopPhotoUrl={customerShopPhotoUrl}
                 orderCode={order.orderCode}
-                timestampLabel={format(new Date(order.placedAt), "d MMM, h:mm a")}
+                timestampLabel={formatDate(new Date(order.placedAt), "d MMM, h:mm a")}
                 totalQuantity={order.totalQuantity}
                 totalAmount={order.totalAmount}
                 status={order.status}
@@ -140,8 +143,8 @@ export default function SalesmanOrdersPage() {
           ) : visiblePreorderRows.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               {preorderStatusFilter === "pending"
-                ? "No pre-orders are pending right now."
-                : "No pre-orders have been fulfilled yet."}
+                ? tx("No pre-orders are pending right now.")
+                : tx("No pre-orders have been fulfilled yet.")}
             </p>
           ) : (
             <div className="flex flex-col gap-3">
@@ -151,7 +154,7 @@ export default function SalesmanOrdersPage() {
                   primaryLabel={customerShopName ?? order.orderCode}
                   shopPhotoUrl={customerShopPhotoUrl}
                   orderCode={order.orderCode}
-                  timestampLabel={format(
+                  timestampLabel={formatDate(
                     new Date(order.fulfilledAt ?? order.scheduledDate ?? order.placedAt),
                     "d MMM yyyy",
                   )}

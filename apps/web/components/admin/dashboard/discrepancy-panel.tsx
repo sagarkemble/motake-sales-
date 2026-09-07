@@ -1,10 +1,10 @@
 "use client";
 
-import { format } from "date-fns";
 import { CheckCircle2Icon, TriangleAlertIcon } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 
 interface DiscrepancyPanelProps {
@@ -12,6 +12,7 @@ interface DiscrepancyPanelProps {
 }
 
 export function DiscrepancyPanel({ businessDate }: DiscrepancyPanelProps) {
+  const formatDate = useFormatDate();
   const { discrepancies, isDiscrepanciesLoading } = useGatepasses({
     businessDate: businessDate || undefined,
     includeDiscrepancies: true,
@@ -71,7 +72,7 @@ export function DiscrepancyPanel({ businessDate }: DiscrepancyPanelProps) {
                 )}
                 {discrepancy.closedAt && (
                   <p className="text-[11px] text-muted-foreground">
-                    {format(new Date(discrepancy.closedAt), "d MMM, h:mm a")}
+                    {formatDate(new Date(discrepancy.closedAt), "d MMM, h:mm a")}
                   </p>
                 )}
               </div>

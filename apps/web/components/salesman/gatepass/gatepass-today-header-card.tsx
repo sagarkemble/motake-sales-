@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { useFormatDate } from "~/hooks/use-format-date";
 
 interface GatepassTodayHeaderCardProps {
   totalAllocatedQty: number;
@@ -9,6 +9,8 @@ export function GatepassTodayHeaderCard({
   totalAllocatedQty,
   totalRemainingQty,
 }: GatepassTodayHeaderCardProps) {
+  const formatDate = useFormatDate();
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
@@ -17,7 +19,7 @@ export function GatepassTodayHeaderCard({
           Active
         </span>
       </div>
-      <p className="text-xs text-muted-foreground">{format(new Date(), "d MMM yyyy")}</p>
+      <p className="text-xs text-muted-foreground">{formatDate(new Date(), "d MMM yyyy")}</p>
       <div className="grid grid-cols-2 gap-2">
         <div>
           <p className="text-xs text-muted-foreground">Total items</p>
