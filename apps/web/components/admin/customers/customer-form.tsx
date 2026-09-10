@@ -54,10 +54,10 @@ export function CustomerForm({
     () =>
       z
         .object({
-          shopName: z.string().min(1, tx("Enter a shop name")).max(200),
+          shopName: z.string().min(1, tx("admin.customers.validation.shopName")).max(200),
           contactName: z.string().max(120).optional(),
-          phone: z.string().min(1, tx("Enter a phone number")).max(20),
-          address: z.string().min(1, tx("Enter an address")),
+          phone: z.string().min(1, tx("admin.customers.validation.phone")).max(20),
+          address: z.string().min(1, tx("admin.customers.validation.address")),
           notes: z.string().optional(),
           shopPhotoKey: z.string(),
           shopPhotoUrl: z.string(),
@@ -66,7 +66,7 @@ export function CustomerForm({
           if (requireShopPhoto && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message: tx("Add a shop photo"),
+              message: tx("admin.customers.validation.shopPhoto"),
               path: ["shopPhotoUrl"],
             });
           }
@@ -103,7 +103,7 @@ export function CustomerForm({
                     requestUploadUrl={createShopPhotoUploadUrlAsync}
                     altText="Shop"
                     shape="square"
-                    uploadButtonLabel="Upload shop photo"
+                    uploadButtonLabel="salesman.checkout.customer.uploadPhoto"
                     onUploaded={(result) => {
                       form.setValue("shopPhotoKey", result.imageKey, { shouldValidate: true });
                       form.setValue("shopPhotoUrl", result.imageUrl, { shouldValidate: true });
@@ -135,7 +135,7 @@ export function CustomerForm({
               <FormItem>
                 <FormLabel>Shop name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Shop name" className="rounded-full bg-muted/40" />
+                  <Input {...field} placeholder="salesman.checkout.customer.shopName" className="rounded-full bg-muted/40" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -183,7 +183,7 @@ export function CustomerForm({
                 <FormControl>
                   <Textarea
                     {...field}
-                    placeholder="Address"
+                    placeholder="common.fields.address"
                     className="min-h-20 rounded-2xl bg-muted/40"
                   />
                 </FormControl>

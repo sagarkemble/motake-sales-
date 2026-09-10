@@ -12,11 +12,11 @@ interface OrderStatusBadgeProps {
 }
 
 const orderStatusLabels: Record<OrderStatus, string> = {
-  confirmed: "Confirmed",
-  scheduled: "Scheduled",
-  due: "Due",
-  fulfilled: "Fulfilled",
-  cancelled: "Cancelled",
+  confirmed: "common.orderStatus.confirmed",
+  scheduled: "common.orderStatus.scheduled",
+  due: "common.orderStatus.due",
+  fulfilled: "common.orderStatus.fulfilled",
+  cancelled: "common.orderStatus.cancelled",
 };
 
 const orderStatusStyles: Record<OrderStatus, string> = {

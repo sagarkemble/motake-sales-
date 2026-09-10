@@ -78,10 +78,10 @@ export function DeactivateCustomerDialog({
     setResolvingOrderId(orderId);
     try {
       await fulfillOrderAsync({ id: orderId });
-      toast.success(tx("Order closed"));
+      toast.success(tx("admin.customers.orderClosed"));
       await refetchOpenOrders();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not close order. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.orderCloseFailed")));
     } finally {
       setResolvingOrderId(null);
     }
@@ -91,10 +91,10 @@ export function DeactivateCustomerDialog({
     setResolvingOrderId(orderId);
     try {
       await cancelOrderAsync({ id: orderId });
-      toast.success(tx("Order cancelled"));
+      toast.success(tx("admin.customers.orderCancelled"));
       await refetchOpenOrders();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not cancel order. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.orderCancelFailed")));
     } finally {
       setResolvingOrderId(null);
     }
@@ -113,7 +113,7 @@ export function DeactivateCustomerDialog({
       }
     }
     setResolvingOrderId(null);
-    toast.success(tx("All open orders closed"));
+    toast.success(tx("admin.customers.allOrdersClosed"));
     await refetchOpenOrders();
   }
 
@@ -130,18 +130,18 @@ export function DeactivateCustomerDialog({
       }
     }
     setResolvingOrderId(null);
-    toast.success(tx("All open orders cancelled"));
+    toast.success(tx("admin.customers.allOrdersCancelled"));
     await refetchOpenOrders();
   }
 
   async function handleDeactivate() {
     try {
       await deactivateCustomerAsync({ id: customerId });
-      toast.success(tx("Customer deactivated"));
+      toast.success(tx("admin.customers.deactivateSuccess"));
       onOpenChange(false);
       onDeactivated?.();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not deactivate customer. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.deactivateFailed")));
       await refetchOpenOrders();
     }
   }
@@ -178,13 +178,13 @@ export function DeactivateCustomerDialog({
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {order.type === "pre_order" ? tx("Pre-order") : tx("Book now")}
+                    {order.type === "pre_order" ? tx("common.orderType.preOrder") : tx("common.orderType.bookNow")}
                     {order.scheduledDate
                       ? ` · ${formatDate(new Date(order.scheduledDate), "d MMM yyyy")}`
                       : ` · ${formatDate(new Date(order.placedAt), "d MMM yyyy")}`}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {order.totalQuantity} {tx("qty")} · {formatInrCompact(order.totalAmount)}
+                    {order.totalQuantity} {tx("common.units.qty")} · {formatInrCompact(order.totalAmount)}
                   </p>
                   <div className="mt-2 flex gap-2">
                     <Button

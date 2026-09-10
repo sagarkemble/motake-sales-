@@ -22,18 +22,18 @@ export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogPro
   async function handleUploaded(result: { imageKey: string; imageUrl: string }) {
     try {
       await updateMyProfileAsync({ avatarKey: result.imageKey });
-      toast.success(tx("Avatar updated"));
+      toast.success(tx("account.avatar.updated"));
     } catch (updateError) {
-      toast.error(getErrorMessage(updateError, tx("Could not save the avatar. Try again.")));
+      toast.error(getErrorMessage(updateError, tx("account.avatar.saveFailed")));
     }
   }
 
   async function handleDeleted() {
     try {
       await deleteMyAvatarAsync();
-      toast.success(tx("Avatar removed"));
+      toast.success(tx("account.avatar.removed"));
     } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, tx("Could not remove the avatar. Try again.")));
+      toast.error(getErrorMessage(deleteError, tx("account.avatar.removeFailed")));
       throw deleteError;
     }
   }

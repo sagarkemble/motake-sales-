@@ -70,25 +70,25 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KpiCard
-              label="Orders"
+              label="admin.dashboard.kpi.orders"
               value={todayKpiSummary?.bookNowOrderCount ?? 0}
               previousValue={yesterdayKpiSummary?.bookNowOrderCount}
               icon={ShoppingCartIcon}
             />
             <KpiCard
-              label="Pre-orders"
+              label="admin.dashboard.kpi.preOrders"
               value={todayKpiSummary?.preOrderCount ?? 0}
               previousValue={yesterdayKpiSummary?.preOrderCount}
               icon={ClockIcon}
             />
             <KpiCard
-              label="Fulfilled"
+              label="admin.dashboard.kpi.fulfilled"
               value={todayKpiSummary?.fulfilledOrderCount ?? 0}
               previousValue={yesterdayKpiSummary?.fulfilledOrderCount}
               icon={CheckCircleIcon}
             />
             <KpiCard
-              label="Sales value"
+              label="admin.dashboard.kpi.salesValue"
               value={formatInrCompact(todayKpiSummary?.salesValue ?? 0)}
               numericValue={todayKpiSummary?.salesValue ?? 0}
               previousValue={yesterdayKpiSummary?.salesValue}
@@ -105,25 +105,25 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KpiCard
-              label="Issued qty"
+              label="admin.dashboard.kpi.issuedQty"
               value={todayKpiSummary?.gatepassTotals.totalIssuedQty ?? 0}
               previousValue={yesterdayKpiSummary?.gatepassTotals.totalIssuedQty}
               icon={TicketIcon}
             />
             <KpiCard
-              label="Sold qty"
+              label="admin.dashboard.kpi.soldQty"
               value={todayKpiSummary?.gatepassTotals.totalSoldQty ?? 0}
               previousValue={yesterdayKpiSummary?.gatepassTotals.totalSoldQty}
               icon={CheckCircleIcon}
             />
             <KpiCard
-              label="Returned qty"
+              label="admin.dashboard.kpi.returnedQty"
               value={todayKpiSummary?.gatepassTotals.totalReturnedQty ?? 0}
               previousValue={yesterdayKpiSummary?.gatepassTotals.totalReturnedQty}
               icon={RotateCcwIcon}
             />
             <KpiCard
-              label="Discrepancies"
+              label="admin.dashboard.kpi.discrepancies"
               value={todayKpiSummary?.gatepassTotals.discrepancyGatepassCount ?? 0}
               previousValue={yesterdayKpiSummary?.gatepassTotals.discrepancyGatepassCount}
               icon={TriangleAlertIcon}

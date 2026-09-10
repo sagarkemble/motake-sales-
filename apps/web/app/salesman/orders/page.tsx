@@ -71,10 +71,10 @@ export default function SalesmanOrdersPage() {
       <Tabs defaultValue="book_now">
         <TabsList className="w-full">
           <TabsTrigger value="book_now" className="flex-1">
-            {tx("Orders")}
+            {tx("salesman.orders.tab.orders")}
           </TabsTrigger>
           <TabsTrigger value="pre_order" className="flex-1">
-            {tx("Pre-orders")}
+            {tx("salesman.orders.tab.preOrders")}
           </TabsTrigger>
         </TabsList>
 
@@ -83,7 +83,7 @@ export default function SalesmanOrdersPage() {
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              {tx("You have not placed any orders yet.")}
+              {tx("salesman.orders.empty.orders")}
             </p>
           ) : (
             bookNowOrdersPage.items.map(({ order, customerShopName, customerShopPhotoUrl }) => (
@@ -143,8 +143,8 @@ export default function SalesmanOrdersPage() {
           ) : visiblePreorderRows.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               {preorderStatusFilter === "pending"
-                ? tx("No pre-orders are pending right now.")
-                : tx("No pre-orders have been fulfilled yet.")}
+                ? tx("salesman.orders.empty.preOrdersPending")
+                : tx("salesman.orders.empty.preOrdersFulfilled")}
             </p>
           ) : (
             <div className="flex flex-col gap-3">

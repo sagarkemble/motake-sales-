@@ -49,10 +49,10 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     if (!orderId) return;
     try {
       await fulfillOrderAsync({ id: orderId });
-      toast.success(tx("Order marked as fulfilled"));
+      toast.success(tx("salesman.orders.fulfilSuccess"));
     } catch (fulfilOrderError) {
       const errorMessage =
-        fulfilOrderError instanceof Error ? fulfilOrderError.message : tx("Could not fulfil order");
+        fulfilOrderError instanceof Error ? fulfilOrderError.message : tx("salesman.orders.fulfilFailed");
       toast.error(errorMessage);
     } finally {
       setIsConfirmingFulfil(false);

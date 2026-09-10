@@ -44,7 +44,7 @@ function CustomersPageContent() {
           {searchTerm && (
             <button
               type="button"
-              aria-label={tx("Clear search")}
+              aria-label={tx("common.actions.clearSearch")}
               onClick={() => setSearchTerm("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
@@ -57,7 +57,7 @@ function CustomersPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/customers/new" aria-label={tx("New customer")}>
+          <Link href="/admin/customers/new" aria-label={tx("admin.customers.newAria")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -65,7 +65,7 @@ function CustomersPageContent() {
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          {isCustomersListLoading ? "Loading…" : `${customersPage.totalCount} total`}
+          {isCustomersListLoading ? "common.status.loading" : `${customersPage.totalCount} total`}
         </p>
         <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
           <input
@@ -88,7 +88,7 @@ function CustomersPageContent() {
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
               ? `No customers match "${debouncedSearchTerm}"`
-              : tx("No customers yet")}
+              : tx("admin.customers.empty")}
           </p>
         ) : (
           customersPage.items.map((customer) => (

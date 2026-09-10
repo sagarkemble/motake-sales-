@@ -79,9 +79,9 @@ export function CustomerDetailsStep({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-base font-semibold">{tx("Customer details")}</p>
+        <p className="text-base font-semibold">{tx("salesman.checkout.customer.title")}</p>
         <p className="text-sm text-muted-foreground">
-          {tx("Select an existing customer or enter new customer details.")}
+          {tx("salesman.checkout.customer.hint")}
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export function CustomerDetailsStep({
         onClick={() => setIsScannerOpen(true)}
       >
         <QrCodeIcon className="size-6 transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] group-hover:scale-110 group-hover:rotate-6" />
-        {tx("Open payment scanner")}
+        {tx("salesman.checkout.customer.openScanner")}
       </Button>
 
       <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
@@ -120,12 +120,12 @@ export function CustomerDetailsStep({
                 </span>
               </span>
             ) : (
-              <span className="text-muted-foreground">{tx("Search existing customers...")}</span>
+              <span className="text-muted-foreground">{tx("salesman.checkout.customer.searchPlaceholder")}</span>
             )}
             {selectedCustomer ? (
               <XIcon
                 role="button"
-                aria-label={tx("Clear selected customer")}
+                aria-label={tx("salesman.checkout.customer.clearSelected")}
                 className="ml-2 size-4 shrink-0 opacity-50 hover:opacity-100"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -140,7 +140,7 @@ export function CustomerDetailsStep({
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder={tx("Search existing customers...")}
+              placeholder={tx("salesman.checkout.customer.searchPlaceholder")}
               value={customerSearchTerm}
               onValueChange={onCustomerSearchTermChange}
             />
@@ -157,7 +157,7 @@ export function CustomerDetailsStep({
               ) : (
                 <>
                   <CommandEmpty>
-                    {tx('No customer matches "{term}"', { term: customerSearchTerm })}
+                    {tx('salesman.checkout.customer.noMatch', { term: customerSearchTerm })}
                   </CommandEmpty>
                   <CommandGroup>
                     {customerOptions.map((customer) => {
@@ -195,17 +195,17 @@ export function CustomerDetailsStep({
       {!selectedCustomer && (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-muted-foreground">
-            {tx("Or enter new customer details")}
+            {tx("salesman.checkout.customer.orEnterNew")}
           </p>
 
           <div className="rounded-2xl border bg-card p-3">
-            <Label className="mb-2 block">{tx("Shop photo *")}</Label>
+            <Label className="mb-2 block">{tx("salesman.checkout.customer.shopPhoto")}</Label>
             <ImageUpload
               imageUrl={newCustomerForm.shopPhotoUrl || null}
               requestUploadUrl={createShopPhotoUploadUrlAsync}
               altText="Shop"
               shape="square"
-              uploadButtonLabel={tx("Upload shop photo")}
+              uploadButtonLabel={tx("salesman.checkout.customer.uploadPhoto")}
               onUploaded={(result) =>
                 onNewCustomerFormChange({
                   shopPhotoKey: result.imageKey,
@@ -225,31 +225,31 @@ export function CustomerDetailsStep({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-shop-name">{tx("Shop name")}</Label>
+            <Label htmlFor="new-customer-shop-name">{tx("salesman.checkout.customer.shopName")}</Label>
             <Input
               id="new-customer-shop-name"
-              placeholder={tx("Enter shop name")}
+              placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
               value={newCustomerForm.shopName}
               onChange={(event) => onNewCustomerFormChange({ shopName: event.target.value })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-phone">{tx("Phone number")}</Label>
+            <Label htmlFor="new-customer-phone">{tx("common.fields.phone")}</Label>
             <Input
               id="new-customer-phone"
               type="tel"
-              placeholder={tx("Enter phone number")}
+              placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
               value={newCustomerForm.phone}
               onChange={(event) => onNewCustomerFormChange({ phone: event.target.value })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-address">{tx("Address")}</Label>
+            <Label htmlFor="new-customer-address">{tx("common.fields.address")}</Label>
             <Textarea
               id="new-customer-address"
-              placeholder={tx("Enter full address")}
+              placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
               value={newCustomerForm.address}
               onChange={(event) => onNewCustomerFormChange({ address: event.target.value })}
             />
@@ -258,7 +258,7 @@ export function CustomerDetailsStep({
       )}
 
       <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">{tx("Place order for")}</span>
+        <span className="text-muted-foreground">{tx("salesman.checkout.customer.placeOrderFor")}</span>
         <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
       </div>
     </div>

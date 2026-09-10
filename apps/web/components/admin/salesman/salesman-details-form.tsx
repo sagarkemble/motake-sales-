@@ -37,7 +37,7 @@ export function SalesmanDetailsForm({
   const salesmanDetailsFormSchema = useMemo(
     () =>
       z.object({
-        name: z.string().min(1, tx("Enter a name")).max(120),
+        name: z.string().min(1, tx("admin.salesmen.validation.name")).max(120),
       }),
     [tx],
   );

@@ -19,7 +19,7 @@ export function LoginView() {
             M
           </div>
           <h1 className="font-display text-2xl font-semibold text-foreground">Motake Admin</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{tx("Sign in to your account")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tx("auth.login.title")}</p>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">

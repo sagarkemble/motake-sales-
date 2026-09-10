@@ -47,7 +47,7 @@ export function CartItemRow({ cartLine, onQuantityChange, onRemove }: CartItemRo
 
       <button
         type="button"
-        aria-label={tx("Remove item")}
+        aria-label={tx("common.a11y.removeItem")}
         onClick={onRemove}
         className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
       >

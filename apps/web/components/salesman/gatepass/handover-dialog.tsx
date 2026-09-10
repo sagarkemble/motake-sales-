@@ -29,11 +29,11 @@ import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 const SHORT_REASONS = [
-  { value: "damaged", label: "Damaged" },
-  { value: "expired", label: "Expired" },
-  { value: "lost", label: "Lost" },
-  { value: "leaked", label: "Leaked" },
-  { value: "other", label: "Other" },
+  { value: "damaged", label: "salesman.handover.reason.damaged" },
+  { value: "expired", label: "salesman.handover.reason.expired" },
+  { value: "lost", label: "salesman.handover.reason.lost" },
+  { value: "leaked", label: "salesman.handover.reason.leaked" },
+  { value: "other", label: "salesman.handover.reason.other" },
 ] as const;
 
 type ShortReasonValue = (typeof SHORT_REASONS)[number]["value"];
@@ -56,9 +56,9 @@ interface HandoverDialogProps {
 }
 
 const WIZARD_STEPS = [
-  { step: 1, label: "Confirm returns" },
-  { step: 2, label: "Explain" },
-  { step: 3, label: "Review" },
+  { step: 1, label: "salesman.handover.step.confirmReturns" },
+  { step: 2, label: "salesman.handover.step.explain" },
+  { step: 3, label: "salesman.handover.step.review" },
 ] as const;
 
 function StepHeader({ currentStep }: { currentStep: number }) {
@@ -157,13 +157,13 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
 
     try {
       await submitHandoverAsync({ gatepassId, items: payloadItems });
-      toast.success(tx("Handover sent for approval"));
+      toast.success(tx("salesman.handover.success"));
       handleOpenChange(false);
     } catch (submitHandoverError) {
       const errorMessage =
         submitHandoverError instanceof Error
           ? submitHandoverError.message
-          : tx("Could not submit handover");
+          : tx("salesman.handover.failed");
       toast.error(errorMessage);
     } finally {
       setIsConfirmOpen(false);
@@ -375,7 +375,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
                 className="h-auto min-h-10 w-full whitespace-normal rounded-full py-2 sm:flex-1"
                 onClick={() => setStep((prev) => prev - 1)}
               >
-                {tx("Back")}
+                {tx("common.actions.back")}
               </Button>
             )}
             {step < 3 ? (
@@ -386,8 +386,8 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
                 onClick={() => setStep((prev) => prev + 1)}
               >
                 {step === 1 && totalShort > 0
-                  ? tx("Next: explain {count} short", { count: totalShort })
-                  : tx("Next: review")}
+                  ? tx("salesman.handover.next.explainShort", { count: totalShort })
+                  : tx("salesman.handover.next.review")}
               </Button>
             ) : (
               <Button
@@ -395,7 +395,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
                 className="h-auto min-h-10 w-full whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90 sm:flex-1"
                 onClick={() => setIsConfirmOpen(true)}
               >
-                {tx("Send for Approval")}
+                {tx("salesman.handover.cta")}
               </Button>
             )}
           </div>
@@ -405,22 +405,22 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, items }: Handov
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{tx("Send for approval?")}</AlertDialogTitle>
+            <AlertDialogTitle>{tx("salesman.handover.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {totalShort > 0
                 ? tx(
-                    "The owner will review your declared returns and the {count} short unit(s) you reported. You cannot change this after you submit it.",
+                    "salesman.handover.confirmBodyWithShort",
                     { count: totalShort },
                   )
                 : tx(
-                    "The owner will review your declared returns. You cannot change this after you submit it.",
+                    "salesman.handover.confirmBody",
                   )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmittingHandover}>{tx("Cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmittingHandover}>{tx("common.actions.cancel")}</AlertDialogCancel>
             <AlertDialogAction disabled={isSubmittingHandover} onClick={handleConfirmSubmit}>
-              {isSubmittingHandover ? tx("Sending...") : tx("Send")}
+              {isSubmittingHandover ? tx("common.actions.sending") : tx("common.actions.send")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

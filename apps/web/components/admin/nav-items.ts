@@ -20,19 +20,19 @@ export type AdminNavItem = NavItem;
 const ADMIN_HOME_HREF = "/admin";
 
 export const adminNavItems: AdminNavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Products", href: "/admin/products", icon: Package },
-  { label: "Salesman", href: "/admin/salesman", icon: Users },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
-  { label: "Customers", href: "/admin/customers", icon: Store },
+  { label: "admin.nav.dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "admin.nav.products", href: "/admin/products", icon: Package },
+  { label: "admin.nav.salesman", href: "/admin/salesman", icon: Users },
+  { label: "admin.nav.orders", href: "/admin/orders", icon: ShoppingCart },
+  { label: "admin.nav.customers", href: "/admin/customers", icon: Store },
 ];
 
 export const adminQuickActions: AdminNavItem[] = [
-  { label: "Allot Gate Passes", href: "/gatepass", icon: TicketIcon },
-  { label: "Add Product", href: "/admin/products/new", icon: PackagePlusIcon },
-  { label: "Add Salesman", href: "/admin/salesman/new", icon: UserPlusIcon },
-  { label: "View Customers", href: "/admin/customers", icon: Store },
-  { label: "View Orders", href: "/admin/orders", icon: ShoppingCart },
+  { label: "admin.nav.quickAllotGatePass", href: "/gatepass", icon: TicketIcon },
+  { label: "admin.nav.quickAddProduct", href: "/admin/products/new", icon: PackagePlusIcon },
+  { label: "admin.nav.quickAddSalesman", href: "/admin/salesman/new", icon: UserPlusIcon },
+  { label: "admin.nav.quickViewCustomers", href: "/admin/customers", icon: Store },
+  { label: "admin.nav.quickViewOrders", href: "/admin/orders", icon: ShoppingCart },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

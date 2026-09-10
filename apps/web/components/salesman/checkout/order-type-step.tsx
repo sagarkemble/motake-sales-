@@ -37,8 +37,8 @@ export function OrderTypeStep({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-base font-semibold">{tx("Order type")}</p>
-        <p className="text-sm text-muted-foreground">{tx("Select the type of order.")}</p>
+        <p className="text-base font-semibold">{tx("salesman.checkout.orderType.title")}</p>
+        <p className="text-sm text-muted-foreground">{tx("salesman.checkout.orderType.hint")}</p>
       </div>
 
       <button
@@ -56,9 +56,9 @@ export function OrderTypeStep({
           <HandCoinsIcon className="size-4" />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-medium">{tx("Order")}</p>
+          <p className="text-sm font-medium">{tx("salesman.checkout.orderType.orderLabel")}</p>
           <p className="text-xs text-muted-foreground">
-            {tx("Deliver now and collect payment from customer.")}
+            {tx("salesman.checkout.orderType.deliverNowHint")}
           </p>
           {!isBookNowAllowed && (
             <div className="mt-2 flex flex-col gap-0.5 rounded-lg bg-destructive/10 p-2">
@@ -87,9 +87,9 @@ export function OrderTypeStep({
           <CalendarClockIcon className="size-4" />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-medium">{tx("Pre-order (tomorrow)")}</p>
+          <p className="text-sm font-medium">{tx("salesman.checkout.orderType.preOrderTomorrow")}</p>
           <p className="text-xs text-muted-foreground">
-            {tx("Order will be delivered {date}. Does not use gate pass.", {
+            {tx("salesman.checkout.orderType.preOrderHint", {
               date: formatDate(nextDayDate, "d MMM yyyy"),
             })}
           </p>
@@ -98,7 +98,7 @@ export function OrderTypeStep({
       </button>
 
       <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">{tx("Amount to collect")}</span>
+        <span className="text-muted-foreground">{tx("salesman.checkout.orderType.amountToCollect")}</span>
         <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
       </div>
     </div>

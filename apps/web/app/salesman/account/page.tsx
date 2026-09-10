@@ -47,9 +47,9 @@ export default function SalesmanAccountPage() {
 
     try {
       await updateMyProfileAsync({ name: trimmedName });
-      toast.success(tx("Name updated"));
+      toast.success(tx("account.profile.nameUpdated"));
     } catch (updateError) {
-      toast.error(getErrorMessage(updateError, tx("Could not save the name. Try again.")));
+      toast.error(getErrorMessage(updateError, tx("account.profile.nameSaveFailed")));
     }
   }
 
@@ -65,9 +65,9 @@ export default function SalesmanAccountPage() {
   if (!profile || !salesman) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-3 px-4 py-10 text-center">
-        <p className="text-sm text-muted-foreground">{tx("We could not load your profile.")}</p>
+        <p className="text-sm text-muted-foreground">{tx("account.profile.loadFailed")}</p>
         <Button variant="outline" size="sm" onClick={() => void refetchMySalesmanProfile()}>
-          {tx("Try again")}
+          {tx("common.actions.tryAgain")}
         </Button>
       </div>
     );
@@ -82,24 +82,24 @@ export default function SalesmanAccountPage() {
             <AvatarFallback className="text-2xl">{avatarInitial}</AvatarFallback>
           </Avatar>
           <Button variant="outline" size="sm" onClick={() => setIsUpdateAvatarDialogOpen(true)}>
-            {tx("Change avatar")}
+            {tx("account.profile.changeAvatar")}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>{tx("Profile details")}</CardTitle>
+          <CardTitle>{tx("account.profile.title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-name">{tx("Name")}</Label>
+            <Label htmlFor="account-name">{tx("common.fields.name")}</Label>
             <div className="flex gap-2">
               <Input
                 id="account-name"
                 value={nameInputValue}
                 onChange={(event) => setNameInputValue(event.target.value)}
-                placeholder={tx("Your name")}
+                placeholder={tx("account.profile.namePlaceholder")}
               />
               <Button
                 type="button"
@@ -110,33 +110,33 @@ export default function SalesmanAccountPage() {
                 onClick={() => void handleSaveName()}
               >
                 {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                {tx("Save")}
+                {tx("common.actions.save")}
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-email">{tx("Email")}</Label>
+            <Label htmlFor="account-email">{tx("common.fields.email")}</Label>
             <Input id="account-email" value={profile.email} readOnly disabled />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-phone">{tx("Phone number")}</Label>
+            <Label htmlFor="account-phone">{tx("common.fields.phone")}</Label>
             <div className="flex gap-2">
-              <Input id="account-phone" value={profile.phone ?? tx("Not set")} readOnly disabled />
+              <Input id="account-phone" value={profile.phone ?? tx("common.status.notSet")} readOnly disabled />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsUpdatePhoneDialogOpen(true)}
               >
-                {tx("Change")}
+                {tx("common.actions.change")}
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-salesman-code">{tx("Salesman code")}</Label>
+            <Label htmlFor="account-salesman-code">{tx("account.profile.salesmanCode")}</Label>
             <Input id="account-salesman-code" value={salesman.salesmanCode} readOnly disabled />
           </div>
         </CardContent>

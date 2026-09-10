@@ -34,27 +34,27 @@ export default function EditProductPage() {
   async function handleSubmit(values: ProductFormValues) {
     try {
       await updateProductAsync({ id: productId, ...values });
-      toast.success(tx("Product updated"));
+      toast.success(tx("admin.products.updateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not update product. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.products.updateFailed")));
     }
   }
 
   async function handleDeactivate() {
     try {
       await deactivateProductAsync({ id: productId });
-      toast.success(tx("Product deactivated"));
+      toast.success(tx("admin.products.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not deactivate product. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.products.deactivateFailed")));
     }
   }
 
   async function handleReactivate() {
     try {
       await reactivateProductAsync({ id: productId });
-      toast.success(tx("Product reactivated"));
+      toast.success(tx("admin.products.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not reactivate product. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.products.reactivateFailed")));
     }
   }
 
@@ -62,9 +62,9 @@ export default function EditProductPage() {
     if (!window.confirm("Are you sure you want to soft-delete this product?")) return;
     try {
       await deleteProductAsync({ id: productId });
-      toast.success(tx("Product deleted"));
+      toast.success(tx("admin.products.deleteSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not delete product. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.products.deleteFailed")));
     }
   }
 

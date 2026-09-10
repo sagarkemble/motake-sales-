@@ -39,11 +39,11 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
   const salesmanFormSchema = useMemo(
     () =>
       z.object({
-        name: z.string().min(1, tx("Enter a name")).max(120),
-        phone: z.string().min(1, tx("Enter a phone number")).max(20),
-        email: z.string().min(1, tx("Enter an email")).email(tx("Enter a valid email")),
-        password: z.string().min(minPasswordLength, tx("Password must be at least 8 characters")),
-        salesmanCode: z.string().min(1, tx("Enter a salesman code")).max(32),
+        name: z.string().min(1, tx("admin.salesmen.validation.name")).max(120),
+        phone: z.string().min(1, tx("admin.salesmen.validation.phone")).max(20),
+        email: z.string().min(1, tx("admin.salesmen.validation.email")).email(tx("admin.salesmen.validation.emailInvalid")),
+        password: z.string().min(minPasswordLength, tx("admin.salesmen.validation.passwordMin")),
+        salesmanCode: z.string().min(1, tx("admin.salesmen.validation.code")).max(32),
       }),
     [tx],
   );
@@ -84,7 +84,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Phone number" {...field} />
+                  <Input placeholder="common.fields.phone" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -12,10 +12,10 @@ export default function AdminOrdersPage() {
       <Tabs defaultValue="pre_order">
         <TabsList className="w-full">
           <TabsTrigger value="pre_order" className="flex-1">
-            {tx("Pre-Orders")}
+            {tx("admin.orders.tab.preOrders")}
           </TabsTrigger>
           <TabsTrigger value="book_now" className="flex-1">
-            {tx("Orders")}
+            {tx("admin.orders.tab.orders")}
           </TabsTrigger>
         </TabsList>
 

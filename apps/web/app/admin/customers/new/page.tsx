@@ -27,16 +27,16 @@ export default function NewCustomerPage() {
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey,
       });
-      toast.success(tx("Customer created"));
+      toast.success(tx("admin.customers.createSuccess"));
       router.push(`/admin/customers/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not create customer. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.createFailed")));
     }
   }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/customers" title="New customer" />
+      <BackHeader href="/admin/customers" title="admin.customers.newAria" />
       <CustomerForm
         isSubmitting={isCreatingCustomer}
         submitLabel="Save customer"

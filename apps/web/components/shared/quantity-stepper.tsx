@@ -37,7 +37,7 @@ export function QuantityStepper({
         className="size-8 shrink-0 rounded-full"
         disabled={quantity <= minQuantity}
         onClick={() => onQuantityChange(Math.max(minQuantity, quantity - 1))}
-        aria-label={tx("Decrease quantity")}
+        aria-label={tx("common.a11y.decreaseQty")}
       >
         <MinusIcon className="size-3.5" />
       </Button>
@@ -57,7 +57,7 @@ export function QuantityStepper({
         size="icon"
         className="size-8 shrink-0 rounded-full"
         onClick={() => onQuantityChange(quantity + 1)}
-        aria-label={tx("Increase quantity")}
+        aria-label={tx("common.a11y.increaseQty")}
       >
         <PlusIcon className="size-3.5" />
       </Button>

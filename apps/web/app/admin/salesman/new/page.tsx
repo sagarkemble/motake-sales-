@@ -17,16 +17,16 @@ export default function NewSalesmanPage() {
   async function handleSubmit(values: SalesmanFormValues) {
     try {
       const response = await createSalesmanAccountAsync(values);
-      toast.success(tx("Salesman created"));
+      toast.success(tx("admin.salesmen.createSuccess"));
       router.push(`/admin/salesman/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not create salesman. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.salesmen.createFailed")));
     }
   }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/salesman" title="New salesman" />
+      <BackHeader href="/admin/salesman" title="admin.salesmen.newAria" />
       <SalesmanForm
         isSubmitting={isCreatingSalesmanAccount}
         submitLabel="Create salesman"

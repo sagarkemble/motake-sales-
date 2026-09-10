@@ -35,7 +35,7 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
       {isOrdersListLoading ? (
         <ListItemSkeleton count={5} />
       ) : ordersPage.items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{tx("No orders yet")}</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{tx("admin.orders.empty")}</p>
       ) : (
         ordersPage.items.map(
           ({
@@ -78,14 +78,14 @@ export function OrderList({ orderType, customerId }: OrderListProps) {
                     {formatInrCompact(order.totalAmount)}
                   </p>
                   <p className="text-xs font-bold text-muted-foreground">
-                    {order.totalQuantity} {tx("qty")}
+                    {order.totalQuantity} {tx("common.units.qty")}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="min-w-0 truncate">
-                  {tx("Salesman")} {salesmanName ?? salesmanCode}
+                  {tx("admin.orders.salesmanPrefix")} {salesmanName ?? salesmanCode}
                 </span>
                 <span>
                   {formatDate(

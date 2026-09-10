@@ -44,7 +44,7 @@ export function ProductCatalogCard({
         )}
         {quantityInCartForProduct > 0 && (
           <span className="absolute right-2 top-2 flex min-w-6 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-xs font-semibold text-brand-foreground">
-            {quantityInCartForProduct} {tx("in cart")}
+            {quantityInCartForProduct} {tx("salesman.catalog.inCart")}
           </span>
         )}
       </div>
@@ -52,13 +52,13 @@ export function ProductCatalogCard({
       <div className="flex-1">
         <p className="truncate text-sm font-medium">{productName}</p>
         <p className="text-xs text-muted-foreground">
-          {varietyCount} {tx(varietyCount === 1 ? "size" : "sizes")}
+          {varietyCount} {tx(varietyCount === 1 ? "salesman.catalog.size" : "salesman.catalog.sizes")}
         </p>
         {fromPrice !== null && (
           <p className="text-xs font-semibold text-brand">
             {varietyCount === 1
               ? formatInrCompact(fromPrice)
-              : tx("from {price}", { price: formatInrCompact(fromPrice) })}
+              : tx("salesman.catalog.fromPrice", { price: formatInrCompact(fromPrice) })}
           </p>
         )}
       </div>
@@ -68,7 +68,7 @@ export function ProductCatalogCard({
         onClick={onAddToCart}
         className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
       >
-        {tx("Add to Cart")}
+        {tx("salesman.catalog.addToCart")}
       </Button>
     </div>
   );

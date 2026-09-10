@@ -1,7 +1,13 @@
+"use client";
+
 import { StepIndicatorDesktop } from "./step-indicator.desktop";
 import { StepIndicatorMobile } from "./step-indicator.mobile";
 
-export const CHECKOUT_STEP_LABELS = ["Verify products", "Order type", "Customer details"];
+export const CHECKOUT_STEP_LABELS = [
+  "salesman.checkout.steps.verifyProducts",
+  "salesman.checkout.orderType.title",
+  "salesman.checkout.customer.title",
+] as const;
 
 interface StepIndicatorProps {
   currentStepNumber: number;
@@ -19,7 +25,7 @@ export function StepIndicator({ currentStepNumber }: StepIndicatorProps) {
       <div className="hidden md:block">
         <StepIndicatorDesktop
           currentStepNumber={currentStepNumber}
-          stepLabels={CHECKOUT_STEP_LABELS}
+          stepLabels={[...CHECKOUT_STEP_LABELS]}
         />
       </div>
     </>

@@ -64,10 +64,10 @@ export default function SalesmanCheckoutPage() {
 
   const isLastStep = wizard.currentStepNumber === 3;
   const nextButtonLabel = isLastStep
-    ? tx("Place order")
+    ? tx("salesman.checkout.cta.placeOrder")
     : wizard.currentStepNumber === 1
-      ? tx("Next: Order type")
-      : tx("Next: Customer details");
+      ? tx("salesman.checkout.cta.nextOrderType")
+      : tx("salesman.checkout.cta.nextCustomer");
   const isOrderTypeStepInvalid =
     wizard.currentStepNumber === 2 && wizard.orderType === "book_now" && !wizard.isBookNowAllowed;
   const isNextDisabled = isOrderTypeStepInvalid || (isLastStep && !wizard.isCustomerStepValid);

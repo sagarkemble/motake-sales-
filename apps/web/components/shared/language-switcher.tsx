@@ -58,7 +58,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           size="sm"
           className={cn("gap-1.5 px-2 font-medium", className)}
           disabled={isPending}
-          aria-label={tx("Language")}
+          aria-label={tx("common.language.label")}
         >
           <LanguagesIcon className="size-4" />
           <span className="text-xs tracking-wide">{localeTriggerLabel[activeLocale]}</span>
@@ -67,7 +67,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       <DropdownMenuContent align="end" className="min-w-40">
         {locales.map((optionLocale) => {
           const isActive = optionLocale === activeLocale;
-          const label = optionLocale === "en" ? tx("English") : tx("Marathi");
+          const label = optionLocale === "en" ? tx("common.language.english") : tx("common.language.marathi");
           return (
             <DropdownMenuItem
               key={optionLocale}

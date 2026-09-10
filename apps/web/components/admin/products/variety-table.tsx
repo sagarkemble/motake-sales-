@@ -52,10 +52,10 @@ export function VarietyTable({ productId }: VarietyTableProps) {
   async function handleSubmit(values: VarietyFormValues) {
     if (editingVariety) {
       await updateProductVarietyAsync({ id: editingVariety.id, ...values });
-      toast.success(tx("Variety updated"));
+      toast.success(tx("admin.varieties.updateSuccess"));
     } else {
       await createProductVarietyAsync({ productId, ...values });
-      toast.success(tx("Variety added"));
+      toast.success(tx("admin.varieties.addSuccess"));
     }
     setIsDialogOpen(false);
   }
@@ -63,9 +63,9 @@ export function VarietyTable({ productId }: VarietyTableProps) {
   async function handleDeactivate(variety: ProductVariety) {
     try {
       await deactivateProductVarietyAsync({ id: variety.id });
-      toast.success(tx("Variety deactivated"));
+      toast.success(tx("admin.varieties.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not deactivate variety. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.varieties.deactivateFailed")));
     }
   }
 
@@ -116,7 +116,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
                   size="icon-sm"
                   variant="ghost"
                   onClick={() => openEditDialog(variety)}
-                  aria-label={tx("Edit variety")}
+                  aria-label={tx("admin.varieties.editAria")}
                 >
                   <PencilIcon />
                 </Button>
@@ -126,7 +126,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
                   variant="ghost"
                   disabled={variety.status === "inactive"}
                   onClick={() => handleDeactivate(variety)}
-                  aria-label={tx("Deactivate variety")}
+                  aria-label={tx("admin.varieties.deactivateAria")}
                 >
                   <XIcon />
                 </Button>

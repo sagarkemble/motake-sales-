@@ -41,7 +41,7 @@ function SalesmanCatalogContent() {
         {searchTerm && (
           <button
             type="button"
-            aria-label={tx("Clear search")}
+            aria-label={tx("common.actions.clearSearch")}
             onClick={() => setSearchTerm("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
@@ -57,7 +57,7 @@ function SalesmanCatalogContent() {
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
               ? `No products match "${debouncedSearchTerm}"`
-              : tx("No products yet")}
+              : tx("salesman.catalog.empty")}
           </p>
         ) : (
           productsPage.items.map(({ product, varieties }) => {

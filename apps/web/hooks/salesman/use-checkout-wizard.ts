@@ -48,7 +48,7 @@ function getBookNowBlockReasons(
   cartLines: { productName: string; varietyName: string; varietyId: string; quantity: number }[],
   myGatepass: ReturnType<typeof useGatepasses>["myGatepass"],
 ): string[] {
-  if (!myGatepass) return ["No gate pass has been given to you for today yet."];
+  if (!myGatepass) return ["salesman.checkout.gatepass.noneToday"];
   if (myGatepass.gatepass.status !== "active") {
     return [`Gate pass is not active (status: ${myGatepass.gatepass.status}).`];
   }
@@ -173,7 +173,7 @@ export function useCheckoutWizard() {
         const errorMessage =
           createCustomerError instanceof Error
             ? createCustomerError.message
-            : tx("Could not save customer");
+            : tx("salesman.checkout.error.saveCustomer");
         toast.error(errorMessage);
         return;
       }
@@ -208,7 +208,7 @@ export function useCheckoutWizard() {
       });
     } catch (placeOrderError) {
       const errorMessage =
-        placeOrderError instanceof Error ? placeOrderError.message : tx("Could not place order");
+        placeOrderError instanceof Error ? placeOrderError.message : tx("salesman.checkout.error.placeOrder");
       toast.error(errorMessage);
     }
   }

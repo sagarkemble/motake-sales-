@@ -57,9 +57,9 @@ export function MagicLinkLoginForm() {
       await sendMagicLink(email.trim());
       goToLinkSentStep();
       startResendCooldown();
-      toast.success(tx("Sign-in link sent to your email"));
+      toast.success(tx("auth.magicLink.sent"));
     } catch {
-      setFormError(tx("Couldn't send the link. Check the email and try again."));
+      setFormError(tx("auth.magicLink.sendFailed"));
     } finally {
       setIsSending(false);
     }
@@ -77,7 +77,7 @@ export function MagicLinkLoginForm() {
           <MailCheckIcon className="size-6" />
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">{tx("Check your email")}</p>
+          <p className="text-sm font-medium text-foreground">{tx("auth.magicLink.checkEmail")}</p>
           <p className="text-sm text-muted-foreground">
             We sent a sign-in link to {email}. Open it on this device to sign in.
           </p>
@@ -95,7 +95,7 @@ export function MagicLinkLoginForm() {
             onClick={goToEmailStep}
             className="text-muted-foreground hover:text-foreground"
           >
-            {tx("Change email")}
+            {tx("auth.magicLink.changeEmail")}
           </button>
           <button
             type="button"
@@ -103,7 +103,7 @@ export function MagicLinkLoginForm() {
             onClick={() => void sendLink()}
             className="text-brand disabled:text-muted-foreground disabled:opacity-60"
           >
-            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("Resend link")}
+            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("auth.magicLink.resend")}
           </button>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function MagicLinkLoginForm() {
   return (
     <form onSubmit={handleSendLink} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="magic-link-email">{tx("Email")}</Label>
+        <Label htmlFor="magic-link-email">{tx("common.fields.email")}</Label>
         <Input
           id="magic-link-email"
           type="email"
@@ -139,7 +139,7 @@ export function MagicLinkLoginForm() {
         className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
       >
         {isSending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-        {tx("Send sign-in link")}
+        {tx("auth.magicLink.cta")}
       </Button>
     </form>
   );

@@ -17,16 +17,16 @@ export default function NewProductPage() {
   async function handleSubmit(values: ProductFormValues) {
     try {
       const response = await createProductAsync(values);
-      toast.success(tx("Product created"));
+      toast.success(tx("admin.products.createSuccess"));
       router.push(`/admin/products/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not create product. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.products.createFailed")));
     }
   }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/products" title="New product" />
+      <BackHeader href="/admin/products" title="admin.products.newAria" />
       <ProductForm
         isSubmitting={isCreatingProduct}
         submitLabel="Create product"

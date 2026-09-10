@@ -15,11 +15,11 @@ export function CartEmptyState() {
         <ShoppingCartIcon className="size-7 text-muted-foreground" />
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium">{tx("Your cart is empty")}</p>
-        <p className="text-xs text-muted-foreground">{tx("Add some products to get started.")}</p>
+        <p className="text-sm font-medium">{tx("salesman.cart.emptyTitle")}</p>
+        <p className="text-xs text-muted-foreground">{tx("salesman.cart.emptyBody")}</p>
       </div>
       <Button asChild className="h-auto min-h-10 whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90">
-        <Link href="/salesman">{tx("Start shopping")}</Link>
+        <Link href="/salesman">{tx("salesman.cart.startShopping")}</Link>
       </Button>
     </div>
   );

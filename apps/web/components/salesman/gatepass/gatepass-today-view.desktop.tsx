@@ -46,10 +46,10 @@ export function GatepassTodayViewDesktop({
 
       <div className="flex flex-col divide-y rounded-2xl border bg-card">
         <div className="grid grid-cols-5 gap-2 px-4 py-2 text-xs text-muted-foreground">
-          <p className="col-span-2">{tx("Item")}</p>
-          <p className="text-right">{tx("Allocated")}</p>
-          <p className="text-right">{tx("Sold")}</p>
-          <p className="text-right">{tx("Remaining")}</p>
+          <p className="col-span-2">{tx("salesman.gatepass.col.item")}</p>
+          <p className="text-right">{tx("salesman.gatepass.col.allocated")}</p>
+          <p className="text-right">{tx("salesman.gatepass.col.sold")}</p>
+          <p className="text-right">{tx("salesman.gatepass.col.remaining")}</p>
         </div>
         {items.map((item) => (
           <div key={item.id} className="grid grid-cols-5 gap-2 px-4 py-3 text-sm">

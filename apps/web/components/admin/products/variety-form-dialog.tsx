@@ -64,7 +64,7 @@ export function VarietyFormDialog({
     try {
       await onSubmit(values);
     } catch (error) {
-      const errorMessage = getErrorMessage(error, tx("Could not save variety. Try again."));
+      const errorMessage = getErrorMessage(error, tx("admin.varieties.saveFailed"));
       if (errorMessage.toLowerCase().includes("sku")) {
         form.setError("sku", { message: errorMessage });
       } else {
@@ -77,7 +77,7 @@ export function VarietyFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{defaultValues ? "Edit variety" : "Add variety"}</DialogTitle>
+          <DialogTitle>{defaultValues ? "admin.varieties.editAria" : "Add variety"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -163,7 +163,7 @@ export function VarietyFormDialog({
                 disabled={isSubmitting}
                 className="w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
               >
-                {isSubmitting ? "Saving" : "Save"}
+                {isSubmitting ? "Saving" : "common.actions.save"}
               </Button>
             </DialogFooter>
           </form>

@@ -16,7 +16,7 @@ interface KpiCardProps {
 }
 
 function getPercentChangeLabel(value: number, previousValue: number): string | null {
-  if (previousValue === 0) return value === 0 ? null : "New";
+  if (previousValue === 0) return value === 0 ? null : "common.status.new";
   const percentChange = Math.round(((value - previousValue) / previousValue) * 100);
   if (percentChange === 0) return "0%";
   return `${percentChange > 0 ? "+" : ""}${percentChange}%`;
@@ -39,7 +39,7 @@ export function KpiCard({
   const isIncrease = hasPreviousValue && comparableValue > previousValue;
   const isDecrease = hasPreviousValue && comparableValue < previousValue;
   const displayPercentLabel =
-    percentChangeLabel === "New" ? tx("New") : percentChangeLabel;
+    percentChangeLabel === "common.status.new" ? tx("common.status.new") : percentChangeLabel;
 
   return (
     <div
@@ -71,7 +71,7 @@ export function KpiCard({
         <p className="text-xl font-semibold leading-none sm:text-2xl">{value}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{tx(label)}</p>
         {percentChangeLabel && (
-          <p className="text-[10px] text-muted-foreground/70">{tx("vs yesterday")}</p>
+          <p className="text-[10px] text-muted-foreground/70">{tx("admin.dashboard.kpi.vsYesterday")}</p>
         )}
       </div>
     </div>

@@ -12,10 +12,10 @@ interface GatepassStatusBadgeProps {
 }
 
 const gatepassStatusLabels: Record<GatepassStatus, string> = {
-  not_issued: "Not Issued",
-  active: "Active",
-  pending_verification: "Pending Verification",
-  closed: "Completed",
+  not_issued: "common.gatepassStatus.notIssued",
+  active: "common.gatepassStatus.active",
+  pending_verification: "common.gatepassStatus.pendingVerification",
+  closed: "common.gatepassStatus.completed",
 };
 
 const gatepassStatusStyles: Record<GatepassStatus, string> = {

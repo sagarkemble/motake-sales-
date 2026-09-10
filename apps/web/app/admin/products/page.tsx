@@ -43,7 +43,7 @@ function ProductsPageContent() {
           {searchTerm && (
             <button
               type="button"
-              aria-label={tx("Clear search")}
+              aria-label={tx("common.actions.clearSearch")}
               onClick={() => setSearchTerm("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
@@ -56,7 +56,7 @@ function ProductsPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/products/new" aria-label={tx("New product")}>
+          <Link href="/admin/products/new" aria-label={tx("admin.products.newAria")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -81,7 +81,7 @@ function ProductsPageContent() {
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
               ? `No products match "${debouncedSearchTerm}"`
-              : tx("No products yet")}
+              : tx("admin.products.empty")}
           </p>
         ) : (
           productsPage.items.map(({ product, varieties }) => {

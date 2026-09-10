@@ -68,10 +68,10 @@ export default function SalesmanGatepassPage() {
       <Tabs defaultValue="today">
         <TabsList className="w-full">
           <TabsTrigger value="today" className="flex-1">
-            {tx("Today")}
+            {tx("salesman.gatepass.tab.today")}
           </TabsTrigger>
           <TabsTrigger value="history" className="flex-1">
-            {tx("History")}
+            {tx("salesman.gatepass.tab.history")}
           </TabsTrigger>
         </TabsList>
 
@@ -82,14 +82,14 @@ export default function SalesmanGatepassPage() {
             onClick={() => setIsHandoverDialogOpen(true)}
             className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            {tx("Handover")}
+            {tx("salesman.gatepass.handoverCta")}
           </Button>
 
           {isMyGatepassLoading ? (
             <ListItemSkeleton count={4} />
           ) : !myGatepass ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              No gate pass has been given to you for today yet.
+              {tx("salesman.gatepass.emptyToday")}
             </p>
           ) : (
             <>

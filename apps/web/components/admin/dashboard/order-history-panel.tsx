@@ -53,7 +53,7 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
       ) : orderHistory.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">
           <InboxIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{tx("No orders yet")}</p>
+          <p className="text-sm text-muted-foreground">{tx("admin.dashboard.orders.empty")}</p>
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-border">

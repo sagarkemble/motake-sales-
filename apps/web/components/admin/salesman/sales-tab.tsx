@@ -44,14 +44,14 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
   const sellThroughRate = totalAllotted > 0 ? Math.round((totalSold / totalAllotted) * 100) : 0;
 
   const kpiCards = [
-    { label: "Items sold", value: totalSold },
-    { label: "Sales value", value: formatInrCompact(totalSoldAmount) },
-    { label: "Items allotted", value: totalAllotted },
-    { label: "Items returned", value: totalReturned },
-    { label: "Pre-orders", value: totalPreOrdered },
-    { label: "Pre-order value", value: formatInrCompact(totalPreOrderedAmount) },
-    { label: "Active days", value: activeDayCount },
-    { label: "Sell-through rate", value: `${sellThroughRate}%` },
+    { label: "admin.salesmen.kpi.itemsSold", value: totalSold },
+    { label: "admin.salesmen.kpi.salesValue", value: formatInrCompact(totalSoldAmount) },
+    { label: "admin.salesmen.kpi.itemsAllotted", value: totalAllotted },
+    { label: "admin.salesmen.kpi.itemsReturned", value: totalReturned },
+    { label: "admin.salesmen.kpi.preOrders", value: totalPreOrdered },
+    { label: "admin.salesmen.kpi.preOrderValue", value: formatInrCompact(totalPreOrderedAmount) },
+    { label: "admin.salesmen.kpi.activeDays", value: activeDayCount },
+    { label: "admin.salesmen.kpi.sellThroughRate", value: `${sellThroughRate}%` },
   ];
 
   return (

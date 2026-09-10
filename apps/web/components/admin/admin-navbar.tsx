@@ -43,7 +43,7 @@ export function AdminNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, tx("Could not log out. Try again.")));
+      toast.error(getErrorMessage(logoutError, tx("common.errors.logoutFailed")));
     }
   }
 
@@ -52,7 +52,7 @@ export function AdminNavbar() {
       <div className="flex items-center gap-6">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={tx("Open menu")} className="md:hidden">
+            <Button variant="ghost" size="icon" aria-label={tx("common.a11y.openMenu")} className="md:hidden">
               <MenuIcon className="size-5" />
             </Button>
           </SheetTrigger>
@@ -81,7 +81,7 @@ export function AdminNavbar() {
 
             <div className="mt-4 border-t border-border px-4 pt-4">
               <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {tx("Quick actions")}
+                {tx("common.nav.quickActions")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {adminQuickActions.map((quickAction) => {
@@ -132,7 +132,7 @@ export function AdminNavbar() {
         <LanguageSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button aria-label={tx("Open account menu")}>
+            <button aria-label={tx("admin.nav.openAccountMenu")}>
               <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
                 <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
                 <AvatarFallback>{avatarInitial}</AvatarFallback>
@@ -143,16 +143,16 @@ export function AdminNavbar() {
             <DropdownMenuItem asChild>
               <Link href="/admin/account">
                 <UserIcon className="size-4" />
-                {tx("Profile")}
+                {tx("common.nav.profile")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
               <SmartphoneIcon className="size-4" />
-              {tx("Update phone number")}
+              {tx("common.nav.updatePhone")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={handleLogout}>
               <LogOutIcon className="size-4" />
-              {tx("Logout")}
+              {tx("common.actions.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

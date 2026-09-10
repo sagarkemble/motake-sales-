@@ -19,17 +19,17 @@ export type SalesmanNavItem = NavItem;
 const SALESMAN_HOME_HREF = "/salesman";
 
 export const salesmanNavItems: SalesmanNavItem[] = [
-  { label: "Products", href: "/salesman", icon: LayoutGrid },
-  { label: "Cart", href: "/salesman/cart", icon: ShoppingCart },
-  { label: "Gate Pass", href: "/salesman/gatepass", icon: TicketCheck },
-  { label: "Orders", href: "/salesman/orders", icon: ClipboardList },
+  { label: "salesman.nav.products", href: "/salesman", icon: LayoutGrid },
+  { label: "salesman.nav.cart", href: "/salesman/cart", icon: ShoppingCart },
+  { label: "salesman.nav.gatepass", href: "/salesman/gatepass", icon: TicketCheck },
+  { label: "salesman.nav.orders", href: "/salesman/orders", icon: ClipboardList },
 ];
 
 export const salesmanQuickActions: SalesmanNavItem[] = [
-  { label: "New Order", href: "/salesman", icon: PackagePlusIcon },
-  { label: "Gate Pass", href: "/salesman/gatepass", icon: TicketIcon },
-  { label: "My Orders", href: "/salesman/orders", icon: ClipboardList },
-  { label: "My Account", href: "/salesman/account", icon: UserIcon },
+  { label: "salesman.nav.quickNewOrder", href: "/salesman", icon: PackagePlusIcon },
+  { label: "salesman.nav.gatepass", href: "/salesman/gatepass", icon: TicketIcon },
+  { label: "salesman.nav.quickMyOrders", href: "/salesman/orders", icon: ClipboardList },
+  { label: "salesman.nav.quickMyAccount", href: "/salesman/account", icon: UserIcon },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

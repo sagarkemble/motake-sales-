@@ -1,5 +1,8 @@
+"use client";
+
 import { CheckIcon } from "lucide-react";
 
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 interface StepIndicatorDesktopProps {
@@ -8,6 +11,8 @@ interface StepIndicatorDesktopProps {
 }
 
 export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndicatorDesktopProps) {
+  const tx = useTranslate();
+
   return (
     <div className="flex items-center px-6 pt-6">
       {stepLabels.map((stepLabel, stepIndex) => {
@@ -35,7 +40,7 @@ export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndi
                   isCurrentStep ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {stepLabel}
+                {tx(stepLabel)}
               </p>
             </div>
             {!isLastStep && (

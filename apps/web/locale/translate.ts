@@ -1,14 +1,12 @@
 /**
- * Shared English → locale conversion.
+ * Shared locale lookup for Motake UI copy.
  *
  * Feature code must call `translate` (server/util) or `useTranslate` → `tx`
- * (client). Do not add per-screen Marathi maps or scatter next-intl namespace keys.
+ * (client). Keys are dotted paths into nested catalogs (`auth.login.cta`).
  *
  * Rules:
- * - Input is the normal English UI sentence (catalog key).
- * - Output is that sentence in the active locale (`en` returns English).
- * - Missing catalog entry → return the English input unchanged.
- * - Never pass UGC (shop/product names) through this helper.
+ * - Pass a stable message key, never UGC (shop/product names).
+ * - Missing catalog entry → return the key unchanged (after interpolate).
  * - Brand wordmarks "Motake" / "Motake Admin" stay Latin (do not catalog them).
  */
 import type { AppLocale } from "./config";
@@ -18,14 +16,28 @@ import mrMessages from "./messages/mr.json";
 
 export type TranslateValues = Record<string, string | number>;
 
-type MessageCatalog = Record<string, string>;
+type MessageTree = { [key: string]: string | MessageTree };
 
-const catalogs: Record<AppLocale, MessageCatalog> = {
+const catalogs: Record<AppLocale, MessageTree> = {
   en: enMessages,
   mr: mrMessages,
 };
 
-export function getMessagesForLocale(locale: string | null | undefined): MessageCatalog {
+function getMessage(tree: MessageTree, key: string): string | undefined {
+  const parts = key.split(".");
+  let current: string | MessageTree | undefined = tree;
+
+  for (const part of parts) {
+    if (current === undefined || typeof current === "string") {
+      return undefined;
+    }
+    current = current[part];
+  }
+
+  return typeof current === "string" ? current : undefined;
+}
+
+export function getMessagesForLocale(locale: string | null | undefined): MessageTree {
   return catalogs[resolveAppLocale(locale)];
 }
 
@@ -38,21 +50,21 @@ function interpolate(template: string, values?: TranslateValues): string {
 }
 
 /**
- * Convert an English UI string to the given locale.
- * @example translate("mr", "Send for Approval")
- * @example translate("en", "Hello, {name}", { name: "Ravi" })
+ * Resolve a dotted message key for the given locale.
+ * @example translate("mr", "salesman.handover.cta")
+ * @example translate("en", "salesman.catalog.fromPrice", { price: "₹20" })
  */
 export function translate(
   locale: string | null | undefined,
-  english: string,
+  key: string,
   values?: TranslateValues,
 ): string {
   const resolvedLocale = resolveAppLocale(locale);
   const catalog = catalogs[resolvedLocale] ?? catalogs[defaultLocale];
-  const localized = catalog[english];
+  const localized = getMessage(catalog, key) ?? getMessage(catalogs[defaultLocale], key);
 
   if (localized === undefined) {
-    return interpolate(english, values);
+    return interpolate(key, values);
   }
 
   return interpolate(localized, values);

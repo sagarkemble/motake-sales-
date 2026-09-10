@@ -36,7 +36,7 @@ export function CheckoutViewMobile({
             className="h-auto min-h-10 w-full whitespace-normal rounded-full py-2 sm:w-auto"
             onClick={onBack}
           >
-            {tx("Back")}
+            {tx("common.actions.back")}
           </Button>
         )}
         <Button
@@ -45,7 +45,7 @@ export function CheckoutViewMobile({
           onClick={onNext}
           className="h-auto min-h-10 w-full flex-1 whitespace-normal rounded-full bg-brand py-2 text-brand-foreground hover:bg-brand/90"
         >
-          {isNextLoading ? tx("Please wait...") : nextButtonLabel}
+          {isNextLoading ? tx("common.status.pleaseWait") : nextButtonLabel}
         </Button>
       </div>
     </div>

@@ -97,10 +97,10 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
     if (!pendingGatepass) return;
     try {
       await verifyGatepassAsync({ id: pendingGatepass.id });
-      toast.success(tx("Gate pass approved and closed"));
+      toast.success(tx("admin.salesmen.verify.approved"));
     } catch (verifyError) {
       const errorMessage =
-        verifyError instanceof Error ? verifyError.message : tx("Could not close gate pass");
+        verifyError instanceof Error ? verifyError.message : tx("admin.salesmen.verify.closeFailed");
       toast.error(errorMessage);
     }
   }
@@ -111,12 +111,12 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
     if (!reason) return;
     try {
       await flagGatepassDiscrepancyAsync({ id: pendingGatepass.id, reason });
-      toast.success(tx("Gate pass flagged as a discrepancy"));
+      toast.success(tx("admin.salesmen.verify.flagged"));
       setIsFlagOpen(false);
       setFlagReason("");
     } catch (flagError) {
       const errorMessage =
-        flagError instanceof Error ? flagError.message : tx("Could not flag gate pass");
+        flagError instanceof Error ? flagError.message : tx("admin.salesmen.verify.flagFailed");
       toast.error(errorMessage);
     }
   }
@@ -222,7 +222,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
           onClick={handleApproveAndClose}
           className="flex-1 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isVerifyingGatepass ? "Please wait..." : "Approve & Close"}
+          {isVerifyingGatepass ? "common.status.pleaseWait" : "Approve & Close"}
         </Button>
       </div>
 

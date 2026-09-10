@@ -34,10 +34,10 @@ export default function EditCustomerPage() {
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey || null,
       });
-      toast.success(tx("Customer updated"));
+      toast.success(tx("admin.customers.updateSuccess"));
       router.push(`/admin/customers/${customerId}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not update customer. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.updateFailed")));
     }
   }
 

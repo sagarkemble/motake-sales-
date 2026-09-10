@@ -42,9 +42,9 @@ export default function CustomerDetailPage() {
   async function handleReactivate() {
     try {
       await reactivateCustomerAsync({ id: customerId });
-      toast.success(tx("Customer reactivated"));
+      toast.success(tx("admin.customers.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not reactivate customer. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.customers.reactivateFailed")));
     }
   }
 
@@ -134,7 +134,7 @@ export default function CustomerDetailPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <KpiCard
-              label="Items sold"
+              label="admin.salesmen.kpi.itemsSold"
               value={customerStats?.totalQuantitySold ?? 0}
               icon={PackageIcon}
             />
@@ -156,7 +156,7 @@ export default function CustomerDetailPage() {
                 <p className="text-sm font-semibold leading-none">
                   {customerStats?.lastOrderAt
                     ? formatDate(new Date(customerStats.lastOrderAt), "d MMM yyyy")
-                    : tx("No orders yet")}
+                    : tx("admin.customers.ordersEmpty")}
                 </p>
                 <p className="text-xs text-muted-foreground">Last order</p>
               </div>

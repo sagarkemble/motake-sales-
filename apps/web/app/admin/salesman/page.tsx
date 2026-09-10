@@ -45,18 +45,18 @@ function SalesmanPageContent() {
   async function handleDeactivate(salesmanId: string) {
     try {
       await deactivateSalesmanAccountAsync({ id: salesmanId });
-      toast.success(tx("Salesman deactivated"));
+      toast.success(tx("admin.salesmen.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not deactivate salesman. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.salesmen.deactivateFailed")));
     }
   }
 
   async function handleReactivate(salesmanId: string) {
     try {
       await reactivateSalesmanAccountAsync({ id: salesmanId });
-      toast.success(tx("Salesman reactivated"));
+      toast.success(tx("admin.salesmen.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not reactivate salesman. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.salesmen.reactivateFailed")));
     }
   }
 
@@ -64,9 +64,9 @@ function SalesmanPageContent() {
     if (!window.confirm("Are you sure you want to soft-delete this salesman?")) return;
     try {
       await deleteSalesmanAccountAsync({ id: salesmanId });
-      toast.success(tx("Salesman deleted"));
+      toast.success(tx("admin.salesmen.deleteSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not delete salesman. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.salesmen.deleteFailed")));
     }
   }
 
@@ -79,7 +79,7 @@ function SalesmanPageContent() {
           size="icon"
           className="size-9 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/admin/salesman/new" aria-label={tx("New salesman")}>
+          <Link href="/admin/salesman/new" aria-label={tx("admin.salesmen.newAria")}>
             <PlusIcon />
           </Link>
         </Button>
@@ -102,7 +102,7 @@ function SalesmanPageContent() {
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {tx("No salesmen yet")}
+            {tx("admin.salesmen.empty")}
           </p>
         ) : (
           salesmenPage.items.map(({ salesman, profile }) => {
@@ -154,7 +154,7 @@ function SalesmanPageContent() {
                           : "border-transparent bg-muted text-muted-foreground"
                       }
                     >
-                      {profile.status === "active" ? "Active" : "Inactive"}
+                      {profile.status === "active" ? "Active" : "common.status.inactive"}
                     </Badge>
                   )}
 
@@ -163,7 +163,7 @@ function SalesmanPageContent() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        aria-label={tx("Salesman actions")}
+                        aria-label={tx("admin.salesmen.actionsAria")}
                         className="size-8 shrink-0"
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}

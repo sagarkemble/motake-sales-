@@ -1,4 +1,7 @@
+"use client";
+
 import { CartItemRow } from "~/components/salesman/cart/cart-item-row";
+import { useTranslate } from "~/hooks/use-translate";
 import { formatInr } from "~/lib/format-money";
 import type { CartLine } from "~/providers/cart-provider";
 
@@ -17,10 +20,12 @@ export function VerifyProductsStep({
   onQuantityChange,
   onRemove,
 }: VerifyProductsStepProps) {
+  const tx = useTranslate();
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-base font-semibold">Verify products</p>
+        <p className="text-base font-semibold">{tx("salesman.checkout.steps.verifyProducts")}</p>
         <p className="text-sm text-muted-foreground">
           Check your products and quantities before proceeding.
         </p>

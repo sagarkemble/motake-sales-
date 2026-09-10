@@ -48,7 +48,7 @@ export function ProductForm({
   const productFormSchema = useMemo(
     () =>
       z.object({
-        name: z.string().min(1, tx("Enter a product name")).max(200),
+        name: z.string().min(1, tx("admin.products.validation.nameRequired")).max(200),
         description: z.string().optional(),
         imageKey: z.string().optional(),
         imageUrl: z.string().optional(),

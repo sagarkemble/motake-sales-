@@ -54,9 +54,9 @@ export function SalesmanEditDialog({
   const salesmanEditFormSchema = useMemo(
     () =>
       z.object({
-        name: z.string().min(1, tx("Enter a name")).max(120),
-        phone: z.string().min(1, tx("Enter a phone number")).max(20),
-        email: z.string().min(1, tx("Enter an email")).email(tx("Enter a valid email")),
+        name: z.string().min(1, tx("admin.salesmen.validation.name")).max(120),
+        phone: z.string().min(1, tx("admin.salesmen.validation.phone")).max(20),
+        email: z.string().min(1, tx("admin.salesmen.validation.email")).email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
       }),
     [tx],
@@ -80,10 +80,10 @@ export function SalesmanEditDialog({
         email: values.email,
         password: values.password ? values.password : undefined,
       });
-      toast.success(tx("Salesman updated"));
+      toast.success(tx("admin.salesmen.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not update salesman. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.salesmen.updateFailed")));
     }
   }
 
@@ -117,7 +117,7 @@ export function SalesmanEditDialog({
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input placeholder="Phone number" {...field} />
+                    <Input placeholder="common.fields.phone" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

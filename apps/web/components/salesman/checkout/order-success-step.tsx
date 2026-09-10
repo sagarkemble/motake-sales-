@@ -15,8 +15,8 @@ interface OrderSuccessStepProps {
 }
 
 const ORDER_TYPE_LABELS: Record<PlacedOrder["type"], string> = {
-  book_now: "Order",
-  pre_order: "Pre-order",
+  book_now: "common.orderType.order",
+  pre_order: "common.orderType.preOrder",
 };
 
 export function OrderSuccessStep({
@@ -35,29 +35,29 @@ export function OrderSuccessStep({
       </span>
 
       <div>
-        <p className="text-lg font-semibold">{tx("Order placed successfully!")}</p>
-        <p className="text-sm text-muted-foreground">{tx("Your order has been placed.")}</p>
+        <p className="text-lg font-semibold">{tx("salesman.checkout.success.title")}</p>
+        <p className="text-sm text-muted-foreground">{tx("salesman.checkout.success.body")}</p>
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border bg-card p-4 text-left">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{tx("Order ID")}</p>
+          <p className="text-xs text-muted-foreground">{tx("salesman.checkout.success.orderId")}</p>
           <p className="text-sm font-medium">{placedOrder.orderCode}</p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{tx("Total items")}</p>
+          <p className="text-xs text-muted-foreground">{tx("salesman.checkout.success.totalItems")}</p>
           <p className="text-sm font-medium">{placedOrder.totalQuantity}</p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{tx("Total amount")}</p>
+          <p className="text-xs text-muted-foreground">{tx("salesman.checkout.success.totalAmount")}</p>
           <p className="text-sm font-semibold text-brand">{formatInr(placedOrder.totalAmount)}</p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{tx("Order type")}</p>
+          <p className="text-xs text-muted-foreground">{tx("salesman.checkout.orderType.title")}</p>
           <p className="text-sm font-medium">{tx(ORDER_TYPE_LABELS[placedOrder.type])}</p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{tx("Order time")}</p>
+          <p className="text-xs text-muted-foreground">{tx("salesman.checkout.success.orderTime")}</p>
           <p className="text-sm font-medium">
             {formatDate(placedOrder.placedAt, "d MMM yyyy, h:mm a")}
           </p>
@@ -70,7 +70,7 @@ export function OrderSuccessStep({
           onClick={onViewOrders}
           className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {tx("View my orders")}
+          {tx("salesman.checkout.success.viewOrders")}
         </Button>
         <Button
           type="button"
@@ -78,7 +78,7 @@ export function OrderSuccessStep({
           onClick={onBackToHome}
           className="w-full rounded-full"
         >
-          {tx("Back to home")}
+          {tx("salesman.checkout.success.backHome")}
         </Button>
       </div>
     </div>

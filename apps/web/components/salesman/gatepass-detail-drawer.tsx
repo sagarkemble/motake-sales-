@@ -82,10 +82,10 @@ export function GatepassDetailDrawer({
 
                 <div className="flex flex-col divide-y rounded-2xl border bg-card">
                   <div className="grid grid-cols-5 gap-2 px-3 py-2 text-xs text-muted-foreground">
-                    <p className="col-span-2">{tx("Item")}</p>
-                    <p className="text-right">{tx("Allocated")}</p>
-                    <p className="text-right">{tx("Sold")}</p>
-                    <p className="text-right">{tx("Remaining")}</p>
+                    <p className="col-span-2">{tx("salesman.gatepass.col.item")}</p>
+                    <p className="text-right">{tx("salesman.gatepass.col.allocated")}</p>
+                    <p className="text-right">{tx("salesman.gatepass.col.sold")}</p>
+                    <p className="text-right">{tx("salesman.gatepass.col.remaining")}</p>
                   </div>
                   {myGatepass.items.map((item) => {
                     const display = varietyDisplayById.get(item.varietyId);
@@ -123,7 +123,7 @@ export function GatepassDetailDrawer({
               <div className="flex gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
                 <InfoIcon className="size-4 shrink-0 text-brand" />
                 <p className="text-foreground">
-                  {tx("Sold items count includes only orders. Pre-orders are not deducted.")}
+                  {tx("salesman.gatepass.hint.soldOrdersOnly")}
                 </p>
               </div>
             </>

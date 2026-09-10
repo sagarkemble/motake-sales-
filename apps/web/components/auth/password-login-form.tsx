@@ -34,8 +34,8 @@ export function PasswordLoginForm() {
   const passwordLoginFormSchema = useMemo(
     () =>
       z.object({
-        email: z.string().min(1, tx("Enter your email")).email(tx("Enter a valid email")),
-        password: z.string().min(minPasswordLength, tx("Password must be at least 8 characters")),
+        email: z.string().min(1, tx("auth.login.validation.emailRequired")).email(tx("auth.login.validation.emailInvalid")),
+        password: z.string().min(minPasswordLength, tx("auth.login.validation.passwordMin")),
       }),
     [tx],
   );
@@ -49,7 +49,7 @@ export function PasswordLoginForm() {
 
     const parsedForm = passwordLoginFormSchema.safeParse({ email: email.trim(), password });
     if (!parsedForm.success) {
-      setFormError(parsedForm.error.issues[0]?.message ?? tx("Enter a valid email and password"));
+      setFormError(parsedForm.error.issues[0]?.message ?? tx("auth.login.validation.formIncomplete"));
       return;
     }
 
@@ -57,10 +57,10 @@ export function PasswordLoginForm() {
     setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(parsedForm.data);
-      toast.success(tx("Signed in"));
+      toast.success(tx("auth.login.success"));
       router.push("/");
     } catch {
-      setFormError(tx("Wrong email or password. Try again."));
+      setFormError(tx("auth.login.error.wrongCredentials"));
       setPassword("");
     } finally {
       setIsSubmitting(false);
@@ -70,7 +70,7 @@ export function PasswordLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password-email">{tx("Email")}</Label>
+        <Label htmlFor="password-email">{tx("common.fields.email")}</Label>
         <Input
           id="password-email"
           type="email"
@@ -85,13 +85,13 @@ export function PasswordLoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password-password">{tx("Password")}</Label>
+        <Label htmlFor="password-password">{tx("common.fields.password")}</Label>
         <div className="relative">
           <Input
             id="password-password"
             type={isPasswordVisible ? "text" : "password"}
             autoComplete="current-password"
-            placeholder={tx("Enter your password")}
+            placeholder={tx("auth.login.passwordPlaceholder")}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
@@ -100,7 +100,7 @@ export function PasswordLoginForm() {
           <button
             type="button"
             onClick={toggleIsPasswordVisible}
-            aria-label={isPasswordVisible ? tx("Hide password") : tx("Show password")}
+            aria-label={isPasswordVisible ? tx("auth.login.hidePassword") : tx("auth.login.showPassword")}
             className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground"
           >
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
@@ -126,7 +126,7 @@ export function PasswordLoginForm() {
         className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
       >
         {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
-        {tx("Sign in")}
+        {tx("auth.login.cta")}
       </Button>
     </form>
   );

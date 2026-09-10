@@ -70,9 +70,9 @@ export function OtpLoginForm() {
       await sendOneTimePasscode(normalizedPhoneNumber());
       goToPasscodeStep();
       startResendCooldown();
-      toast.success(tx("Code sent by SMS"));
+      toast.success(tx("auth.otp.codeSent"));
     } catch {
-      setFormError(tx("Couldn't send a code. Check the details and try again."));
+      setFormError(tx("auth.otp.sendFailed"));
     } finally {
       setIsSending(false);
     }
@@ -91,10 +91,10 @@ export function OtpLoginForm() {
     setIsVerifying(true);
     try {
       await verifyOneTimePasscode({ phone: normalizedPhoneNumber(), passcode });
-      toast.success(tx("Signed in"));
+      toast.success(tx("auth.login.success"));
       router.push("/");
     } catch {
-      setFormError(tx("That code is wrong or expired."));
+      setFormError(tx("auth.otp.invalidOrExpired"));
       setPasscode("");
     } finally {
       setIsVerifying(false);
@@ -105,7 +105,7 @@ export function OtpLoginForm() {
     return (
       <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="otp-passcode">{tx("6-digit code")}</Label>
+          <Label htmlFor="otp-passcode">{tx("auth.otp.codeLabel")}</Label>
           <p className="text-sm text-muted-foreground">Sent to +91 {contactValue}</p>
           <InputOTP
             id="otp-passcode"
@@ -136,7 +136,7 @@ export function OtpLoginForm() {
           className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
         >
           {isVerifying ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          {tx("Verify and sign in")}
+          {tx("auth.otp.verifyCta")}
         </Button>
 
         <div className="flex items-center justify-between text-sm">
@@ -145,7 +145,7 @@ export function OtpLoginForm() {
             onClick={goToContactStep}
             className="text-muted-foreground hover:text-foreground"
           >
-            {tx("Change number")}
+            {tx("auth.otp.changeNumber")}
           </button>
           <button
             type="button"
@@ -153,7 +153,7 @@ export function OtpLoginForm() {
             onClick={() => void sendPasscode()}
             className="text-brand disabled:text-muted-foreground disabled:opacity-60"
           >
-            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("Resend code")}
+            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("auth.otp.resend")}
           </button>
         </div>
       </form>
@@ -163,7 +163,7 @@ export function OtpLoginForm() {
   return (
     <form onSubmit={handleSendPasscode} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="otp-contact">{tx("Phone number")}</Label>
+        <Label htmlFor="otp-contact">{tx("common.fields.phone")}</Label>
         <div className="flex h-10 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
           <span className="text-sm text-muted-foreground">+91</span>
           <Input
@@ -171,7 +171,7 @@ export function OtpLoginForm() {
             type="tel"
             inputMode="numeric"
             autoComplete="tel"
-            placeholder={tx("10-digit mobile number")}
+            placeholder={tx("auth.otp.phonePlaceholder")}
             value={contactValue}
             onChange={(event) =>
               setContactValue(event.target.value.replace(/\D/g, "").slice(0, 10))
@@ -194,7 +194,7 @@ export function OtpLoginForm() {
         className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
       >
         {isSending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-        {tx("Send code")}
+        {tx("auth.otp.sendCta")}
       </Button>
     </form>
   );

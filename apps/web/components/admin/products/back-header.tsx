@@ -20,7 +20,7 @@ export function BackHeader({ href, title, avatar, actions }: BackHeaderProps) {
       <div className="flex items-center gap-3">
         <Link
           href={href}
-          aria-label={tx("Go back")}
+          aria-label={tx("common.actions.goBack")}
           className="flex size-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-accent"
         >
           <ChevronLeftIcon className="size-5" />

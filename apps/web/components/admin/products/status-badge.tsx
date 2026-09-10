@@ -12,7 +12,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const tx = useTranslate();
   const isActive = status === "active";
-  const label = isActive ? "Active" : "Inactive";
+  const label = isActive ? "common.status.active" : "common.status.inactive";
 
   return (
     <Badge

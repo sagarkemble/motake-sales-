@@ -55,7 +55,7 @@ export default function SalesmanDetailPage() {
             size="icon"
             variant="outline"
             className="size-9 shrink-0 rounded-full"
-            aria-label={tx("Edit salesman")}
+            aria-label={tx("admin.salesmen.editAria")}
             onClick={() => setIsEditDialogOpen(true)}
           >
             <PencilIcon className="size-4" />
@@ -65,9 +65,9 @@ export default function SalesmanDetailPage() {
 
       <Tabs defaultValue="sales">
         <TabsList className="w-full">
-          <TabsTrigger value="sales">{tx("Sales")}</TabsTrigger>
-          <TabsTrigger value="gatepass">{tx("Gate Pass")}</TabsTrigger>
-          <TabsTrigger value="verification">{tx("Verification")}</TabsTrigger>
+          <TabsTrigger value="sales">{tx("admin.salesmen.tab.sales")}</TabsTrigger>
+          <TabsTrigger value="gatepass">{tx("admin.salesmen.tab.gatepass")}</TabsTrigger>
+          <TabsTrigger value="verification">{tx("admin.salesmen.tab.verification")}</TabsTrigger>
         </TabsList>
         <TabsContent value="sales">
           <SalesTab salesmanId={salesman.id} />

@@ -113,14 +113,14 @@ function GatepassPageContent() {
 
   async function handleAllotGatepass() {
     if (!selectedSalesmanId) {
-      toast.error(tx("Select a salesman"));
+      toast.error(tx("admin.gatepass.allot.selectSalesmanError"));
       return;
     }
     const items = Object.entries(quantitiesByVarietyId)
       .filter(([, issuedQty]) => issuedQty > 0)
       .map(([varietyId, issuedQty]) => ({ varietyId, issuedQty }));
     if (items.length === 0) {
-      toast.error(tx("Set a quantity for at least one item"));
+      toast.error(tx("admin.gatepass.allot.qtyRequired"));
       return;
     }
 
@@ -130,10 +130,10 @@ function GatepassPageContent() {
         businessDate: businessDateKey,
         items,
       });
-      toast.success(tx("Gate pass allotted"));
+      toast.success(tx("admin.gatepass.allot.success"));
       router.push(`/admin/salesman/${selectedSalesmanId}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("Could not allot gate pass. Try again.")));
+      toast.error(getErrorMessage(error, tx("admin.gatepass.allot.failed")));
     }
   }
 
@@ -145,11 +145,11 @@ function GatepassPageContent() {
     <div className="flex flex-col gap-5 px-4 py-4 pb-28">
       <BackHeader
         href={preselectedSalesmanId ? `/admin/salesman/${preselectedSalesmanId}` : "/admin"}
-        title={tx("Allot Gate Pass")}
+        title={tx("admin.gatepass.allot.title")}
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{tx("Date")}</label>
+        <label className="text-sm font-medium">{tx("common.fields.date")}</label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -172,11 +172,11 @@ function GatepassPageContent() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{tx("Select Salesman *")}</label>
+        <label className="text-sm font-medium">{tx("admin.gatepass.allot.selectSalesman")}</label>
         <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
           <SelectTrigger className="h-11 w-full rounded-xl bg-muted/40">
             <SelectValue
-              placeholder={isSalesmenListLoading ? tx("Loading…") : tx("Select salesman")}
+              placeholder={isSalesmenListLoading ? tx("common.status.loading") : tx("admin.gatepass.allot.selectSalesmanPlaceholder")}
             />
           </SelectTrigger>
           <SelectContent>
@@ -238,7 +238,7 @@ function GatepassPageContent() {
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs text-muted-foreground">{tx("Qty")}</span>
+                  <span className="text-xs text-muted-foreground">{tx("common.fields.qty")}</span>
                   <QuantityStepper
                     quantity={quantitiesByVarietyId[item.varietyId] ?? 0}
                     onQuantityChange={(quantity) => handleQuantityChange(item.varietyId, quantity)}
@@ -257,7 +257,7 @@ function GatepassPageContent() {
           onClick={() => void handleAllotGatepass()}
           className="h-auto min-h-11 w-full whitespace-normal rounded-full bg-brand py-2.5 text-brand-foreground hover:bg-brand/90"
         >
-          {isAllottingGatepass ? tx("Allotting") : tx("Allot Gate Pass")}
+          {isAllottingGatepass ? tx("admin.gatepass.allot.allotting") : tx("admin.gatepass.allot.title")}
         </Button>
       </div>
     </div>
