@@ -16,7 +16,7 @@ Standard accounting for a customer (debtor) account in the seller's books:
 | Side | Meaning for the Customer's Balance | Examples |
 | --- | --- | --- |
 | **Debit** | Increases what the Customer owes Motake | Bill raised, Debit Note, Refund paid out, Opening balance owed |
-| **Credit** | Decreases what the Customer owes Motake | Payment received, Credit Note, Bill cancelled, Opening balance in advance |
+| **Credit** | Decreases what the Customer owes Motake | Payment received, Credit Note, Opening balance in advance |
 
 **Balance = total Debits − total Credits.**
 
@@ -67,7 +67,8 @@ Reasons: undercharge, extra items delivered after the Bill.
 Rules:
 
 - Each note has its own number series, date, amount, tax split and reason.
-- Total Credit Notes on a Bill cannot exceed that Bill's amount. No notes on a cancelled Bill.
+- A GST Note selects the affected Bill lines and quantities; HSN, taxable value and tax are calculated from those lines.
+- Total Credit Notes on a Bill cannot exceed that Bill's amount. Cancelling a Bill automatically creates its full-value Credit Note; no additional Notes are allowed afterward.
 - If the same Bill or ledger entry already has another Credit/Debit Note, the app warns that the change may be counted twice. Admin can ignore the warning and continue.
 - A **GST Credit Note** reverses the applicable tax and reduces Motake's GST liability.
 - A **Commercial Credit Note** (the “without GST” option) reduces the Customer's Balance but not Motake's GST liability; Motake bears the tax already paid.
@@ -81,7 +82,6 @@ Rules:
 | Opening balance | Debit (owed) or Credit (advance) | Seeded from client data, or set once by admin for a new Customer |
 | Bill | Debit | Book Now placed; Pre-order fulfilled |
 | Payment | Credit | Cash kept (at checkout or with no purchase). Only the amount **kept** is entered; change handed back is never an entry |
-| Bill cancelled | Credit | Admin cancels a billed order. Equals the Bill's current amount |
 | Credit Note | Credit | System creates one from an admin Bill reduction, or admin raises one independently |
 | Debit Note | Debit | System creates one from an admin Bill increase, or admin raises one independently |
 | Payment adjusted | Debit (amount lowered) or Credit (amount raised) | Admin fixes a wrongly recorded Payment; linked to that Payment |
@@ -102,7 +102,7 @@ Critical actions that reverse or adjust money are **admin only, with a reason**.
 | Choose return-change vs keep-as-advance | Payment amount | Yes, on own payment | Yes, on own payment |
 | Edit a Bill | None if amount unchanged; automatic linked Credit / Debit Note if amount changes | No | Yes, with reason |
 | Raise Credit Note / Debit Note | Credit Note / Debit Note | No | Yes, with reason |
-| Cancel a billed order | Bill cancelled | No | Yes, with reason |
+| Cancel a billed order | Automatic full-value Credit Note | No | Yes, with reason |
 | Cancel an unfulfilled Pre-order | None | Yes, own | Yes |
 | Refund Advance | Refund | No | Yes, with mode |
 | Set Opening balance | Opening balance | No | Yes, once per Customer |
@@ -143,16 +143,16 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 ### Pre-order
 
-13. **Placed.** Linked to the route, not to a GatePass or salesman. Price locked on the order (tax calculated at fulfil on the locked price). No ledger entry, no Balance change, no message.
+13. **Placed.** Linked to the route, not to a GatePass or salesman. Price locked on the order. No ledger entry, no Balance change, no message.
 14. **Cancelled before fulfil.** By its salesman or admin. No ledger entry (nothing was billed).
 15a. **Fulfilled by one of several salesmen on the route.** Any salesman with an Active GatePass on that route, on or after the scheduled date, can fulfil. Once one does, every other salesman on the route sees it as fulfilled.
-15. **Fulfilled after a price change.** Billed at the locked price, not today's price. Bill entry dated at fulfil time.
+15. **Fulfilled after a price or GST-rate change.** Uses the locked Route price but the GST rate effective on the fulfilment/Bill date. Bill entry is dated at fulfilment.
 16. **Fulfilled by admin.** Same as checkout. Payment, if any, carries no GatePass.
 
 ### After the Bill (admin only)
 
-17. **Order cancelled, nothing paid.** Bill +3,000, Bill cancelled −3,000 → back to previous Balance. No message.
-18. **Order cancelled after part payment.** Bill +3,000, Payment −2,000, Bill cancelled −3,000 → −₹2,000 (advance). The Payment stays. No message.
+17. **Order cancelled, nothing paid.** Bill +3,000 → admin cancels with reason → system creates full Credit Note −3,000 → back to previous Balance. No cancellation message.
+18. **Order cancelled after part payment.** Bill +3,000, Payment −2,000 → cancellation creates full Credit Note −3,000 → −₹2,000 (advance). The Payment stays. No cancellation message.
 19. **Bill edited, amount up.** Wrong qty, ₹10,000 → ₹20,000 → system creates Debit Note +10,000 linked to the Bill → Balance +₹10,000 → account-update message.
 19a. **Bill edited, amount unchanged.** Wrong variety name, same price → history row only. No ledger entry, no message.
 20. **Edited twice.** ₹10,000 → ₹20,000 (automatic Debit Note +10,000) → ₹18,000 (automatic Credit Note −2,000). Bill shows ₹18,000; history has three rows.
@@ -181,9 +181,11 @@ Placing a Pre-order, editing a route price, moving a Customer, GatePass allot / 
 
 ## Messages
 
+- There is no Customer portal, downloadable document view or “Updated Bill View.”
 - **Bill** — when a Bill is raised (Book Now placed, Pre-order fulfilled).
 - **Receipt** — when a Payment with amount kept > ₹0 is recorded.
-- **Account update** — when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance.
+- **Account update** — WhatsApp message when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance.
+- Credit/Debit Notes and Bill History remain admin/CA records. Customers receive the Bill, Receipt when paid, and account-update messages only.
 - Bill cancellation sends nothing.
 
 ```
@@ -212,6 +214,7 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 - Money and tax calculations use whole paise internally (integer minor units), never floating-point rupees. Each line's tax is rounded to the nearest paisa. The Bill total is rounded to the nearest rupee with a visible "round off" line.
 - Every displayed money amount has exactly two decimal places (for example, `₹1,234.00`).
 - Numbering: one server-generated series per financial year, sequential and unique, max 16 characters (e.g. `MTK/26-27/000123`). Credit Notes and Debit Notes each have their own series.
+- After a GST period is filed, its Bills are locked. Admin may still create an eligible GST Credit Note, a Commercial Credit Note, or a Debit Note independently; these do not rewrite the filed Bill.
 
 ## Open questions
 

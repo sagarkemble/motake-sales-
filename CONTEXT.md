@@ -32,7 +32,7 @@ _Avoid_: Unit price (company-wide), rate card
 An order placed and billed on the spot, deducting stock from the Active GatePass.
 
 **Pre-order**:
-An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled.
+An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST rate effective on that fulfilment date.
 _Avoid_: Booking, advance order
 
 ### Money
@@ -63,7 +63,7 @@ _Avoid_: Khata (in code), account statement
 A ledger entry that increases what the Customer owes (Bill, Debit Note, Refund).
 
 **Credit**:
-A ledger entry that decreases what the Customer owes (Payment, Credit Note, Bill cancelled).
+A ledger entry that decreases what the Customer owes (Payment, Credit Note).
 _Avoid_: using "credit" to mean Advance
 
 **Bill history**:
