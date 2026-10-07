@@ -2,6 +2,18 @@
 
 **Product Requirements Document (PRD v1.9)**
 
+> **Historical document — superseded.**
+>
+> This file records the original Phase-1 requirements and is retained for project history only. It is **not an implementation source** for current work. In particular, its company-wide prices, globally shared Customer visibility, next-day-only Pre-orders, deferred Routes, unconditional GatePass restoration, and original technical architecture are obsolete.
+>
+> Current implementation authority, in order:
+>
+> 1. [`CONTEXT.md`](./CONTEXT.md) for domain terminology.
+> 2. [`docs/route-pricing-and-udhar.md`](./docs/route-pricing-and-udhar.md) for current Route, GatePass, Customer, ordering and end-to-end product rules.
+> 3. [`docs/adr/`](./docs/adr/) for accepted architecture, Balance, ledger, Bill, Payment, GST and notification decisions.
+>
+> When this historical PRD conflicts with those documents, the current documents above win.
+
 | Field       | Value  |
 | ----------- | ------ |
 | **Company** | Motake |
@@ -9,7 +21,7 @@
 | **Phase** | Phase 1 — Order Management System |
 | **Target Delivery** | 15 days (2 weeks) |
 | **Document Version** | 1.9 |
-| **Status** | Updated per clarification review (v1.9) |
+| **Status** | Historical — superseded by current domain docs and ADRs |
 | **Reference** | [prideofcows.com](https://prideofcows.com) (business model & product positioning) |
 
 ---
