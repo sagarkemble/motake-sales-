@@ -71,7 +71,7 @@ Every version of a Bill's items and amounts, including the first, with who chang
 _Avoid_: Revised bill, amended invoice
 
 **Credit Note**:
-Explicitly raised by admin against a Bill or ledger entry to reduce what the Customer owes, including for a lower corrected Bill, return, damage or later discount; never generated automatically.
+Reduces what the Customer owes. Generated automatically when an admin lowers a Bill, or raised independently by admin for a return, damage or later discount.
 
 **GST Credit Note**:
 A Credit Note that also reverses applicable tax and reduces Motake's GST liability.
@@ -81,7 +81,7 @@ A Credit Note that reduces the Customer's Balance without reducing Motake's GST 
 _Avoid_: Credit Note without GST
 
 **Debit Note**:
-Explicitly raised by admin against a Bill or ledger entry to increase what the Customer owes, including for a higher corrected Bill, undercharge or extra items; never generated automatically.
+Increases what the Customer owes. Generated automatically when an admin raises a Bill, or raised independently by admin for an undercharge or extra items.
 
 **Payment adjustment**:
 An admin fix to a wrongly recorded Payment amount (miscount, typo), kept with the Payment's history. Never done by editing a Bill.

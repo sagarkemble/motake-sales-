@@ -36,7 +36,7 @@ A Bill can be edited after it is raised — **by admin only, with a reason, unti
 - The Bill's original date, time and number never change.
 - Once admin/CA marks the Bill's GST period as filed, the Bill is locked. Later value or tax corrections use a Credit/Debit Note.
 - **Edit that does not change the amount** (e.g. wrong variety name at the same price): Bill + history only. No ledger entry.
-- **Edit that changes the amount**: admin must explicitly create a linked **Debit Note** (amount up) or **Credit Note** (amount down) for the difference and enter a note/reason. The app never generates it automatically. The Bill edit and linked Note are saved together; the Note is what moves the Balance.
+- **Edit that changes the amount**: the system automatically creates a linked **Debit Note** (amount up) or **Credit Note** (amount down) for the difference, using the admin's required edit reason. The Bill, Bill History, Note and ledger entry are saved together; the Note is what moves the Balance.
 - A cancelled Bill cannot be edited. A Bill cannot be edited below ₹0.
 - Items removed through an edit do **not** go back onto any GatePass. Stock is not tracked for returns.
 
@@ -51,7 +51,12 @@ id  amount                bill_id  version  amount  reason              entry   
 
 ## Credit Note and Debit Note
 
-Created **explicitly by admin only, with a note/reason**, against a Bill or its ledger entry. The system never creates one automatically. Admin may create one while correcting an amount-changing Bill edit, or separately for something that happened after a correct Bill (return, damage, later discount, later extra charge). Definitions follow Indian GST (CGST Act, s.34): both are issued by the seller and reference the original Bill.
+Created through either of two admin-only flows:
+
+1. **Automatic internal Note from a Bill edit:** admin edits a Bill with a required reason; if its amount changes, the system creates the matching linked Note for the difference.
+2. **Independent Note:** admin explicitly creates a Note with a reason for something that happened after a correct Bill (return, damage, later discount, later extra charge).
+
+Both are proper numbered Notes linked to the original Bill and their ledger entry. Definitions follow Indian GST (CGST Act, s.34): both are issued by the seller and reference the original Bill.
 
 **Credit Note** — the Bill charged **more** than it should have. It **reduces** what the Customer owes (credit entry).
 Reasons: goods returned, goods damaged / spoiled, discount after billing, overcharge.
@@ -77,8 +82,8 @@ Rules:
 | Bill | Debit | Book Now placed; Pre-order fulfilled |
 | Payment | Credit | Cash kept (at checkout or with no purchase). Only the amount **kept** is entered; change handed back is never an entry |
 | Bill cancelled | Credit | Admin cancels a billed order. Equals the Bill's current amount |
-| Credit Note | Credit | Admin explicitly raises a GST or Commercial Credit Note, including while editing a Bill down |
-| Debit Note | Debit | Admin explicitly raises one, including while editing a Bill up |
+| Credit Note | Credit | System creates one from an admin Bill reduction, or admin raises one independently |
+| Debit Note | Debit | System creates one from an admin Bill increase, or admin raises one independently |
 | Payment adjusted | Debit (amount lowered) or Credit (amount raised) | Admin fixes a wrongly recorded Payment; linked to that Payment |
 | Refund | Debit | Admin records Motake paying the Customer back out of Advance, with mode (cash / bank / UPI) and optional reference |
 
@@ -95,7 +100,7 @@ Critical actions that reverse or adjust money are **admin only, with a reason**.
 | Record cash at checkout | Payment | Yes | Yes (when fulfilling) |
 | Record payment with no purchase | Payment | Yes, Customer on Active GatePass route | Yes, any Customer |
 | Choose return-change vs keep-as-advance | Payment amount | Yes, on own payment | Yes, on own payment |
-| Edit a Bill | None if amount unchanged; explicitly linked Credit / Debit Note if amount changes | No | Yes, with reason |
+| Edit a Bill | None if amount unchanged; automatic linked Credit / Debit Note if amount changes | No | Yes, with reason |
 | Raise Credit Note / Debit Note | Credit Note / Debit Note | No | Yes, with reason |
 | Cancel a billed order | Bill cancelled | No | Yes, with reason |
 | Cancel an unfulfilled Pre-order | None | Yes, own | Yes |
@@ -148,9 +153,9 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 17. **Order cancelled, nothing paid.** Bill +3,000, Bill cancelled −3,000 → back to previous Balance. No message.
 18. **Order cancelled after part payment.** Bill +3,000, Payment −2,000, Bill cancelled −3,000 → −₹2,000 (advance). The Payment stays. No message.
-19. **Bill edited, amount up.** Wrong qty, ₹10,000 → ₹20,000 → admin explicitly creates Debit Note +10,000 linked to the Bill → Balance +₹10,000 → account-update message.
+19. **Bill edited, amount up.** Wrong qty, ₹10,000 → ₹20,000 → system creates Debit Note +10,000 linked to the Bill → Balance +₹10,000 → account-update message.
 19a. **Bill edited, amount unchanged.** Wrong variety name, same price → history row only. No ledger entry, no message.
-20. **Edited twice.** ₹10,000 → ₹20,000 (admin creates Debit Note +10,000) → ₹18,000 (admin creates Credit Note −2,000). Bill shows ₹18,000; history has three rows.
+20. **Edited twice.** ₹10,000 → ₹20,000 (automatic Debit Note +10,000) → ₹18,000 (automatic Credit Note −2,000). Bill shows ₹18,000; history has three rows.
 21. **Goods returned / damaged after full payment.** Paid ₹10,000 (₹0), ₹2,000 returned → admin raises Credit Note −2,000 → −₹2,000 advance → account-update message. Then either:
     - used against the next Bill, or
     - refunded → Refund +2,000 → ₹0.
@@ -210,6 +215,4 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 
 ## Open questions
 
-- Bill edit and ledger architecture: whether an issued Bill and its ledger posting remain separate records.
-- Credit/Debit Note link target: Bill only, or Bill plus a ledger entry.
 - E-invoicing: **blocking decision before implementation**. Confirm whether Motake's turnover and B2B sales require IRN/QR generation.
