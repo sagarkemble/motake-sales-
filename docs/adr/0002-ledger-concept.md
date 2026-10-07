@@ -28,29 +28,29 @@ A Bill is always debited in **full** (tax included). A payment is credited **sep
 
 ## Bill editing and history
 
-A Bill can be edited after it is raised — **by admin only, with a reason, with no time limit**. Editing does **not** create a Credit or Debit Note.
+A Bill can be edited after it is raised — **by admin only, with a reason, with no time limit**. Editing is for fixing a **wrong entry** on the Bill.
 
 - The **Bill** always holds the latest items and amounts.
 - **Bill history** holds one row per version, including the first. A Bill never edited has exactly one history row.
 - Each history row keeps the full items and amounts of that version, who made it, when, and the reason.
 - The Bill's original date, time and number never change.
+- **Edit that does not change the amount** (e.g. wrong variety name at the same price): Bill + history only. No ledger entry.
+- **Edit that changes the amount**: Bill + history, and a **Debit Note** (amount up) or **Credit Note** (amount down) for the difference is created automatically, linked to the Bill and its ledger entry. That note is what moves the Balance.
 - A cancelled Bill cannot be edited. A Bill cannot be edited below ₹0.
 - Items removed through an edit do **not** go back onto any GatePass. Stock is not tracked for returns.
 
 Example:
 
 ```
-Bill                      Bill history
-id  amount                bill_id  version  amount  reason
-1   20,000   (latest)     1        1        10,000  (raised)
-                          1        2        20,000  extra crates delivered
+Bill                      Bill history                                  Ledger
+id  amount                bill_id  version  amount  reason              entry          amount   linked to
+1   20,000   (latest)     1        1        10,000  (raised)            Bill           +10,000  Bill 1
+                          1        2        20,000  wrong qty entered   Debit Note     +10,000  Bill 1
 ```
-
-How the edit reaches the Balance: see open questions.
 
 ## Credit Note and Debit Note
 
-Raised **by admin only, by hand, with a reason**, against a Bill. Independent of Bill editing. Definitions follow Indian GST (CGST Act, s.34): both are issued by the seller and reference the original Bill.
+Created **by admin only, with a reason**, against a Bill — either automatically by an amount-changing Bill edit, or by hand for something that happened after a correct Bill (return, damage, later discount, later extra charge). Definitions follow Indian GST (CGST Act, s.34): both are issued by the seller and reference the original Bill.
 
 **Credit Note** — the Bill charged **more** than it should have. It **reduces** what the Customer owes (credit entry).
 Reasons: goods returned, goods damaged / spoiled, discount after billing, overcharge.
@@ -60,9 +60,12 @@ Reasons: undercharge, extra items delivered after the Bill.
 
 Rules:
 
-- Each note has its own number series, date, amount, tax split and reason. The original Bill is untouched.
+- Each note has its own number series, date, amount, tax split and reason.
 - Total Credit Notes on a Bill cannot exceed that Bill's amount. No notes on a cancelled Bill.
-- GST deadline: a Credit Note must be issued by 30 November after the end of the Bill's financial year (or the annual-return date, if earlier). Debit Notes have no limit. Verify with the client's CA.
+- If a Bill has both an amount-changing edit and a hand-raised note, the app warns that the same change may be counted twice. Admin can ignore the warning and continue.
+- A Credit Note is either **with GST** (the tax on the reduced amount is reversed) or **without GST** (the Customer's Balance drops by the full amount, Motake bears the tax already paid).
+- GST deadline: a Credit Note **with GST** must be issued by 30 November after the end of the Bill's financial year (or the annual-return date, if earlier). After that only a Credit Note **without GST** is allowed. Debit Notes have no limit. Verify with the client's CA.
+- Instead of a Credit Note, admin can give the Customer a **reduction on their next Bill** (see open questions).
 
 ## Entry types
 
@@ -72,8 +75,9 @@ Rules:
 | Bill | Debit | Book Now placed; Pre-order fulfilled |
 | Payment | Credit | Cash kept (at checkout or with no purchase). Only the amount **kept** is entered; change handed back is never an entry |
 | Bill cancelled | Credit | Admin cancels a billed order. Equals the Bill's current amount |
-| Credit Note | Credit | Admin raises one against a Bill |
-| Debit Note | Debit | Admin raises one against a Bill |
+| Credit Note | Credit | Admin edits a Bill down, or raises one by hand; with or without GST |
+| Debit Note | Debit | Admin edits a Bill up, or raises one by hand |
+| Payment adjusted | Debit (amount lowered) or Credit (amount raised) | Admin fixes a wrongly recorded Payment; linked to that Payment |
 | Refund | Debit | Admin records Motake paying the Customer back out of Advance, with mode (cash / bank / UPI) and optional reference |
 
 Entries are never deleted or overwritten. Each stores who made it, when, and (for salesmen) the Active GatePass, if any.
@@ -85,17 +89,17 @@ Critical actions that reverse or adjust money are **admin only, with a reason**.
 | Action | Ledger effect | Salesman | Admin |
 | --- | --- | --- | --- |
 | Place Book Now | Bill | Yes, on Active GatePass route | No |
-| Fulfil Pre-order | Bill | Yes, see open questions | Yes |
+| Fulfil Pre-order | Bill | Yes, Active GatePass on the Pre-order's route | Yes |
 | Record cash at checkout | Payment | Yes | Yes (when fulfilling) |
 | Record payment with no purchase | Payment | Yes, Customer on Active GatePass route | Yes, any Customer |
 | Choose return-change vs keep-as-advance | Payment amount | Yes, on own payment | Yes, on own payment |
-| Edit a Bill | See open questions | No | Yes, with reason |
+| Edit a Bill | None, or auto Credit / Debit Note if amount changes | No | Yes, with reason |
 | Raise Credit Note / Debit Note | Credit Note / Debit Note | No | Yes, with reason |
 | Cancel a billed order | Bill cancelled | No | Yes, with reason |
 | Cancel an unfulfilled Pre-order | None | Yes, own | Yes |
 | Refund Advance | Refund | No | Yes, with mode |
 | Set Opening balance | Opening balance | No | Yes, once per Customer |
-| Fix a wrongly recorded Payment | — | No | See open questions |
+| Fix a wrongly recorded Payment | Payment adjusted | No | Yes, with reason; Payment history kept |
 
 ## What the user sees
 
@@ -132,8 +136,9 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 ### Pre-order
 
-13. **Placed.** Price locked on the order (tax calculated at fulfil on the locked price). No ledger entry, no Balance change, no message.
+13. **Placed.** Linked to the route, not to a GatePass or salesman. Price locked on the order (tax calculated at fulfil on the locked price). No ledger entry, no Balance change, no message.
 14. **Cancelled before fulfil.** By its salesman or admin. No ledger entry (nothing was billed).
+15a. **Fulfilled by one of several salesmen on the route.** Any salesman with an Active GatePass on that route, on or after the scheduled date, can fulfil. Once one does, every other salesman on the route sees it as fulfilled.
 15. **Fulfilled after a price change.** Billed at the locked price, not today's price. Bill entry dated at fulfil time.
 16. **Fulfilled by admin.** Same as checkout. Payment, if any, carries no GatePass.
 
@@ -141,19 +146,21 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 17. **Order cancelled, nothing paid.** Bill +3,000, Bill cancelled −3,000 → back to previous Balance. No message.
 18. **Order cancelled after part payment.** Bill +3,000, Payment −2,000, Bill cancelled −3,000 → −₹2,000 (advance). The Payment stays. No message.
-19. **Bill edited.** Bill ₹10,000 → ₹20,000 with reason. Bill shows ₹20,000; history shows both versions. Effect on Balance: see open questions.
-20. **Edited twice.** ₹10,000 → ₹20,000 → ₹18,000. Bill shows ₹18,000; history has three rows.
+19. **Bill edited, amount up.** Wrong qty, ₹10,000 → ₹20,000 → Debit Note +10,000 (auto, linked to the Bill) → Balance +₹10,000 → account-update message.
+19a. **Bill edited, amount unchanged.** Wrong variety name, same price → history row only. No ledger entry, no message.
+20. **Edited twice.** ₹10,000 → ₹20,000 (Debit Note +10,000) → ₹18,000 (Credit Note −2,000). Bill shows ₹18,000; history has three rows.
 21. **Goods returned / damaged after full payment.** Paid ₹10,000 (₹0), ₹2,000 returned → admin raises Credit Note −2,000 → −₹2,000 advance → account-update message. Then either:
     - used against the next Bill, or
     - refunded → Refund +2,000 → ₹0.
 22. **Undercharged.** Admin raises Debit Note for the difference → Balance up.
+22a. **Edit and hand-raised note on the same Bill.** Warning shown; admin can ignore it.
 23. **Credit Notes exceed the Bill, or Bill is cancelled.** Refused.
-24. **Credit Note after the GST deadline.** See open questions.
+24. **Credit Note after the GST deadline.** Only a Credit Note without GST is allowed (Motake bears the tax), or a reduction on the next Bill.
 
 ### Mistakes and retries
 
 25. **Same checkout submitted twice (bad network).** Second submit is ignored; one Bill, one Payment.
-26. **Cash counted short / typo in cash received.** See open questions. The Bill must not be edited to cover a cash mistake: the goods and tax were correct, only the Payment was wrong.
+26. **Cash counted short / typo in cash received.** Receipt said ₹2,000, Motake counts ₹1,900 → admin edits the Payment to ₹1,900 with reason → Payment adjusted +100 (debit) → Customer owes ₹100 more → account-update message. Payment history keeps both amounts. The Bill is never edited to cover a cash mistake.
 
 ### Customer record changes
 
@@ -169,7 +176,7 @@ Placing a Pre-order, editing a route price, moving a Customer, GatePass allot / 
 
 - **Bill** — when a Bill is raised (Book Now placed, Pre-order fulfilled).
 - **Receipt** — when a Payment with amount kept > ₹0 is recorded.
-- **Account update** — when a Bill edit, Credit / Debit Note or Refund changes the Balance; shows the change, reason and new Balance.
+- **Account update** — when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance.
 - Bill cancellation sends nothing.
 
 ```
@@ -188,18 +195,20 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 
 ## GST
 
-- Motake supplies within Maharashtra only: every Bill charges **CGST + SGST**, never IGST.
-- Motake's GSTIN is held in admin settings. A Customer may have a GSTIN (optional); it is printed on their Bills when present.
+- **Intra-state and inter-state** are both supported. Place of supply is the Customer's state:
+  - Customer in Motake's state (Maharashtra) → **CGST + SGST** (rate split in half).
+  - Customer in another state → **IGST** (full rate).
+- Motake's GSTIN and state are held in admin settings. A Customer has a state and an optional GSTIN; the GSTIN is printed on their Bills when present.
 - Each **variety** has an HSN code and a GST rate, company-wide (not per route). Exempt items (e.g. milk) have rate 0.
 - **Route prices exclude tax.** The Bill adds GST per line on top of the route price. The Bill total, Pending and Payments are all tax-inclusive.
 - One checkout produces **one document** covering exempt and taxable items together (invoice-cum-bill of supply).
+- Rounding: each line's tax is calculated to the paisa; the Bill total is rounded to the nearest rupee with a visible "round off" line.
 - Numbering: one server-generated series per financial year, sequential and unique, max 16 characters (e.g. `MTK/26-27/000123`). Credit Notes and Debit Notes each have their own series.
 
 ## Open questions
 
-- Bill edit → Balance: how the change in a Bill's amount reaches the ledger.
-- Credit / Debit Note vs Bill edit: when admin should use which.
-- Wrong cash amount on a Payment (flow 26): how it is fixed.
-- Credit Note after the GST deadline (flow 24): block, or allow.
-- Pre-order fulfilment: who may fulfil (route / GatePass link).
+- Bill edits after the month's GST return is filed: allowed freely, or only via notes.
+- Reduction on the next Bill: how admin sets it and how it applies (before or after tax).
+- Customer's state for place of supply: set per Customer or per route.
+- Money stored as whole paise everywhere, or only for Payments.
 - E-invoicing: whether Motake's turnover requires it.

@@ -32,7 +32,7 @@ _Avoid_: Unit price (company-wide), rate card
 An order placed and billed on the spot, deducting stock from the Active GatePass.
 
 **Pre-order**:
-An order placed for a later date at the route price of the moment it was placed; billed only when fulfilled.
+An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled.
 _Avoid_: Booking, advance order
 
 ### Money
@@ -71,13 +71,16 @@ Every version of a Bill's items and amounts, including the first, with who chang
 _Avoid_: Revised bill, amended invoice
 
 **Credit Note**:
-Raised by admin against a Bill that charged too much (return, damage, later discount, overcharge); reduces what the Customer owes.
+Issued by Motake against a Bill to reduce what the Customer owes, either from an admin edit lowering the Bill or raised by hand (return, damage, later discount). With GST (tax reversed) or without GST (Motake bears the tax).
 
 **Debit Note**:
-Raised by admin against a Bill that charged too little (undercharge, extra items); increases what the Customer owes.
+Issued by Motake against a Bill to increase what the Customer owes, either from an admin edit raising the Bill or raised by hand (undercharge, extra items).
+
+**Payment adjustment**:
+An admin fix to a wrongly recorded Payment amount (miscount, typo), kept with the Payment's history. Never done by editing a Bill.
 
 **GST**:
-Tax added on top of the Route price per line of a Bill, at the variety's rate. Bills, Pending and Payments are tax-inclusive.
+Tax added on top of the Route price per line of a Bill, at the variety's rate: CGST + SGST when the Customer is in Motake's state, IGST otherwise. Bills, Pending and Payments are tax-inclusive.
 
 **Refund**:
 Money Motake pays back to a Customer out of their Advance.
