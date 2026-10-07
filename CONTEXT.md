@@ -25,7 +25,7 @@ _Avoid_: Shop, outlet, client
 The person behind one or more Customers. Not a record; carries no balance of its own.
 
 **Route price**:
-The price of one variety on one route. A variety with no route price cannot be sold on that route.
+The tax-exclusive price of one variety on one route. A variety with no route price cannot be sold on that route.
 _Avoid_: Unit price (company-wide), rate card
 
 **Book Now**:
@@ -66,15 +66,18 @@ A ledger entry that increases what the Customer owes (Bill, Debit Note, Refund).
 A ledger entry that decreases what the Customer owes (Payment, Credit Note, Bill cancelled).
 _Avoid_: using "credit" to mean Advance
 
-**Bill version**:
-One snapshot of a Bill's items and amounts. An admin edit creates a new version; past versions are kept unchanged with who, when and why.
+**Bill history**:
+Every version of a Bill's items and amounts, including the first, with who changed it, when and why. The Bill itself always shows the latest version.
 _Avoid_: Revised bill, amended invoice
 
 **Credit Note**:
-Issued by Motake when a Bill version is lower than the previous one (return, damage, later discount, overcharge); reduces what the Customer owes.
+Raised by admin against a Bill that charged too much (return, damage, later discount, overcharge); reduces what the Customer owes.
 
 **Debit Note**:
-Issued by Motake when a Bill version is higher than the previous one (undercharge, extra items); increases what the Customer owes.
+Raised by admin against a Bill that charged too little (undercharge, extra items); increases what the Customer owes.
+
+**GST**:
+Tax added on top of the Route price per line of a Bill, at the variety's rate. Bills, Pending and Payments are tax-inclusive.
 
 **Refund**:
 Money Motake pays back to a Customer out of their Advance.
