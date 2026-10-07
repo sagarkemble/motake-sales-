@@ -30,7 +30,7 @@ No payment gateway. Staff manually record cash, bank or UPI Payments received ou
 
 | Word         | Meaning                                                                                                                                    |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Route**    | A named price list and Customer list, with a state used as the default delivery state. Examples: Kolhapur, Satara.                         |
+| **Route**    | A named price list and Customer list whose state determines place of supply. Examples: Kolhapur, Satara.                                  |
 | **GatePass** | The stock allotment for one salesman. This feature also stores the route on it. Quantities stay as they are today: issued, sold, returned. |
 | **Customer** | One outlet on exactly one Route. This is the record the salesman bills.                                                                     |
 | **Owner**    | The person who may own more than one Customer. The app does not keep a separate Owner Balance.                                             |
@@ -65,6 +65,10 @@ Admin can see every Route and every Customer.
 
 Different salesmen may each have a separate active GatePass on the same Route on the same day. They share Route visibility and due Pre-orders, but each GatePass keeps its own stock quantities and handover. One salesman still has only one active GatePass at a time.
 
+Every Route has a state. That Route state always determines place of supply for its Bills. Admin may update the state; the change applies to orders started afterward, while existing orders and historical Bills keep their snapshots.
+
+A used Route is never hard-deleted. Admin may deactivate it only when it has no active GatePass and no open Pre-order. Historical records continue referencing it.
+
 ---
 
 
@@ -75,13 +79,14 @@ Admin sets a price for each variety **on each route**. The single company-wide v
 
 - Route prices exclude GST.
 - Kolhapur milk and Satara milk are two prices.
+- A Route price must be greater than zero. Free samples are a separate future flow.
 - The salesman cannot type a different price on a bill.
 - A variety with no price on that route cannot be added to the cart. Show a clear reason: this route has no price yet. Do not fall back to another route's price.
 - A new variety is not sellable on a route until admin enters that route's price. Creating the variety does not copy a price onto every route.
-- Price edits apply to **future bills only**. Orders already placed keep the price stored on them.
-- Each variety has effective-dated HSN, exemption status and GST rates. Bill and Note lines snapshot those facts.
+- The server snapshots the Route price when an item first enters an order. Later price-list edits do not reprice that order, including while its cart/draft remains open. The client never supplies or overrides the price.
+- Each variety has effective-dated HSN, exemption status and GST rates. Effective periods cannot overlap. Bill and Note lines snapshot the facts effective for that event.
 - Money is stored as integer paise and displayed with two decimal places. Never calculate money with floating-point rupees.
-- Each line's tax is rounded to paise. The final Bill has a visible nearest-rupee round-off line.
+- Use half-up rounding: each line's tax is rounded to paise and the final Bill to the nearest rupee, with a visible round-off component. Credit/Debit Notes reverse the original line's exact remaining paise so repeated partial Notes cannot drift.
 
 The GatePass screen stays quantity-only. Do not show or store money on the GatePass.
 
@@ -120,7 +125,7 @@ One Owner can have two Customers. Example: Shree Dairy on Kolhapur and Shree Dai
 
 The tax-exclusive price is the Route price of the **active GatePass** at the moment the order is placed. The app stores that price on the order lines. Later Route-price edits do not change that order.
 
-The delivery state defaults from the Route. Admin may correct it before Bill issue. Same-state delivery uses CGST + SGST; interstate delivery uses IGST.
+The Route state is snapshotted as place of supply when the order starts and always determines the tax split. A Route in Motake's state uses CGST + SGST; a Route in another state uses IGST. Updating the Route state affects only orders started afterward.
 
 One Customer-facing Bill concept is used. Internally, a taxable or mixed Bill is a Tax Invoice; a fully exempt Bill is a Bill of Supply.
 
@@ -130,6 +135,10 @@ The Bill row always contains the latest data. Bill History contains the original
 - Amount or statutory tax fields changed: save the Bill version and automatically create the necessary numbered Credit/Debit Note and ledger entry in the same transaction.
 - A same-total edit that changes HSN, taxable value, exemption, rate, tax split or place of supply still creates tax corrections.
 - After filing, the Bill is locked. Admin may create independent GST/Commercial Credit Notes or Debit Notes.
+
+Bill, GST Credit Note and Debit Note numbers are assigned inside the successful transaction. Once assigned, a number is never reused; cancelled documents retain their numbers.
+
+At month end, Admin records the externally completed GSTR-1 filing through a form containing the filing month, filing date, reference/acknowledgement, filer and optional notes. Submitting that form locks direct Bill edits for the month. Later corrections use Notes.
 
 
 | Case                                                              | Price used                                                                                        |
@@ -149,7 +158,7 @@ The Bill row always contains the latest data. Bill History contains the original
 
 All of this happens atomically when the order is placed. The order still deducts GatePass quantity, as today.
 
-1. Validate the active GatePass, Customer Route, current Route prices and stock.
+1. Validate the active GatePass, Customer Route, snapshotted Route prices and stock. Do not reprice from the current price list.
 2. Calculate GST, round-off and the final tax-inclusive total.
 3. Create the Bill, Bill History version 1 and Bill ledger debit.
 4. Staff enter the payment received. Zero is allowed. The whole Bill can stay Pending. Payment methods are cash, bank and UPI; bank/UPI may have a reference.
@@ -195,7 +204,7 @@ Checkout is idempotent. A retry caused by poor connectivity returns the original
 - A salesman on Satara today cannot fulfill a Kolhapur pre-order, including the salesman who placed it if their GatePass today is not Kolhapur.
 - Use the price stored at placement. Do not re-price.
 - Use the effective GST classification/rate on the fulfilment date.
-- Then treat it like a bill being raised: add the total to pending, record cash received (zero allowed), WhatsApp the bill, and WhatsApp a receipt if cash was kept.
+- Then treat it like a Bill being raised: debit the total, record an optional cash/bank/UPI Payment, WhatsApp the Bill, and WhatsApp a Receipt if an amount was kept.
 - Fulfillment still does not deduct GatePass quantity.
 - All due and overdue Pre-orders stay visible, with a due/overdue banner, to salesmen on that Route until fulfilled or cancelled.
 - Concurrent fulfilment is first-writer-wins and idempotent. Every other salesman then sees it as fulfilled.
@@ -283,14 +292,14 @@ A pre-order cancelled **before fulfill** does not change the balance, because it
 
 ### 8.6 Bill edits, Notes, adjustments, and refunds
 
-- Admin may independently create a GST Credit Note, Commercial Credit Note or Debit Note with affected lines and a required reason.
+- Admin may independently create a GST Credit Note, Commercial Credit Note or Debit Note with affected lines and a required reason. A return/damage Note also requires quantity, return/damage date and reason; batch/inventory tracking remains out of scope.
 - Automatic and independent Notes have their own sequential number, tax split and ledger entry.
 - A possible duplicate Note shows a warning; Admin may continue with a reason.
 - An incorrect issued Note is never edited or deleted. Admin reverses it with an opposite Note, then creates the correct Note.
 - A GST Credit Note reverses eligible tax. A Commercial Credit Note reduces Balance while Motake bears the original GST.
 - A reduction intended for the next Bill is recorded now as a Commercial Credit Note, creating Advance that the next Bill consumes.
-- Admin may correct a Payment with a reason. Payment History keeps every version; only the delta is posted to the ledger.
-- Admin may Refund up to the available Advance using cash, bank or UPI, with an optional reference.
+- Admin may correct a Payment with a reason. Payment History keeps every version; only the delta is posted on the correction date. The disclosure shows previous amount, corrected amount, difference and reason; exact presentation is deferred.
+- Admin may record a Refund up to the available Advance using cash, bank or UPI, with an optional reference, only after that external Refund has actually completed. The app does not model a processing Refund.
 - Opening Balance is entered once. A mistake is corrected by an Opening Balance Adjustment with as-of date, source, reason and approver; it has no GST effect.
 
 ### 8.7 What does not change the balance
@@ -322,15 +331,15 @@ Send when:
 
 Do not send when a pre-order is only placed.
 
-The message identifies the Customer, Route, Bill, line items, tax, final total and Balance. After a Bill edit, send only after Bill History, automatic Notes, GST and ledger changes have all committed; the Customer always receives the latest Bill.
+The message identifies the Customer, Route, Bill, line items, tax, final total and Balance **after the Bill debit but before any Payment recorded in the same checkout**. After a Bill edit, send only after Bill History, automatic Notes, GST and ledger changes have all committed; the Customer always receives the latest Bill.
 
 ### 9.2 Receipt message
 
 Send when a payment is recorded and the amount **kept** is greater than zero. That includes a partial payment and a payment with no new purchase.
 
-Do not send a receipt when cash received is zero.
+Do not send a Receipt when the kept Payment amount is zero.
 
-The message identifies the Customer, Route, amount kept, cash returned if any, and Pending or Advance after the Payment.
+The message identifies the Customer, Route, amount kept, cash returned if any, and the final Pending or Advance **after the Payment**.
 
 **Example.** Pending was ₹10,000. Payment kept is ₹2,000. Receipt says ₹2,000 received, ₹8,000 still Pending, and the Customer name. It does not list milk vs curd as cleared.
 
@@ -370,7 +379,7 @@ Two messages can go out for one Book Now checkout: the bill, and the receipt if 
 | See a Customer's Balance                               | On Customers they can see, including while billing                 | All Customers                                       |
 
 
-Deactivating a Customer does not erase its Balance. Admin can still see it and record a Payment or Refund. A salesman sees the Customer only when it is active and on their GatePass Route.
+Deactivating a Customer is blocked while it has any open Pre-order. Deactivation does not erase its Balance. Admin can still see it and record a Payment or Refund. A salesman sees the Customer only when it is active and on their GatePass Route.
 
 Deactivation may leave Pending or Advance. Admin can collect a Payment or issue a Refund after deactivation.
 
@@ -408,9 +417,13 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 26. **Earlier Credit Note then cancellation.** Cancellation reverses only remaining uncredited value.
 27. **Wrong Note.** Opposite Note reverses it; correct Note is issued. Nothing is deleted.
 28. **Filed Bill.** Direct edit is blocked; Admin creates an independent Note.
-29. **Intra/interstate.** Delivery state determines CGST+SGST versus IGST.
+29. **Intra/interstate.** Snapshotted Route state determines CGST+SGST versus IGST.
 30. **Shared phone.** Search shows Customer name, Route and address; Customer ID selects the record.
 31. **Overdue Pre-order.** It remains visible with an overdue banner to all active salesmen on that Route.
+32. **Price list changes while an order is open.** The order keeps its server-snapshotted price; the salesman never supplies a price and checkout does not reprice it.
+33. **Month filed.** Admin records the GSTR-1 filing form; direct Bill edits for that month are blocked.
+34. **Payment corrected later.** The correction date carries the delta; disclosure shows old amount, corrected amount, difference and reason.
+35. **Return/damage Note.** Affected lines, quantity, date and reason are recorded; GatePass stock remains unchanged.
 
 ---
 
@@ -445,11 +458,16 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 - Bill WhatsApp goes out on Book Now place and on pre-order fulfill. Receipt WhatsApp goes out when cash is kept, including a payment with no new sale.
 - A failed or skipped WhatsApp send does not roll back the order or the payment.
 - All money uses integer paise; Route prices exclude GST.
-- Bill lines snapshot effective HSN, exemption, GST rate, tax components and delivery state.
+- Bill lines snapshot effective HSN, exemption, GST rate, tax components and Route state.
 - Bill History contains every version; amount/statutory edits create linked Notes and ledger entries atomically.
 - GSTIN Customers receive statutory Notes; other Customers receive account updates.
 - Pre-orders are Route-owned, support any future date, remain visible when overdue and can be fulfilled by any active salesman on that Route or Admin.
 - Cancellation is Admin-only, preserves Payments, reverses only remaining value and restores stock only when the originating GatePass remains active.
 - Duplicate checkout, fulfilment, Payment, edit, Note, Refund and retry operations cannot double-post.
 - E-invoicing/IRN applicability is confirmed before implementation begins.
+- Route state always determines the tax split and is snapshotted when the order starts; later Route-state edits affect future orders only.
+- Route prices are positive and server-snapshotted when items enter an order; later price-list edits never reprice it.
+- GSTR-1 filing submission locks direct Bill edits for its month.
+- Used Routes are deactivated rather than deleted, and only after active GatePasses and open Pre-orders close.
+- Customer deactivation is blocked while open Pre-orders exist.
 
