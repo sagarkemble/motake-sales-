@@ -7,7 +7,7 @@ Field sales for a dairy distributor: admin allots stock to salesmen on a route e
 ### Selling
 
 **Route**:
-A named area (e.g. Kolhapur, Satara) with its own customer list and its own price per variety.
+A named area (e.g. Kolhapur, Satara) with its own Customer list, price per variety and default delivery state.
 _Avoid_: Area, beat, zone
 
 **GatePass**:
@@ -38,8 +38,14 @@ _Avoid_: Booking, advance order
 ### Money
 
 **Bill**:
-The amount of one order at the route prices locked onto it, raised when a Book Now is placed or a Pre-order is fulfilled.
+A single order's latest billed state at its locked Route prices, including tax. Bill History preserves the original and every later version.
 _Avoid_: Invoice
+
+**Tax Invoice**:
+The internal legal type for a Bill containing any taxable supply.
+
+**Bill of Supply**:
+The internal legal type for a Bill containing only exempt supply.
 
 **Balance**:
 The single running amount between one Customer and Motake. Not per bill, not per owner.
@@ -53,7 +59,7 @@ A Balance below zero: Motake owes the Customer, from cash kept above what was ow
 _Avoid_: Deposit; using "advance" for a part-payment at checkout
 
 **Payment**:
-Cash kept by Motake against a Customer's Balance. Never applied to a specific Bill.
+Cash, bank or UPI money kept by Motake against a Customer's Balance. Never applied to a specific Bill.
 
 **Ledger**:
 The append-only record of every money event for one Customer; the Balance is derived from it.
@@ -87,7 +93,7 @@ Increases what the Customer owes. Generated automatically when an admin raises a
 An admin fix to a wrongly recorded Payment amount (miscount, typo), kept with the Payment's history. Never done by editing a Bill.
 
 **GST**:
-Tax added on top of the Route price per line of a Bill, at the variety's rate: CGST + SGST when the Route is in Motake's state, IGST otherwise. Bills, Pending and Payments are tax-inclusive.
+Tax added on top of the Route price per Bill line. Actual delivery state determines CGST + SGST versus IGST; the Route supplies the default state. Bills, Pending and Payments are tax-inclusive.
 
 **Paisa**:
 The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise. Rupee decimals are only a display format.
@@ -99,5 +105,5 @@ Money Motake pays back to a Customer out of their Advance.
 A one-time starting Balance entered for a Customer to carry over what was owed before the app; may be Pending or Advance.
 
 **Receipt**:
-The message sent to a Customer because a Payment was recorded.
+The message sent to a Customer because a cash, bank or UPI Payment was recorded.
 _Avoid_: Bill message, invoice
