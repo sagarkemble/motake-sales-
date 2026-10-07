@@ -71,16 +71,26 @@ Every version of a Bill's items and amounts, including the first, with who chang
 _Avoid_: Revised bill, amended invoice
 
 **Credit Note**:
-Issued by Motake against a Bill to reduce what the Customer owes, either from an admin edit lowering the Bill or raised by hand (return, damage, later discount). With GST (tax reversed) or without GST (Motake bears the tax).
+Explicitly raised by admin against a Bill or ledger entry to reduce what the Customer owes, including for a lower corrected Bill, return, damage or later discount; never generated automatically.
+
+**GST Credit Note**:
+A Credit Note that also reverses applicable tax and reduces Motake's GST liability.
+
+**Commercial Credit Note**:
+A Credit Note that reduces the Customer's Balance without reducing Motake's GST liability; Motake bears the tax.
+_Avoid_: Credit Note without GST
 
 **Debit Note**:
-Issued by Motake against a Bill to increase what the Customer owes, either from an admin edit raising the Bill or raised by hand (undercharge, extra items).
+Explicitly raised by admin against a Bill or ledger entry to increase what the Customer owes, including for a higher corrected Bill, undercharge or extra items; never generated automatically.
 
 **Payment adjustment**:
 An admin fix to a wrongly recorded Payment amount (miscount, typo), kept with the Payment's history. Never done by editing a Bill.
 
 **GST**:
-Tax added on top of the Route price per line of a Bill, at the variety's rate: CGST + SGST when the Customer is in Motake's state, IGST otherwise. Bills, Pending and Payments are tax-inclusive.
+Tax added on top of the Route price per line of a Bill, at the variety's rate: CGST + SGST when the Route is in Motake's state, IGST otherwise. Bills, Pending and Payments are tax-inclusive.
+
+**Paisa**:
+The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise. Rupee decimals are only a display format.
 
 **Refund**:
 Money Motake pays back to a Customer out of their Advance.
