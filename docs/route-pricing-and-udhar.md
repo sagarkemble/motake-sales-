@@ -164,8 +164,8 @@ All of this happens atomically when the order is placed. The order still deducts
 4. Staff enter the payment received. Zero is allowed. The whole Bill can stay Pending. Payment methods are cash, bank and UPI; bank/UPI may have a reference.
 5. If cash exceeds the amount required to clear Pending, staff choose: return the extra or keep it as Advance.
 6. Update the cached Balance in the same transaction.
-7. Create notification records in that transaction.
-8. Only after Bill History, Notes, GST and ledger resolution succeeds, send the latest Bill.
+7. Determine which Bill and Receipt notifications this checkout requires.
+8. Only after Bill History, Notes, GST and ledger resolution succeeds, request the latest Bill notification through the decoupled notification boundary.
 9. If any Payment is kept, send a Receipt as well.
 
 Checkout is idempotent. A retry caused by poor connectivity returns the original result and never creates another Bill, stock deduction, Payment or message.
@@ -317,6 +317,8 @@ A pre-order cancelled **before fulfill** does not change the balance, because it
 ## 9. WhatsApp
 
 Send automatically. Staff do not have to press Send for the normal case. Staff can resend if a send failed or the customer did not get it.
+
+Ordering, billing, Payment and ledger code never call WhatsApp or a provider directly. They use the provider-agnostic notification boundary defined by ADR-0001. Provider choice and the notification component's package/service, queue, outbox, worker, persistence and retry architecture are deferred until implementation planning immediately before development.
 
 A failed send does **not** undo the order or the payment. The sale stands. Show that the message was not sent, and allow retry.
 

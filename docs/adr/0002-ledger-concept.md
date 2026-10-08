@@ -28,13 +28,13 @@ A Bill is always debited in **full** (tax included). A payment is credited **sep
 
 ## Bill editing and history
 
-A Bill can be edited after it is raised — **by admin only, with a reason, until its GST period is marked filed**. Editing is for fixing a **wrong entry** on the Bill.
+A Bill can be edited after it is raised — **by admin only, with a reason, until Admin records that month's completed GSTR-1 filing**. Editing is for fixing a **wrong entry** on the Bill.
 
 - The **Bill** always holds the latest items and amounts.
 - **Bill history** holds one row per version, including the first. A Bill never edited has exactly one history row.
 - Each history row keeps the full items and amounts of that version, who made it, when, and the reason.
 - The Bill's original date, time and number never change.
-- Once admin/CA marks the Bill's GST period as filed, the Bill is locked. Later value or tax corrections use a Credit/Debit Note.
+- At month end, Admin records the externally completed GSTR-1 filing using a form with month, filing date, reference/acknowledgement, filer and optional notes. Submission locks Bills in that month; later corrections use Credit/Debit Notes.
 - **Edit that changes neither amount nor statutory tax facts** (e.g. a non-statutory description at the same price): Bill + History only. No Note or ledger entry.
 - **Edit that changes the amount**: the system automatically creates a linked **Debit Note** (amount up) or **Credit Note** (amount down) for the difference, using the admin's required edit reason.
 - **Edit with the same total but changed statutory facts** (HSN, taxable value, exemption, GST rate, tax split or place of supply): the system automatically creates the required paired tax-correction Notes. Net Balance may stay unchanged while GST changes.
@@ -70,6 +70,7 @@ Rules:
 
 - Each note has its own number series, date, amount, tax split and reason.
 - A GST Note selects the affected Bill lines and quantities; HSN, taxable value and tax are calculated from those lines.
+- A return/damage Note also records the affected quantity, return/damage date and reason. Batch and inventory tracking remain out of scope.
 - Total Credit Notes cannot exceed the remaining uncredited lines/value after prior Notes.
 - If the same Bill or ledger entry already has another Credit/Debit Note, the app warns that the change may be counted twice. Admin can ignore the warning and continue.
 - A **GST Credit Note** reverses the applicable tax and reduces Motake's GST liability.
@@ -86,8 +87,8 @@ Rules:
 | Payment | Credit | Cash, bank or UPI Payment kept (at checkout or with no purchase). For cash, only the amount **kept** is entered; change handed back is never an entry |
 | Credit Note | Credit | System creates one from an admin Bill reduction, or admin raises one independently |
 | Debit Note | Debit | System creates one from an admin Bill increase, or admin raises one independently |
-| Payment adjusted | Debit (amount lowered) or Credit (amount raised) | Admin fixes a wrongly recorded Payment; linked to that Payment |
-| Refund | Debit | Admin records Motake paying the Customer back out of Advance, with mode (cash / bank / UPI) and optional reference |
+| Payment adjusted | Debit (amount lowered) or Credit (amount raised) | Admin fixes a wrongly recorded Payment; linked to that Payment and posted on the correction date |
+| Refund | Debit | After an external Refund completes, Admin records Motake paying the Customer back out of Advance, with mode (cash / bank / UPI) and optional reference |
 
 Entries are never deleted or overwritten. Each stores who made it, when, and (for salesmen) the Active GatePass, if any.
 
@@ -172,7 +173,7 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 ### Mistakes and retries
 
 25. **Same checkout submitted twice (bad network).** Second submit is ignored; one Bill, one Payment.
-26. **Cash counted short / typo in cash received.** Receipt said ₹2,000, Motake counts ₹1,900 → admin edits the Payment to ₹1,900 with reason → Payment adjusted +100 (debit) → Customer owes ₹100 more → account-update message. Payment history keeps both amounts. The Bill is never edited to cover a cash mistake.
+26. **Cash counted short / typo in Payment.** Receipt said ₹2,000, correct amount is ₹1,900 → Admin corrects the Payment with reason → Payment adjusted +100 (debit) on the correction date → Customer owes ₹100 more → account-update message. Payment History and disclosure show previous ₹2,000, corrected ₹1,900, difference ₹100 and reason. Exact display format is deferred. The Bill is never edited to cover a Payment mistake.
 
 ### Customer record changes
 
@@ -191,6 +192,7 @@ Placing a Pre-order, editing a route price, moving a Customer, GatePass allot / 
 - **Receipt** — when a Payment with amount kept > ₹0 is recorded.
 - **Account update** — WhatsApp message when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance.
 - After a Bill edit, send the latest Bill only after Bill History, Notes, GST effects and ledger entries commit.
+- A Bill message shows Balance after the Bill debit but before any same-checkout Payment. Its Receipt shows the final Balance after Payment.
 - A Customer with GSTIN also receives the statutory Credit/Debit Note. A Customer without GSTIN receives the account update only.
 - Credit/Debit Notes and Bill History remain available to Admin/CA.
 - Bill cancellation sends no separate cancellation message. If it creates a statutory Note for a GSTIN Customer, that Note is still delivered.
@@ -214,16 +216,17 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 - One Customer-facing **Bill** concept is used:
   - Taxable or mixed supply → internal legal type **Tax Invoice**.
   - Entirely exempt supply → internal legal type **Bill of Supply**.
-- **Intra-state and inter-state** are both supported. Place of supply is the actual delivery state snapshotted on the Bill:
-  - Delivery in Motake's state (Maharashtra) → **CGST + SGST** (rate split in half).
-  - Delivery in another state → **IGST** (full rate).
-- Motake's GSTIN and state are held in admin settings. Delivery state defaults from the Customer's Route and Admin may correct it before Bill issue. A Customer has an optional GSTIN; it is printed on Bills when present.
-- Each **variety** has effective-dated HSN, exemption status and GST rates, company-wide (not per Route). Bill and Note lines snapshot the effective facts.
+- **Intra-state and inter-state** are both supported. The snapshotted Route state always determines place of supply:
+  - Route in Motake's state (Maharashtra) → **CGST + SGST** (rate split in half).
+  - Route in another state → **IGST** (full rate).
+- Motake's GSTIN and state are held in admin settings. Admin may update a Route's state; orders already started and historical Bills retain their snapshots. A Customer has an optional GSTIN; it is printed on Bills when present.
+- Each **variety** has effective-dated HSN, exemption status and GST rates, company-wide (not per Route). Effective periods cannot overlap. Bill and Note lines snapshot the effective facts.
 - **Route prices exclude tax.** The Bill adds GST per line on top of the route price. The Bill total, Pending and Payments are all tax-inclusive.
-- Money and tax calculations use whole paise internally (integer minor units), never floating-point rupees. Each line's tax is rounded to the nearest paisa. The Bill total is rounded to the nearest rupee with a visible "round off" line.
+- Route prices must be greater than zero. The server snapshots the Route price when an item enters an order; later price-list edits never reprice that order and the client never supplies a price.
+- Money and tax calculations use whole paise internally (integer minor units), never floating-point rupees. Use half-up rounding: each line's tax to paise and final Bill to the nearest rupee, with a visible round-off component. Notes reverse the original line's exact remaining paise.
 - Every displayed money amount has exactly two decimal places (for example, `₹1,234.00`).
-- Numbering: one server-generated series per financial year, sequential and unique, max 16 characters (e.g. `MTK/26-27/000123`). Credit Notes and Debit Notes each have their own series.
-- After a GST period is filed, its Bills are locked. Admin may still create an eligible GST Credit Note, a Commercial Credit Note, or a Debit Note independently; these do not rewrite the filed Bill.
+- Numbering: one server-generated series per financial year, sequential and unique, max 16 characters (e.g. `MTK/26-27/000123`). Credit Notes and Debit Notes each have their own series. Numbers are assigned inside the successful transaction; once assigned they are never reused, and cancelled documents retain them.
+- After a GSTR-1 filing form locks its month, Admin may still create an eligible GST Credit Note, a Commercial Credit Note, or a Debit Note independently; these do not rewrite the filed Bill.
 
 ## Open questions
 
