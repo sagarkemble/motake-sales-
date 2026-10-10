@@ -10,7 +10,7 @@
 2. ADR-0002 owns Balance, ledger, Bill, Bill History, Payment, Credit/Debit Note, Refund, GST and money-storage rules.
 3. This document owns Route, GatePass, Customer visibility, ordering and end-to-end product behaviour.
 4. **Customer** is the canonical term; do not use “shop” in code or product copy.
-5. E-invoicing/IRN applicability is unresolved and **must be confirmed before implementation starts**.
+5. Motake operates under **Regular GST** (not Composition; CA written confirmation before go-live). E-invoicing is configured **per Customer** from the seeded Customer list, not org-wide.
 
 This feature adds:
 
@@ -63,7 +63,7 @@ A salesman is not stuck to one Route for life. The next GatePass can use a diffe
 
 Admin can see every Route and every Customer.
 
-Different salesmen may each have a separate active GatePass on the same Route on the same day. They share Route visibility and due Pre-orders, but each GatePass keeps its own stock quantities and handover. One salesman still has only one active GatePass at a time.
+Different salesmen may each have a separate active GatePass on the same Route on the same day. They share Route visibility and Pre-orders on that Route (upcoming, due and overdue), but each GatePass keeps its own stock quantities and handover. One salesman still has only one active GatePass at a time.
 
 Every Route has a state. That Route state always determines place of supply for its Bills. Admin may update the state; the change applies to orders started afterward, while existing orders and historical Bills keep their snapshots.
 
@@ -103,7 +103,10 @@ One Owner can have two Customers. Example: Shree Dairy on Kolhapur and Shree Dai
 - Each Customer is billed at its own Route's rates. The Owner does not get one blended rate.
 - The same mobile number may be saved on more than one Customer. Today's rule “one phone, one Customer” must be removed.
 - Phone never identifies a Customer by itself. Selection and every mutation use Customer ID; search results show name, Route and address.
+- For WhatsApp, an Indian mobile number is normalized to `+91`. A missing or malformed number makes the notification skipped, but does not block saving the Customer or completing a financial action.
 - WhatsApp for each Customer goes to that Customer's number. The message must name the **Customer and Route**, so the Owner can tell two Customers apart.
+- A Customer may have an optional **GSTIN**. A valid GSTIN marks a registered business Customer; absence of GSTIN marks a normal (B2C) Customer for statutory messaging and e-invoice treatment.
+- **E-invoicing required** is a per-Customer Admin setting (`yes` | `no`), not a company-wide switch. Use it to decide whether that Customer's Bills need an IRN and signed QR before the final Bill PDF and Bill WhatsApp go out. Default: `no` when the Customer has no GSTIN; when a GSTIN is present, default to `yes`. Admin may override either way at any time (including `no` for a GSTIN Customer). A normal Customer without GSTIN may still receive a taxable Bill; IRN is simply not required for them. At migration, **E-invoicing required** for each Customer comes from the seeded Customer list (CA-guided); it is not inferred automatically at runtime.
 
 **Salesman adds a Customer.** It is saved on the Route of the active GatePass. The salesman does not pick a Route. If there is no active GatePass, they cannot add a Customer.
 
@@ -131,14 +134,14 @@ One Customer-facing Bill concept is used. Internally, a taxable or mixed Bill is
 
 The Bill row always contains the latest data. Bill History contains the original and every later version. Admin alone may edit a Bill, with a reason, until its GST period is filed:
 
-- Amount and statutory tax fields unchanged: add Bill History only.
+- Amount and statutory tax fields unchanged: add Bill History only. Still send the updated Bill on WhatsApp after commit (no Note or ledger entry).
 - Amount or statutory tax fields changed: save the Bill version and automatically create the necessary numbered Credit/Debit Note and ledger entry in the same transaction.
 - A same-total edit that changes HSN, taxable value, exemption, rate, tax split or place of supply still creates tax corrections.
 - After filing, the Bill is locked. Admin may create independent GST/Commercial Credit Notes or Debit Notes.
 
-Bill, GST Credit Note and Debit Note numbers are assigned inside the successful transaction. Once assigned, a number is never reused; cancelled documents retain their numbers.
+Bill, Credit Note and Debit Note numbers are assigned inside the successful transaction. Once assigned, a number is never reused; cancelled documents retain their numbers. Use separate configurable prefixes per financial year before the first document of that year, for example Bill `MB/26-27/000001`, Credit Note `MC/26-27/000001`, Debit Note `MD/26-27/000001` (`MB` = Motake Bill, `MC` = Motake Credit, `MD` = Motake Debit). GST and Commercial Credit Notes share the Credit Note series; classification is stored on the Note.
 
-At month end, Admin records the externally completed GSTR-1 filing through a form containing the filing month, filing date, reference/acknowledgement, filer and optional notes. Submitting that form locks direct Bill edits for the month. Later corrections use Notes.
+At month end, Admin records the externally completed **monthly** GSTR-1 filing through a form containing the filing month, filing date, reference/acknowledgement, filer and optional notes. Submitting that form locks direct Bill edits for that month. Later corrections use Notes.
 
 
 | Case                                                              | Price used                                                                                        |
@@ -164,9 +167,10 @@ All of this happens atomically when the order is placed. The order still deducts
 4. Staff enter the payment received. Zero is allowed. The whole Bill can stay Pending. Payment methods are cash, bank and UPI; bank/UPI may have a reference.
 5. If cash exceeds the amount required to clear Pending, staff choose: return the extra or keep it as Advance.
 6. Update the cached Balance in the same transaction.
-7. Determine which Bill and Receipt notifications this checkout requires.
-8. Only after Bill History, Notes, GST and ledger resolution succeeds, request the latest Bill notification through the decoupled notification boundary.
-9. If any Payment is kept, send a Receipt as well.
+7. Determine and snapshot which Bill and Receipt notifications this checkout requires, including their recipient, rendered text, attachment and business document version.
+8. Only after Bill History, Notes, GST and ledger resolution commits, hand the required notifications to the decoupled notification boundary. A committed requirement must not be lost if the application crashes before provider delivery; the exact durable-handoff architecture is deferred.
+9. If any Payment is kept, send a Receipt after the Bill. A Bill delivery failure does not prevent the Receipt attempt.
+10. If the Customer requires e-invoicing, stock, ledger, Balance and Payment still commit in this transaction. Only the **final** Bill PDF and Bill WhatsApp wait until Admin records IRN and signed QR (see §9.6). Receipt WhatsApp still sends when Payment is kept.
 
 Checkout is idempotent. A retry caused by poor connectivity returns the original result and never creates another Bill, stock deduction, Payment or message.
 
@@ -190,23 +194,28 @@ Checkout is idempotent. A retry caused by poor connectivity returns the original
 
 **When it is placed**
 
-- Store the route and the route price on the order.
+- Store the route, the route price and the Route state (place of supply) on the order at **placement**.
 - The scheduled date may be any future date, but not today.
 - Do **not** add the amount to pending.
 - Do **not** send the WhatsApp bill.
 - Do **not** record a payment.
 - Do **not** deduct GatePass quantity (same as today).
 
+**Visibility before fulfil**
+
+- Salesmen on the Route see future Pre-orders as **upcoming** (read-only). Fulfil stays disabled until the scheduled date.
+
 **When it is fulfilled**
 
+- Fulfil only **on or after** the scheduled date, never before.
 - Any salesman with an active GatePass on that Route may fulfil it; the Pre-order is not owned by a salesman or GatePass.
 - Admin may also fulfil it.
 - A salesman on Satara today cannot fulfill a Kolhapur pre-order, including the salesman who placed it if their GatePass today is not Kolhapur.
-- Use the price stored at placement. Do not re-price.
+- Use the price and Route state stored at placement. Do not re-price or re-derive place of supply at fulfil.
 - Use the effective GST classification/rate on the fulfilment date.
 - Then treat it like a Bill being raised: debit the total, record an optional cash/bank/UPI Payment, WhatsApp the Bill, and WhatsApp a Receipt if an amount was kept.
 - Fulfillment still does not deduct GatePass quantity.
-- All due and overdue Pre-orders stay visible, with a due/overdue banner, to salesmen on that Route until fulfilled or cancelled.
+- Upcoming, due and overdue Pre-orders stay visible on that Route until fulfilled or cancelled. Upcoming ones are read-only until the scheduled date; due and overdue show the appropriate banner.
 - Concurrent fulfilment is first-writer-wins and idempotent. Every other salesman then sees it as fulfilled.
 - Admin alone may cancel an unfulfilled Pre-order, with a reason.
 
@@ -276,7 +285,7 @@ Admin alone may cancel, with a reason. Cancellation never deletes or reverses a 
 
 Admin selects the reason:
 
-- **Voided before delivery:** reverse the remaining uncredited Bill value. Restore quantities to the originating GatePass only if that GatePass is still active; otherwise stock is unchanged.
+- **Voided before delivery:** reverse the remaining uncredited Bill value using a **GST Credit Note** when tax reversal is legally eligible, otherwise a **Commercial Credit Note** after the configured GST Credit Note deadline (see ADR-0002). Exempt-only remaining value reverses without tax. Restore quantities to the originating GatePass only if that GatePass is still active; otherwise stock is unchanged.
 - **Goods fully returned:** create the eligible GST Credit Note for remaining affected lines; GatePass stock is unchanged.
 - **Commercial write-off/discount:** create a Commercial Credit Note; GST remains payable.
 
@@ -286,7 +295,7 @@ Cancellation reverses only the remaining uncredited lines/value after previous C
 
 - Balance becomes ₹1,000 − ₹3,000 = −₹2,000 (credit), because the ₹2,000 payment stays.
 - Do not delete the payment.
-- Send no automatic "cancel" WhatsApp unless a later feature adds one. This feature does not.
+- Send the cancellation message. If cancellation generates a statutory Note for a GSTIN Customer, send that Note as well; do not also send the generic account-update message.
 
 A pre-order cancelled **before fulfill** does not change the balance, because it was never added.
 
@@ -300,7 +309,7 @@ A pre-order cancelled **before fulfill** does not change the balance, because it
 - A reduction intended for the next Bill is recorded now as a Commercial Credit Note, creating Advance that the next Bill consumes.
 - Admin may correct a Payment with a reason. Payment History keeps every version; only the delta is posted on the correction date. The disclosure shows previous amount, corrected amount, difference and reason; exact presentation is deferred.
 - Admin may record a Refund up to the available Advance using cash, bank or UPI, with an optional reference, only after that external Refund has actually completed. The app does not model a processing Refund.
-- Opening Balance is entered once. A mistake is corrected by an Opening Balance Adjustment with as-of date, source, reason and approver; it has no GST effect.
+- Opening Balance is seeded once per Customer at migration with a cutoff date and signed source data. Before go-live, a wrong seed may be replaced by direct database correction. After go-live, the append-only ledger rule applies: correct mistakes only through a controlled database script that appends a correcting ledger entry (no in-app Opening Balance Adjustment UI for now). No separate approval workflow; record source, reason and acting Admin.
 
 ### 8.7 What does not change the balance
 
@@ -318,11 +327,15 @@ A pre-order cancelled **before fulfill** does not change the balance, because it
 
 Send automatically. Staff do not have to press Send for the normal case. Staff can resend if a send failed or the customer did not get it.
 
-Ordering, billing, Payment and ledger code never call WhatsApp or a provider directly. They use the provider-agnostic notification boundary defined by ADR-0001. Provider choice and the notification component's package/service, queue, outbox, worker, persistence and retry architecture are deferred until implementation planning immediately before development.
+Ordering, billing, Payment and ledger code own the business trigger and provider-neutral content but never call WhatsApp or a provider directly. They use the transport-only notification boundary defined by ADR-0001. Provider choice and the notification component's package/service, queue, outbox, worker, persistence and retry architecture are deferred until implementation planning immediately before development.
 
 A failed send does **not** undo the order or the payment. The sale stands. Show that the message was not sent, and allow retry.
 
-If the Customer has no usable phone, skip the send and show why. The order or Payment still saves.
+Every WhatsApp text is bilingual: Marathi first, then English. This rule applies to the WhatsApp text only; Bill and Note PDFs keep their own document formats.
+
+The new features send required messages to all Customers without checking or recording WhatsApp consent. Consent tracking and opt-out are future scope.
+
+The automatic instruction snapshots the normalized recipient, rendered text, attachment and business document/version when the business action completes. If the Customer has no usable phone, mark the notification `skipped` and show why; the order or Payment still saves. Correcting the phone does not send automatically. Staff may then request a resend, which uses the corrected current phone while retaining the applicable immutable business document.
 
 ### 9.1 Bill message
 
@@ -333,7 +346,9 @@ Send when:
 
 Do not send when a pre-order is only placed.
 
-The message identifies the Customer, Route, Bill, line items, tax, final total and Balance **after the Bill debit but before any Payment recorded in the same checkout**. After a Bill edit, send only after Bill History, automatic Notes, GST and ledger changes have all committed; the Customer always receives the latest Bill.
+The message identifies the Customer, Route, Bill, line items, tax, final total and Balance **after the Bill debit but before any Payment recorded in the same checkout**. It contains concise bilingual text and the Bill PDF.
+
+After a Bill edit, send the updated Bill only after Bill History, automatic Notes, GST and ledger changes have all committed. Suppress any older Bill version still waiting to send. If an older version was already sent, it remains in history but cannot be manually resent; offer **Send latest Bill** instead.
 
 ### 9.2 Receipt message
 
@@ -341,7 +356,7 @@ Send when a payment is recorded and the amount **kept** is greater than zero. Th
 
 Do not send a Receipt when the kept Payment amount is zero.
 
-The message identifies the Customer, Route, amount kept, cash returned if any, and the final Pending or Advance **after the Payment**.
+The bilingual text identifies the Customer, Route, amount kept, cash returned if any, and the final Pending or Advance **after the Payment**. A Receipt has no PDF.
 
 **Example.** Pending was ₹10,000. Payment kept is ₹2,000. Receipt says ₹2,000 received, ₹8,000 still Pending, and the Customer name. It does not list milk vs curd as cleared.
 
@@ -349,11 +364,36 @@ Two messages can go out for one Book Now checkout: the bill, and the receipt if 
 
 ### 9.3 Account update and statutory Notes
 
-- Send an account-update message after a Bill edit, Credit/Debit Note, Payment adjustment or Refund changes the Balance.
+- Send a bilingual text-only account-update message after a Bill edit, Credit/Debit Note, Payment adjustment or Refund changes the Balance, except when cancellation sends its dedicated message.
 - A GSTIN Customer also receives the statutory Credit/Debit Note.
 - A Customer without GSTIN receives the account update only.
+- A statutory Note notification contains concise bilingual text and the Note PDF.
+- A Balance-changing Bill edit therefore sends the updated Bill and account update, plus the statutory Note for a GSTIN Customer.
 - Credit/Debit Notes and Bill History remain available to Admin/CA.
-- Bill cancellation sends no cancellation message.
+
+### 9.4 Cancellation
+
+Bill cancellation sends a dedicated bilingual message containing the Customer, Route, Bill number, cancellation reason, reversed amount and resulting Pending or Advance. It does not attach the cancelled Bill PDF and does not also send the generic account-update message. If cancellation generates a statutory Note for a GSTIN Customer, send that Note and its PDF separately.
+
+### 9.5 Status and resend
+
+- Show `pending`, `sent`, `failed` or `skipped` on the related Bill, Payment or Note. Admin can also see the Customer's notification history.
+- Retry failed delivery automatically. Exact retry timing and limits are deferred to implementation planning.
+- Admin may resend for any Customer. A salesman may resend only for a Customer visible through their Active GatePass Route.
+- Manual resend is available for `failed`, `skipped`, and `sent` messages the Customer reports not receiving. It deliberately creates another delivery without repeating any financial operation.
+- Do not manually duplicate a `pending` notification.
+- Receipts and Notes resend their original immutable document/version. An obsolete Bill version cannot be resent; send the latest Bill instead.
+
+### 9.6 E-invoicing (IRN and signed QR)
+
+Applies only when the Customer's **E-invoicing required** setting is `yes`. There is no org-wide e-invoice mode.
+
+- The sale (stock, Bill, ledger, Balance, Payment) commits immediately. Status **IRN pending** means the final Tax Invoice PDF and Bill WhatsApp are withheld until IRN data exists.
+- Admin downloads a clearly marked **Draft — IRN pending** Bill (and any export needed for manual entry on the government e-invoice portal). It must not be presented to the Customer as the final Tax Invoice.
+- Admin completes portal reporting outside the app, then enters **IRN**, acknowledgement number, acknowledgement date and **signed QR** (data and/or image). Only Admin may enter or update IRN fields. Provide an **IRN pending** worklist.
+- Before IRN is recorded, Admin may correct the Bill and regenerate the draft/export, with Bill History preserved. After IRN is recorded, direct Bill edits are locked; corrections use Credit/Debit Notes or the legally permitted portal cancellation flow.
+- **Cancellation on the portal** is manual. Admin performs the allowed portal action first and records its acknowledgement in the app. After the permitted cancellation window, use Notes instead of treating the IRN Bill as directly editable.
+- When **E-invoicing required** is `no`, checkout and WhatsApp follow the normal Bill flow with no IRN step.
 
 ---
 
@@ -408,8 +448,8 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 15. **Second GatePass the same day.** After the first is handed over, Admin allots another and may pick a different Route. The new pass shows that Route's Customers and prices. Previous orders keep their snapshots.
 16. **Cancel after a partial Payment.** Admin reverses the remaining uncredited Bill value. The Payment stays and the Balance can become Advance.
 17. **Cancel an unfulfilled Pre-order.** Admin cancels with a reason. Balance stays unchanged and no Bill was sent.
-18. **WhatsApp fails.** Order and Payment remain. Screen shows not sent. Staff can resend without duplicating financial records.
-19. **No phone on the Customer.** Order and Payment remain. Nothing is sent. Screen explains why.
+18. **WhatsApp fails.** Order and Payment remain. Screen shows failed. Delivery retries automatically, and authorized staff can resend without duplicating financial records.
+19. **No phone on the Customer.** Order and Payment remain. The notification is skipped and the screen explains why. After correcting the phone, authorized staff may resend.
 20. **Salesman cannot override a price.** The bill uses the route list only.
 21. **Duplicate checkout.** A retry returns the original Bill and Payment; nothing is posted twice.
 22. **Concurrent Pre-order fulfilment.** The first valid fulfilment wins; everyone else sees fulfilled.
@@ -437,11 +477,13 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 - Clearing a chosen old bill, or fixed installments
 - One combined Balance for an Owner across Customers
 - SMS (WhatsApp only)
+- Email
+- WhatsApp consent tracking or opt-out
 - Due reminders and pre-order alert popups
-- A WhatsApp message for a cancellation
 - Money fields on the GatePass
 - Automatic stock restoration after the originating GatePass is no longer active
-- E-invoicing implementation until applicability is confirmed
+- Automatic e-invoice portal integration (manual download + Admin IRN entry only in this feature)
+- Composition GST scheme (product assumes Regular GST; validate separately if ever needed)
 
 ---
 
@@ -459,14 +501,21 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 - Cash above pending is either returned or kept as advance, by a choice on that payment.
 - Bill WhatsApp goes out on Book Now place and on pre-order fulfill. Receipt WhatsApp goes out when cash is kept, including a payment with no new sale.
 - A failed or skipped WhatsApp send does not roll back the order or the payment.
+- Required WhatsApp text is Marathi first and English second; Bill and statutory Note PDFs keep their own formats.
+- Bill precedes Receipt, but Bill delivery failure does not block the Receipt attempt.
+- Staff can see notification status and resend within their Customer permissions without repeating financial actions; obsolete Bill versions are never resent.
+- Bill cancellation sends its dedicated message and any applicable statutory Note, but no generic account-update message.
 - All money uses integer paise; Route prices exclude GST.
 - Bill lines snapshot effective HSN, exemption, GST rate, tax components and Route state.
 - Bill History contains every version; amount/statutory edits create linked Notes and ledger entries atomically.
 - GSTIN Customers receive statutory Notes; other Customers receive account updates.
-- Pre-orders are Route-owned, support any future date, remain visible when overdue and can be fulfilled by any active salesman on that Route or Admin.
+- Pre-orders are Route-owned, support any future date, appear as upcoming on the Route before they are due, and can be fulfilled on or after the scheduled date by any active salesman on that Route or Admin.
 - Cancellation is Admin-only, preserves Payments, reverses only remaining value and restores stock only when the originating GatePass remains active.
 - Duplicate checkout, fulfilment, Payment, edit, Note, Refund and retry operations cannot double-post.
-- E-invoicing/IRN applicability is confirmed before implementation begins.
+- Per-Customer **E-invoicing required** (seeded list + Admin override) controls IRN pending vs final Bill/WhatsApp.
+- History-only Bill edits still send the updated Bill on WhatsApp.
+- Pre-orders lock Route state (place of supply) at placement; GST rate at fulfil.
+- IRN pending Bills allow draft download, Admin IRN/QR entry, draft correction before IRN, and lock direct edits after IRN.
 - Route state always determines the tax split and is snapshotted when the order starts; later Route-state edits affect future orders only.
 - Route prices are positive and server-snapshotted when items enter an order; later price-list edits never reprice it.
 - GSTR-1 filing submission locks direct Bill edits for its month.

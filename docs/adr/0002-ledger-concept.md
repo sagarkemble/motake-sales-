@@ -35,8 +35,8 @@ A Bill can be edited after it is raised — **by admin only, with a reason, unti
 - Each history row keeps the full items and amounts of that version, who made it, when, and the reason.
 - The Bill's original date, time and number never change.
 - At month end, Admin records the externally completed GSTR-1 filing using a form with month, filing date, reference/acknowledgement, filer and optional notes. Submission locks Bills in that month; later corrections use Credit/Debit Notes.
-- **Edit that changes neither amount nor statutory tax facts** (e.g. a non-statutory description at the same price): Bill + History only. No Note or ledger entry.
-- **Edit that changes the amount**: the system automatically creates a linked **Debit Note** (amount up) or **Credit Note** (amount down) for the difference, using the admin's required edit reason.
+- **Edit that changes neither amount nor statutory tax facts** (e.g. a non-statutory description at the same price): Bill + History only. No Note or ledger entry. Still send the updated Bill on WhatsApp after commit.
+- **Edit that changes the amount**: the system automatically creates a linked **Debit Note** (amount up) or **Credit Note** (amount down) for the difference, using the admin's required edit reason. Amount **down** uses a **GST Credit Note** when tax reversal is legally eligible under the configured deadline; otherwise a **Commercial Credit Note**.
 - **Edit with the same total but changed statutory facts** (HSN, taxable value, exemption, GST rate, tax split or place of supply): the system automatically creates the required paired tax-correction Notes. Net Balance may stay unchanged while GST changes.
 - The Bill, Bill History, Notes, GST effects and ledger entries are saved together. Only after they commit may the latest Bill be sent.
 - A cancelled Bill cannot be edited. A Bill cannot be edited below ₹0.
@@ -75,14 +75,14 @@ Rules:
 - If the same Bill or ledger entry already has another Credit/Debit Note, the app warns that the change may be counted twice. Admin can ignore the warning and continue.
 - A **GST Credit Note** reverses the applicable tax and reduces Motake's GST liability.
 - A **Commercial Credit Note** (the “without GST” option) reduces the Customer's Balance but not Motake's GST liability; Motake bears the tax already paid.
-- Tax-adjustment deadline: a GST Credit Note must be reported by 30 November after the end of the Bill's financial year (or the annual-return date, if earlier). After that, a Credit Note may still be issued but cannot reduce GST liability, so the app treats it as a Commercial Credit Note. Debit Notes have no equivalent limit. Verify filing details with the client's CA.
+- **GST Credit Note deadline:** Admin configures the CA-confirmed reporting deadline **per financial year** (default guidance: 30 November after the Bill's financial year end, or the annual-return date if earlier). Changes are audited. After that date for a Bill, automatic and manual reductions that would reverse GST must issue a **Commercial Credit Note** instead (Customer Balance only; GST already paid stays payable). Debit Notes have no equivalent limit. Initial deadline values come from the CA before go-live.
 - A reduction on the next Bill is recorded now as a Commercial Credit Note, creating Advance. That Advance is then applied to the next Bill; an old adjustment is never disguised as a discount on a new taxable sale.
 
 ## Entry types
 
 | Entry | Side | Created when |
 | --- | --- | --- |
-| Opening balance | Debit (owed) or Credit (advance) | Seeded from client data, or set once by admin for a new Customer |
+| Opening balance | Debit (owed) or Credit (advance) | Seeded at migration with cutoff date and signed source; before go-live wrong seed may be replaced by direct DB correction; after go-live corrections append via controlled DB script only |
 | Bill | Debit | Book Now placed; Pre-order fulfilled |
 | Payment | Credit | Cash, bank or UPI Payment kept (at checkout or with no purchase). For cash, only the amount **kept** is entered; change handed back is never an entry |
 | Credit Note | Credit | System creates one from an admin Bill reduction, or admin raises one independently |
@@ -146,20 +146,20 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 ### Pre-order
 
-13. **Placed.** Linked to the route, not to a GatePass or salesman. Price locked on the order. No ledger entry, no Balance change, no message.
+13. **Placed.** Linked to the route, not to a GatePass or salesman. Route price and Route state (place of supply) locked at placement. No ledger entry, no Balance change, no message.
 14. **Cancelled before fulfil.** Admin cancels with a reason. No ledger entry (nothing was billed).
 15a. **Fulfilled by one of several salesmen on the route.** Any salesman with an Active GatePass on that route, on or after the scheduled date, can fulfil. Once one does, every other salesman on the route sees it as fulfilled.
-15. **Fulfilled after a price or GST-rate change.** Uses the locked Route price but the GST rate effective on the fulfilment/Bill date. Bill entry is dated at fulfilment.
+15. **Fulfilled after a price, Route-state or GST-rate change.** Uses the locked Route price and locked Route state from placement; GST rate effective on the fulfilment/Bill date. Bill entry is dated at fulfilment.
 16. **Fulfilled by admin.** Same as checkout. Payment, if any, carries no GatePass.
 
 ### After the Bill (admin only)
 
-17. **Voided before delivery.** Admin cancels with reason → system reverses the remaining uncredited Bill value. If the originating GatePass is still active, its quantities are restored; otherwise stock is unchanged. No cancellation message.
+17. **Voided before delivery.** Admin cancels with reason → system reverses the remaining uncredited Bill value. If the originating GatePass is still active, its quantities are restored; otherwise stock is unchanged. Send the dedicated cancellation message and any applicable statutory Note, but no generic account-update message.
 18. **Goods fully returned.** Admin creates the eligible GST Credit Note for remaining affected lines. GatePass stock is unchanged.
 18a. **Commercial write-off / discount.** Admin creates a Commercial Credit Note; Balance decreases but GST remains payable.
 18b. **Cancellation after part Payment.** The Payment stays. Reversing the remaining Bill value can make the Balance an Advance.
 19. **Bill edited, amount up.** Wrong qty, ₹10,000 → ₹20,000 → system creates Debit Note +10,000 linked to the Bill → Balance +₹10,000 → account-update message.
-19a. **Bill edited, amount and statutory facts unchanged.** Non-statutory description corrected at the same price/tax → History only. No ledger entry.
+19a. **Bill edited, amount and statutory facts unchanged.** Non-statutory description corrected at the same price/tax → History only. No ledger entry. Updated Bill on WhatsApp after commit.
 19b. **Bill edited, total unchanged but tax facts changed.** Paired tax-correction Notes reverse the old statutory line and apply the new one. Net Balance may remain unchanged.
 20. **Edited twice.** ₹10,000 → ₹20,000 (automatic Debit Note +10,000) → ₹18,000 (automatic Credit Note −2,000). Bill shows ₹18,000; history has three rows.
 21. **Goods returned / damaged after full payment.** Paid ₹10,000 (₹0), ₹2,000 returned → admin raises Credit Note −2,000 → −₹2,000 advance → account-update message. Then either:
@@ -190,12 +190,12 @@ Placing a Pre-order, editing a route price, moving a Customer, GatePass allot / 
 - There is no Customer portal, downloadable document view or “Updated Bill View.”
 - **Bill** — when a Bill is raised (Book Now placed, Pre-order fulfilled).
 - **Receipt** — when a Payment with amount kept > ₹0 is recorded.
-- **Account update** — WhatsApp message when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance.
-- After a Bill edit, send the latest Bill only after Bill History, Notes, GST effects and ledger entries commit.
+- **Account update** — WhatsApp message when a Bill edit, Credit / Debit Note, Payment adjustment or Refund changes the Balance; shows the change, reason and new Balance. Cancellation uses its dedicated message instead.
+- After a Bill edit, send the latest Bill only after Bill History, Notes, GST effects and ledger entries commit. A Balance-changing edit also sends the account update and, for a GSTIN Customer, the statutory Note.
 - A Bill message shows Balance after the Bill debit but before any same-checkout Payment. Its Receipt shows the final Balance after Payment.
 - A Customer with GSTIN also receives the statutory Credit/Debit Note. A Customer without GSTIN receives the account update only.
 - Credit/Debit Notes and Bill History remain available to Admin/CA.
-- Bill cancellation sends no separate cancellation message. If it creates a statutory Note for a GSTIN Customer, that Note is still delivered.
+- Bill cancellation sends a dedicated message with the reason, reversed amount and resulting Balance. If it creates a statutory Note for a GSTIN Customer, that Note is also delivered.
 
 ```
 Customer buys items worth ₹10,000
@@ -225,9 +225,17 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 - Route prices must be greater than zero. The server snapshots the Route price when an item enters an order; later price-list edits never reprice that order and the client never supplies a price.
 - Money and tax calculations use whole paise internally (integer minor units), never floating-point rupees. Use half-up rounding: each line's tax to paise and final Bill to the nearest rupee, with a visible round-off component. Notes reverse the original line's exact remaining paise.
 - Every displayed money amount has exactly two decimal places (for example, `₹1,234.00`).
-- Numbering: one server-generated series per financial year, sequential and unique, max 16 characters (e.g. `MTK/26-27/000123`). Credit Notes and Debit Notes each have their own series. Numbers are assigned inside the successful transaction; once assigned they are never reused, and cancelled documents retain them.
+- **Regular GST** is assumed (not Composition). Numbering: separate server-generated series per document type and financial year, sequential and unique, max 16 characters (e.g. Bill `MB/26-27/000001`, Credit Note `MC/26-27/000001`, Debit Note `MD/26-27/000001`). Prefixes are configurable before the first document of the year. GST and Commercial Credit Notes share the Credit Note series. Numbers are assigned inside the successful transaction; once assigned they are never reused, and cancelled documents retain them.
 - After a GSTR-1 filing form locks its month, Admin may still create an eligible GST Credit Note, a Commercial Credit Note, or a Debit Note independently; these do not rewrite the filed Bill.
 
-## Open questions
+## E-invoicing (IRN)
 
-- E-invoicing: **blocking decision before implementation**. Confirm whether Motake's turnover and B2B sales require IRN/QR generation.
+- **Per Customer**, Admin sets **E-invoicing required** (`yes` | `no`). GSTIN marks a registered business Customer; absence of GSTIN marks normal B2C. IRN and signed QR are required before final Bill PDF/WhatsApp only when that Customer's setting is `yes`. Admin may override either way, including `no` for a GSTIN Customer. Normal Customers without GSTIN do not require IRN even on taxable Bills. Seeding supplies the initial value per Customer from a CA-guided list.
+- Sale commits immediately (ledger, Balance, Payment). IRN pending withholds final Bill delivery until Admin records IRN, acknowledgement fields and signed QR after manual portal reporting. Draft Bill download and pre-IRN correction are allowed; after IRN, direct Bill edits are locked.
+- Portal cancellation remains manual; record portal acknowledgement. End-to-end product rules live in `docs/route-pricing-and-udhar.md` §9.6.
+
+## Before go-live (CA / seeding)
+
+- **Regular GST** (not Composition): obtain written CA confirmation.
+- **E-invoicing required** per Customer: seeded from the Customer migration list (CA says which GSTIN Customers need IRN).
+- **GST Credit Note deadline** per financial year: configurable in admin; seed initial values from the CA.
