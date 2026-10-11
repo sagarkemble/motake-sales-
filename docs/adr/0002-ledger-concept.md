@@ -75,7 +75,7 @@ Rules:
 - If the same Bill or ledger entry already has another Credit/Debit Note, the app warns that the change may be counted twice. Admin can ignore the warning and continue.
 - A **GST Credit Note** reverses the applicable tax and reduces Motake's GST liability.
 - A **Commercial Credit Note** (the “without GST” option) reduces the Customer's Balance but not Motake's GST liability; Motake bears the tax already paid.
-- **GST Credit Note deadline:** Admin configures the CA-confirmed reporting deadline **per financial year** (default guidance: 30 November after the Bill's financial year end, or the annual-return date if earlier). Changes are audited. After that date for a Bill, automatic and manual reductions that would reverse GST must issue a **Commercial Credit Note** instead (Customer Balance only; GST already paid stays payable). Debit Notes have no equivalent limit. Initial deadline values come from the CA before go-live.
+- **GST Credit Note deadline:** **CA confirmed.** Motake admin settings hold one deadline **per financial year** (typically set once per year; may be updated the next year if the CA advises). Default guidance until configured: 30 November after the Bill's financial year end, or the annual-return date if earlier. Changes are audited. After that date for a Bill, automatic and manual reductions that would reverse GST must issue a **Commercial Credit Note** instead (Customer Balance only; GST already paid stays payable). Debit Notes have no equivalent deadline.
 - A reduction on the next Bill is recorded now as a Commercial Credit Note, creating Advance. That Advance is then applied to the next Bill; an old adjustment is never disguised as a discount on a new taxable sale.
 
 ## Entry types
@@ -219,7 +219,8 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 - **Intra-state and inter-state** are both supported. The snapshotted Route state always determines place of supply:
   - Route in Motake's state (Maharashtra) → **CGST + SGST** (rate split in half).
   - Route in another state → **IGST** (full rate).
-- Motake's GSTIN and state are held in admin settings. Admin may update a Route's state; orders already started and historical Bills retain their snapshots. A Customer has an optional GSTIN; it is printed on Bills when present.
+- **Seller (CA-confirmed master data):** MOTAKE MILK AND MILK PRODUCT; GAT NO 6, MOTAKE MALA, NANDANI ROAD, JAMBHALI-416121; GSTIN **27EHCPP4509Q1ZP** (Maharashtra); contact phone 9822418224; email akashpatil8090@gmail.com. Held in admin settings for Bills and Notes; update only when the business re-registers or the CA instructs a change.
+- Admin may update a Route's state; orders already started and historical Bills retain their snapshots. A Customer has an optional GSTIN; it is printed on Bills when present.
 - Each **variety** has effective-dated HSN, exemption status and GST rates, company-wide (not per Route). Effective periods cannot overlap. Bill and Note lines snapshot the effective facts.
 - **Route prices exclude tax.** The Bill adds GST per line on top of the route price. The Bill total, Pending and Payments are all tax-inclusive.
 - Route prices must be greater than zero. The server snapshots the Route price when an item enters an order; later price-list edits never reprice that order and the client never supplies a price.
@@ -232,10 +233,30 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 
 - **Per Customer**, Admin sets **E-invoicing required** (`yes` | `no`). GSTIN marks a registered business Customer; absence of GSTIN marks normal B2C. IRN and signed QR are required before final Bill PDF/WhatsApp only when that Customer's setting is `yes`. Admin may override either way, including `no` for a GSTIN Customer. Normal Customers without GSTIN do not require IRN even on taxable Bills. Seeding supplies the initial value per Customer from a CA-guided list.
 - Sale commits immediately (ledger, Balance, Payment). IRN pending withholds final Bill delivery until Admin records IRN, acknowledgement fields and signed QR after manual portal reporting. Draft Bill download and pre-IRN correction are allowed; after IRN, direct Bill edits are locked.
-- Portal cancellation remains manual; record portal acknowledgement. End-to-end product rules live in `docs/route-pricing-and-udhar.md` §9.6.
+- After IRN is recorded, **Credit/Debit Notes only** (plus the locked product rules) for value or tax corrections; adhere to the configured Credit Note deadline and normal GST timelines. Portal cancellation remains manual; record portal acknowledgement. Manual government portal reporting plus Admin IRN entry in the app is **CA accepted**. End-to-end product rules live in `docs/route-pricing-and-udhar.md` §9.6.
 
-## Before go-live (CA / seeding)
+## CA confirmation (statutory product rules)
 
-- **Regular GST** (not Composition): obtain written CA confirmation.
-- **E-invoicing required** per Customer: seeded from the Customer migration list (CA says which GSTIN Customers need IRN).
-- **GST Credit Note deadline** per financial year: configurable in admin; seed initial values from the CA.
+**Status: confirmed by CA** for the rules below. Implementation still needs seeded Customers, varieties, Routes, and opening balances.
+
+| Area | CA answer |
+| --- | --- |
+| GST scheme | **Regular GST** (not Composition) |
+| E-invoicing / IRN | Per locked product rules; e-invoicing applies where required; **Admin may mark individual GSTIN Customers as not requiring e-invoicing**; manual portal + Admin IRN entry accepted |
+| Place of supply | Route state drives CGST+SGST vs IGST; inter-state allowed; Pre-order locks Route state at placement |
+| Product taxation | HSN/rates/exemption as seeded; Tax Invoice vs Bill of Supply; tax-exclusive route prices, tax-inclusive totals, half-up rounding |
+| Credit/Debit Notes | GST vs Commercial rules as documented; **Credit Note deadline configurable per FY in admin settings**; shared Credit Note series; partial/multiple Notes allowed |
+| GSTR-1 | **Monthly** filing; month lock after filing form; Bill text-only edits may WhatsApp updated Bill |
+| Cancellations / voids | GST/Commercial Note paths; cancellation messaging; Payments preserved |
+| B2B / B2C | Optional Customer GSTIN; B2C without IRN; statutory Note for GSTIN, account update otherwise |
+| Opening balance | Per-Customer migration at cutoff with signed source |
+| Numbering | Separate Bill / Credit / Debit series per FY (`MB` / `MC` / `MD` pattern) |
+| Payments / refunds | Manual cash/bank/UPI; Payment adjustment entries; Refund after payout |
+| WhatsApp | Customer copies acceptable; consent/opt-out not in app (operational risk accepted) |
+| Law-specific extras | **No** dairy/industry-specific GST rules beyond standard GST; e-invoice applicability handled **per Customer** (not a separate turnover toggle in app); Credit Note deadline **configurable**; GSTR-1 **monthly** |
+
+## Remaining before build (data, not CA)
+
+- Seed **Customer** list including **E-invoicing required** per row.
+- Seed varieties (HSN, rates), Routes (state), route prices, opening balances.
+- Set **GST Credit Note deadline** in admin for the active financial year(s).

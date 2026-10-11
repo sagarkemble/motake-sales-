@@ -7,10 +7,11 @@
 ## Authority and terminology
 
 1. `CONTEXT.md` owns domain terminology.
-2. ADR-0002 owns Balance, ledger, Bill, Bill History, Payment, Credit/Debit Note, Refund, GST and money-storage rules.
-3. This document owns Route, GatePass, Customer visibility, ordering and end-to-end product behaviour.
-4. **Customer** is the canonical term; do not use “shop” in code or product copy.
-5. Motake operates under **Regular GST** (not Composition; CA written confirmation before go-live). E-invoicing is configured **per Customer** from the seeded Customer list, not org-wide.
+2. ADR-0003 owns the decision that Route replaces the company-wide variety price and the shared Customer list.
+3. ADR-0002 owns Balance, ledger, Bill, Bill History, Payment, Credit/Debit Note, Refund, GST, e-invoicing and money-storage rules.
+4. This document owns Route, GatePass, Customer visibility, ordering and end-to-end product behaviour.
+5. **Customer** is the canonical term; do not use “shop” in code or product copy.
+6. Motake operates under **Regular GST** (not Composition; **CA confirmed**). E-invoicing is configured **per Customer** from the seeded Customer list, not org-wide. Statutory seller details and the CA checklist live in ADR-0002.
 
 This feature adds:
 

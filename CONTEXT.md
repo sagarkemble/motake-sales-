@@ -95,6 +95,13 @@ An admin fix to a wrongly recorded Payment amount (miscount, typo), kept with th
 **GST**:
 Tax added on top of the Route price per Bill line. Actual delivery state determines CGST + SGST versus IGST; the Route supplies the default state. Bills, Pending and Payments are tax-inclusive.
 
+**E-invoicing required**:
+A per-Customer Admin setting. When yes, that Customer's Bills need an IRN and signed QR before the final Bill is delivered.
+_Avoid_: org-wide e-invoice mode
+
+**IRN pending**:
+A Bill whose sale has committed but whose final Tax Invoice PDF and Bill WhatsApp wait for Admin-recorded IRN and signed QR.
+
 **Paisa**:
 The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise. Rupee decimals are only a display format.
 
