@@ -68,7 +68,7 @@ Different salesmen may each have a separate active GatePass on the same Route on
 
 Every Route has a state. That Route state always determines place of supply for its Bills. Admin may update the state; the change applies to orders started afterward, while existing orders and historical Bills keep their snapshots.
 
-A used Route is never hard-deleted. Admin may deactivate it only when it has no active GatePass and no open Pre-order. Historical records continue referencing it.
+A Route is never physically deleted. **Status** (`active` / `inactive`) is an Admin toggle and does not use the GatePass / Pre-order gates. **Soft-delete** (`deleted`) hides it from normal lists and allotment; Admin may set it only when the Route has no active GatePass and no open Pre-order. Customers may stay on a soft-deleted Route. Historical records continue referencing it. Admin may clear the soft-delete flag.
 
 ---
 

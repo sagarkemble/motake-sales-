@@ -12,7 +12,7 @@ Once a financial transaction commits, any notification required by its business 
 
 - **Web** (`apps/web`, PM2 on the VPS) calls the main API only. It never calls the notification service or a messaging provider.
 - **Main API** (`apps/api`, PM2 on the same VPS) runs business operations against **Supabase Postgres** via **Drizzle** (`packages/database`). Supabase Auth and existing tRPC routes stay on this app. The API holds no WhatsApp credentials.
-- **Notification service** (`apps/notification`, Docker on the same VPS) exposes tRPC for internal enqueue and status operations, serves provider webhooks (HTTP alongside tRPC), and runs **Inngest** for durable step execution, automatic retry and provider-agnostic orchestration. It uses the same Supabase database through Drizzle for notification tables.
+- **Notification service** (`apps/notification`, one Docker container on the same KVM) exposes tRPC for internal enqueue and status operations, serves provider webhooks (HTTP alongside tRPC), and runs **Inngest in that same container** for durable step execution, automatic retry and provider-agnostic orchestration. It uses the same Supabase database through Drizzle for notification tables.
 - **Database** is Supabase Postgres, not a Postgres container on the VPS. Migrations live in `packages/database` and apply to the shared project both apps use.
 
 ## Request flow
@@ -39,7 +39,7 @@ Handoff durability: the notification tRPC handler must **persist before it ackno
 ## Deployment
 
 - **PM2**: `apps/web`, `apps/api` (unchanged pattern).
-- **Docker**: `apps/notification` (and Inngest when self-hosted on the VPS, if not using Inngest Cloud).
+- **Docker**: one `apps/notification` container on the KVM, including the self-hosted Inngest process. No Inngest Cloud.
 - **Caddy**: routes public web and API domains to PM2; routes WhatsApp webhook paths to the notification container on localhost.
 - Changes to `packages/trpc` notification procedures or `packages/services` notification logic require rebuilding and redeploying the notification container; the main API redeploys when delegation or shared procedure types change. Web redeploys only when the app router or web-facing packages change.
 
