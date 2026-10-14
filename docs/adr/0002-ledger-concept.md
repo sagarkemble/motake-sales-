@@ -146,10 +146,10 @@ Each line: what happens → ledger entries → resulting Balance → messages. B
 
 ### Pre-order
 
-13. **Placed.** Linked to the route, not to a GatePass or salesman. Route price and Route state (place of supply) locked at placement. No ledger entry, no Balance change, no message.
+13. **Placed.** Linked to the route, not to a GatePass or salesman. Route price, Route state (place of supply), HSN, exemption and GST rate locked at placement. No ledger entry, no Balance change, no message.
 14. **Cancelled before fulfil.** Admin cancels with a reason. No ledger entry (nothing was billed).
 15a. **Fulfilled by one of several salesmen on the route.** Any salesman with an Active GatePass on that route, on or after the scheduled date, can fulfil. Once one does, every other salesman on the route sees it as fulfilled.
-15. **Fulfilled after a price, Route-state or GST-rate change.** Uses the locked Route price and locked Route state from placement; GST rate effective on the fulfilment/Bill date. Bill entry is dated at fulfilment.
+15. **Fulfilled after a price, Route-state or GST-rate change.** Uses the locked Route price, Route state, HSN, exemption and GST rate from placement. Fulfil does not re-price or re-tax. Bill entry is dated at fulfilment.
 16. **Fulfilled by admin.** Same as checkout. Payment, if any, carries no GatePass.
 
 ### After the Bill (admin only)
@@ -221,7 +221,7 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
   - Route in another state → **IGST** (full rate).
 - **Seller (CA-confirmed master data):** MOTAKE MILK AND MILK PRODUCT; GAT NO 6, MOTAKE MALA, NANDANI ROAD, JAMBHALI-416121; GSTIN **27EHCPP4509Q1ZP** (Maharashtra); contact phone 9822418224; email akashpatil8090@gmail.com. Held in admin settings for Bills and Notes; update only when the business re-registers or the CA instructs a change.
 - Admin may update a Route's state; orders already started and historical Bills retain their snapshots. A Customer has an optional GSTIN; it is printed on Bills when present.
-- Each **variety** has effective-dated HSN, exemption status and GST rates, company-wide (not per Route). Effective periods cannot overlap. Bill and Note lines snapshot the effective facts.
+- Each **variety** has effective-dated HSN, exemption status and GST rates, company-wide (not per Route). Effective periods cannot overlap. Bill and Note lines snapshot the facts effective for that event. For a Pre-order that event is **placement**; fulfil reuses the snapshot.
 - **Route prices exclude tax.** The Bill adds GST per line on top of the route price. The Bill total, Pending and Payments are all tax-inclusive.
 - Route prices must be greater than zero. The server snapshots the Route price when an item enters an order; later price-list edits never reprice that order and the client never supplies a price.
 - Money and tax calculations use whole paise internally (integer minor units), never floating-point rupees. Use half-up rounding: each line's tax to paise and final Bill to the nearest rupee, with a visible round-off component. Notes reverse the original line's exact remaining paise.
@@ -244,6 +244,7 @@ WhatsApp: Bill + Receipt (₹5,000 received, ₹5,000 pending)
 | GST scheme | **Regular GST** (not Composition) |
 | E-invoicing / IRN | Per locked product rules; e-invoicing applies where required; **Admin may mark individual GSTIN Customers as not requiring e-invoicing**; manual portal + Admin IRN entry accepted |
 | Place of supply | Route state drives CGST+SGST vs IGST; inter-state allowed; Pre-order locks Route state at placement |
+| Pre-order GST rate | **Product amendment:** HSN, exemption and GST rate snapshot at placement, not fulfilment. Bill still dated at fulfilment. Earlier draft used rate-at-fulfil; CA should re-confirm if they object. |
 | Product taxation | HSN/rates/exemption as seeded; Tax Invoice vs Bill of Supply; tax-exclusive route prices, tax-inclusive totals, half-up rounding |
 | Credit/Debit Notes | GST vs Commercial rules as documented; **Credit Note deadline configurable per FY in admin settings**; shared Credit Note series; partial/multiple Notes allowed |
 | GSTR-1 | **Monthly** filing; month lock after filing form; Bill text-only edits may WhatsApp updated Bill |

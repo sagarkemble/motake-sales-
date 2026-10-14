@@ -1,7 +1,7 @@
 # Route pricing, Customer Balance, GST, and WhatsApp Bill / Receipt
 
 **Audience:** developer implementing this feature.
-**Status:** product rules from discussion. Build to this document subject to the authority order below.
+**Status:** frozen 2026-10-12 with `docs/hld.md`. Product rules from discussion. Build to this document subject to the authority order below.
 **App today:** one price per variety for the whole company. Customers are one shared list. Orders store the price used at billing. There is no Route, no Customer Balance, and no WhatsApp.
 
 ## Authority and terminology
@@ -85,7 +85,7 @@ Admin sets a price for each variety **on each route**. The single company-wide v
 - A variety with no price on that route cannot be added to the cart. Show a clear reason: this route has no price yet. Do not fall back to another route's price.
 - A new variety is not sellable on a route until admin enters that route's price. Creating the variety does not copy a price onto every route.
 - The server snapshots the Route price when an item first enters an order. Later price-list edits do not reprice that order, including while its cart/draft remains open. The client never supplies or overrides the price.
-- Each variety has effective-dated HSN, exemption status and GST rates. Effective periods cannot overlap. Bill and Note lines snapshot the facts effective for that event.
+- Each variety has effective-dated HSN, exemption status and GST rates. Effective periods cannot overlap. Bill and Note lines snapshot the facts effective for that event. For a Pre-order that event is placement; fulfil reuses the snapshot.
 - Money is stored as integer paise and displayed with two decimal places. Never calculate money with floating-point rupees.
 - Use half-up rounding: each line's tax is rounded to paise and the final Bill to the nearest rupee, with a visible round-off component. Credit/Debit Notes reverse the original line's exact remaining paise so repeated partial Notes cannot drift.
 
@@ -148,7 +148,7 @@ At month end, Admin records the externally completed **monthly** GSTR-1 filing t
 | Case                                                              | Price used                                                                                        |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Book Now placed today on a Kolhapur GatePass                      | Kolhapur price at the time of placing                                                             |
-| Pre-order placed today on a Kolhapur GatePass, fulfilled tomorrow | Kolhapur price from the day it was **placed**, even if admin changed the Kolhapur price overnight |
+| Pre-order placed today on a Kolhapur GatePass, fulfilled tomorrow | Kolhapur price and GST from the day it was **placed**, even if admin changed the price or GST overnight |
 | Customer moved from Kolhapur to Satara after an order was placed  | That order stays at the old price. The next order uses Satara                                     |
 | Salesman tries to bill a variety with no price on this route      | Sale of that variety is blocked                                                                   |
 | Two Customers, one Owner, two Routes                              | Each Bill uses the Route of the Customer being billed                                             |
@@ -195,7 +195,7 @@ Checkout is idempotent. A retry caused by poor connectivity returns the original
 
 **When it is placed**
 
-- Store the route, the route price and the Route state (place of supply) on the order at **placement**.
+- Store the route, the route price, the Route state (place of supply), and the effective HSN, exemption and GST rate on the order at **placement**.
 - The scheduled date may be any future date, but not today.
 - Do **not** add the amount to pending.
 - Do **not** send the WhatsApp bill.
@@ -212,8 +212,7 @@ Checkout is idempotent. A retry caused by poor connectivity returns the original
 - Any salesman with an active GatePass on that Route may fulfil it; the Pre-order is not owned by a salesman or GatePass.
 - Admin may also fulfil it.
 - A salesman on Satara today cannot fulfill a Kolhapur pre-order, including the salesman who placed it if their GatePass today is not Kolhapur.
-- Use the price and Route state stored at placement. Do not re-price or re-derive place of supply at fulfil.
-- Use the effective GST classification/rate on the fulfilment date.
+- Use the price, Route state, HSN, exemption and GST rate stored at placement. Do not re-price, re-derive place of supply, or re-tax at fulfil.
 - Then treat it like a Bill being raised: debit the total, record an optional cash/bank/UPI Payment, WhatsApp the Bill, and WhatsApp a Receipt if an amount was kept.
 - Fulfillment still does not deduct GatePass quantity.
 - Upcoming, due and overdue Pre-orders stay visible on that Route until fulfilled or cancelled. Upcoming ones are read-only until the scheduled date; due and overdue show the appropriate banner.
@@ -222,7 +221,7 @@ Checkout is idempotent. A retry caused by poor connectivity returns the original
 
 **Example.** Monday, Kolhapur GatePass, Pre-order 10 kg basundi at Monday's tax-exclusive Kolhapur rate of ₹200/kg. The ₹2,000 subtotal is stored. Pending does not change. No WhatsApp.
 
-Tuesday the Kolhapur rate is ₹220. A salesman with a Kolhapur GatePass fulfils it. The subtotal remains ₹2,000; GST effective Tuesday is added to produce the final Bill total. That total is debited to the ledger and the Bill WhatsApp goes out.
+Tuesday the Kolhapur rate is ₹220. A salesman with a Kolhapur GatePass fulfils it. The subtotal remains ₹2,000; GST is the classification and rate snapshotted on Monday, even if Tuesday’s GST rate differs. That total is debited to the ledger and the Bill WhatsApp goes out.
 
 If Tuesday's GatePass is Satara, that salesman does not see this pre-order as something they can fulfill.
 
@@ -441,7 +440,7 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 7. **Overpay, keep advance.** Same cash, staff choose advance. Balance −₹200. The next bill uses that credit first.
 8. **Same Owner, two Customers.** Kolhapur and Satara Customers share a phone. Kolhapur GatePass shows only the Kolhapur Customer at Kolhapur rates. Messages name the Customer and Route.
 9. **New Customer in the field.** Salesman on Kolhapur adds a Customer onto Kolhapur. Admin can move it to Satara after its open Pre-orders close. Old Bills keep Kolhapur snapshots; future Bills use Satara. Balance stays with the Customer.
-10. **Pre-order price lock.** Placed Monday at Monday's rate. Fulfilled Tuesday after a rate change. Charged at Monday's rate. Pending and bill WhatsApp happen on Tuesday, not Monday.
+10. **Pre-order price lock.** Placed Monday at Monday's rate and Monday's GST. Fulfilled Tuesday after a rate or GST change. Charged at Monday's price and GST. Pending and bill WhatsApp happen on Tuesday, not Monday.
 11. **Wrong route cannot fulfill.** Pre-order is Kolhapur. Today's GatePass is Satara. Fulfill is refused.
 12. **No GatePass.** No Customers, billing, Pre-order, field Payment or field-created Customer.
 13. **Missing route price.** That variety cannot be sold on that route until admin sets the price.
@@ -496,7 +495,7 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 - Each route has its own variety prices. A missing price blocks that variety. A salesman cannot change the price.
 - Two Customers may share a phone. Each keeps its own Route, prices and Balance; selection uses Customer ID plus identifying context.
 - A Customer added by a salesman lands on the current GatePass Route. Admin can move it after open Pre-orders close. Past order snapshots stay stored.
-- Book Now updates pending at place. Pre-order updates pending only at fulfill, at the placement price, and only if today's GatePass route matches.
+- Book Now updates pending at place. Pre-order updates pending only at fulfill, at the placement price and GST, and only if today's GatePass route matches.
 - With no active GatePass, the salesman cannot bill, pre-order, or take a field payment.
 - A Payment reduces the Customer's single Balance and is not applied to a specific Bill.
 - Cash above pending is either returned or kept as advance, by a choice on that payment.
@@ -515,7 +514,7 @@ Deactivation may leave Pending or Advance. Admin can collect a Payment or issue 
 - Duplicate checkout, fulfilment, Payment, edit, Note, Refund and retry operations cannot double-post.
 - Per-Customer **E-invoicing required** (seeded list + Admin override) controls IRN pending vs final Bill/WhatsApp.
 - History-only Bill edits still send the updated Bill on WhatsApp.
-- Pre-orders lock Route state (place of supply) at placement; GST rate at fulfil.
+- Pre-orders lock Route state (place of supply), HSN, exemption and GST rate at placement. Fulfil does not re-tax.
 - IRN pending Bills allow draft download, Admin IRN/QR entry, draft correction before IRN, and lock direct edits after IRN.
 - Route state always determines the tax split and is snapshotted when the order starts; later Route-state edits affect future orders only.
 - Route prices are positive and server-snapshotted when items enter an order; later price-list edits never reprice it.

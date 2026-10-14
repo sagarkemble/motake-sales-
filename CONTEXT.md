@@ -45,7 +45,7 @@ The current tax-exclusive price of one variety on one Route. There is no company
 An order placed and billed on the spot, deducting stock from the Active GatePass. It remembers that GatePass so cancel can restore stock only there.
 
 **Pre-order**:
-An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST rate effective on that fulfilment date.
+An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST classification and rate snapshotted at placement.
 *Avoid*: Booking, advance order
 
 ### Money

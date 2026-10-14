@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Throwaway wayfinder prototypes. Spec lives on the GitHub issue.
+/app/prototype/
+/components/prototype/
