@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Prototypes are gitignored. Tailwind v4 skips gitignored files unless sourced. */
+@source "./prototype/**/*.{ts,tsx}";
+@source "../components/prototype/**/*.{ts,tsx}";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
