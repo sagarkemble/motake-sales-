@@ -1,8 +1,19 @@
 import { sql } from "drizzle-orm";
-import { pgTable, uuid, varchar, timestamp, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  check,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { entityStatusEnum } from "./enums";
 import { profilesTable } from "./profile";
+import { routesTable } from "./route";
 
 export const customersTable = pgTable(
   "customers",
@@ -13,6 +24,7 @@ export const customersTable = pgTable(
 
     contactName: varchar("contact_name", { length: 120 }),
 
+    // Not unique: the same phone may appear on more than one Customer.
     phone: varchar("phone", { length: 20 }).notNull(),
 
     address: text("address").notNull(),
@@ -22,6 +34,18 @@ export const customersTable = pgTable(
     shopPhotoKey: text("shop_photo_key"),
 
     shopPhotoUrl: text("shop_photo_url"),
+
+    routeId: uuid("route_id")
+      .notNull()
+      .references(() => routesTable.id, { onDelete: "restrict" }),
+
+    // Empty = normal Customer.
+    gstin: varchar("gstin", { length: 15 }),
+
+    einvoicingRequired: boolean("einvoicing_required").notNull(),
+
+    // Debits minus Credits, kept in step with each Ledger row. Above 0 = Pending, below 0 = Advance.
+    balancePaise: bigint("balance_paise", { mode: "number" }).notNull().default(0),
 
     createdBy: uuid("created_by")
       .notNull()
@@ -36,9 +60,11 @@ export const customersTable = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex("customers_phone_active_unique")
-      .on(table.phone)
-      .where(sql`${table.deletedAt} IS NULL`),
+    index("customers_route_id_idx").on(table.routeId),
+    check(
+      "customers_gstin_check",
+      sql`${table.gstin} IS NULL OR char_length(${table.gstin}) = 15`,
+    ),
   ],
 );
 

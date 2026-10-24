@@ -1,9 +1,9 @@
-import { sql } from "drizzle-orm";
-import { check, numeric, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { entityStatusEnum } from "./enums";
 import { productsTable } from "./product";
 
+// No money here: price is per Route (`route_prices`), GST is dated (`variety_tax_periods`).
 export const productVarietiesTable = pgTable(
   "product_varieties",
   {
@@ -13,13 +13,12 @@ export const productVarietiesTable = pgTable(
       .notNull()
       .references(() => productsTable.id, { onDelete: "cascade" }),
 
+    // Generated `vr-{slug}-{nnn}` on insert. Never typed by Admin.
     sku: varchar("sku", { length: 64 }).notNull().unique(),
 
     name: varchar("name", { length: 120 }).notNull(),
 
     unit: varchar("unit", { length: 32 }).notNull(),
-
-    unitPrice: numeric("unit_price", { precision: 12, scale: 2, mode: "number" }).notNull(),
 
     status: entityStatusEnum("status").notNull().default("active"),
 
@@ -29,7 +28,7 @@ export const productVarietiesTable = pgTable(
       .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (table) => [check("product_varieties_unit_price_check", sql`${table.unitPrice} >= 0`)],
+  (table) => [uniqueIndex("product_varieties_product_name_unique").on(table.productId, table.name)],
 );
 
 export type SelectProductVariety = typeof productVarietiesTable.$inferSelect;
