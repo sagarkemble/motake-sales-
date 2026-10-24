@@ -3,7 +3,8 @@ import { pgTable, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-c
 import { entityStatusEnum } from "./enums";
 import { productsTable } from "./product";
 
-// No money here: price is per Route (`route_prices`), GST is dated (`variety_tax_periods`).
+// A sellable SKU under a product. Company-wide unit_price is dropped. GST lives on
+// variety_tax_periods, not here.
 export const productVarietiesTable = pgTable(
   "product_varieties",
   {
@@ -13,7 +14,7 @@ export const productVarietiesTable = pgTable(
       .notNull()
       .references(() => productsTable.id, { onDelete: "cascade" }),
 
-    // Generated `vr-{slug}-{nnn}` on insert. Never typed by Admin.
+    // Generated `vr-{slug}-{nnn}`; Admin does not type it.
     sku: varchar("sku", { length: 64 }).notNull().unique(),
 
     name: varchar("name", { length: 120 }).notNull(),

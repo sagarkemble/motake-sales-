@@ -1,33 +1,36 @@
-import { sql } from "drizzle-orm";
 import { pgTable, uuid, varchar, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { entityStatusEnum } from "./enums";
 
+// A named area with its own Customer list, price per variety, and default delivery state.
+// Never physically deleted. Hide is gated in the app (no Active GatePass, no open Pre-order).
 export const routesTable = pgTable(
   "routes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
+    // Staff label; unique including hidden.
     name: varchar("name", { length: 120 }).notNull(),
 
-    // Generated `rt-{slug}-{nnn}`. Never edited.
-    code: varchar("code", { length: 64 }).notNull().unique(),
+    // `rt-{slug}-{nnn}`; generated; never edited.
+    code: varchar("code", { length: 64 }).notNull(),
 
-    // Full official state name. Default place of supply.
-    deliveryState: varchar("delivery_state", { length: 64 }).notNull(),
+    // Full official name; default place of supply.
+    deliveryState: varchar("delivery_state", { length: 120 }).notNull(),
 
     status: entityStatusEnum("status").notNull().default("active"),
+
+    // Null = listed; set = hidden; row stays.
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())
       .notNull(),
-    // Hidden, never removed.
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    // Unique case-insensitive, including hidden Routes.
-    uniqueIndex("routes_name_lower_unique").on(sql`lower(${table.name})`),
+    uniqueIndex("routes_name_unique").on(table.name),
+    uniqueIndex("routes_code_unique").on(table.code),
   ],
 );
 

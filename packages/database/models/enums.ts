@@ -19,8 +19,7 @@ export const gatepassShortReasonEnum = pgEnum("gatepass_short_reason", [
   "other",
 ]);
 
-// `office_bill` is the Admin Raise Bill from the Ledger: Route prices, no GatePass, no salesman.
-export const orderTypeEnum = pgEnum("order_type", ["book_now", "pre_order", "office_bill"]);
+export const orderTypeEnum = pgEnum("order_type", ["book_now", "pre_order"]);
 
 export const orderStatusEnum = pgEnum("order_status", [
   "confirmed",
@@ -53,10 +52,11 @@ export const noteKindEnum = pgEnum("note_kind", [
 
 export const paymentModeEnum = pgEnum("payment_mode", ["cash", "bank", "upi"]);
 
-export const moneyEventTypeEnum = pgEnum("money_event_type", ["posted", "adjusted"]);
+export const paymentEventKindEnum = pgEnum("payment_event_kind", ["posted", "adjusted"]);
 
-// One number series per document type per financial year: MB / MC / MD / MP / MR.
-export const documentSeriesEnum = pgEnum("document_series", [
+export const refundEventKindEnum = pgEnum("refund_event_kind", ["posted", "adjusted"]);
+
+export const documentKindEnum = pgEnum("document_kind", [
   "bill",
   "credit_note",
   "debit_note",
@@ -64,7 +64,14 @@ export const documentSeriesEnum = pgEnum("document_series", [
   "refund",
 ]);
 
-export const notificationKindEnum = pgEnum("notification_kind", ["text", "template", "document"]);
+export const notificationKindEnum = pgEnum("notification_kind", [
+  "bill",
+  "receipt",
+  "credit_note",
+  "debit_note",
+  "account_update",
+  "cancellation",
+]);
 
 export const notificationStatusEnum = pgEnum("notification_status", [
   "pending",
@@ -72,4 +79,51 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "read",
   "failed",
   "skipped",
+]);
+
+export const notificationAttemptStatusEnum = pgEnum("notification_attempt_status", [
+  "sent",
+  "failed",
+]);
+
+export const auditEntityTypeEnum = pgEnum("audit_entity_type", [
+  "profile",
+  "salesman",
+  "product",
+  "product_variety",
+  "variety_tax_period",
+  "route",
+  "route_price",
+  "customer",
+  "gatepass",
+  "order",
+  "bill",
+  "note",
+  "payment",
+  "refund",
+  "seller_settings",
+  "document_number_series",
+  "gst_credit_note_deadline",
+  "gstr1_filing",
+]);
+
+export const auditActionEnum = pgEnum("audit_action", [
+  "created",
+  "updated",
+  "activated",
+  "deactivated",
+  "deleted",
+  "allotted",
+  "handover_submitted",
+  "closed",
+  "placed",
+  "fulfilled",
+  "cancelled",
+  "corrected",
+  "irn_recorded",
+  "portal_cancelled",
+  "note_raised",
+  "opening_set",
+  "filed",
+  "moved_route",
 ]);

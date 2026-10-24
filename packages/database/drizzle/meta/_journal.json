@@ -5,15 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1792877813250,
-      "tag": "0000_route_money_baseline",
+      "when": 1792880558068,
+      "tag": "0000_schema_baseline",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1792877821550,
-      "tag": "0001_append_only_money",
+      "when": 1792880559655,
+      "tag": "0001_deferrable_note_ledger_pair",
       "breakpoints": true
     }
   ]
