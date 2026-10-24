@@ -1,8 +1,18 @@
 import { sql } from "drizzle-orm";
-import { pgTable, uuid, date, timestamp, text, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  date,
+  timestamp,
+  text,
+  boolean,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/pg-core";
 
 import { gatepassStatusEnum } from "./enums";
 import { profilesTable } from "./profile";
+import { routesTable } from "./route";
 import { salesmenTable } from "./salesman";
 
 export const gatepassesTable = pgTable(
@@ -13,6 +23,11 @@ export const gatepassesTable = pgTable(
     salesmanId: uuid("salesman_id")
       .notNull()
       .references(() => salesmenTable.id),
+
+    // Set at allotment. Never edited.
+    routeId: uuid("route_id")
+      .notNull()
+      .references(() => routesTable.id, { onDelete: "restrict" }),
 
     businessDate: date("business_date").notNull(),
 
@@ -46,6 +61,7 @@ export const gatepassesTable = pgTable(
     uniqueIndex("gatepasses_salesman_active_business_date_unique")
       .on(table.salesmanId, table.businessDate)
       .where(sql`${table.status} = 'active'`),
+    index("gatepasses_route_id_idx").on(table.routeId),
   ],
 );
 
