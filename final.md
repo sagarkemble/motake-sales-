@@ -1,5 +1,17 @@
 # Motake — Developer Scope Document
 
+> **Historical document — superseded.**
+>
+> This file records the original developer scope and is retained for project history only. It is **not an implementation source** for current work. Its globally shared Customer visibility, next-day-only Pre-orders, company-wide pricing, Admin order restrictions, and lack of Balance, ledger, GST and notification rules are obsolete.
+>
+> Current implementation authority, in order:
+>
+> 1. [`CONTEXT.md`](./CONTEXT.md) for domain terminology.
+> 2. [`docs/route-pricing-and-udhar.md`](./docs/route-pricing-and-udhar.md) for current Route, GatePass, Customer, ordering and end-to-end product rules.
+> 3. [`docs/adr/`](./docs/adr/) for accepted architecture, Balance, ledger, Bill, Payment, GST and notification decisions.
+>
+> When this historical scope conflicts with those documents, the current documents above win.
+
 **Purpose:** This document lists exactly what you need to build — pages, features, and backend work — for the Admin and Salesman sides of the Motake app.
 
 ---
