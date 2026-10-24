@@ -24,8 +24,6 @@ export const gatepassItemsTable = pgTable(
 
     returnedQty: integer("returned_qty").notNull().default(0),
 
-    availableQty: integer("available_qty").generatedAlwaysAs(sql`issued_qty - sold_qty`),
-
     shortReason: gatepassShortReasonEnum("short_reason"),
 
     shortNote: text("short_note"),

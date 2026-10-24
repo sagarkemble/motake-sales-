@@ -4,17 +4,18 @@ import {
   boolean,
   check,
   integer,
+  jsonb,
   pgTable,
   timestamp,
   uniqueIndex,
   uuid,
-  varchar,
 } from "drizzle-orm/pg-core";
 
 import { ordersTable } from "./order";
 import { productVarietiesTable } from "./product-variety";
 
-// Live Bill lines. Route price and covering tax period are snapshotted by the server at place.
+// Sale lines: what was asked. Locked Route price and tax classification at place. Billed GST
+// amounts live on bill_items (db-decisions/0003, 0005).
 export const orderItemsTable = pgTable(
   "order_items",
   {
@@ -28,25 +29,19 @@ export const orderItemsTable = pgTable(
       .notNull()
       .references(() => productVarietiesTable.id),
 
-    varietyName: varchar("variety_name", { length: 120 }).notNull(),
-
-    unit: varchar("unit", { length: 32 }).notNull(),
+    // Frozen Variety {name, unit} + tax print {hsn}.
+    stamp: jsonb("stamp").notNull(),
 
     quantity: integer("quantity").notNull(),
 
-    // Tax-exclusive.
+    // Tax-exclusive lock at place.
     routePricePaise: bigint("route_price_paise", { mode: "number" }).notNull(),
 
-    hsn: varchar("hsn", { length: 8 }).notNull(),
-
+    // Classification lock; amounts on bill_items.
     exempt: boolean("exempt").notNull(),
 
+    // 5% is 500; lock at place.
     gstRateBps: integer("gst_rate_bps").notNull(),
-
-    taxablePaise: bigint("taxable_paise", { mode: "number" }).notNull(),
-    cgstPaise: bigint("cgst_paise", { mode: "number" }).notNull(),
-    sgstPaise: bigint("sgst_paise", { mode: "number" }).notNull(),
-    igstPaise: bigint("igst_paise", { mode: "number" }).notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -54,15 +49,9 @@ export const orderItemsTable = pgTable(
     uniqueIndex("order_items_order_variety_unique").on(table.orderId, table.varietyId),
     check("order_items_quantity_check", sql`${table.quantity} > 0`),
     check("order_items_route_price_paise_check", sql`${table.routePricePaise} > 0`),
-    check("order_items_hsn_check", sql`${table.hsn} ~ '^[0-9]{4,8}$'`),
     check(
-      "order_items_rate_check",
+      "order_items_exempt_rate_check",
       sql`(${table.exempt} AND ${table.gstRateBps} = 0) OR (NOT ${table.exempt} AND ${table.gstRateBps} > 0)`,
-    ),
-    check(
-      "order_items_money_check",
-      sql`${table.taxablePaise} >= 0 AND ${table.cgstPaise} >= 0 AND ${table.sgstPaise} >= 0
-        AND ${table.igstPaise} >= 0`,
     ),
   ],
 );

@@ -14,7 +14,8 @@ import {
 
 import { productVarietiesTable } from "./product-variety";
 
-// Company-wide dated GST for a variety. A period runs until the next later `effective_from`.
+// Company-wide GST for a variety. A period has a start date and no end date; the next later
+// start ends it. Missing covering period means unsellable that day.
 export const varietyTaxPeriodsTable = pgTable(
   "variety_tax_periods",
   {
@@ -24,26 +25,25 @@ export const varietyTaxPeriodsTable = pgTable(
       .notNull()
       .references(() => productVarietiesTable.id, { onDelete: "restrict" }),
 
+    // No effective_to.
     effectiveFrom: date("effective_from").notNull(),
 
+    // 4 to 8 digits.
     hsn: varchar("hsn", { length: 8 }).notNull(),
 
     exempt: boolean("exempt").notNull(),
 
-    // Basis points: 5% is 500.
+    // 5% is 500.
     gstRateBps: integer("gst_rate_bps").notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("variety_tax_periods_variety_effective_from_unique").on(
-      table.varietyId,
-      table.effectiveFrom,
-    ),
+    uniqueIndex("variety_tax_periods_variety_from_unique").on(table.varietyId, table.effectiveFrom),
     index("variety_tax_periods_lookup_idx").on(table.varietyId, table.effectiveFrom.desc()),
     check("variety_tax_periods_hsn_check", sql`${table.hsn} ~ '^[0-9]{4,8}$'`),
     check(
-      "variety_tax_periods_rate_check",
+      "variety_tax_periods_exempt_rate_check",
       sql`(${table.exempt} AND ${table.gstRateBps} = 0) OR (NOT ${table.exempt} AND ${table.gstRateBps} > 0)`,
     ),
   ],
