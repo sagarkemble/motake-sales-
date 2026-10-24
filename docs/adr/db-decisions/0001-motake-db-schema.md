@@ -1,6 +1,6 @@
 # Motake Postgres schema follows the closed #21–#33 specs, not the live app tables
 
-The live Drizzle models still match the old company-wide price app (numeric rupees, unique phone, no Route, no Ledger). Closed map [#20](https://github.com/Lunar-Studio-Dev/motake-sales/issues/20) now specifies what Motake must store. **Cutover wipes those live money/order rows (#25) and ships this schema.** The billed `orders` row remains the current Bill (ADR-0003). Money is bigint paise. `customers.balance_paise` is a maintained copy of Ledger Debits − Credits, not a second source of truth.
+The live Drizzle models still match the old company-wide price app (numeric rupees, unique phone, no Route, no Ledger). Closed map [#20](https://github.com/Lunar-Studio-Dev/motake-sales/issues/20) now specifies what Motake must store. **Cutover wipes those live money/order rows (#25) and ships this schema.** **Amended by `docs/adr/db-decisions/0004-order-and-bill-are-separate.md`:** `orders` is the sale; `bills` is the paper. Money is bigint paise. `customers.balance_paise` is a maintained copy of Ledger Debits − Credits, not a second source of truth.
 
 We keep **controlled snapshots** (Route on the Bill, seller on Bill/Note, line prices and tax) so later Settings edits do not rewrite documents. We do **not** stamp `filed` on every Bill — month lock is derived from `gstr1_filings` + Bill date. Document prefixes and the GST Credit Note deadline live per financial year, not on each document. Notification tables stay a transport store (ADR-0001); domain never rolls back when WhatsApp fails.
 
@@ -12,15 +12,16 @@ The live ER is the canvas `motake-db-er-diagram.canvas.tsx` (proposed mode). Thi
 | --- | --- |
 | Route, prices, tax periods, GatePass Route | `routes`, `route_prices`, `variety_tax_periods`, `gatepasses.route_id` |
 | Customer on one Route, GSTIN, IRN flag, Balance copy | `customers` |
-| Bill number at Book Now / Pre-order place | `orders.number` |
+| Bill number when the paper is issued | `bills.number` (Book Now place or Pre-order fulfil) |
 | Pre-order place vs fulfil | `type`, `status`, `scheduled_date`, nullable `bill_date` / `gatepass_id` |
 | Admin Raise Bill (no salesman / GatePass) | nullable `salesman_id`; Book Now CHECK is `route_id` only |
-| Bill history + Notes + remaining qty | `bill_versions`, `bill_version_lines`, `notes`, `note_lines` |
+| Bill history + Notes + remaining qty | `bill_versions` (header + items jsonb), `notes`, `note_lines` |
+| Order history | `order_versions` (header + items jsonb) |
 | Ledger, Payment MP, Refund MR, Opening | `ledger_entries`, `payments`, `payment_events`, `refunds`, `refund_events` |
-| IRN / QR / portal cancel | columns on `orders` |
+| IRN / QR / portal cancel | columns on `bills` |
 | Seller master + prefix freeze + CN deadline + GSTR-1 | `seller_settings`, `document_number_series`, `gst_credit_note_deadlines`, `gstr1_filings` |
-| WhatsApp kinds / skip / attachment URL | `notifications`, `notification_attempts` |
-| Seed load once | `seed_loads` (one row; workbook bytes off-DB) |
+| WhatsApp kinds / skip / attachment URL | `notifications`, `notification_attempts` (`account_update`, `cancellation`; db-decisions/0013) |
+| Who did which procedure | `audit_logs` (`audit_entity_type`, `audit_action`; db-decisions/0012) |
 
 **Intentionally not stored:** PDF bytes, Meta template IDs, a `filed` flag on Bills, a dated Route price list, company-wide `unit_price`, unique Customer phone.
 
@@ -28,12 +29,12 @@ The live ER is the canvas `motake-db-er-diagram.canvas.tsx` (proposed mode). Thi
 
 3NF for masters and events. Allowed denorm:
 
-- `orders` = current Bill (full line rewrite + `bill_versions` copy). Avoids a live `bills` table beside `orders`.
+- `orders` = sale; `bills` = current paper (full line rewrite + `bill_versions` copy). See db-decisions/0004.
 - `customers.balance_paise` copy, rebuilt from Ledger.
 - Frozen Route / seller / buyer / line tax on documents so Settings or Customer edits do not rewrite papers.
 - `next_seq` on the series row (concurrency), not computed from `MAX(number)`.
 
-Split that stays 3NF: prefixes vs GST CN deadline vs GSTR-1 month (three tables, not five prefix columns on one FY row). Note lines point at `bill_version_lines`; remaining uncredited qty is derived.
+Split that stays 3NF: prefixes vs GST CN deadline vs GSTR-1 month (three tables, not five prefix columns on one FY row). Note lines point at `bill_versions` + `items[].id`; remaining uncredited qty is derived.
 
 `notes.ledger_entry_id` and `ledger_entries.note_id` are a 1:1 pair written in one transaction (deferrable FKs or insert-then-backfill).
 

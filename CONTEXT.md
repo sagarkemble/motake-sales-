@@ -76,7 +76,7 @@ A Balance below zero: Motake owes the Customer, from cash kept above what was ow
 *Avoid*: Deposit; using "advance" for a part-payment at checkout
 
 **Payment**:
-Cash, bank or UPI money kept by Motake against a Customer's Balance. Never applied to a specific Bill. Numbered `MP/{FY}/{seq}`. A salesman records field Payment only on the Active GatePass Route. Admin records a Payment with no purchase from Ledger Add. Admin may Correct kept amount, mode, and reference with a reason; Payment history is kept. Correct may take kept to ₹0; that is not a delete.
+Cash, bank or UPI money kept by Motake against a Customer's Balance. Never applied to a specific Bill. Numbered `MP/{FY}/{seq}`. A salesman records field Payment only on the Active GatePass Route. Admin records a Payment with no purchase from Ledger Add. Admin may Correct kept amount, mode, and reference with a reason; Payment history is kept on `payment_events`. Correct may take kept to ₹0; that is not a delete. More money from the shop is a new Payment.
 
 **Ledger**:
 The append-only record of every money event for one Customer; the Balance is derived from it. Admin sees that Ledger as one table (Bill, Payment, Credit Note, Debit Note, Refund, Opening balance). Opening / Current total / Closing sit at the foot of the table. Clicking a row opens that record. Admin adds Bill, Payment, Refund, Opening balance, and independent Note from Add on that Ledger. There is no second Admin money page and no separate Balance panel.
