@@ -1,6 +1,7 @@
 import { db } from "@repo/database";
 import {
   listSeriesForYear,
+  lockSeriesForYear,
   type DocumentKind,
 } from "@repo/database/queries/document-number-series";
 import { getGstCreditNoteDeadlineRow } from "@repo/database/queries/gst-credit-note-deadlines";
@@ -223,7 +224,7 @@ class SettingsService {
     }));
   }
 
-  // Takes the same row lock as the allocator: a change that waits behind the year's first number
+  // Takes the allocator's row locks, in its order: a change that waits behind the year's first number
   // sees it and is refused; a change that wins is the prefix that number uses.
   public async updatePrefix(
     input: UpdatePrefixInput,
@@ -238,17 +239,16 @@ class SettingsService {
 
     await runInTransaction(async (transaction) => {
       await this.ensureYearWithAudit(financialYear, actorProfileId, reason, transaction);
-      const series = await documentNumbers.lockSeriesRow(
-        { financialYear, kind, actorId: actorProfileId },
-        transaction,
-      );
+      // Locks the whole year, not just this kind, so two changes cannot both take the same prefix.
+      const yearRows = await lockSeriesForYear(financialYear, transaction);
+      const series = yearRows.find((row) => row.kind === kind);
+      if (!series) throw internalError(`Series ${kind} ${financialYear} missing`);
       if (series.firstUsedAt) {
         throw conflict(
           `The ${kind} prefix for ${financialYear} is frozen: its first number has been issued`,
         );
       }
       if (series.prefix === prefix) return;
-      const yearRows = await listSeriesForYear(financialYear, transaction);
       const clash = yearRows.find((row) => row.kind !== kind && row.prefix === prefix);
       if (clash) {
         throw conflict(`Prefix ${prefix} is already used by ${clash.kind} in ${financialYear}`);

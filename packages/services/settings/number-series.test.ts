@@ -183,6 +183,24 @@ describe("Number prefixes", () => {
     expect((await billTx).number).toBe("MB/26-27/000001");
   });
 
+  it("lets only one of two parallel changes take the same new prefix", async () => {
+    const admin = await buildProfile();
+    await settings.updatePrefix({ financialYear: "26-27", kind: "refund", prefix: "RF" }, admin.id);
+
+    const results = await Promise.allSettled([
+      settings.updatePrefix({ financialYear: "26-27", kind: "bill", prefix: "XY" }, admin.id),
+      settings.updatePrefix({ financialYear: "26-27", kind: "payment", prefix: "XY" }, admin.id),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const refused = results.filter((result) => result.status === "rejected");
+    expect(refused).toHaveLength(1);
+    expect((refused[0] as PromiseRejectedResult).reason).toMatchObject({ code: "CONFLICT" });
+    expect((refused[0] as PromiseRejectedResult).reason.message).toMatch(/already used/);
+    const prefixes = (await seriesRows("26-27")).map((row) => row.prefix);
+    expect(prefixes.filter((prefix) => prefix === "XY")).toHaveLength(1);
+  });
+
   it("refuses edits to past years and to years beyond next", async () => {
     const admin = await buildProfile();
 

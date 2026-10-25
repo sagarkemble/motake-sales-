@@ -140,6 +140,7 @@ export type SettingsHistoryEntry = Pick<
 > & { actorName: string };
 
 // Audit rows of one settings record, newest first, with the actor's name (email when unnamed).
+// Rows written by one transaction share created_at; among them `created` sorts as the oldest.
 export async function listSettingsHistory(
   entityType: "seller_settings" | "document_number_series" | "gst_credit_note_deadline",
   entityId: string,
@@ -158,5 +159,8 @@ export async function listSettingsHistory(
     .from(auditLogsTable)
     .innerJoin(profilesTable, eq(profilesTable.id, auditLogsTable.actorId))
     .where(and(eq(auditLogsTable.entityType, entityType), eq(auditLogsTable.entityId, entityId)))
-    .orderBy(desc(auditLogsTable.createdAt));
+    .orderBy(
+      desc(auditLogsTable.createdAt),
+      desc(sql`CASE WHEN ${auditLogsTable.action} = 'created' THEN 0 ELSE 1 END`),
+    );
 }
