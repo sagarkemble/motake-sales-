@@ -133,7 +133,7 @@ describe("covering lookup", () => {
       code: "BAD_REQUEST",
       message: expect.stringContaining("Toned milk 500 ml"),
     });
-    const error = await refusal.catch((caught: unknown) => caught as { cause: unknown });
+    const error = (await refusal.catch((caught: unknown) => caught)) as { cause: unknown };
     expect(error.cause).toMatchObject({
       day: "2026-10-25",
       uncoveredVarieties: [
@@ -176,6 +176,22 @@ describe("Admin reads", () => {
       { effectiveFrom: "2027-01-01", coversToday: false, upcoming: true, editable: true },
       { effectiveFrom: "2026-04-01", coversToday: true, upcoming: false, editable: true },
       { effectiveFrom: "2025-04-01", coversToday: false, upcoming: false, editable: false },
+    ]);
+  });
+
+  it("marks every period of a soft-deleted Variety not editable", async () => {
+    const { admin, variety } = await setup();
+    await buildVarietyTaxPeriod(variety.id, { effectiveFrom: "2026-04-01" });
+    await buildVarietyTaxPeriod(variety.id, { effectiveFrom: "2027-01-01", gstRateBps: 1200 });
+    await products.deactivateProductVariety(variety.id, admin.id);
+
+    const list = await taxPeriods.listForVariety(variety.id);
+
+    expect(
+      list.periods.map(({ effectiveFrom, editable }) => ({ effectiveFrom, editable })),
+    ).toEqual([
+      { effectiveFrom: "2027-01-01", editable: false },
+      { effectiveFrom: "2026-04-01", editable: false },
     ]);
   });
 

@@ -82,6 +82,8 @@ class VarietyTaxPeriodService {
     const { today, currentFinancialYear } = currentWindow();
     const periods = await listVarietyTaxPeriods(parsedVarietyId, executor);
     const covering = periods.find((period) => period.effectiveFrom <= today);
+    // A soft-deleted Variety's periods are read-only: upsert and delete refuse it.
+    const live = variety.deletedAt === null;
     return {
       today,
       currentFinancialYear,
@@ -89,7 +91,7 @@ class VarietyTaxPeriodService {
         ...period,
         coversToday: period.id === covering?.id,
         upcoming: period.effectiveFrom > today,
-        editable: inWindow(period.effectiveFrom, currentFinancialYear),
+        editable: live && inWindow(period.effectiveFrom, currentFinancialYear),
       })),
     };
   }
