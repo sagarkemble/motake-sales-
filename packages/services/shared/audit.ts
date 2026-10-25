@@ -39,6 +39,7 @@ export interface AuditEntry {
   entityType: AuditEntityType;
   entityId: string;
   customerId?: string | null;
+  reason?: string | null;
   payload?: Record<string, unknown> | null;
 }
 
@@ -54,7 +55,7 @@ export async function recordAudit(entry: AuditEntry, executor: DbExecutor = db):
       entityType: entry.entityType,
       entityId: entry.entityId,
       customerId: entry.customerId ?? null,
-      reason: null,
+      reason: entry.reason ?? null,
       payload: entry.payload ?? null,
     },
     executor,

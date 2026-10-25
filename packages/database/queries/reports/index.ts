@@ -16,7 +16,7 @@ import {
   type OrderCountBySalesman,
 } from "../orders";
 import { firstOrThrow } from "../shared/assertions";
-import { toIstBusinessDate } from "../shared/business-date";
+import { businessDateOf } from "../shared/business-date";
 
 export interface DailyKpiSummary {
   bookNowOrderCount: number;
@@ -139,8 +139,8 @@ export async function getProductWiseSalesSummary(range: {
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
     .where(
       and(
-        gte(billsTable.billDate, toIstBusinessDate(range.from)),
-        lte(billsTable.billDate, toIstBusinessDate(range.to)),
+        gte(billsTable.billDate, businessDateOf(range.from)),
+        lte(billsTable.billDate, businessDateOf(range.to)),
         billIsNotCancelled(),
       ),
     )
