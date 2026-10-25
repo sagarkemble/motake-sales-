@@ -13,11 +13,7 @@ import {
   getStoredBalance,
   hasOpeningBalance,
   insertLedgerEntry,
-  listBalanceMismatches,
   lockLiveCustomerBalance,
-  setStoredBalance,
-  sumLedgerForCustomer,
-  type BalanceMismatch,
 } from "@repo/database/queries/ledger";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
@@ -28,16 +24,12 @@ import { recordAudit } from "../shared/audit";
 import {
   openingBalanceInputSchema,
   postInputSchema,
-  rebuildBalanceInputSchema,
   type Balance,
-  type BalanceCheck,
-  type BalanceRebuild,
   type BalanceState,
   type OpeningBalanceInput,
   type ParsedPostInput,
   type PostInput,
   type PostResult,
-  type RebuildBalanceInput,
 } from "./model";
 
 // What a post resolved to before it writes the Ledger row.
@@ -122,53 +114,6 @@ class LedgerService {
     const balancePaise = await lockLiveCustomerBalance(customerId, executor);
     if (balancePaise === undefined) throw notFound(`Customer ${customerId} not found`);
     return toBalance(balancePaise);
-  }
-
-  // Reads both sides with the Customer row locked, so a post committing in between cannot show a
-  // false mismatch.
-  public async checkBalance(customerId: string, executor: DbExecutor = db): Promise<BalanceCheck> {
-    return executor.transaction(async (transaction) => {
-      const { balancePaise: storedPaise } = await this.lockBalance(customerId, transaction);
-      const ledgerPaise = await sumLedgerForCustomer(customerId, transaction);
-      return { storedPaise, ledgerPaise, matches: storedPaise === ledgerPaise };
-    });
-  }
-
-  public async findBalanceMismatches(executor: DbExecutor = db): Promise<BalanceMismatch[]> {
-    return listBalanceMismatches(executor);
-  }
-
-  // Sets the stored copy to the Ledger sum; never touches Ledger rows. Audited only when it changed.
-  public async rebuildBalance(
-    input: RebuildBalanceInput,
-    executor: DbExecutor = db,
-  ): Promise<BalanceRebuild> {
-    const parsedInput = rebuildBalanceInputSchema.parse(input);
-    return executor.transaction(async (transaction) => {
-      const { balancePaise: beforePaise } = await this.lockBalance(
-        parsedInput.customerId,
-        transaction,
-      );
-      const afterPaise = await sumLedgerForCustomer(parsedInput.customerId, transaction);
-      if (afterPaise === beforePaise) return { changed: false, beforePaise, afterPaise };
-      await setStoredBalance(
-        { customerId: parsedInput.customerId, balancePaise: afterPaise },
-        transaction,
-      );
-      await recordAudit(
-        {
-          actorId: parsedInput.actorId,
-          action: "corrected",
-          entityType: "customer",
-          entityId: parsedInput.customerId,
-          customerId: parsedInput.customerId,
-          reason: parsedInput.reason,
-          payload: { balancePaise: { from: beforePaise, to: afterPaise } },
-        },
-        transaction,
-      );
-      return { changed: true, beforePaise, afterPaise };
-    });
   }
 
   // Reads the linked paper (already inserted or updated by the caller) for side, amount and reason.
@@ -327,4 +272,4 @@ class LedgerService {
 }
 
 export default LedgerService;
-export type { Balance, BalanceMismatch, BalanceState, OpeningBalanceInput, PostInput, PostResult };
+export type { Balance, BalanceState, OpeningBalanceInput, PostInput, PostResult };

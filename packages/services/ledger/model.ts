@@ -62,13 +62,6 @@ export const openingBalanceInputSchema = z.object({
 });
 export type OpeningBalanceInput = z.input<typeof openingBalanceInputSchema>;
 
-export const rebuildBalanceInputSchema = z.object({
-  customerId: z.string().uuid(),
-  actorId: z.string().uuid(),
-  reason: reasonSchema,
-});
-export type RebuildBalanceInput = z.input<typeof rebuildBalanceInputSchema>;
-
 export interface PostResult {
   entryId: string;
   entryType: SelectLedgerEntry["entryType"];
@@ -85,16 +78,4 @@ export interface Balance {
   balancePaise: number;
   state: BalanceState;
   amountPaise: number;
-}
-
-export interface BalanceCheck {
-  storedPaise: number;
-  ledgerPaise: number;
-  matches: boolean;
-}
-
-export interface BalanceRebuild {
-  changed: boolean;
-  beforePaise: number;
-  afterPaise: number;
 }

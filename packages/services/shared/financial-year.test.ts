@@ -10,11 +10,16 @@ describe("financial year", () => {
     ["2027-01-15", "26-27"],
     ["2026-03-31", "25-26"],
     ["2099-04-01", "99-00"],
-    ["2100-02-01", "99-00"],
-    ["2000-01-10", "99-00"],
-    ["2000-04-10", "00-01"],
+    ["2100-03-31", "99-00"],
+    ["2000-04-01", "00-01"],
   ])("labels the IST date %s as %s", (date, financialYear) => {
     expect(financialYearOf(date)).toBe(financialYear);
+  });
+
+  it("refuses a date before 1 April 2000 or after 31 March 2100, so no label means two years", () => {
+    expect(() => financialYearOf("2000-03-31")).toThrow();
+    expect(() => financialYearOf("1999-06-15")).toThrow();
+    expect(() => financialYearOf("2100-04-01")).toThrow();
   });
 
   it("takes the year from the Asia/Kolkata date, not UTC", () => {
