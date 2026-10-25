@@ -6,6 +6,7 @@ import OrderService from "@repo/services/orders";
 import ProductService from "@repo/services/products";
 import ReportService from "@repo/services/reports";
 import SalesmanService from "@repo/services/salesman";
+import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 
 export const authService = new AuthService();
 export const billService = new BillService();
@@ -15,3 +16,4 @@ export const orderService = new OrderService();
 export const productService = new ProductService();
 export const reportService = new ReportService();
 export const salesmanService = new SalesmanService();
+export const varietyTaxPeriodService = new VarietyTaxPeriodService();
