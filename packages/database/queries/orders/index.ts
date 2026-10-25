@@ -18,7 +18,7 @@ import {
   type SelectOrderItem,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
-import { toIstBusinessDate } from "../shared/business-date";
+import { businessDateOf } from "../shared/business-date";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -682,7 +682,7 @@ export async function cancelBookNowOrderWithGatepassRestoration(
     }
 
     if (existingOrder.type === "book_now") {
-      const businessDate = toIstBusinessDate(existingOrder.placedAt);
+      const businessDate = businessDateOf(existingOrder.placedAt);
       const [salesmanGatepass] = await tx
         .select()
         .from(gatepassesTable)

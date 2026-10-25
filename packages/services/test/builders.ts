@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { db, sql } from "@repo/database";
+import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import {
   billItemsTable,
   billsTable,
@@ -9,12 +10,15 @@ import {
   gatepassItemsTable,
   gatepassesTable,
   ledgerEntriesTable,
+  notesTable,
   orderItemsTable,
   ordersTable,
   orderVersionsTable,
+  paymentsTable,
   productsTable,
   productVarietiesTable,
   profilesTable,
+  refundsTable,
   routePricesTable,
   routesTable,
   salesmenTable,
@@ -23,10 +27,13 @@ import {
   type SelectBill,
   type SelectCustomer,
   type SelectGatepass,
+  type SelectNote,
   type SelectOrder,
+  type SelectPayment,
   type SelectProduct,
   type SelectProductVariety,
   type SelectProfile,
+  type SelectRefund,
   type SelectRoute,
 } from "@repo/database/schema";
 
@@ -338,6 +345,8 @@ export async function buildBill(input: {
   lines: LineInput[];
 }): Promise<BuiltBill> {
   billCounter += 1;
+  // Read before any await, so parallel builders never share a number.
+  const billNumber = `TB/26-27/${String(billCounter).padStart(6, "0")}`;
   const [route] = await db
     .select()
     .from(routesTable)
@@ -358,7 +367,7 @@ export async function buildBill(input: {
     .insert(billsTable)
     .values({
       orderId: input.orderId ?? null,
-      number: `TB/26-27/${String(billCounter).padStart(6, "0")}`,
+      number: billNumber,
       legalType: allExempt ? "bill_of_supply" : "tax_invoice",
       letterhead: {
         route: routeStamp(route!),
@@ -457,4 +466,87 @@ export async function buildBookNowWithBill(input: {
     lines: input.lines,
   });
   return { ...built, bill };
+}
+
+// Money papers without their Ledger row: the procedures that write both arrive in Specs F–H, so
+// money core tests post the Ledger row themselves.
+
+export async function buildPayment(input: {
+  customer: SelectCustomer;
+  actorId: string;
+  keptPaise: number;
+  occurredAt?: Date;
+}): Promise<SelectPayment> {
+  const unique = nextUnique();
+  const [payment] = await db
+    .insert(paymentsTable)
+    .values({
+      customerId: input.customer.id,
+      mode: "cash",
+      amountReceivedPaise: input.keptPaise,
+      amountKeptPaise: input.keptPaise,
+      amountReturnedPaise: 0,
+      number: `TP/26-27/${String(unique).padStart(6, "0")}`,
+      actorId: input.actorId,
+      occurredAt: input.occurredAt ?? new Date(),
+      idempotencyKey: randomUUID(),
+    })
+    .returning();
+  return payment!;
+}
+
+export async function buildRefund(input: {
+  customer: SelectCustomer;
+  actorId: string;
+  amountPaise: number;
+}): Promise<SelectRefund> {
+  const unique = nextUnique();
+  const [refund] = await db
+    .insert(refundsTable)
+    .values({
+      customerId: input.customer.id,
+      number: `TR/26-27/${String(unique).padStart(6, "0")}`,
+      mode: "upi",
+      amountPaise: input.amountPaise,
+      reason: "Advance paid back",
+      actorId: input.actorId,
+      occurredAt: new Date(),
+      idempotencyKey: randomUUID(),
+    })
+    .returning();
+  return refund!;
+}
+
+// A Note must be inserted in the same transaction as its Ledger row (deferred FK pair), so this
+// takes the caller's transaction and the Ledger row id the caller will post with.
+export async function buildNote(
+  executor: DbExecutor,
+  input: {
+    bill: SelectBill;
+    kind: SelectNote["kind"];
+    amountPaise: number;
+    ledgerEntryId: string;
+    reason?: string;
+  },
+): Promise<SelectNote> {
+  const unique = nextUnique();
+  const [note] = await executor
+    .insert(notesTable)
+    .values({
+      kind: input.kind,
+      number: `TN/26-27/${String(unique).padStart(6, "0")}`,
+      billId: input.bill.id,
+      issuedOn: input.bill.billDate,
+      reason: input.reason ?? "Damaged in transit",
+      amountPaise: input.amountPaise,
+      cgstPaise: 0,
+      sgstPaise: 0,
+      igstPaise: 0,
+      sellerLegalName: "Motake Test Foods Pvt Ltd",
+      sellerAddress: "1 Test Road, Kolhapur",
+      sellerGstin: "27AAAAA0000A1Z5",
+      ledgerEntryId: input.ledgerEntryId,
+    })
+    .returning();
+  return note!;
 }

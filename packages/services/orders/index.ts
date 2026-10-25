@@ -19,7 +19,7 @@ import {
   type OrderWithItems,
 } from "@repo/database/queries/orders";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
-import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
+import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import type { SelectOrder } from "@repo/database/schema";
 
 import { badRequest, conflict, notFound } from "../errors";
@@ -146,7 +146,7 @@ class OrderService {
       !options.allowBeforeScheduledDate &&
       orderWithItems.order.scheduledDate
     ) {
-      const todayBusinessDate = toIstBusinessDate(new Date());
+      const todayBusinessDate = businessDateOf(new Date());
       if (orderWithItems.order.scheduledDate > todayBusinessDate) {
         throw badRequest(
           `Pre-order is scheduled for ${orderWithItems.order.scheduledDate} and cannot be fulfilled before that date`,

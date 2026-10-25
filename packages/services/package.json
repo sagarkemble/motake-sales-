@@ -10,6 +10,7 @@
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
     "./k6-cleanup": "./k6-cleanup/index.ts",
+    "./money": "./money/index.ts",
     "./orders": "./orders/index.ts",
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",
@@ -21,6 +22,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "dotenv-cli": "^11.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3"
   },
@@ -36,6 +38,7 @@
     "zod": "^4.3.5"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "money:check-balances": "tsx scripts/check-balances.ts"
   }
 }
