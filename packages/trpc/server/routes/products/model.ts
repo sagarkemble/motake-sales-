@@ -69,7 +69,11 @@ export const updateProductVarietyInputSchema = createProductVarietyInputSchema
 
 export const varietyIdInputSchema = z.object({ id: z.string().uuid() });
 
-export const productVarietiesInputSchema = z.object({ productId: z.string().uuid() });
+export const productVarietiesInputSchema = z.object({
+  productId: z.string().uuid(),
+  // Admin only: also return deactivated varieties so they can be reactivated.
+  includeInactive: z.boolean().optional().default(false),
+});
 
 export const allowedProductImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 

@@ -8,6 +8,7 @@ export const listBillsInputSchema = z.object({
   billDateFrom: businessDateSchema.optional(),
   billDateTo: businessDateSchema.optional(),
   numberSearch: z.string().trim().min(1).optional(),
+  hideCancelled: z.boolean().optional().default(false),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
 });

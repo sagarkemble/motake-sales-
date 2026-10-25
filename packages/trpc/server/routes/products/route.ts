@@ -209,8 +209,10 @@ export const productsRouter = router({
     })
     .input(productVarietiesInputSchema)
     .output(apiResponseSchema(z.array(productVarietySchema)))
-    .query(async ({ input }) => {
-      const varieties = await productService.listVarietiesForProduct(input.productId);
+    .query(async ({ ctx, input }) => {
+      const varieties = await productService.listVarietiesForProduct(input.productId, {
+        includeInactive: input.includeInactive && ctx.user?.role === "admin",
+      });
       return apiResponse(varieties);
     }),
 
@@ -270,6 +272,25 @@ export const productsRouter = router({
     .output(apiResponseSchema(productVarietySchema))
     .mutation(async ({ ctx, input }) => {
       const variety = await productService.deactivateProductVariety(input.id, ctx.user.id);
+      if (!variety) throw notFound(`Product variety ${input.id} not found`);
+      return apiResponse(variety);
+    }),
+
+  reactivateVariety: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/varieties/{id}/reactivate"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Reactivate a product variety",
+        description: "Mark a deactivated product variety as active again.",
+      },
+    })
+    .input(varietyIdInputSchema)
+    .output(apiResponseSchema(productVarietySchema))
+    .mutation(async ({ ctx, input }) => {
+      const variety = await productService.reactivateProductVariety(input.id, ctx.user.id);
       if (!variety) throw notFound(`Product variety ${input.id} not found`);
       return apiResponse(variety);
     }),

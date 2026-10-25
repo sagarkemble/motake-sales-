@@ -119,6 +119,7 @@ export interface BillListFilters {
   billDateFrom?: string;
   billDateTo?: string;
   numberSearch?: string;
+  hideCancelled?: boolean;
 }
 
 export interface BillListRow {
@@ -145,6 +146,7 @@ export async function listBills(
     filters.billDateFrom ? gte(billsTable.billDate, filters.billDateFrom) : undefined,
     filters.billDateTo ? lte(billsTable.billDate, filters.billDateTo) : undefined,
     filters.numberSearch ? ilike(billsTable.number, `%${filters.numberSearch}%`) : undefined,
+    filters.hideCancelled ? billIsNotCancelled() : undefined,
   );
 
   const [rows, countRows] = await Promise.all([

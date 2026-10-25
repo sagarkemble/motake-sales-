@@ -248,12 +248,18 @@ export async function getProductVarietyBySku(
   return variety;
 }
 
-export async function listVarietiesByProductId(productId: string): Promise<SelectProductVariety[]> {
+export async function listVarietiesByProductId(
+  productId: string,
+  includeInactive = false,
+): Promise<SelectProductVariety[]> {
   return db
     .select()
     .from(productVarietiesTable)
     .where(
-      and(eq(productVarietiesTable.productId, productId), isNull(productVarietiesTable.deletedAt)),
+      and(
+        eq(productVarietiesTable.productId, productId),
+        includeInactive ? undefined : isNull(productVarietiesTable.deletedAt),
+      ),
     )
     .orderBy(asc(productVarietiesTable.name));
 }
@@ -299,4 +305,16 @@ export async function softDeleteProductVariety(
     .where(eq(productVarietiesTable.id, varietyId))
     .returning();
   return deletedVariety;
+}
+
+export async function reactivateProductVariety(
+  varietyId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProductVariety | undefined> {
+  const [reactivatedVariety] = await executor
+    .update(productVarietiesTable)
+    .set({ deletedAt: null, status: "active" })
+    .where(eq(productVarietiesTable.id, varietyId))
+    .returning();
+  return reactivatedVariety;
 }

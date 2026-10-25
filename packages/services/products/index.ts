@@ -9,6 +9,7 @@ import {
   listProductsForAdminWithVarieties,
   listVarietiesByProductId,
   reactivateProduct,
+  reactivateProductVariety,
   softDeleteProductVariety,
   updateProduct,
   updateProductVariety,
@@ -253,8 +254,11 @@ class ProductService {
     }
   }
 
-  public async listVarietiesForProduct(productId: string): Promise<SelectProductVariety[]> {
-    return listVarietiesByProductId(productId);
+  public async listVarietiesForProduct(
+    productId: string,
+    { includeInactive = false }: { includeInactive?: boolean } = {},
+  ): Promise<SelectProductVariety[]> {
+    return listVarietiesByProductId(productId, includeInactive);
   }
 
   // Name and unit only; the SKU never changes after insert.
@@ -304,6 +308,27 @@ class ProductService {
           {
             actorId: actorProfileId,
             action: "deactivated",
+            entityType: "product_variety",
+            entityId: varietyId,
+          },
+          transaction,
+        );
+      }
+      return variety;
+    });
+  }
+
+  public async reactivateProductVariety(
+    varietyId: string,
+    actorProfileId: string,
+  ): Promise<SelectProductVariety | undefined> {
+    return runInTransaction(async (transaction) => {
+      const variety = await reactivateProductVariety(varietyId, transaction);
+      if (variety) {
+        await recordAudit(
+          {
+            actorId: actorProfileId,
+            action: "activated",
             entityType: "product_variety",
             entityId: varietyId,
           },

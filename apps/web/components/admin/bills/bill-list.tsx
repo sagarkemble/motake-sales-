@@ -17,6 +17,7 @@ import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
   Table,
@@ -42,6 +43,7 @@ export function BillList() {
   const [numberSearch, setNumberSearch] = useState("");
   const [billDateFrom, setBillDateFrom] = useState("");
   const [billDateTo, setBillDateTo] = useState("");
+  const [hideCancelled, setHideCancelled] = useState(false);
   const [customerId, setCustomerId] = useState(ALL);
   const [salesmanId, setSalesmanId] = useState(ALL);
   const [lookupNumber, setLookupNumber] = useState("");
@@ -59,6 +61,7 @@ export function BillList() {
       numberSearch: debouncedNumberSearch || undefined,
       billDateFrom: billDateFrom || undefined,
       billDateTo: billDateTo || undefined,
+      hideCancelled,
       page,
       pageSize,
     },
@@ -159,6 +162,16 @@ export function BillList() {
             }}
           />
         </FilterField>
+        <label className="col-span-2 flex items-center gap-2 text-sm sm:col-span-3 lg:col-span-5">
+          <Checkbox
+            checked={hideCancelled}
+            onCheckedChange={(checked) => {
+              setHideCancelled(checked === true);
+              setPage(1);
+            }}
+          />
+          {tx("admin.bills.hideCancelled")}
+        </label>
       </div>
 
       {isBillsListLoading ? (

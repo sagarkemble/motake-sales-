@@ -158,4 +158,28 @@ describe("BillService reads", () => {
     expect(inRange.items.map((row) => row.id)).toEqual([newer.bill.id]);
     expect(byNumber.items.map((row) => row.id)).toEqual([older.bill.id]);
   });
+
+  it("leaves cancelled Bills out of the list when asked to", async () => {
+    const admin = await buildProfile();
+    const customer = await buildCustomer(admin.id);
+    const variety = await buildVariety();
+    const line = { variety, quantity: 1, routePricePaise: 1_000 };
+    const kept = await buildBookNowWithBill({ customer, actorId: admin.id, lines: [line] });
+    const cancelled = await buildBookNowWithBill({
+      customer,
+      actorId: admin.id,
+      status: "cancelled",
+      lines: [line],
+    });
+
+    const all = await billService.listBills({ customerId: customer.id });
+    const withoutCancelled = await billService.listBills({
+      customerId: customer.id,
+      hideCancelled: true,
+    });
+
+    expect(all.items.map((row) => row.id).sort()).toEqual([kept.bill.id, cancelled.bill.id].sort());
+    expect(withoutCancelled.items.map((row) => row.id)).toEqual([kept.bill.id]);
+    expect(withoutCancelled.totalCount).toBe(1);
+  });
 });

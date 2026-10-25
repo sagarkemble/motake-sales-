@@ -27,7 +27,7 @@ describe("ProductService audit", () => {
     expect(rows.every((row) => row.customerId === null)).toBe(true);
   });
 
-  it("records Variety create, update and deactivate under product_variety", async () => {
+  it("records Variety create, update, deactivate and reactivate under product_variety", async () => {
     const admin = await buildProfile();
     const product = await productService.createProduct({ name: "Lassi" }, admin.id);
 
@@ -38,9 +38,15 @@ describe("ProductService audit", () => {
     await productService.updateProductVariety(variety.id, { unit: "bottle" }, admin.id);
     await productService.updateProductVariety(variety.id, { unit: "bottle" }, admin.id);
     await productService.deactivateProductVariety(variety.id, admin.id);
+    await productService.reactivateProductVariety(variety.id, admin.id);
 
     const rows = await listAuditLogsForEntity("product_variety", variety.id);
-    expect(rows.map((row) => row.action).sort()).toEqual(["created", "deactivated", "updated"]);
+    expect(rows.map((row) => row.action).sort()).toEqual([
+      "activated",
+      "created",
+      "deactivated",
+      "updated",
+    ]);
     const created = rows.find((row) => row.action === "created");
     const updated = rows.find((row) => row.action === "updated");
     expect(created?.payload).toEqual({

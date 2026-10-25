@@ -89,4 +89,26 @@ describe("ProductService varieties", () => {
 
     expect(updated).toMatchObject({ name: "1 kg jar", unit: "jar", sku: "vr-ghee-1-kg-001" });
   });
+
+  it("lists a deactivated Variety for Admin only, and reactivates it", async () => {
+    const admin = await buildProfile();
+    const product = await buildProduct({ name: "Curd" });
+    const variety = await productService.createProductVariety(
+      { productId: product.id, name: "1 kg", unit: "tub" },
+      admin.id,
+    );
+    await productService.deactivateProductVariety(variety.id, admin.id);
+
+    expect(await productService.listVarietiesForProduct(product.id)).toEqual([]);
+    expect(
+      await productService.listVarietiesForProduct(product.id, { includeInactive: true }),
+    ).toEqual([expect.objectContaining({ id: variety.id, status: "inactive" })]);
+
+    const reactivated = await productService.reactivateProductVariety(variety.id, admin.id);
+
+    expect(reactivated).toMatchObject({ id: variety.id, status: "active", deletedAt: null });
+    expect(await productService.listVarietiesForProduct(product.id)).toEqual([
+      expect.objectContaining({ id: variety.id, status: "active" }),
+    ]);
+  });
 });

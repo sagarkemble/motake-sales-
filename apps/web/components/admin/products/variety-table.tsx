@@ -2,9 +2,20 @@
 
 import type { RouterOutputs } from "@repo/trpc/client";
 import { useState } from "react";
-import { BoxIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
+import { BoxIcon, PencilIcon, PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SkuChip } from "~/components/admin/products/sku-chip";
 import { StatusBadge } from "~/components/admin/products/status-badge";
@@ -35,11 +46,14 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
     updateProductVarietyAsync,
     isUpdatingProductVariety,
     deactivateProductVarietyAsync,
+    reactivateProductVarietyAsync,
+    isReactivatingProductVariety,
   } = useProducts({ productId });
 
   const [editingVariety, setEditingVariety] = useState<ProductVariety | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [addedVarietyId, setAddedVarietyId] = useState<string | null>(null);
+  const [reactivatingVariety, setReactivatingVariety] = useState<ProductVariety | null>(null);
 
   function openAddDialog() {
     setEditingVariety(null);
@@ -69,6 +83,17 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
       toast.success(tx("admin.varieties.deactivateSuccess"));
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.varieties.deactivateFailed")));
+    }
+  }
+
+  async function handleReactivate() {
+    if (!reactivatingVariety) return;
+    try {
+      await reactivateProductVarietyAsync({ id: reactivatingVariety.id });
+      toast.success(tx("admin.varieties.reactivateSuccess"));
+      setReactivatingVariety(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error, tx("admin.varieties.reactivateFailed")));
     }
   }
 
@@ -131,34 +156,91 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                   )}
                 </div>
 
-                <StatusBadge status={variety.status} />
+                {isInactive ? (
+                  <Badge
+                    variant="outline"
+                    className="border-transparent bg-muted text-muted-foreground"
+                  >
+                    {tx("admin.varieties.deactivated")}
+                  </Badge>
+                ) : (
+                  <StatusBadge status={variety.status} />
+                )}
 
                 <div className="flex shrink-0 gap-1">
                   <Button
                     type="button"
                     size="icon-sm"
                     variant="ghost"
+                    // A deactivated variety is read-only until it is reactivated.
+                    disabled={isInactive}
                     onClick={() => openEditDialog(variety)}
                     aria-label={tx("admin.varieties.editAria")}
                   >
                     <PencilIcon />
                   </Button>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    disabled={isInactive}
-                    onClick={() => handleDeactivate(variety)}
-                    aria-label={tx("admin.varieties.deactivateAria")}
-                  >
-                    <XIcon />
-                  </Button>
+                  {isInactive ? (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      className="text-brand hover:text-brand"
+                      onClick={() => setReactivatingVariety(variety)}
+                      aria-label={tx("admin.varieties.reactivateAria")}
+                      title={tx("admin.varieties.reactivateAria")}
+                    >
+                      <RotateCcwIcon />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => handleDeactivate(variety)}
+                      aria-label={tx("admin.varieties.deactivateAria")}
+                      title={tx("admin.varieties.deactivateAria")}
+                    >
+                      <XIcon />
+                    </Button>
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      <AlertDialog
+        open={Boolean(reactivatingVariety)}
+        onOpenChange={(open) => !open && setReactivatingVariety(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tx("admin.varieties.reactivateTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tx("admin.varieties.reactivateBody", {
+                name: reactivatingVariety
+                  ? `${reactivatingVariety.name} · ${reactivatingVariety.unit}`
+                  : "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isReactivatingProductVariety}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isReactivatingProductVariety}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleReactivate();
+              }}
+            >
+              {tx("admin.varieties.reactivateConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <VarietyFormDialog
         open={isDialogOpen}
