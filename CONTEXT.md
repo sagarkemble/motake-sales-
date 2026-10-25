@@ -190,7 +190,7 @@ A numbered revision of one Message template for one provider and language. A mes
 *Avoid*: falling back to an older verified version
 
 **Preferred language**:
-The language a Customer receives messages in: Marathi, Hindi or English. Marathi unless set otherwise. Documents are always English.
+The language a Customer receives messages in: Marathi, Hindi or English, chosen when the Customer is added (Marathi unless chosen otherwise) and never changed afterwards. Documents are always English.
 
 **Document**:
 A PDF of a Bill (Tax Invoice or Bill of Supply), Note, or Payment receipt, drawn from a fixed layout kept in the app. Stored privately; never reachable by a public link. Its file name is `Motake <paper> <number>.pdf` with `/` replaced by `-`, e.g. `Motake Bill MB-26-27-000123.pdf`.
