@@ -15,6 +15,13 @@
       "when": 1792880559655,
       "tag": "0001_deferrable_note_ledger_pair",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792902230336,
+      "tag": "0002_notification_templates_and_documents",
+      "breakpoints": true
     }
   ]
 }

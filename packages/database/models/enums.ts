@@ -81,6 +81,14 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "skipped",
 ]);
 
+export const notificationProviderEnum = pgEnum("notification_provider", ["whatsapp", "sms"]);
+
+export const messageLanguageEnum = pgEnum("message_language", ["mr", "hi", "en"]);
+
+export const templateDocumentTypeEnum = pgEnum("template_document_type", ["none", "image", "pdf"]);
+
+export const attachmentTypeEnum = pgEnum("attachment_type", ["image", "pdf"]);
+
 export const notificationAttemptStatusEnum = pgEnum("notification_attempt_status", [
   "sent",
   "failed",
