@@ -1,6 +1,8 @@
+import { db } from "@repo/database";
 import {
   createGatepassWithItems,
   getActiveGatepassBySalesmanAndDate,
+  getActiveGatepassWithRoute,
   getAllotmentMatrixForDate,
   getDiscrepancyGatepassesForDate,
   getEndOfDayTotalsForDate,
@@ -15,16 +17,21 @@ import {
   submitHandoverForGatepass,
   updateGatepassStatus,
   withSellableQty,
+  type ActiveGatepassWithRoute,
   type AllotmentMatrixRow,
   type DiscrepancyGatepassRow,
   type GatepassEndOfDayTotals,
   type GatepassHistoryRow,
   type GatepassItemWithSellable,
   type GatepassWithItems,
+  type GatepassWithRoute,
+  type GatepassWithRouteAndItems,
 } from "@repo/database/queries/gatepass";
+import { listPricesForRoute, listVarietyLabels, lockRouteRow } from "@repo/database/queries/routes";
 import { getProfileById } from "@repo/database/queries/auth";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
-import { runInTransaction } from "@repo/database/queries/shared/executor";
+import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
 import { badRequest, conflict, forbidden, notFound } from "../errors";
@@ -44,15 +51,10 @@ import {
   type SubmitHandoverInput,
 } from "./model";
 
-const GATEPASS_UNIQUE_VIOLATION_CODE = "23505";
+const activeGatepassConstraint = "gatepasses_salesman_active_business_date_unique";
 
 function isDuplicateGatepassError(caughtError: unknown): boolean {
-  return (
-    typeof caughtError === "object" &&
-    caughtError !== null &&
-    "code" in caughtError &&
-    (caughtError as { code: unknown }).code === GATEPASS_UNIQUE_VIOLATION_CODE
-  );
+  return violatedUniqueConstraint(caughtError) === activeGatepassConstraint;
 }
 
 class GatepassService {
@@ -60,35 +62,91 @@ class GatepassService {
     return businessDateOf(new Date());
   }
 
-  public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithItems> {
-    const parsedInput = allotGatepassInputSchema.parse(input);
-    // A salesman can be re-allotted a fresh gatepass on the same day, but only once their
-    // current one is no longer active (handed over / closed). Block only on an active gatepass.
-    const activeGatepass = await getActiveGatepassBySalesmanAndDate(
-      parsedInput.salesmanId,
-      parsedInput.businessDate,
+  // The salesman's GatePass with status `active` on today's Asia/Kolkata business date, with its
+  // Route. Handed-over and closed GatePasses are not Active. Pass the caller's transaction to
+  // resolve it inside that transaction.
+  public async getActiveGatepassForSalesman(
+    salesmanId: string,
+    executor: DbExecutor = db,
+  ): Promise<ActiveGatepassWithRoute | null> {
+    const activeGatepass = await getActiveGatepassWithRoute(
+      salesmanId,
+      businessDateOf(new Date()),
+      executor,
     );
-    if (activeGatepass) {
-      throw conflict(
+    return activeGatepass ?? null;
+  }
+
+  // The Route is set here once and never changed. Every allotted variety needs a Route price on it.
+  public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithRouteAndItems> {
+    const parsedInput = allotGatepassInputSchema.parse(input);
+    const alreadyActive = () =>
+      conflict(
         `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
       );
-    }
     try {
-      return await createGatepassWithItems(
-        {
-          salesmanId: parsedInput.salesmanId,
-          businessDate: parsedInput.businessDate,
-          issuedBy: parsedInput.issuedBy,
-          status: "active",
-        },
-        parsedInput.items,
-      );
-    } catch (insertError) {
-      if (isDuplicateGatepassError(insertError)) {
-        throw conflict(
-          `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
+      return await runInTransaction(async (transaction) => {
+        // FOR SHARE waits on a concurrent Hide, so a hidden Route never gets an Active GatePass.
+        const route = await lockRouteRow(parsedInput.routeId, "share", transaction);
+        if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
+        if (route.deletedAt) {
+          throw conflict(`Route ${route.name} is hidden. Pick another Route.`);
+        }
+
+        const pricedVarietyIds = new Set(
+          (await listPricesForRoute(route.id, transaction)).map((price) => price.varietyId),
         );
-      }
+        const unpricedVarietyIds = parsedInput.items
+          .map((item) => item.varietyId)
+          .filter((varietyId) => !pricedVarietyIds.has(varietyId));
+        if (unpricedVarietyIds.length > 0) {
+          const labels = await listVarietyLabels(unpricedVarietyIds, transaction);
+          const named = labels.length ? labels.map((row) => row.label) : unpricedVarietyIds;
+          throw badRequest(`No price on Route ${route.name} for: ${named.join(", ")}`);
+        }
+
+        // A salesman can be re-allotted a fresh gatepass on the same day, but only once their
+        // current one is no longer active (handed over / closed).
+        const activeGatepass = await getActiveGatepassBySalesmanAndDate(
+          parsedInput.salesmanId,
+          parsedInput.businessDate,
+          transaction,
+        );
+        if (activeGatepass) throw alreadyActive();
+
+        const created = await createGatepassWithItems(
+          {
+            salesmanId: parsedInput.salesmanId,
+            routeId: route.id,
+            businessDate: parsedInput.businessDate,
+            issuedBy: parsedInput.issuedBy,
+            status: "active",
+          },
+          parsedInput.items,
+          transaction,
+        );
+        await recordAudit(
+          {
+            actorId: parsedInput.issuedBy,
+            action: "allotted",
+            entityType: "gatepass",
+            entityId: created.gatepass.id,
+            payload: {
+              salesmanId: parsedInput.salesmanId,
+              businessDate: parsedInput.businessDate,
+              routeId: route.id,
+              items: parsedInput.items,
+            },
+          },
+          transaction,
+        );
+        return {
+          gatepass: { ...created.gatepass, routeName: route.name, routeCode: route.code },
+          items: created.items,
+        };
+      });
+    } catch (insertError) {
+      if (isDuplicateGatepassError(insertError)) throw alreadyActive();
       throw insertError;
     }
   }
@@ -101,7 +159,8 @@ class GatepassService {
     salesmanId: string,
     businessDate: string,
   ): Promise<
-    (GatepassWithItems & { issuedByName: string | null; closedByName: string | null }) | undefined
+    | (GatepassWithRouteAndItems & { issuedByName: string | null; closedByName: string | null })
+    | undefined
   > {
     const gatepassWithItems = await getGatepassWithItemsForSalesmanAndDate(
       salesmanId,
@@ -119,7 +178,7 @@ class GatepassService {
     };
   }
 
-  public async listGatepassesForDate(businessDate: string): Promise<SelectGatepass[]> {
+  public async listGatepassesForDate(businessDate: string): Promise<GatepassWithRoute[]> {
     return listGatepassesForDate(businessDate);
   }
 

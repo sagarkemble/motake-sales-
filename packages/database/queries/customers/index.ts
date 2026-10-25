@@ -1,10 +1,23 @@
-import { and, asc, count, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  getTableColumns,
+  ilike,
+  inArray,
+  isNull,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "../../index";
 import {
   billsTable,
   customersTable,
   ordersTable,
+  routesTable,
   type InsertCustomer,
   type SelectCustomer,
 } from "../../schema";
@@ -19,9 +32,68 @@ import {
   type PaginationParams,
 } from "../shared/pagination";
 
-export async function createCustomer(newCustomer: InsertCustomer): Promise<SelectCustomer> {
-  const insertedRows = await db.insert(customersTable).values(newCustomer).returning();
+// A Customer with its live Route name and code; a hidden Route is still shown, labelled.
+export type CustomerWithRoute = SelectCustomer & {
+  routeName: string;
+  routeCode: string;
+  routeHidden: boolean;
+};
+
+const customerWithRouteColumns = {
+  ...getTableColumns(customersTable),
+  routeName: routesTable.name,
+  routeCode: routesTable.code,
+  routeHidden: sql<boolean>`${routesTable.deletedAt} IS NOT NULL`,
+};
+
+export async function createCustomer(
+  newCustomer: InsertCustomer,
+  executor: DbExecutor = db,
+): Promise<SelectCustomer> {
+  const insertedRows = await executor.insert(customersTable).values(newCustomer).returning();
   return firstOrThrow(insertedRows, "createCustomer");
+}
+
+export async function getCustomerWithRouteById(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<CustomerWithRoute | undefined> {
+  const [customer] = await executor
+    .select(customerWithRouteColumns)
+    .from(customersTable)
+    .innerJoin(routesTable, eq(customersTable.routeId, routesTable.id))
+    .where(eq(customersTable.id, customerId));
+  return customer;
+}
+
+export async function lockCustomerRow(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<SelectCustomer | undefined> {
+  const [customer] = await executor
+    .select()
+    .from(customersTable)
+    .where(eq(customersTable.id, customerId))
+    .for("update");
+  return customer;
+}
+
+// Pre-orders still to be fulfilled for this Customer.
+export async function countOpenPreordersForCustomer(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<number> {
+  const [row] = await executor
+    .select({ total: count() })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.customerId, customerId),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, ["scheduled", "due"]),
+      ),
+    );
+  return row?.total ?? 0;
 }
 
 export async function getCustomerById(
@@ -46,25 +118,28 @@ export async function listActiveCustomersByIds(customerIds: string[]): Promise<S
 export async function searchCustomers(
   searchTerm: string | undefined,
   pagination: PaginationParams,
-  options: { includeInactive?: boolean } = {},
-): Promise<PaginatedResult<SelectCustomer>> {
+  options: { includeInactive?: boolean; routeId?: string; matchAddress?: boolean } = {},
+): Promise<PaginatedResult<CustomerWithRoute>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
   const searchClause = searchTerm
     ? or(
         ilike(customersTable.shopName, `%${searchTerm}%`),
         ilike(customersTable.contactName, `%${searchTerm}%`),
         ilike(customersTable.phone, `%${searchTerm}%`),
+        options.matchAddress ? ilike(customersTable.address, `%${searchTerm}%`) : undefined,
       )
     : undefined;
   const whereClause = and(
     options.includeInactive ? undefined : isNull(customersTable.deletedAt),
+    options.routeId ? eq(customersTable.routeId, options.routeId) : undefined,
     searchClause,
   );
 
   const [items, countRows] = await Promise.all([
     db
-      .select()
+      .select(customerWithRouteColumns)
       .from(customersTable)
+      .innerJoin(routesTable, eq(customersTable.routeId, routesTable.id))
       .where(whereClause)
       .orderBy(asc(customersTable.shopName))
       .limit(limit)
@@ -80,7 +155,7 @@ export async function searchCustomers(
 export async function searchActiveCustomers(
   searchTerm: string | undefined,
   pagination: PaginationParams,
-): Promise<PaginatedResult<SelectCustomer>> {
+): Promise<PaginatedResult<CustomerWithRoute>> {
   return searchCustomers(searchTerm, pagination, { includeInactive: false });
 }
 

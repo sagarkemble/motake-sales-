@@ -8,6 +8,8 @@ export type GatepassItemAllotment = z.infer<typeof gatepassItemAllotmentSchema>;
 
 export const allotGatepassInputSchema = z.object({
   salesmanId: z.string().uuid(),
+  // Fixed once allotted.
+  routeId: z.string().uuid(),
   businessDate: z.string(),
   issuedBy: z.string().uuid(),
   items: z.array(gatepassItemAllotmentSchema).min(1),
@@ -26,13 +28,7 @@ export const recordReturnInputSchema = z.object({
 });
 export type RecordReturnInput = z.infer<typeof recordReturnInputSchema>;
 
-export const gatepassShortReasonSchema = z.enum([
-  "damaged",
-  "expired",
-  "lost",
-  "leaked",
-  "other",
-]);
+export const gatepassShortReasonSchema = z.enum(["damaged", "expired", "lost", "leaked", "other"]);
 export type GatepassShortReason = z.infer<typeof gatepassShortReasonSchema>;
 
 export const handoverItemSchema = z.object({
