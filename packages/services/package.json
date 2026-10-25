@@ -16,6 +16,7 @@
     "./orders": "./orders/index.ts",
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",
+    "./routes": "./routes/index.ts",
     "./salesman": "./salesman/index.ts",
     "./uploads": "./uploads/r2-client.ts"
   },
