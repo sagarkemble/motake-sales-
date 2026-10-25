@@ -1,0 +1,1 @@
+ALTER TABLE "bills" RENAME COLUMN "signed_qr_image_url" TO "signed_qr_image_key";

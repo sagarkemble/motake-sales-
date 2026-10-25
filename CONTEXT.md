@@ -49,13 +49,13 @@ The current tax-exclusive price of one variety on one Route. There is no company
 An order placed and billed on the spot, deducting stock from the Active GatePass. It remembers that GatePass so cancel can restore stock only there. The salesman app sends Variety SKU and qty only; the server snapshots Route price and tax. Qty is a positive integer count of that Variety SKU (packs), not a free-typed kg or L. Short stock or a bad line refuses the whole Bill; the app shows what was short. No partial basket.
 
 **Pre-order**:
-An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST classification and rate snapshotted at placement. Scheduled date is after today. Place assigns the Bill number `MB/{FY}/{seq}` immediately (Motake Bill). Fulfil keeps that number. Place does not take Payment, stock, or Ledger. Salesman or Admin uses the same fulfil procedure; Admin has no GatePass. Fulfil before the scheduled date, or after another fulfil, is refused and shown; first writer wins.
+An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST classification and rate snapshotted at placement. Scheduled date is after today. Place creates no Bill, no number, no Payment, no stock change and no Ledger row; fulfil issues the Bill and its `MB/{FY}/{seq}` number. Fulfil uses the Route state copied onto the Pre-order when it was placed. Salesman or Admin uses the same fulfil procedure; Admin has no GatePass. Fulfil before the scheduled date, or after another fulfil, is refused and shown; first writer wins.
 *Avoid*: Booking, advance order
 
 ### Money
 
 **Bill**:
-A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill), including an unfulfilled Pre-order from the moment it is placed. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed, and after IRN is recorded.
+A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill) when it is issued: at Book Now, Pre-order fulfil, or Admin Raise Bill. An unfulfilled Pre-order has no Bill. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed, and after IRN is recorded.
 *Avoid*: Invoice
 
 **Tax Invoice**:
@@ -149,7 +149,7 @@ An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept wit
 A one-time starting Balance entered for a Customer to carry over what was owed before the app; may be Pending or Advance. Admin sets it once from the Ledger and does not Correct it afterwards.
 
 **Receipt**:
-The WhatsApp sent because a Payment was kept above ₹0. Names Customer and Route, kept amount, cash returned if any, and Balance after that Payment. No PDF.
+The WhatsApp sent because a Payment was kept above ₹0. Names Customer and Route, kept amount, cash returned if any, and Balance after that Payment. Carries the Payment receipt Document.
 *Avoid*: Bill message, invoice; a second Receipt when IRN is later recorded
 
 **Account update**:
@@ -179,6 +179,20 @@ The series token for that document type in that financial year (`MB`, `MC`, `MD`
 **GST Credit Note deadline**:
 One date per financial year. After it, a reduction that would reverse GST on a Bill of that year must be a Commercial Credit Note. Debit Notes have no deadline. Until set, 30 November after that year ends.
 
-**Seed load**:
-Admin's one successful import of Motake's filled workbook before go-live. All sheets commit together or none do. A second load is refused until a pre-go-live wipe.
+### Messages and documents
+
+**Message template**:
+A provider-approved message shape (for example a WhatsApp template) with named blanks, in one language and one version. Every Customer message is sent through one; no free text is ever sent. Developers add rows by hand; the app only reads them.
+*Avoid*: free-text message, editing a template in place (add a new version instead)
+
+**Template version**:
+A numbered revision of one Message template for one provider and language. A message always uses the highest version; if that version is not verified by the provider, the message is refused.
+*Avoid*: falling back to an older verified version
+
+**Preferred language**:
+The language a Customer receives messages in: Marathi, Hindi or English, chosen when the Customer is added (Marathi unless chosen otherwise) and never changed afterwards. Documents are always English.
+
+**Document**:
+A PDF of a Bill (Tax Invoice or Bill of Supply), Note, or Payment receipt, drawn from a fixed layout kept in the app. Stored privately; never reachable by a public link. Its file name is `Motake <paper> <number>.pdf` with `/` replaced by `-`, e.g. `Motake Bill MB-26-27-000123.pdf`.
+*Avoid*: invoice PDF, public Bill link
 *Avoid*: merging a second file; loading salesmen or GatePasses from this workbook

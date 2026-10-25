@@ -30,8 +30,8 @@ export const billVersionsTable = pgTable(
       .notNull()
       .references(() => profilesTable.id),
 
-    // Immutable PDF for this version.
-    pdfUrl: text("pdf_url"),
+    // Private R2 key of this version's PDF; set once. Correct IRN may replace it (db-decisions/0014).
+    pdfKey: text("pdf_key"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

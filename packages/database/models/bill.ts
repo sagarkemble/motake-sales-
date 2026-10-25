@@ -59,7 +59,8 @@ export const billsTable = pgTable(
     irnAckNumber: varchar("irn_ack_number", { length: 64 }),
     irnAckDate: date("irn_ack_date"),
     signedQrText: text("signed_qr_text"),
-    signedQrImageUrl: text("signed_qr_image_url"),
+    // Private R2 key of the uploaded signed QR image (db-decisions/0014).
+    signedQrImageKey: text("signed_qr_image_key"),
     irnRecordedAt: timestamp("irn_recorded_at", { withTimezone: true }),
     irnRecordedBy: uuid("irn_recorded_by").references(() => profilesTable.id),
     irnCorrectReason: text("irn_correct_reason"),

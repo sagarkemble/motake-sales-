@@ -1,6 +1,6 @@
 import { bigint, boolean, index, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
-import { entityStatusEnum } from "./enums";
+import { entityStatusEnum, messageLanguageEnum } from "./enums";
 import { profilesTable } from "./profile";
 import { routesTable } from "./route";
 
@@ -35,6 +35,9 @@ export const customersTable = pgTable(
     gstin: varchar("gstin", { length: 15 }),
 
     einvoicingRequired: boolean("einvoicing_required").notNull(),
+
+    // Language of WhatsApp messages; Documents are always English.
+    preferredLanguage: messageLanguageEnum("preferred_language").notNull().default("mr"),
 
     // Signed copy of Debits − Credits; > 0 Pending, < 0 Advance. Updated in the same
     // transaction as each Ledger insert.
