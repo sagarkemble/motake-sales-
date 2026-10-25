@@ -5,6 +5,7 @@ import GatepassService from "@repo/services/gatepass";
 import OrderService from "@repo/services/orders";
 import ProductService from "@repo/services/products";
 import ReportService from "@repo/services/reports";
+import RouteService from "@repo/services/routes";
 import SalesmanService from "@repo/services/salesman";
 
 export const authService = new AuthService();
@@ -14,4 +15,5 @@ export const gatepassService = new GatepassService();
 export const orderService = new OrderService();
 export const productService = new ProductService();
 export const reportService = new ReportService();
+export const routeService = new RouteService();
 export const salesmanService = new SalesmanService();

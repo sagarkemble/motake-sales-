@@ -9,6 +9,7 @@ import { healthRouter } from "./routes/health/route";
 import { ordersRouter } from "./routes/orders/route";
 import { productsRouter } from "./routes/products/route";
 import { reportsRouter } from "./routes/reports/route";
+import { routesRouter } from "./routes/routes/route";
 import { salesmanRouter } from "./routes/salesman/route";
 
 export const serverRouter = router({
@@ -21,6 +22,7 @@ export const serverRouter = router({
   orders: ordersRouter,
   products: productsRouter,
   reports: reportsRouter,
+  routes: routesRouter,
   salesmen: salesmanRouter,
 });
 
