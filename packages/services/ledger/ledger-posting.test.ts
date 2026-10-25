@@ -24,13 +24,13 @@ import {
   buildSalesman,
   buildVariety,
 } from "../test/builders";
-import { DocumentNumberService } from "./document-numbers";
-import { LedgerService, type PostInput } from "./ledger";
+import DocumentNumberService from "../document-numbers";
+import LedgerService, { type PostInput } from "./index";
 
 const ledger = new LedgerService();
 const numbers = new DocumentNumberService();
 
-const post = (input: PostInput) => runInTransaction((tx) => ledger.post(tx, input));
+const post = (input: PostInput) => runInTransaction((tx) => ledger.post(input, tx));
 
 async function setup() {
   const admin = await buildProfile();
@@ -85,12 +85,15 @@ async function postNote(
       amountPaise,
       ledgerEntryId: randomUUID(),
     });
-    const result = await ledger.post(tx, {
-      entryType: entryType ?? "note",
-      noteId: note.id,
-      customerId,
-      actorId,
-    });
+    const result = await ledger.post(
+      {
+        entryType: entryType ?? (kind === "debit_note" ? "debit_note" : "credit_note"),
+        noteId: note.id,
+        customerId,
+        actorId,
+      },
+      tx,
+    );
     return { note, result };
   });
 }
@@ -328,11 +331,11 @@ describe("LedgerService.post refusals", () => {
         customerId: customer.id,
         actorId: admin.id,
       }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    ).rejects.toMatchObject({ name: "ZodError" });
     expect(await ledgerRows(customer.id)).toEqual([]);
   });
 
-  it("refuses a missing paper, a missing reason and a fractional amount", async () => {
+  it("refuses a missing paper, and rejects a missing reason or a fractional amount as invalid input", async () => {
     const { admin, customer } = await setup();
     const payment = await buildPayment({ customer, actorId: admin.id, keptPaise: 1_000 });
 
@@ -348,7 +351,7 @@ describe("LedgerService.post refusals", () => {
         customerId: customer.id,
         actorId: admin.id,
       }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    ).rejects.toMatchObject({ name: "ZodError" });
     await expect(
       post({
         entryType: "payment_adjusted",
@@ -358,7 +361,7 @@ describe("LedgerService.post refusals", () => {
         customerId: customer.id,
         actorId: admin.id,
       }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    ).rejects.toMatchObject({ name: "ZodError" });
   });
 
   it("refuses a paper that belongs to another Customer", async () => {
@@ -412,7 +415,12 @@ describe("LedgerService.post refusals", () => {
 
     const { note } = await postNote(bill, customer.id, admin.id, "gst_credit_note", 1_000);
     await expect(
-      post({ entryType: "note", noteId: note.id, customerId: customer.id, actorId: admin.id }),
+      post({
+        entryType: "credit_note",
+        noteId: note.id,
+        customerId: customer.id,
+        actorId: admin.id,
+      }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(await balanceOf(customer.id)).toBe(10_000 - 1_000);
   });
@@ -580,12 +588,15 @@ describe("LedgerService.post transactions", () => {
           amountPaise: 1_000,
           ledgerEntryId: randomUUID(),
         });
-        await ledger.post(tx, {
-          entryType: "note",
-          noteId: note.id,
-          customerId: customer.id,
-          actorId: admin.id,
-        });
+        await ledger.post(
+          {
+            entryType: "credit_note",
+            noteId: note.id,
+            customerId: customer.id,
+            actorId: admin.id,
+          },
+          tx,
+        );
         throw new Error("caller failed after posting");
       }),
     ).rejects.toThrow("caller failed after posting");
@@ -608,13 +619,16 @@ describe("LedgerService.post transactions", () => {
 
     await expect(
       runInTransaction(async (tx) => {
-        await numbers.allocate(tx, { kind: "refund", financialYear: "26-27", actorId: admin.id });
-        await ledger.post(tx, {
-          entryType: "refund",
-          refundId: tooBig.id,
-          customerId: customer.id,
-          actorId: admin.id,
-        });
+        await numbers.allocate({ kind: "refund", financialYear: "26-27", actorId: admin.id }, tx);
+        await ledger.post(
+          {
+            entryType: "refund",
+            refundId: tooBig.id,
+            customerId: customer.id,
+            actorId: admin.id,
+          },
+          tx,
+        );
       }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
 

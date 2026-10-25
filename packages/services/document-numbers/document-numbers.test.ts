@@ -4,7 +4,7 @@ import { documentNumberSeriesTable } from "@repo/database/schema";
 import { describe, expect, it } from "vitest";
 
 import { buildProfile } from "../test/builders";
-import { DocumentNumberService, formatDocumentNumber } from "./document-numbers";
+import DocumentNumberService, { formatDocumentNumber } from "./index";
 
 const numbers = new DocumentNumberService();
 
@@ -54,10 +54,10 @@ describe("DocumentNumberService", () => {
     const admin = await buildProfile();
 
     const first = await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "bill", financialYear: "26-27", actorId: admin.id }),
+      numbers.allocate({ kind: "bill", financialYear: "26-27", actorId: admin.id }, tx),
     );
     const second = await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "bill", financialYear: "26-27", actorId: admin.id }),
+      numbers.allocate({ kind: "bill", financialYear: "26-27", actorId: admin.id }, tx),
     );
 
     expect(first).toEqual({
@@ -75,10 +75,10 @@ describe("DocumentNumberService", () => {
     const admin = await buildProfile();
 
     const firstRun = await runInTransaction((tx) =>
-      numbers.ensureFinancialYear(tx, { financialYear: "27-28", actorId: admin.id }),
+      numbers.ensureFinancialYear({ financialYear: "27-28", actorId: admin.id }, tx),
     );
     const secondRun = await runInTransaction((tx) =>
-      numbers.ensureFinancialYear(tx, { financialYear: "27-28", actorId: admin.id }),
+      numbers.ensureFinancialYear({ financialYear: "27-28", actorId: admin.id }, tx),
     );
 
     expect([...firstRun].sort()).toEqual([
@@ -94,7 +94,7 @@ describe("DocumentNumberService", () => {
   it("freezes a series on its first number only, and uses a prefix set before first use", async () => {
     const admin = await buildProfile();
     await runInTransaction((tx) =>
-      numbers.ensureFinancialYear(tx, { financialYear: "28-29", actorId: admin.id }),
+      numbers.ensureFinancialYear({ financialYear: "28-29", actorId: admin.id }, tx),
     );
     await db
       .update(documentNumberSeriesTable)
@@ -102,11 +102,11 @@ describe("DocumentNumberService", () => {
       .where(eq(documentNumberSeriesTable.financialYear, "28-29"));
 
     const first = await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "bill", financialYear: "28-29", actorId: admin.id }),
+      numbers.allocate({ kind: "bill", financialYear: "28-29", actorId: admin.id }, tx),
     );
     const frozenAt = (await seriesRow("28-29", "bill"))?.firstUsedAt;
     await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "bill", financialYear: "28-29", actorId: admin.id }),
+      numbers.allocate({ kind: "bill", financialYear: "28-29", actorId: admin.id }, tx),
     );
 
     expect(first.number).toBe("XB/28-29/000001");
@@ -118,17 +118,17 @@ describe("DocumentNumberService", () => {
   it("gives a number back when the caller's transaction rolls back", async () => {
     const admin = await buildProfile();
     await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "payment", financialYear: "26-27", actorId: admin.id }),
+      numbers.allocate({ kind: "payment", financialYear: "26-27", actorId: admin.id }, tx),
     );
 
     await expect(
       runInTransaction(async (tx) => {
-        await numbers.allocate(tx, { kind: "payment", financialYear: "26-27", actorId: admin.id });
+        await numbers.allocate({ kind: "payment", financialYear: "26-27", actorId: admin.id }, tx);
         throw new Error("refused after allocation");
       }),
     ).rejects.toThrow("refused after allocation");
     const next = await runInTransaction((tx) =>
-      numbers.allocate(tx, { kind: "payment", financialYear: "26-27", actorId: admin.id }),
+      numbers.allocate({ kind: "payment", financialYear: "26-27", actorId: admin.id }, tx),
     );
 
     expect(next.number).toBe("MP/26-27/000002");
@@ -137,7 +137,7 @@ describe("DocumentNumberService", () => {
   it("keeps financial years and kinds independent", async () => {
     const admin = await buildProfile();
     const allocate = (kind: "bill" | "refund", financialYear: string) =>
-      runInTransaction((tx) => numbers.allocate(tx, { kind, financialYear, actorId: admin.id }));
+      runInTransaction((tx) => numbers.allocate({ kind, financialYear, actorId: admin.id }, tx));
 
     await allocate("bill", "31-32");
     await allocate("bill", "31-32");
@@ -152,7 +152,7 @@ describe("DocumentNumberService", () => {
     const results = await Promise.all(
       Array.from({ length: 8 }, () =>
         runInTransaction((tx) =>
-          numbers.allocate(tx, { kind: "debit_note", financialYear: "33-34", actorId: admin.id }),
+          numbers.allocate({ kind: "debit_note", financialYear: "33-34", actorId: admin.id }, tx),
         ),
       ),
     );
@@ -170,11 +170,14 @@ describe("DocumentNumberService", () => {
     const billReady = new Promise<void>((resolve) => (billAllocated = resolve));
 
     const billTx = runInTransaction(async (tx) => {
-      const result = await numbers.allocate(tx, {
-        kind: "bill",
-        financialYear: "35-36",
-        actorId: admin.id,
-      });
+      const result = await numbers.allocate(
+        {
+          kind: "bill",
+          financialYear: "35-36",
+          actorId: admin.id,
+        },
+        tx,
+      );
       billAllocated();
       await held;
       return result;
@@ -182,7 +185,7 @@ describe("DocumentNumberService", () => {
     await billReady;
     const payment = await Promise.race([
       runInTransaction((tx) =>
-        numbers.allocate(tx, { kind: "payment", financialYear: "35-36", actorId: admin.id }),
+        numbers.allocate({ kind: "payment", financialYear: "35-36", actorId: admin.id }, tx),
       ),
       new Promise<"blocked">((resolve) => setTimeout(() => resolve("blocked"), 3_000)),
     ]);
@@ -195,7 +198,7 @@ describe("DocumentNumberService", () => {
   it("refuses to number past 9,999,999", async () => {
     const admin = await buildProfile();
     await runInTransaction((tx) =>
-      numbers.ensureFinancialYear(tx, { financialYear: "34-35", actorId: admin.id }),
+      numbers.ensureFinancialYear({ financialYear: "34-35", actorId: admin.id }, tx),
     );
     await db
       .update(documentNumberSeriesTable)
@@ -204,7 +207,7 @@ describe("DocumentNumberService", () => {
 
     await expect(
       runInTransaction((tx) =>
-        numbers.allocate(tx, { kind: "bill", financialYear: "34-35", actorId: admin.id }),
+        numbers.allocate({ kind: "bill", financialYear: "34-35", actorId: admin.id }, tx),
       ),
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });

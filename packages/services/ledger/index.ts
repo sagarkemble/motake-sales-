@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { db } from "@repo/database";
 import {
   applyBalanceChange,
   findBillDebit,
@@ -17,72 +18,33 @@ import {
   setStoredBalance,
   sumLedgerForCustomer,
   type BalanceMismatch,
-} from "@repo/database/queries/money/ledger";
-import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+} from "@repo/database/queries/ledger";
+import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
-import type { InsertLedgerEntry, SelectLedgerEntry } from "@repo/database/schema";
+import type { InsertLedgerEntry } from "@repo/database/schema";
 
 import { badRequest, conflict, notFound } from "../errors";
 import { recordAudit } from "../shared/audit";
+import {
+  openingBalanceInputSchema,
+  postInputSchema,
+  rebuildBalanceInputSchema,
+  type Balance,
+  type BalanceCheck,
+  type BalanceRebuild,
+  type BalanceState,
+  type OpeningBalanceInput,
+  type ParsedPostInput,
+  type PostInput,
+  type PostResult,
+  type RebuildBalanceInput,
+} from "./model";
 
-export type { BalanceMismatch };
-
-type EntryType = SelectLedgerEntry["entryType"];
-type Side = SelectLedgerEntry["side"];
-
-interface PostCommon {
-  customerId: string;
-  actorId: string;
-  // Only when a salesman posts against their Active GatePass.
-  gatepassId?: string | null;
-  occurredAt?: Date;
-}
-
-export type PostInput = PostCommon &
-  (
-    | { entryType: "bill"; billId: string; reason?: string }
-    | { entryType: "payment"; paymentId: string; reason?: string }
-    // "note" lets the core pick credit_note or debit_note from the Note's kind.
-    | { entryType: "note" | "credit_note" | "debit_note"; noteId: string }
-    // Signed difference: new kept minus old kept.
-    | { entryType: "payment_adjusted"; paymentId: string; differencePaise: number; reason: string }
-    | { entryType: "refund"; refundId: string }
-    // Signed difference: new Refund minus old Refund.
-    | { entryType: "refund_adjusted"; refundId: string; differencePaise: number; reason: string }
-  );
-
-export interface PostResult {
-  entryId: string;
-  entryType: EntryType;
-  side: Side;
-  amountPaise: number;
-  balanceBeforePaise: number;
-  balanceAfterPaise: number;
-  occurredAt: Date;
-}
-
-export type BalanceState = "pending" | "advance" | "settled";
-
-export interface Balance {
-  balancePaise: number;
-  state: BalanceState;
-  amountPaise: number;
-}
-
-export interface OpeningBalanceInput {
-  customerId: string;
-  direction: "pending" | "advance";
-  amountPaise: number;
-  reason: string;
-  actorId: string;
-  occurredAt?: Date;
-}
-
-// What a post resolved to before it touches the Customer row.
+// What a post resolved to before it writes the Ledger row.
 interface Entry {
   id?: string;
-  entryType: EntryType;
-  side: Side;
+  entryType: PostResult["entryType"];
+  side: PostResult["side"];
   amountPaise: number;
   reason: string | null;
   links: Pick<InsertLedgerEntry, "billId" | "paymentId" | "noteId" | "refundId">;
@@ -94,18 +56,6 @@ function toBalance(balancePaise: number): Balance {
   return { balancePaise, state, amountPaise: Math.abs(balancePaise) };
 }
 
-function requiredReason(reason: string | undefined): string {
-  const trimmed = reason?.trim();
-  if (!trimmed) throw badRequest("A reason is required");
-  return trimmed;
-}
-
-function assertPositivePaise(amountPaise: number): void {
-  if (!Number.isInteger(amountPaise) || amountPaise <= 0) {
-    throw badRequest("A Ledger amount must be a positive whole number of paise");
-  }
-}
-
 function assertSameCustomer(paperCustomerId: string, customerId: string, paper: string): void {
   if (paperCustomerId !== customerId) throw badRequest(`This ${paper} belongs to another Customer`);
 }
@@ -113,161 +63,164 @@ function assertSameCustomer(paperCustomerId: string, customerId: string, paper: 
 // The money core's Ledger: the only writer of ledger_entries and customers.balance_paise. Posts run
 // inside the caller's transaction; the caller audits its own action and sends no WhatsApp before
 // commit. Lock order: number series first, then the Customer row, then papers and posts.
-export class LedgerService {
-  public async post(executor: DbExecutor, input: PostInput): Promise<PostResult> {
+class LedgerService {
+  public async post(input: PostInput, executor: DbExecutor): Promise<PostResult> {
+    const parsedInput = postInputSchema.parse(input);
     // Locked before the "already posted" checks, so two posts of one paper cannot both pass them.
-    await this.lockBalance(executor, input.customerId);
-    const entry = await this.resolveEntry(executor, input);
-    return this.writeEntry(executor, input, entry);
+    await this.lockBalance(parsedInput.customerId, executor);
+    const entry = await this.resolveEntry(parsedInput, executor);
+    return this.writeEntry(parsedInput, entry, executor);
   }
 
-  // Once per Customer. A complete procedure: opens its own transaction unless given one.
+  // Once per Customer.
   public async setOpeningBalance(
     input: OpeningBalanceInput,
-    executor?: DbExecutor,
+    executor: DbExecutor = db,
   ): Promise<PostResult> {
-    const reason = requiredReason(input.reason);
-    assertPositivePaise(input.amountPaise);
-    const work = async (tx: DbExecutor) => {
-      await this.lockBalance(tx, input.customerId);
-      if (await hasOpeningBalance(tx, input.customerId)) {
+    const parsedInput = openingBalanceInputSchema.parse(input);
+    return executor.transaction(async (transaction) => {
+      await this.lockBalance(parsedInput.customerId, transaction);
+      if (await hasOpeningBalance(parsedInput.customerId, transaction)) {
         throw conflict("This Customer already has an Opening balance");
       }
-      const result = await this.writeEntry(tx, input, {
-        entryType: "opening_balance",
-        side: input.direction === "pending" ? "debit" : "credit",
-        amountPaise: input.amountPaise,
-        reason,
-        links: {},
-      });
+      const result = await this.writeEntry(
+        parsedInput,
+        {
+          entryType: "opening_balance",
+          side: parsedInput.direction === "pending" ? "debit" : "credit",
+          amountPaise: parsedInput.amountPaise,
+          reason: parsedInput.reason,
+          links: {},
+        },
+        transaction,
+      );
       await recordAudit(
         {
-          actorId: input.actorId,
+          actorId: parsedInput.actorId,
           action: "opening_set",
           entityType: "customer",
-          entityId: input.customerId,
-          customerId: input.customerId,
-          reason,
-          payload: { direction: input.direction, amountPaise: input.amountPaise },
+          entityId: parsedInput.customerId,
+          customerId: parsedInput.customerId,
+          reason: parsedInput.reason,
+          payload: { direction: parsedInput.direction, amountPaise: parsedInput.amountPaise },
         },
-        tx,
+        transaction,
       );
       return result;
-    };
-    return executor ? work(executor) : runInTransaction(work);
+    });
   }
 
   // The stored copy, as Pending / Advance / Settled.
-  public async getBalance(customerId: string, executor?: DbExecutor): Promise<Balance> {
+  public async getBalance(customerId: string, executor: DbExecutor = db): Promise<Balance> {
     const balancePaise = await getStoredBalance(customerId, executor);
     if (balancePaise === undefined) throw notFound(`Customer ${customerId} not found`);
     return toBalance(balancePaise);
   }
 
   // Locks the live Customer row FOR UPDATE, for callers that decide what to post from the Balance.
-  public async lockBalance(executor: DbExecutor, customerId: string): Promise<Balance> {
-    const balancePaise = await lockLiveCustomerBalance(executor, customerId);
+  public async lockBalance(customerId: string, executor: DbExecutor): Promise<Balance> {
+    const balancePaise = await lockLiveCustomerBalance(customerId, executor);
     if (balancePaise === undefined) throw notFound(`Customer ${customerId} not found`);
     return toBalance(balancePaise);
   }
 
   // Reads both sides with the Customer row locked, so a post committing in between cannot show a
   // false mismatch.
-  public async checkBalance(
-    customerId: string,
-    executor?: DbExecutor,
-  ): Promise<{ storedPaise: number; ledgerPaise: number; matches: boolean }> {
-    const work = async (tx: DbExecutor) => {
-      const { balancePaise: storedPaise } = await this.lockBalance(tx, customerId);
-      const ledgerPaise = await sumLedgerForCustomer(customerId, tx);
+  public async checkBalance(customerId: string, executor: DbExecutor = db): Promise<BalanceCheck> {
+    return executor.transaction(async (transaction) => {
+      const { balancePaise: storedPaise } = await this.lockBalance(customerId, transaction);
+      const ledgerPaise = await sumLedgerForCustomer(customerId, transaction);
       return { storedPaise, ledgerPaise, matches: storedPaise === ledgerPaise };
-    };
-    return executor ? work(executor) : runInTransaction(work);
+    });
   }
 
-  public async findBalanceMismatches(executor?: DbExecutor): Promise<BalanceMismatch[]> {
+  public async findBalanceMismatches(executor: DbExecutor = db): Promise<BalanceMismatch[]> {
     return listBalanceMismatches(executor);
   }
 
   // Sets the stored copy to the Ledger sum; never touches Ledger rows. Audited only when it changed.
   public async rebuildBalance(
-    input: { customerId: string; actorId: string; reason: string },
-    executor?: DbExecutor,
-  ): Promise<{ changed: boolean; beforePaise: number; afterPaise: number }> {
-    const reason = requiredReason(input.reason);
-    const work = async (tx: DbExecutor) => {
-      const { balancePaise: beforePaise } = await this.lockBalance(tx, input.customerId);
-      const afterPaise = await sumLedgerForCustomer(input.customerId, tx);
+    input: RebuildBalanceInput,
+    executor: DbExecutor = db,
+  ): Promise<BalanceRebuild> {
+    const parsedInput = rebuildBalanceInputSchema.parse(input);
+    return executor.transaction(async (transaction) => {
+      const { balancePaise: beforePaise } = await this.lockBalance(
+        parsedInput.customerId,
+        transaction,
+      );
+      const afterPaise = await sumLedgerForCustomer(parsedInput.customerId, transaction);
       if (afterPaise === beforePaise) return { changed: false, beforePaise, afterPaise };
-      await setStoredBalance(tx, { customerId: input.customerId, balancePaise: afterPaise });
+      await setStoredBalance(
+        { customerId: parsedInput.customerId, balancePaise: afterPaise },
+        transaction,
+      );
       await recordAudit(
         {
-          actorId: input.actorId,
+          actorId: parsedInput.actorId,
           action: "corrected",
           entityType: "customer",
-          entityId: input.customerId,
-          customerId: input.customerId,
-          reason,
+          entityId: parsedInput.customerId,
+          customerId: parsedInput.customerId,
+          reason: parsedInput.reason,
           payload: { balancePaise: { from: beforePaise, to: afterPaise } },
         },
-        tx,
+        transaction,
       );
       return { changed: true, beforePaise, afterPaise };
-    };
-    return executor ? work(executor) : runInTransaction(work);
+    });
   }
 
   // Reads the linked paper (already inserted or updated by the caller) for side, amount and reason.
-  private async resolveEntry(executor: DbExecutor, input: PostInput): Promise<Entry> {
+  private async resolveEntry(input: ParsedPostInput, executor: DbExecutor): Promise<Entry> {
     switch (input.entryType) {
       case "bill": {
-        const bill = await findBillForPosting(executor, input.billId);
+        const bill = await findBillForPosting(input.billId, executor);
         if (!bill) throw notFound(`Bill ${input.billId} not found`);
         // An office Bill has no order; its own debit is what ties it to the Customer.
         if (bill.orderCustomerId)
           assertSameCustomer(bill.orderCustomerId, input.customerId, "Bill");
-        if (await findBillDebit(executor, bill.id)) throw conflict("This Bill is already debited");
+        if (await findBillDebit(bill.id, executor)) throw conflict("This Bill is already debited");
         return {
           entryType: "bill",
           side: "debit",
           amountPaise: bill.totalPaise,
-          reason: input.reason?.trim() || null,
+          reason: input.reason || null,
           links: { billId: bill.id },
         };
       }
       case "payment": {
-        const payment = await findPaymentForPosting(executor, input.paymentId);
+        const payment = await findPaymentForPosting(input.paymentId, executor);
         if (!payment) throw notFound(`Payment ${input.paymentId} not found`);
         assertSameCustomer(payment.customerId, input.customerId, "Payment");
-        if (await findFirstPosting(executor, { paymentId: payment.id })) {
+        if (await findFirstPosting({ paymentId: payment.id }, executor)) {
           throw conflict("This Payment is already posted");
         }
         return {
           entryType: "payment",
           side: "credit",
           amountPaise: payment.amountKeptPaise,
-          reason: input.reason?.trim() || null,
+          reason: input.reason || null,
           links: { paymentId: payment.id },
         };
       }
       case "payment_adjusted": {
-        const reason = requiredReason(input.reason);
-        const payment = await findPaymentForPosting(executor, input.paymentId);
+        const payment = await findPaymentForPosting(input.paymentId, executor);
         if (!payment) throw notFound(`Payment ${input.paymentId} not found`);
         assertSameCustomer(payment.customerId, input.customerId, "Payment");
         return {
           entryType: "payment_adjusted",
           side: input.differencePaise > 0 ? "credit" : "debit",
           amountPaise: Math.abs(input.differencePaise),
-          reason,
+          reason: input.reason,
           links: { paymentId: payment.id },
         };
       }
       case "refund": {
-        const refund = await findRefundForPosting(executor, input.refundId);
+        const refund = await findRefundForPosting(input.refundId, executor);
         if (!refund) throw notFound(`Refund ${input.refundId} not found`);
         assertSameCustomer(refund.customerId, input.customerId, "Refund");
-        if (await findFirstPosting(executor, { refundId: refund.id })) {
+        if (await findFirstPosting({ refundId: refund.id }, executor)) {
           throw conflict("This Refund is already posted");
         }
         return {
@@ -279,40 +232,38 @@ export class LedgerService {
         };
       }
       case "refund_adjusted": {
-        const reason = requiredReason(input.reason);
-        const refund = await findRefundForPosting(executor, input.refundId);
+        const refund = await findRefundForPosting(input.refundId, executor);
         if (!refund) throw notFound(`Refund ${input.refundId} not found`);
         assertSameCustomer(refund.customerId, input.customerId, "Refund");
         return {
           entryType: "refund_adjusted",
           side: input.differencePaise > 0 ? "debit" : "credit",
           amountPaise: Math.abs(input.differencePaise),
-          reason,
+          reason: input.reason,
           links: { refundId: refund.id },
         };
       }
-      case "note":
       case "credit_note":
       case "debit_note": {
-        const note = await findNoteForPosting(executor, input.noteId);
+        const note = await findNoteForPosting(input.noteId, executor);
         if (!note) throw notFound(`Note ${input.noteId} not found`);
-        const entryType = note.kind === "debit_note" ? "debit_note" : "credit_note";
-        if (input.entryType !== "note" && input.entryType !== entryType) {
+        const noteEntryType = note.kind === "debit_note" ? "debit_note" : "credit_note";
+        if (input.entryType !== noteEntryType) {
           throw badRequest(`This Note is a ${note.kind}, not a ${input.entryType}`);
         }
-        const bill = await findBillForPosting(executor, note.billId);
+        const bill = await findBillForPosting(note.billId, executor);
         const noteCustomerId =
-          bill?.orderCustomerId ?? (await findBillDebit(executor, note.billId))?.customerId;
+          bill?.orderCustomerId ?? (await findBillDebit(note.billId, executor))?.customerId;
         if (!noteCustomerId) throw badRequest("This Note's Bill has no Customer");
         assertSameCustomer(noteCustomerId, input.customerId, "Note");
-        if (await findLedgerEntryForNote(executor, note.id)) {
+        if (await findLedgerEntryForNote(note.id, executor)) {
           throw conflict("This Note is already posted");
         }
         return {
           // The Note already carries the id of its one Ledger row (deferred FK pair).
           id: note.ledgerEntryId,
-          entryType,
-          side: entryType === "debit_note" ? "debit" : "credit",
+          entryType: noteEntryType,
+          side: noteEntryType === "debit_note" ? "debit" : "credit",
           amountPaise: note.amountPaise,
           reason: note.reason,
           links: { noteId: note.id },
@@ -322,16 +273,19 @@ export class LedgerService {
   }
 
   private async writeEntry(
-    executor: DbExecutor,
-    input: PostCommon,
+    input: { customerId: string; actorId: string; gatepassId?: string | null; occurredAt?: Date },
     entry: Entry,
+    executor: DbExecutor,
   ): Promise<PostResult> {
-    assertPositivePaise(entry.amountPaise);
+    // The paper's own amount, e.g. a Payment where nothing was kept.
+    if (!Number.isInteger(entry.amountPaise) || entry.amountPaise <= 0) {
+      throw badRequest("A Ledger amount must be a positive whole number of paise");
+    }
     const deltaPaise = entry.side === "debit" ? entry.amountPaise : -entry.amountPaise;
-    const balanceAfterPaise = await applyBalanceChange(executor, {
-      customerId: input.customerId,
-      deltaPaise,
-    });
+    const balanceAfterPaise = await applyBalanceChange(
+      { customerId: input.customerId, deltaPaise },
+      executor,
+    );
     if (balanceAfterPaise === undefined) throw notFound(`Customer ${input.customerId} not found`);
     // Checked with the Customer row locked, so two Refunds at once cannot both pass.
     const isRefundDebit =
@@ -341,18 +295,21 @@ export class LedgerService {
 
     const occurredAt = input.occurredAt ?? new Date();
     try {
-      const row = await insertLedgerEntry(executor, {
-        id: entry.id ?? randomUUID(),
-        customerId: input.customerId,
-        entryType: entry.entryType,
-        side: entry.side,
-        amountPaise: entry.amountPaise,
-        occurredAt,
-        actorId: input.actorId,
-        gatepassId: input.gatepassId ?? null,
-        reason: entry.reason,
-        ...entry.links,
-      });
+      const row = await insertLedgerEntry(
+        {
+          id: entry.id ?? randomUUID(),
+          customerId: input.customerId,
+          entryType: entry.entryType,
+          side: entry.side,
+          amountPaise: entry.amountPaise,
+          occurredAt,
+          actorId: input.actorId,
+          gatepassId: input.gatepassId ?? null,
+          reason: entry.reason,
+          ...entry.links,
+        },
+        executor,
+      );
       return {
         entryId: row.id,
         entryType: row.entryType,
@@ -368,3 +325,6 @@ export class LedgerService {
     }
   }
 }
+
+export default LedgerService;
+export type { Balance, BalanceMismatch, BalanceState, OpeningBalanceInput, PostInput, PostResult };

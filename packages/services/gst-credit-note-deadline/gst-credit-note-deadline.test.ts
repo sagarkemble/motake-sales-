@@ -3,7 +3,7 @@ import { gstCreditNoteDeadlinesTable } from "@repo/database/schema";
 import { describe, expect, it } from "vitest";
 
 import { buildProfile } from "../test/builders";
-import { GstCreditNoteDeadlineService } from "./gst-credit-note-deadline";
+import GstCreditNoteDeadlineService from "./index";
 
 const deadlineService = new GstCreditNoteDeadlineService();
 

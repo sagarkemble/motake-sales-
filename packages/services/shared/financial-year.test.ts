@@ -1,11 +1,7 @@
+import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import { describe, expect, it } from "vitest";
 
-import {
-  businessDateOf,
-  financialYearBounds,
-  financialYearOf,
-  financialYearOfInstant,
-} from "./financial-year";
+import { financialYearBounds, financialYearOf, financialYearOfInstant } from "./financial-year";
 
 describe("financial year", () => {
   it.each([

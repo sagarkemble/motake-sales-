@@ -5,7 +5,7 @@ import { customersTable, ledgerEntriesTable } from "@repo/database/schema";
 import { describe, expect, it } from "vitest";
 
 import { buildCustomer, buildPayment, buildProfile } from "../test/builders";
-import { LedgerService } from "./ledger";
+import LedgerService from "./index";
 
 const ledger = new LedgerService();
 
@@ -69,10 +69,10 @@ describe("Opening balance", () => {
 
     await expect(
       ledger.setOpeningBalance({ ...base, amountPaise: 1_000, reason: " " }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    ).rejects.toMatchObject({ name: "ZodError" });
     await expect(
       ledger.setOpeningBalance({ ...base, amountPaise: 0, reason: "Zero" }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    ).rejects.toMatchObject({ name: "ZodError" });
   });
 
   it("joins the caller's transaction, so a rollback leaves no row and no audit", async () => {
@@ -110,12 +110,15 @@ describe("Balance read, check and rebuild", () => {
 
     expect(await ledger.getBalance(customer.id)).toMatchObject({ state: "settled" });
     await runInTransaction((tx) =>
-      ledger.post(tx, {
-        entryType: "payment",
-        paymentId: payment.id,
-        customerId: customer.id,
-        actorId: admin.id,
-      }),
+      ledger.post(
+        {
+          entryType: "payment",
+          paymentId: payment.id,
+          customerId: customer.id,
+          actorId: admin.id,
+        },
+        tx,
+      ),
     );
 
     expect(await ledger.getBalance(customer.id)).toEqual({
@@ -123,7 +126,7 @@ describe("Balance read, check and rebuild", () => {
       state: "advance",
       amountPaise: 30_000,
     });
-    const locked = await runInTransaction((tx) => ledger.lockBalance(tx, customer.id));
+    const locked = await runInTransaction((tx) => ledger.lockBalance(customer.id, tx));
     expect(locked.state).toBe("advance");
   });
 

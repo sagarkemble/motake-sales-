@@ -21,8 +21,8 @@ const signedAmount = sql<number>`CASE WHEN ${ledgerEntriesTable.side} = 'debit'
 // Adds `deltaPaise` to a live Customer's stored Balance. The UPDATE takes the Customer row lock.
 // Returns the Balance after, or undefined when the Customer is missing or soft-deleted.
 export async function applyBalanceChange(
-  executor: DbExecutor,
   input: { customerId: string; deltaPaise: number },
+  executor: DbExecutor = db,
 ): Promise<number | undefined> {
   const [row] = await executor
     .update(customersTable)
@@ -33,8 +33,8 @@ export async function applyBalanceChange(
 }
 
 export async function lockLiveCustomerBalance(
-  executor: DbExecutor,
   customerId: string,
+  executor: DbExecutor = db,
 ): Promise<number | undefined> {
   const [row] = await executor
     .select({ balancePaise: customersTable.balancePaise })
@@ -56,8 +56,8 @@ export async function getStoredBalance(
 }
 
 export async function setStoredBalance(
-  executor: DbExecutor,
   input: { customerId: string; balancePaise: number },
+  executor: DbExecutor = db,
 ): Promise<void> {
   await executor
     .update(customersTable)
@@ -66,8 +66,8 @@ export async function setStoredBalance(
 }
 
 export async function insertLedgerEntry(
-  executor: DbExecutor,
   values: InsertLedgerEntry,
+  executor: DbExecutor = db,
 ): Promise<SelectLedgerEntry> {
   const [row] = await executor.insert(ledgerEntriesTable).values(values).returning();
   return row!;
@@ -119,8 +119,8 @@ export async function listBalanceMismatches(executor: DbExecutor = db): Promise<
 }
 
 export async function hasOpeningBalance(
-  executor: DbExecutor,
   customerId: string,
+  executor: DbExecutor = db,
 ): Promise<boolean> {
   const [row] = await executor
     .select({ id: ledgerEntriesTable.id })
@@ -136,7 +136,7 @@ export async function hasOpeningBalance(
 
 // --- The papers a Ledger row reads its amount and Customer from.
 
-export async function findBillForPosting(executor: DbExecutor, billId: string) {
+export async function findBillForPosting(billId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({
       id: billsTable.id,
@@ -150,7 +150,7 @@ export async function findBillForPosting(executor: DbExecutor, billId: string) {
 }
 
 // The Customer an office Bill (no order) was debited to: its only relational link.
-export async function findBillDebit(executor: DbExecutor, billId: string) {
+export async function findBillDebit(billId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({ id: ledgerEntriesTable.id, customerId: ledgerEntriesTable.customerId })
     .from(ledgerEntriesTable)
@@ -158,7 +158,7 @@ export async function findBillDebit(executor: DbExecutor, billId: string) {
   return row;
 }
 
-export async function findPaymentForPosting(executor: DbExecutor, paymentId: string) {
+export async function findPaymentForPosting(paymentId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({
       id: paymentsTable.id,
@@ -170,7 +170,7 @@ export async function findPaymentForPosting(executor: DbExecutor, paymentId: str
   return row;
 }
 
-export async function findRefundForPosting(executor: DbExecutor, refundId: string) {
+export async function findRefundForPosting(refundId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({
       id: refundsTable.id,
@@ -183,7 +183,7 @@ export async function findRefundForPosting(executor: DbExecutor, refundId: strin
   return row;
 }
 
-export async function findNoteForPosting(executor: DbExecutor, noteId: string) {
+export async function findNoteForPosting(noteId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({
       id: notesTable.id,
@@ -200,8 +200,8 @@ export async function findNoteForPosting(executor: DbExecutor, noteId: string) {
 
 // The one Ledger row a Payment or Refund is first posted as (adjustments are separate rows).
 export async function findFirstPosting(
-  executor: DbExecutor,
   link: { paymentId: string } | { refundId: string },
+  executor: DbExecutor = db,
 ) {
   const where =
     "paymentId" in link
@@ -220,7 +220,7 @@ export async function findFirstPosting(
   return row;
 }
 
-export async function findLedgerEntryForNote(executor: DbExecutor, noteId: string) {
+export async function findLedgerEntryForNote(noteId: string, executor: DbExecutor = db) {
   const [row] = await executor
     .select({ id: ledgerEntriesTable.id })
     .from(ledgerEntriesTable)
