@@ -1,0 +1,43 @@
+// Indian states and union territories by full name, with the two-digit GST state code. A Route's
+// delivery state and the seller state are stored exactly as `name`, so the CGST+SGST vs IGST test
+// is an exact string match on two values from this list. The code checks a GSTIN's first two digits.
+export const INDIAN_STATES = [
+  { name: "Andaman and Nicobar Islands", gstStateCode: "35" },
+  { name: "Andhra Pradesh", gstStateCode: "37" },
+  { name: "Arunachal Pradesh", gstStateCode: "12" },
+  { name: "Assam", gstStateCode: "18" },
+  { name: "Bihar", gstStateCode: "10" },
+  { name: "Chandigarh", gstStateCode: "04" },
+  { name: "Chhattisgarh", gstStateCode: "22" },
+  { name: "Dadra and Nagar Haveli and Daman and Diu", gstStateCode: "26" },
+  { name: "Delhi", gstStateCode: "07" },
+  { name: "Goa", gstStateCode: "30" },
+  { name: "Gujarat", gstStateCode: "24" },
+  { name: "Haryana", gstStateCode: "06" },
+  { name: "Himachal Pradesh", gstStateCode: "02" },
+  { name: "Jammu and Kashmir", gstStateCode: "01" },
+  { name: "Jharkhand", gstStateCode: "20" },
+  { name: "Karnataka", gstStateCode: "29" },
+  { name: "Kerala", gstStateCode: "32" },
+  { name: "Ladakh", gstStateCode: "38" },
+  { name: "Lakshadweep", gstStateCode: "31" },
+  { name: "Madhya Pradesh", gstStateCode: "23" },
+  { name: "Maharashtra", gstStateCode: "27" },
+  { name: "Manipur", gstStateCode: "14" },
+  { name: "Meghalaya", gstStateCode: "17" },
+  { name: "Mizoram", gstStateCode: "15" },
+  { name: "Nagaland", gstStateCode: "13" },
+  { name: "Odisha", gstStateCode: "21" },
+  { name: "Puducherry", gstStateCode: "34" },
+  { name: "Punjab", gstStateCode: "03" },
+  { name: "Rajasthan", gstStateCode: "08" },
+  { name: "Sikkim", gstStateCode: "11" },
+  { name: "Tamil Nadu", gstStateCode: "33" },
+  { name: "Telangana", gstStateCode: "36" },
+  { name: "Tripura", gstStateCode: "16" },
+  { name: "Uttar Pradesh", gstStateCode: "09" },
+  { name: "Uttarakhand", gstStateCode: "05" },
+  { name: "West Bengal", gstStateCode: "19" },
+] as const;
+
+export type IndianStateName = (typeof INDIAN_STATES)[number]["name"];
