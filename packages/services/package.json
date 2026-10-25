@@ -17,6 +17,7 @@
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",
     "./salesman": "./salesman/index.ts",
+    "./settings": "./settings/index.ts",
     "./uploads": "./uploads/r2-client.ts"
   },
   "devDependencies": {
