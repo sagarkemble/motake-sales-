@@ -77,9 +77,14 @@ class GatepassService {
     return activeGatepass ?? null;
   }
 
-  // The Route is set here once and never changed. Every allotted variety needs a Route price on it.
+  // The Route is set here once and never changed. Every variety allotted a quantity above zero
+  // needs a Route price on it.
   public async allotGatepass(input: AllotGatepassInput): Promise<GatepassWithRouteAndItems> {
     const parsedInput = allotGatepassInputSchema.parse(input);
+    const varietyIds = parsedInput.items.map((item) => item.varietyId);
+    if (new Set(varietyIds).size !== varietyIds.length) {
+      throw badRequest("Each variety can appear only once in a gatepass allotment");
+    }
     const alreadyActive = () =>
       conflict(
         `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
@@ -93,10 +98,12 @@ class GatepassService {
           throw conflict(`Route ${route.name} is hidden. Pick another Route.`);
         }
 
+        // Only varieties with a quantity above zero are allotted, so only they need a Route price.
         const pricedVarietyIds = new Set(
           (await listPricesForRoute(route.id, transaction)).map((price) => price.varietyId),
         );
         const unpricedVarietyIds = parsedInput.items
+          .filter((item) => item.issuedQty > 0)
           .map((item) => item.varietyId)
           .filter((varietyId) => !pricedVarietyIds.has(varietyId));
         if (unpricedVarietyIds.length > 0) {

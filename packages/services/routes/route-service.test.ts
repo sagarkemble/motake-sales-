@@ -46,6 +46,48 @@ describe("RouteService create and rename", () => {
     expect(satara.code).toBe(`rt-satara-${next}`);
   });
 
+  it("drops accents from the code slug", async () => {
+    const admin = await buildProfile();
+
+    const route = await routeService.createRoute(
+      { name: "Kolhāpur", deliveryState: "Maharashtra" },
+      admin.id,
+    );
+
+    expect(route.code).toMatch(/^rt-kolhapur-\d{3}$/);
+  });
+
+  it("checks the name length after trimming and collapsing whitespace", async () => {
+    const admin = await buildProfile();
+    const name = `${"Shirol ".repeat(17)}Ok`.slice(0, 120);
+    const padded = `   ${name.replace(/ /g, "   ")}   `;
+    expect(padded.length).toBeGreaterThan(120);
+
+    const route = await routeService.createRoute(
+      { name: padded, deliveryState: "Maharashtra" },
+      admin.id,
+    );
+
+    expect(route.name).toBe(name);
+    await expect(
+      routeService.createRoute({ name: `${name}x`, deliveryState: "Maharashtra" }, admin.id),
+    ).rejects.toThrow();
+  });
+
+  it("treats an update with no changes as a no-op without an audit row", async () => {
+    const admin = await buildProfile();
+    const route = await routeService.createRoute(
+      { name: "Ajara No-op", deliveryState: "Maharashtra" },
+      admin.id,
+    );
+
+    const unchanged = await routeService.updateRoute(route.id, {}, admin.id);
+
+    expect(unchanged).toEqual(route);
+    const rows = await listAuditLogsForEntity("route", route.id);
+    expect(rows.map((row) => row.action)).toEqual(["created"]);
+  });
+
   it("gives a name with no ASCII letters or digits the code rt-{nnn}", async () => {
     const admin = await buildProfile();
 

@@ -146,6 +146,11 @@ class RouteService {
   ): Promise<SelectRoute> {
     const parsedRouteId = routeIdSchema.parse(routeId);
     const parsedChanges = updateRouteInputSchema.parse(changes);
+    if (parsedChanges.name === undefined && parsedChanges.deliveryState === undefined) {
+      const route = await getRouteById(parsedRouteId);
+      if (!route) throw notFound(`Route ${parsedRouteId} not found`);
+      return route;
+    }
     try {
       return await runInTransaction(async (transaction) => {
         if (parsedChanges.name !== undefined) {
@@ -318,3 +323,4 @@ class RouteService {
 export default RouteService;
 export type { RouteChoice, RouteListRow, RoutePriceFormRow };
 export { INDIAN_STATES, type IndianStateName } from "../shared/indian-states";
+export { routeNameSchema } from "./model";

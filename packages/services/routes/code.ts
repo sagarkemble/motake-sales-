@@ -2,10 +2,12 @@ const CODE_MAX_LENGTH = 64;
 const CODE_PREFIX = "rt-";
 const COUNTER_DIGITS = 3;
 
-// Lower-case ASCII slug of the Route name; every other run of characters becomes one hyphen.
+// Lower-case ASCII slug of the Route name: accents dropped ("Kolhāpur" → "kolhapur"), every
+// other run of characters becomes one hyphen.
 export function routeCodeSlug(name: string): string {
   return name
     .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");

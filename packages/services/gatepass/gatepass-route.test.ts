@@ -136,6 +136,58 @@ describe("GatepassService allot on a Route", () => {
     expect(await gatepassService.getActiveGatepassForSalesman(salesman.id)).toBeNull();
   });
 
+  it("allots alongside an unpriced variety at quantity 0, refusing it only above 0", async () => {
+    const { admin, salesman, route, variety } = await pricedRoute();
+    const product = await buildProduct({ name: "Warana Lassi" });
+    const unpriced = await buildVariety({ productId: product.id, name: "200 ml" });
+    const input = {
+      salesmanId: salesman.id,
+      routeId: route.id,
+      businessDate: today,
+      issuedBy: admin.id,
+    };
+
+    await expect(
+      gatepassService.allotGatepass({
+        ...input,
+        items: [
+          { varietyId: variety.id, issuedQty: 4 },
+          { varietyId: unpriced.id, issuedQty: 1 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: `No price on Route ${route.name} for: Warana Lassi 200 ml`,
+    });
+
+    const allotted = await gatepassService.allotGatepass({
+      ...input,
+      items: [
+        { varietyId: variety.id, issuedQty: 4 },
+        { varietyId: unpriced.id, issuedQty: 0 },
+      ],
+    });
+    expect(allotted.gatepass.routeId).toBe(route.id);
+  });
+
+  it("refuses the same variety twice in one allotment", async () => {
+    const { admin, salesman, route, variety } = await pricedRoute();
+
+    await expect(
+      gatepassService.allotGatepass({
+        salesmanId: salesman.id,
+        routeId: route.id,
+        businessDate: today,
+        issuedBy: admin.id,
+        items: [
+          { varietyId: variety.id, issuedQty: 2 },
+          { varietyId: variety.id, issuedQty: 3 },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(await gatepassService.getActiveGatepassForSalesman(salesman.id)).toBeNull();
+  });
+
   it("still refuses a second Active GatePass for the salesman on the same date", async () => {
     const { admin, salesman, route, variety } = await pricedRoute();
     const input = {

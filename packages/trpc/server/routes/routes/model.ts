@@ -1,4 +1,4 @@
-import { INDIAN_STATES, type IndianStateName } from "@repo/services/routes";
+import { INDIAN_STATES, routeNameSchema, type IndianStateName } from "@repo/services/routes";
 
 import { z } from "../../schema";
 
@@ -75,13 +75,14 @@ export const routeChoicesInputSchema = z.object({
 
 export const routeIdInputSchema = z.object({ id: z.string().uuid() });
 
+// Same rule as the service: trimmed, inner whitespace collapsed, then 1–120 characters.
 export const createRouteInputSchema = z.object({
-  name: z.string().min(1).max(120),
+  name: routeNameSchema,
   deliveryState: deliveryStateSchema,
 });
 
 export const updateRouteInputSchema = routeIdInputSchema.extend({
-  name: z.string().min(1).max(120).optional(),
+  name: routeNameSchema.optional(),
   deliveryState: deliveryStateSchema.optional(),
 });
 
