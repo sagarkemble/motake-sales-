@@ -2,8 +2,10 @@ import { and, count, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
+  billsTable,
   gatepassItemsTable,
   gatepassesTable,
+  orderItemsTable,
   ordersTable,
   profilesTable,
   salesmenTable,
@@ -12,7 +14,9 @@ import {
   type SelectProfile,
   type SelectSalesman,
 } from "../../schema";
+import { billIsNotCancelled } from "../bills/cancelled";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -25,13 +29,22 @@ export interface SalesmanWithProfile {
   profile: SelectProfile;
 }
 
-export async function createSalesman(newSalesman: InsertSalesman): Promise<SelectSalesman> {
-  const insertedRows = await db.insert(salesmenTable).values(newSalesman).returning();
+export async function createSalesman(
+  newSalesman: InsertSalesman,
+  executor: DbExecutor = db,
+): Promise<SelectSalesman> {
+  const insertedRows = await executor.insert(salesmenTable).values(newSalesman).returning();
   return firstOrThrow(insertedRows, "createSalesman");
 }
 
-export async function getSalesmanById(salesmanId: string): Promise<SelectSalesman | undefined> {
-  const [salesman] = await db.select().from(salesmenTable).where(eq(salesmenTable.id, salesmanId));
+export async function getSalesmanById(
+  salesmanId: string,
+  executor: DbExecutor = db,
+): Promise<SelectSalesman | undefined> {
+  const [salesman] = await executor
+    .select()
+    .from(salesmenTable)
+    .where(eq(salesmenTable.id, salesmanId));
   return salesman;
 }
 
@@ -92,8 +105,9 @@ export async function reactivateSalesman(salesmanId: string): Promise<SelectProf
 export async function updateSalesmanCode(
   salesmanId: string,
   salesmanCode: string,
+  executor: DbExecutor = db,
 ): Promise<SelectSalesman | undefined> {
-  const [updatedSalesman] = await db
+  const [updatedSalesman] = await executor
     .update(salesmenTable)
     .set({ salesmanCode })
     .where(eq(salesmenTable.id, salesmanId))
@@ -108,8 +122,8 @@ export interface SalesmanDayWiseHistoryRow {
   soldQty: number;
   returnedQty: number;
   preOrderedQty: number;
-  soldAmount: number;
-  preOrderedAmount: number;
+  // Bills of this salesman's Book Now orders, by Bill date. Pre-orders have no Bill yet.
+  soldAmountPaise: number;
 }
 
 export async function getSalesmanDayWiseHistory(
@@ -135,73 +149,69 @@ export async function getSalesmanDayWiseHistory(
     )
     .groupBy(gatepassesTable.businessDate, gatepassesTable.status);
 
+  const placedBusinessDate = sql<string>`(${ordersTable.placedAt} AT TIME ZONE 'Asia/Kolkata')::date::text`;
   const preOrderRows = await db
     .select({
-      businessDate: sql<string>`date(${ordersTable.placedAt})`,
-      preOrderedQty: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
-      preOrderedAmount: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
+      businessDate: placedBusinessDate,
+      preOrderedQty: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
     })
     .from(ordersTable)
+    .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
     .where(
       and(
         eq(ordersTable.salesmanId, salesmanId),
         eq(ordersTable.type, "pre_order"),
         sql`${ordersTable.status} <> 'cancelled'`,
-        gte(ordersTable.placedAt, sql`${dateRange.from}::date`),
-        lte(ordersTable.placedAt, sql`(${dateRange.to}::date + interval '1 day')`),
+        sql`${placedBusinessDate} BETWEEN ${dateRange.from} AND ${dateRange.to}`,
       ),
     )
-    .groupBy(sql`date(${ordersTable.placedAt})`);
+    .groupBy(placedBusinessDate);
 
-  const bookNowAmountRows = await db
+  const soldAmountRows = await db
     .select({
-      businessDate: sql<string>`date(${ordersTable.placedAt})`,
-      soldAmount: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
+      businessDate: billsTable.billDate,
+      soldAmountPaise: sql<number>`coalesce(sum(${billsTable.totalPaise}), 0)::bigint`.mapWith(
+        Number,
+      ),
     })
-    .from(ordersTable)
+    .from(billsTable)
+    .innerJoin(ordersTable, eq(billsTable.orderId, ordersTable.id))
     .where(
       and(
         eq(ordersTable.salesmanId, salesmanId),
         eq(ordersTable.type, "book_now"),
-        sql`${ordersTable.status} <> 'cancelled'`,
-        gte(ordersTable.placedAt, sql`${dateRange.from}::date`),
-        lte(ordersTable.placedAt, sql`(${dateRange.to}::date + interval '1 day')`),
+        billIsNotCancelled(),
+        gte(billsTable.billDate, dateRange.from),
+        lte(billsTable.billDate, dateRange.to),
       ),
     )
-    .groupBy(sql`date(${ordersTable.placedAt})`);
+    .groupBy(billsTable.billDate);
 
-  const preOrderedByDate = new Map(
-    preOrderRows.map((row) => [
-      row.businessDate,
-      { preOrderedQty: row.preOrderedQty, preOrderedAmount: row.preOrderedAmount },
-    ]),
+  const preOrderedQtyByDate = new Map(
+    preOrderRows.map((row) => [row.businessDate, row.preOrderedQty]),
   );
   const soldAmountByDate = new Map(
-    bookNowAmountRows.map((row) => [row.businessDate, row.soldAmount]),
+    soldAmountRows.map((row) => [row.businessDate, row.soldAmountPaise]),
   );
 
   const dates = new Set<string>([
     ...gatepassRows.map((row) => row.businessDate),
-    ...preOrderedByDate.keys(),
+    ...preOrderedQtyByDate.keys(),
     ...soldAmountByDate.keys(),
   ]);
 
   const gatepassByDate = new Map(gatepassRows.map((row) => [row.businessDate, row]));
 
-  return [...dates]
-    .sort()
-    .map((businessDate) => {
-      const gatepassRow = gatepassByDate.get(businessDate);
-      const preOrderRow = preOrderedByDate.get(businessDate);
-      return {
-        businessDate,
-        gatepassStatus: gatepassRow?.status ?? null,
-        allottedQty: gatepassRow?.allottedQty ?? 0,
-        soldQty: gatepassRow?.soldQty ?? 0,
-        returnedQty: gatepassRow?.returnedQty ?? 0,
-        preOrderedQty: preOrderRow?.preOrderedQty ?? 0,
-        soldAmount: soldAmountByDate.get(businessDate) ?? 0,
-        preOrderedAmount: preOrderRow?.preOrderedAmount ?? 0,
-      };
-    });
+  return [...dates].sort().map((businessDate) => {
+    const gatepassRow = gatepassByDate.get(businessDate);
+    return {
+      businessDate,
+      gatepassStatus: gatepassRow?.status ?? null,
+      allottedQty: gatepassRow?.allottedQty ?? 0,
+      soldQty: gatepassRow?.soldQty ?? 0,
+      returnedQty: gatepassRow?.returnedQty ?? 0,
+      preOrderedQty: preOrderedQtyByDate.get(businessDate) ?? 0,
+      soldAmountPaise: soldAmountByDate.get(businessDate) ?? 0,
+    };
+  });
 }

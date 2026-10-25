@@ -95,8 +95,8 @@ export const productsRouter = router({
     })
     .input(productIdInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
-      const product = await productService.deleteProductImage(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const product = await productService.deleteProductImage(input.id, ctx.user.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),
@@ -114,8 +114,8 @@ export const productsRouter = router({
     })
     .input(createProductInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
-      const product = await productService.createProduct(input);
+    .mutation(async ({ ctx, input }) => {
+      const product = await productService.createProduct(input, ctx.user.id);
       return apiResponse(product);
     }),
 
@@ -132,9 +132,9 @@ export const productsRouter = router({
     })
     .input(productIdInputSchema.extend(updateProductInputSchema.shape))
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...changes } = input;
-      const product = await productService.updateProduct(id, changes);
+      const product = await productService.updateProduct(id, changes, ctx.user.id);
       if (!product) throw notFound(`Product ${id} not found`);
       return apiResponse(product);
     }),
@@ -152,8 +152,8 @@ export const productsRouter = router({
     })
     .input(productIdInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
-      const product = await productService.deactivateProduct(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const product = await productService.deactivateProduct(input.id, ctx.user.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),
@@ -171,8 +171,8 @@ export const productsRouter = router({
     })
     .input(productIdInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
-      const product = await productService.reactivateProduct(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const product = await productService.reactivateProduct(input.id, ctx.user.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),
@@ -190,8 +190,8 @@ export const productsRouter = router({
     })
     .input(productIdInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ input }) => {
-      const product = await productService.deleteProduct(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const product = await productService.deleteProduct(input.id, ctx.user.id);
       if (!product) throw notFound(`Product ${input.id} not found`);
       return apiResponse(product);
     }),
@@ -209,8 +209,10 @@ export const productsRouter = router({
     })
     .input(productVarietiesInputSchema)
     .output(apiResponseSchema(z.array(productVarietySchema)))
-    .query(async ({ input }) => {
-      const varieties = await productService.listVarietiesForProduct(input.productId);
+    .query(async ({ ctx, input }) => {
+      const varieties = await productService.listVarietiesForProduct(input.productId, {
+        includeInactive: input.includeInactive && ctx.user?.role === "admin",
+      });
       return apiResponse(varieties);
     }),
 
@@ -222,13 +224,14 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Add a product variety",
-        description: "Create a new variety under a product. Admin only.",
+        description:
+          "Create a new variety under a product. The server generates its SKU. Admin only.",
       },
     })
     .input(createProductVarietyInputSchema)
     .output(apiResponseSchema(productVarietySchema))
-    .mutation(async ({ input }) => {
-      const variety = await productService.createProductVariety(input);
+    .mutation(async ({ ctx, input }) => {
+      const variety = await productService.createProductVariety(input, ctx.user.id);
       return apiResponse(variety);
     }),
 
@@ -240,14 +243,15 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Update a product variety",
-        description: "Change the details of an existing product variety. Admin only.",
+        description:
+          "Rename a product variety or change its unit. The SKU never changes. Admin only.",
       },
     })
     .input(varietyIdInputSchema.extend(updateProductVarietyInputSchema.shape))
     .output(apiResponseSchema(productVarietySchema))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...changes } = input;
-      const variety = await productService.updateProductVariety(id, changes);
+      const variety = await productService.updateProductVariety(id, changes, ctx.user.id);
       if (!variety) throw notFound(`Product variety ${id} not found`);
       return apiResponse(variety);
     }),
@@ -266,8 +270,27 @@ export const productsRouter = router({
     })
     .input(varietyIdInputSchema)
     .output(apiResponseSchema(productVarietySchema))
-    .mutation(async ({ input }) => {
-      const variety = await productService.deactivateProductVariety(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const variety = await productService.deactivateProductVariety(input.id, ctx.user.id);
+      if (!variety) throw notFound(`Product variety ${input.id} not found`);
+      return apiResponse(variety);
+    }),
+
+  reactivateVariety: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/varieties/{id}/reactivate"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Reactivate a product variety",
+        description: "Mark a deactivated product variety as active again.",
+      },
+    })
+    .input(varietyIdInputSchema)
+    .output(apiResponseSchema(productVarietySchema))
+    .mutation(async ({ ctx, input }) => {
+      const variety = await productService.reactivateProductVariety(input.id, ctx.user.id);
       if (!variety) throw notFound(`Product variety ${input.id} not found`);
       return apiResponse(variety);
     }),

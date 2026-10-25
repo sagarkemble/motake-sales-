@@ -22,7 +22,6 @@ import { ImageUpload } from "~/components/shared/image-upload";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useCustomers } from "~/hooks/use-customers";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 
 interface CustomerOption {
@@ -50,7 +49,7 @@ interface CustomerDetailsStepProps {
   onClearSelectedCustomer: () => void;
   newCustomerForm: NewCustomerFormValues;
   onNewCustomerFormChange: (fieldValues: Partial<NewCustomerFormValues>) => void;
-  totalCartAmount: number;
+  totalCartQuantity: number;
 }
 
 export function CustomerDetailsStep({
@@ -63,10 +62,9 @@ export function CustomerDetailsStep({
   onClearSelectedCustomer,
   newCustomerForm,
   onNewCustomerFormChange,
-  totalCartAmount,
+  totalCartQuantity,
 }: CustomerDetailsStepProps) {
   const tx = useTranslate();
-  const { formatInr } = useFormatMoney();
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const { createShopPhotoUploadUrlAsync } = useCustomers();
@@ -80,9 +78,7 @@ export function CustomerDetailsStep({
     <div className="flex flex-col gap-4">
       <div>
         <p className="text-base font-semibold">{tx("salesman.checkout.customer.title")}</p>
-        <p className="text-sm text-muted-foreground">
-          {tx("salesman.checkout.customer.hint")}
-        </p>
+        <p className="text-sm text-muted-foreground">{tx("salesman.checkout.customer.hint")}</p>
       </div>
 
       <Button
@@ -120,7 +116,9 @@ export function CustomerDetailsStep({
                 </span>
               </span>
             ) : (
-              <span className="text-muted-foreground">{tx("salesman.checkout.customer.searchPlaceholder")}</span>
+              <span className="text-muted-foreground">
+                {tx("salesman.checkout.customer.searchPlaceholder")}
+              </span>
             )}
             {selectedCustomer ? (
               <XIcon
@@ -157,7 +155,7 @@ export function CustomerDetailsStep({
               ) : (
                 <>
                   <CommandEmpty>
-                    {tx('salesman.checkout.customer.noMatch', { term: customerSearchTerm })}
+                    {tx("salesman.checkout.customer.noMatch", { term: customerSearchTerm })}
                   </CommandEmpty>
                   <CommandGroup>
                     {customerOptions.map((customer) => {
@@ -225,7 +223,9 @@ export function CustomerDetailsStep({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-customer-shop-name">{tx("salesman.checkout.customer.shopName")}</Label>
+            <Label htmlFor="new-customer-shop-name">
+              {tx("salesman.checkout.customer.shopName")}
+            </Label>
             <Input
               id="new-customer-shop-name"
               placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
@@ -258,8 +258,12 @@ export function CustomerDetailsStep({
       )}
 
       <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">{tx("salesman.checkout.customer.placeOrderFor")}</span>
-        <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
+        <span className="text-muted-foreground">
+          {tx("salesman.checkout.customer.placeOrderFor")}
+        </span>
+        <span className="font-semibold text-brand">
+          {tx("salesman.orders.qty", { count: totalCartQuantity })}
+        </span>
       </div>
     </div>
   );

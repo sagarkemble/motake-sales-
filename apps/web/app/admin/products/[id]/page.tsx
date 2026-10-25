@@ -138,7 +138,7 @@ export default function EditProductPage() {
         onSubmit={handleSubmit}
       />
 
-      <VarietyTable productId={productId} />
+      <VarietyTable productId={productId} productName={product.name} />
     </div>
   );
 }

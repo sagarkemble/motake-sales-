@@ -16,20 +16,18 @@ import {
   assertGatepassItemHandoverShape,
   assertHandoverItemsConsistent,
   assertHandoverSubmitted,
-  assertOrderMoney,
   assertShopPhoto,
-  assertVarietyPrices,
-} from '../lib/pricing.js';
+} from '../lib/checks.js';
 
 /** Items eligible for return: those with stock still on the salesman. */
 function returnableGatepassItems(gatepassItems) {
   return (gatepassItems ?? []).filter(
-    (item) => (item.availableQty ?? item.issuedQty - item.soldQty) > 0,
+    (item) => (item.sellableQty ?? item.issuedQty - item.soldQty) > 0,
   );
 }
 
 function remainingOf(item) {
-  return item.availableQty ?? item.issuedQty - item.soldQty;
+  return item.sellableQty ?? item.issuedQty - item.soldQty;
 }
 
 let sessionReady = false;
@@ -106,7 +104,6 @@ export function salesmanFlow() {
     name: 'products_list',
   });
   const productsPayload = parseData(productsRes);
-  assertVarietyPrices(productsPayload);
 
   const customersListRes = apiGet(`${base}/api/customers/?page=1&pageSize=20`, {
     role: 'salesman',
@@ -120,7 +117,6 @@ export function salesmanFlow() {
     name: 'orders_list',
   });
   const firstOrderRow = parseData(ordersRes)?.items?.[0];
-  assertOrderMoney(firstOrderRow?.order);
   if (firstOrderRow) {
     check(firstOrderRow, {
       'order row has customerShopPhotoUrl key': (row) => 'customerShopPhotoUrl' in row,
@@ -376,12 +372,12 @@ export function salesmanFlow() {
       customerId = customersPayload?.items?.[0]?.id ?? null;
     }
 
-    const availableItem = gatepassData?.items?.find((item) => (item.availableQty ?? 0) > 0);
+    const availableItem = gatepassData?.items?.find((item) => (item.sellableQty ?? 0) > 0);
 
     // Only an active gatepass can absorb a sale; once handed over it moves to pending/closed.
     // Accept 400/409 defensively in case a concurrent VU hands the gatepass over mid-iteration.
     if (varietyId && customerId && availableItem && isActiveGatepass) {
-      const bookNowRes = apiPost(
+      apiPost(
         `${base}/api/orders/book-now`,
         {
           customerId,
@@ -393,9 +389,6 @@ export function salesmanFlow() {
         { role: 'salesman', name: 'order_book_now' },
         [200, 400, 409],
       );
-      if (bookNowRes.status === 200) {
-        assertOrderMoney(parseData(bookNowRes)?.order);
-      }
     }
   }
 

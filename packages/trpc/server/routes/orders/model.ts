@@ -1,17 +1,22 @@
 import { z } from "../../schema";
 
 export const orderTypeSchema = z.enum(["book_now", "pre_order"]);
-export const orderStatusSchema = z.enum(["confirmed", "scheduled", "due", "fulfilled", "cancelled"]);
+export const orderStatusSchema = z.enum([
+  "confirmed",
+  "scheduled",
+  "due",
+  "fulfilled",
+  "cancelled",
+]);
 
 export const orderSchema = z.object({
   id: z.string(),
-  orderCode: z.string(),
   type: orderTypeSchema,
   status: orderStatusSchema,
-  salesmanId: z.string(),
+  salesmanId: z.string().nullable(),
   customerId: z.string(),
-  totalQuantity: z.number(),
-  totalAmount: z.number(),
+  routeId: z.string(),
+  gatepassId: z.string().nullable(),
   scheduledDate: z.string().nullable(),
   placedAt: z.date(),
   fulfilledAt: z.date().nullable(),
@@ -24,12 +29,22 @@ export const orderSchema = z.object({
   updatedAt: z.date(),
 });
 
+// Frozen Variety name and unit plus the HSN printed for tax.
+export const orderLineStampSchema = z.object({
+  name: z.string(),
+  unit: z.string(),
+  hsn: z.string(),
+});
+
 export const orderItemSchema = z.object({
   id: z.string(),
   orderId: z.string(),
   varietyId: z.string(),
-  quantity: z.number(),
-  unitPrice: z.number(),
+  stamp: orderLineStampSchema,
+  quantity: z.number().int(),
+  routePricePaise: z.number().int(),
+  exempt: z.boolean(),
+  gstRateBps: z.number().int(),
   createdAt: z.date(),
 });
 
@@ -43,13 +58,33 @@ export const orderItemPreviewSchema = z.object({
   imageUrl: z.string().nullable(),
 });
 
+export const orderBillSummarySchema = z.object({
+  id: z.string(),
+  number: z.string(),
+  totalPaise: z.number().int(),
+});
+
 export const orderListRowSchema = z.object({
-  order: orderSchema,
+  id: z.string(),
+  type: orderTypeSchema,
+  status: orderStatusSchema,
+  customerId: z.string(),
   customerShopName: z.string(),
   customerPhone: z.string(),
   customerShopPhotoUrl: z.string().nullable(),
-  salesmanCode: z.string(),
+  salesmanId: z.string().nullable(),
+  salesmanCode: z.string().nullable(),
   salesmanName: z.string().nullable(),
+  routeId: z.string(),
+  routeName: z.string(),
+  routeCode: z.string(),
+  totalQuantity: z.number().int(),
+  scheduledDate: z.string().nullable(),
+  placedAt: z.date(),
+  fulfilledAt: z.date().nullable(),
+  cancelledAt: z.date().nullable(),
+  // Null until the Bill is issued (an unfulfilled Pre-order has none).
+  bill: orderBillSummarySchema.nullable(),
   itemPreviews: z.array(orderItemPreviewSchema),
 });
 
@@ -64,10 +99,11 @@ export const paginatedOrdersSchema = z.object({
 export const orderDetailItemSchema = z.object({
   varietyId: z.string(),
   productName: z.string(),
-  varietyName: z.string(),
-  unit: z.string(),
-  quantity: z.number(),
-  unitPrice: z.number(),
+  stamp: orderLineStampSchema,
+  quantity: z.number().int(),
+  routePricePaise: z.number().int(),
+  exempt: z.boolean(),
+  gstRateBps: z.number().int(),
   imageUrl: z.string().nullable(),
 });
 
@@ -80,9 +116,13 @@ export const orderDetailSchema = z.object({
     address: z.string(),
     shopPhotoUrl: z.string().nullable(),
   }),
-  salesmanCode: z.string(),
+  routeName: z.string(),
+  routeCode: z.string(),
+  salesmanCode: z.string().nullable(),
   salesmanName: z.string().nullable(),
   fulfilledBySalesmanName: z.string().nullable(),
+  totalQuantity: z.number().int(),
+  bill: orderBillSummarySchema.nullable(),
   items: z.array(orderDetailItemSchema),
 });
 

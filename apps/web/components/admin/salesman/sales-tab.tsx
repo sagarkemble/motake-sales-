@@ -3,7 +3,7 @@
 import { format, subDays } from "date-fns";
 
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
-import { formatInrCompact } from "~/lib/format-money";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useTranslate } from "~/hooks/use-translate";
 import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
@@ -16,6 +16,7 @@ const HISTORY_DAYS = 30;
 
 export function SalesTab({ salesmanId }: SalesTabProps) {
   const tx = useTranslate();
+  const { formatPaiseCompact } = useFormatMoney();
   const today = new Date();
   const historyFilters = {
     id: salesmanId,
@@ -26,16 +27,15 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
   const { salesmanHistory, isSalesmanHistoryLoading } = useSalesmen({ historyFilters });
 
   if (isSalesmanHistoryLoading) {
-    return <StatGridSkeleton count={8} />;
+    return <StatGridSkeleton count={7} />;
   }
 
   const totalAllotted = salesmanHistory.reduce((total, day) => total + day.allottedQty, 0);
   const totalSold = salesmanHistory.reduce((total, day) => total + day.soldQty, 0);
   const totalReturned = salesmanHistory.reduce((total, day) => total + day.returnedQty, 0);
   const totalPreOrdered = salesmanHistory.reduce((total, day) => total + day.preOrderedQty, 0);
-  const totalSoldAmount = salesmanHistory.reduce((total, day) => total + day.soldAmount, 0);
-  const totalPreOrderedAmount = salesmanHistory.reduce(
-    (total, day) => total + day.preOrderedAmount,
+  const totalSoldAmountPaise = salesmanHistory.reduce(
+    (total, day) => total + day.soldAmountPaise,
     0,
   );
   const activeDayCount = salesmanHistory.filter(
@@ -45,11 +45,10 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
 
   const kpiCards = [
     { label: "admin.salesmen.kpi.itemsSold", value: totalSold },
-    { label: "admin.salesmen.kpi.salesValue", value: formatInrCompact(totalSoldAmount) },
+    { label: "admin.salesmen.kpi.salesValue", value: formatPaiseCompact(totalSoldAmountPaise) },
     { label: "admin.salesmen.kpi.itemsAllotted", value: totalAllotted },
     { label: "admin.salesmen.kpi.itemsReturned", value: totalReturned },
     { label: "admin.salesmen.kpi.preOrders", value: totalPreOrdered },
-    { label: "admin.salesmen.kpi.preOrderValue", value: formatInrCompact(totalPreOrderedAmount) },
     { label: "admin.salesmen.kpi.activeDays", value: activeDayCount },
     { label: "admin.salesmen.kpi.sellThroughRate", value: `${sellThroughRate}%` },
   ];

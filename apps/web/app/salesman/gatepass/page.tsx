@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { GatepassDetailDrawer } from "~/components/salesman/gatepass-detail-drawer";
 import { GatepassHistoryCard } from "~/components/salesman/gatepass-history-card";
+import { sumGatepassQuantities, type GatepassLine } from "~/lib/gatepass-quantities";
 import { HandoverDialog } from "~/components/salesman/gatepass/handover-dialog";
 import { GatepassTodayViewDesktop } from "~/components/salesman/gatepass/gatepass-today-view.desktop";
 import { GatepassTodayViewMobile } from "~/components/salesman/gatepass/gatepass-today-view.mobile";
@@ -13,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
-import { computeGatepassTotals } from "~/lib/gatepass-totals";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 
 const CATALOG_PAGE_SIZE = 200;
@@ -42,9 +42,8 @@ export default function SalesmanGatepassPage() {
     ),
   );
 
-  const todayItems = (myGatepass?.items ?? []).map((item) => {
+  const todayLines: GatepassLine[] = (myGatepass?.items ?? []).map((item) => {
     const display = varietyDisplayById.get(item.varietyId);
-    const remainingQty = item.availableQty ?? item.issuedQty - item.soldQty;
     return {
       id: item.id,
       productName: display?.productName ?? "Product",
@@ -52,16 +51,14 @@ export default function SalesmanGatepassPage() {
       unit: display?.unit ?? "",
       issuedQty: item.issuedQty,
       soldQty: item.soldQty,
-      remainingQty,
+      sellableQty: item.sellableQty,
+      returnedQty: item.returnedQty,
+      shortReason: item.shortReason,
+      shortNote: item.shortNote,
     };
   });
-  const { totalAllocatedQty, totalSoldQty, totalRemainingQty } = computeGatepassTotals(
-    todayItems.map((item) => ({
-      issuedQty: item.issuedQty,
-      soldQty: item.soldQty,
-      availableQty: item.remainingQty,
-    })),
-  );
+  const todayTotals = sumGatepassQuantities(todayLines);
+  const isGatepassActive = myGatepass?.gatepass.status === "active";
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4">
@@ -78,11 +75,13 @@ export default function SalesmanGatepassPage() {
         <TabsContent value="today" className="flex flex-col gap-4">
           <Button
             type="button"
-            disabled={myGatepass?.gatepass.status !== "active"}
+            disabled={!isGatepassActive}
             onClick={() => setIsHandoverDialogOpen(true)}
             className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            {tx("salesman.gatepass.handoverCta")}
+            {!myGatepass || isGatepassActive
+              ? tx("salesman.gatepass.handOverStock")
+              : tx("salesman.gatepass.handedOver")}
           </Button>
 
           {isMyGatepassLoading ? (
@@ -95,18 +94,20 @@ export default function SalesmanGatepassPage() {
             <>
               <div className="md:hidden">
                 <GatepassTodayViewMobile
-                  items={todayItems}
-                  totalAllocatedQty={totalAllocatedQty}
-                  totalSoldQty={totalSoldQty}
-                  totalRemainingQty={totalRemainingQty}
+                  businessDate={myGatepass.gatepass.businessDate}
+                  status={myGatepass.gatepass.status}
+                  hasDiscrepancy={myGatepass.gatepass.hasDiscrepancy}
+                  lines={todayLines}
+                  totals={todayTotals}
                 />
               </div>
               <div className="hidden md:block">
                 <GatepassTodayViewDesktop
-                  items={todayItems}
-                  totalAllocatedQty={totalAllocatedQty}
-                  totalSoldQty={totalSoldQty}
-                  totalRemainingQty={totalRemainingQty}
+                  businessDate={myGatepass.gatepass.businessDate}
+                  status={myGatepass.gatepass.status}
+                  hasDiscrepancy={myGatepass.gatepass.hasDiscrepancy}
+                  lines={todayLines}
+                  totals={todayTotals}
                 />
               </div>
             </>
@@ -147,7 +148,7 @@ export default function SalesmanGatepassPage() {
           open={isHandoverDialogOpen}
           onOpenChange={setIsHandoverDialogOpen}
           gatepassId={myGatepass.gatepass.id}
-          items={todayItems}
+          lines={todayLines}
         />
       )}
     </div>

@@ -18,11 +18,19 @@ interface OrderHistoryPanelProps {
   heading?: string;
 }
 
-export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: OrderHistoryPanelProps = {}) {
+export function OrderHistoryPanel({
+  salesmanId,
+  heading = "Order history",
+}: OrderHistoryPanelProps = {}) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
-  const { orderHistory, isOrderHistoryLoading, isLoadingMoreOrders, hasMoreOrders, loadMoreOrders } =
-    useOrderHistory({ pageSize: 15, salesmanId });
+  const {
+    orderHistory,
+    isOrderHistoryLoading,
+    isLoadingMoreOrders,
+    hasMoreOrders,
+    loadMoreOrders,
+  } = useOrderHistory({ pageSize: 15, salesmanId });
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -59,7 +67,11 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
         <div className="flex flex-col divide-y divide-border">
           {orderHistory.map(
             ({
-              order,
+              id,
+              type,
+              status,
+              totalQuantity,
+              placedAt,
               customerShopName,
               customerPhone,
               customerShopPhotoUrl,
@@ -67,41 +79,44 @@ export function OrderHistoryPanel({ salesmanId, heading = "Order history" }: Ord
               salesmanName,
               itemPreviews,
             }) => (
-            <button
-              key={order.id}
-              type="button"
-              onClick={() => setSelectedOrderId(order.id)}
-              className="flex items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-accent/50"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <ShopPhotoThumbnail
-                  shopPhotoUrl={customerShopPhotoUrl}
-                  shopName={customerShopName}
-                  size="sm"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium">{customerShopName}</p>
-                    <OrderStatusBadge status={order.status} className="shrink-0" />
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSelectedOrderId(id)}
+                className="flex items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-accent/50"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <ShopPhotoThumbnail
+                    shopPhotoUrl={customerShopPhotoUrl}
+                    shopName={customerShopName}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium">{customerShopName}</p>
+                      <OrderStatusBadge status={status} className="shrink-0" />
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {type === "pre_order"
+                        ? tx("common.orderType.preOrder")
+                        : tx("common.orderType.bookNow")}
+                      {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
+                      {customerPhone ? ` · ${customerPhone}` : ""}
+                    </p>
                   </div>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.orderCode}
-                    {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
-                    {customerPhone ? ` · ${customerPhone}` : ""}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{totalQuantity} qty</p>
+                    <OrderItemAvatars itemPreviews={itemPreviews} size="sm" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(new Date(placedAt), "d MMM, h:mm a")}
                   </p>
                 </div>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">{order.totalQuantity} qty</p>
-                  <OrderItemAvatars itemPreviews={itemPreviews} size="sm" />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(new Date(order.placedAt), "d MMM, h:mm a")}
-                </p>
-              </div>
-            </button>
-          ))}
+              </button>
+            ),
+          )}
         </div>
       )}
 

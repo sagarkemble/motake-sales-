@@ -1,55 +1,41 @@
+import type { GatepassStatus } from "~/hooks/use-gatepasses";
+
 import { GatepassInfoBanner } from "./gatepass-info-banner";
 import { GatepassItemRow } from "./gatepass-item-row";
-import { GatepassQuickStats } from "./gatepass-quick-stats";
+import {
+  isHandedOver,
+  type GatepassLine,
+  type GatepassQuantityTotals,
+} from "~/lib/gatepass-quantities";
 import { GatepassTodayHeaderCard } from "./gatepass-today-header-card";
 
-interface TodayGatepassItem {
-  id: string;
-  productName: string;
-  varietyName: string;
-  unit: string;
-  issuedQty: number;
-  soldQty: number;
-  remainingQty: number;
-}
-
 interface GatepassTodayViewMobileProps {
-  items: TodayGatepassItem[];
-  totalAllocatedQty: number;
-  totalSoldQty: number;
-  totalRemainingQty: number;
+  businessDate: string;
+  status: GatepassStatus;
+  hasDiscrepancy: boolean;
+  lines: GatepassLine[];
+  totals: GatepassQuantityTotals;
 }
 
 export function GatepassTodayViewMobile({
-  items,
-  totalAllocatedQty,
-  totalSoldQty,
-  totalRemainingQty,
+  businessDate,
+  status,
+  hasDiscrepancy,
+  lines,
+  totals,
 }: GatepassTodayViewMobileProps) {
   return (
     <div className="flex flex-col gap-4">
       <GatepassTodayHeaderCard
-        totalAllocatedQty={totalAllocatedQty}
-        totalRemainingQty={totalRemainingQty}
-      />
-
-      <GatepassQuickStats
-        totalAllocatedQty={totalAllocatedQty}
-        totalSoldQty={totalSoldQty}
-        totalRemainingQty={totalRemainingQty}
+        businessDate={businessDate}
+        status={status}
+        hasDiscrepancy={hasDiscrepancy}
+        totals={totals}
       />
 
       <div className="flex flex-col gap-2">
-        {items.map((item) => (
-          <GatepassItemRow
-            key={item.id}
-            productName={item.productName}
-            varietyName={item.varietyName}
-            unit={item.unit}
-            issuedQty={item.issuedQty}
-            soldQty={item.soldQty}
-            remainingQty={item.remainingQty}
-          />
+        {lines.map((line) => (
+          <GatepassItemRow key={line.id} line={line} handedOver={isHandedOver(status)} />
         ))}
       </div>
 

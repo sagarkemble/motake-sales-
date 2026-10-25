@@ -30,7 +30,7 @@ export const listCustomersInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
 });
-export type ListCustomersInput = z.infer<typeof listCustomersInputSchema>;
+export type ListCustomersInput = z.input<typeof listCustomersInputSchema>;
 
 export const createShopPhotoUploadUrlInputSchema = z.object({
   fileName: z.string().min(1).max(200),

@@ -17,9 +17,9 @@ import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-pa
 import { adminQuickActions } from "~/components/admin/nav-items";
 import { QuickActionLink } from "~/components/shared/quick-action-link";
 import { Skeleton } from "~/components/ui/skeleton";
-import { formatInrCompact } from "~/lib/format-money";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/hooks/use-auth";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useReports } from "~/hooks/use-reports";
 
 function KpiGridSkeleton({ count, columnClassName }: { count: number; columnClassName: string }) {
@@ -45,6 +45,7 @@ export default function AdminDashboardPage() {
   const yesterday = subDays(today, 1);
 
   const { signedInUser } = useAuth();
+  const { formatPaiseCompact } = useFormatMoney();
   const { dailyKpiSummary: todayKpiSummary, isDailyKpiSummaryLoading: isTodayKpiSummaryLoading } =
     useReports({ dailyKpiFilters: toBusinessDateFilters(today) });
   const { dailyKpiSummary: yesterdayKpiSummary } = useReports({
@@ -89,9 +90,9 @@ export default function AdminDashboardPage() {
             />
             <KpiCard
               label="admin.dashboard.kpi.salesValue"
-              value={formatInrCompact(todayKpiSummary?.salesValue ?? 0)}
-              numericValue={todayKpiSummary?.salesValue ?? 0}
-              previousValue={yesterdayKpiSummary?.salesValue}
+              value={formatPaiseCompact(todayKpiSummary?.salesValuePaise ?? 0)}
+              numericValue={todayKpiSummary?.salesValuePaise ?? 0}
+              previousValue={yesterdayKpiSummary?.salesValuePaise}
               icon={IndianRupeeIcon}
             />
           </div>

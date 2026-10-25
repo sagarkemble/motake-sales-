@@ -3,7 +3,6 @@
 import { PackageIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import { useCart } from "~/providers/cart-provider";
 
@@ -12,7 +11,6 @@ interface ProductCatalogCardProps {
   productName: string;
   productImageUrl: string | null;
   varietyCount: number;
-  fromPrice: number | null;
   onAddToCart: () => void;
 }
 
@@ -21,11 +19,9 @@ export function ProductCatalogCard({
   productName,
   productImageUrl,
   varietyCount,
-  fromPrice,
   onAddToCart,
 }: ProductCatalogCardProps) {
   const tx = useTranslate();
-  const { formatInrCompact } = useFormatMoney();
   const { cartLines } = useCart();
 
   const quantityInCartForProduct = cartLines
@@ -52,15 +48,9 @@ export function ProductCatalogCard({
       <div className="flex-1">
         <p className="truncate text-sm font-medium">{productName}</p>
         <p className="text-xs text-muted-foreground">
-          {varietyCount} {tx(varietyCount === 1 ? "salesman.catalog.size" : "salesman.catalog.sizes")}
+          {varietyCount}{" "}
+          {tx(varietyCount === 1 ? "salesman.catalog.size" : "salesman.catalog.sizes")}
         </p>
-        {fromPrice !== null && (
-          <p className="text-xs font-semibold text-brand">
-            {varietyCount === 1
-              ? formatInrCompact(fromPrice)
-              : tx("salesman.catalog.fromPrice", { price: formatInrCompact(fromPrice) })}
-          </p>
-        )}
       </div>
 
       <Button

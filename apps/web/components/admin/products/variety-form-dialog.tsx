@@ -1,11 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { TRPCClientError } from "@repo/trpc/client";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { LockedSku } from "~/components/admin/products/sku-chip";
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useTranslate } from "~/hooks/use-translate";
@@ -25,20 +27,20 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 
-const varietyFormSchema = z.object({
-  sku: z.string().min(1, "Enter a SKU").max(64),
-  name: z.string().min(1, "Enter a variety name").max(120),
-  unit: z.string().min(1, "Enter a unit, e.g. kg or box").max(32),
-  unitPrice: z.number().min(0, "Price must be 0 or more"),
-});
+const UNIT_SUGGESTIONS = ["pouch", "pack", "cup", "tin", "box", "kg"];
 
-export type VarietyFormValues = z.infer<typeof varietyFormSchema>;
+const emptyValues = { name: "", unit: "" };
+
+export type VarietyFormValues = { name: string; unit: string };
 
 interface VarietyFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultValues?: VarietyFormValues;
+  productName: string;
+  /** The Variety being edited; omitted when adding one. */
+  editing?: VarietyFormValues & { sku: string };
   isSubmitting: boolean;
   onSubmit: (values: VarietyFormValues) => Promise<void>;
 }
@@ -46,27 +48,37 @@ interface VarietyFormDialogProps {
 export function VarietyFormDialog({
   open,
   onOpenChange,
-  defaultValues,
+  productName,
+  editing,
   isSubmitting,
   onSubmit,
 }: VarietyFormDialogProps) {
   const tx = useTranslate();
+  const varietyFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(1, tx("admin.varieties.validation.nameRequired")).max(120),
+        unit: z.string().trim().min(1, tx("admin.varieties.validation.unitRequired")).max(32),
+      }),
+    [tx],
+  );
   const form = useForm<VarietyFormValues>({
     resolver: zodResolver(varietyFormSchema),
-    defaultValues: defaultValues ?? { sku: "", name: "", unit: "", unitPrice: 0 },
+    defaultValues: emptyValues,
   });
 
   useEffect(() => {
-    if (open) form.reset(defaultValues ?? { sku: "", name: "", unit: "", unitPrice: 0 });
-  }, [open, defaultValues, form]);
+    if (open) form.reset(editing ? { name: editing.name, unit: editing.unit } : emptyValues);
+  }, [open, editing, form]);
 
   async function handleFormSubmit(values: VarietyFormValues) {
     try {
       await onSubmit(values);
     } catch (error) {
       const errorMessage = getErrorMessage(error, tx("admin.varieties.saveFailed"));
-      if (errorMessage.toLowerCase().includes("sku")) {
-        form.setError("sku", { message: errorMessage });
+      // The server refuses a second Variety with the same name under this Product.
+      if (error instanceof TRPCClientError && error.data?.code === "CONFLICT") {
+        form.setError("name", { message: errorMessage });
       } else {
         toast.error(errorMessage);
       }
@@ -77,11 +89,18 @@ export function VarietyFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{defaultValues ? "admin.varieties.editAria" : "Add variety"}</DialogTitle>
+          <DialogTitle>
+            {tx(editing ? "admin.varieties.editTitle" : "admin.varieties.addTitle")}
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>{tx("admin.varieties.product")}</Label>
+              <p className="rounded-xl border bg-muted/20 px-3 py-2 text-sm">{productName}</p>
+            </div>
+
             <FormField
               control={form.control}
               name="name"
@@ -89,22 +108,8 @@ export function VarietyFormDialog({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Large" className="rounded-xl bg-muted/40" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="sku"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SKU</FormLabel>
-                  <FormControl>
                     <Input
-                      placeholder="e.g. PRD-001-L"
+                      placeholder="e.g. 500 ml"
                       className="rounded-xl bg-muted/40"
                       {...field}
                     />
@@ -121,41 +126,30 @@ export function VarietyFormDialog({
                 <FormItem>
                   <FormLabel>Unit</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. kg" className="rounded-xl bg-muted/40" {...field} />
+                    <Input
+                      list="variety-unit-suggestions"
+                      placeholder="e.g. pouch"
+                      className="rounded-xl bg-muted/40"
+                      {...field}
+                    />
                   </FormControl>
+                  <datalist id="variety-unit-suggestions">
+                    {UNIT_SUGGESTIONS.map((unit) => (
+                      <option key={unit} value={unit} />
+                    ))}
+                  </datalist>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="unitPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit price (₹)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="0.00"
-                      className="rounded-xl bg-muted/40"
-                      value={field.value}
-                      onChange={(event) =>
-                        field.onChange(
-                          event.target.value === "" ? 0 : Number(event.target.value),
-                        )
-                      }
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {editing ? (
+              <LockedSku sku={editing.sku} />
+            ) : (
+              <p className="rounded-xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+                {tx("admin.varieties.skuOnSave")}
+              </p>
+            )}
 
             <DialogFooter>
               <Button
@@ -163,7 +157,9 @@ export function VarietyFormDialog({
                 disabled={isSubmitting}
                 className="w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
               >
-                {isSubmitting ? "Saving" : "common.actions.save"}
+                {isSubmitting
+                  ? tx("common.status.pleaseWait")
+                  : tx(editing ? "common.actions.save" : "admin.varieties.addTitle")}
               </Button>
             </DialogFooter>
           </form>

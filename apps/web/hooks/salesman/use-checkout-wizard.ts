@@ -28,10 +28,8 @@ interface NewCustomerFormValues {
 }
 
 export interface PlacedOrder {
-  orderCode: string;
   type: OrderTypeChoice;
   totalQuantity: number;
-  totalAmount: number;
   placedAt: Date;
 }
 
@@ -56,12 +54,10 @@ function getBookNowBlockReasons(
   const shortfalls: string[] = [];
   for (const line of cartLines) {
     const gatepassItem = myGatepass.items.find((item) => item.varietyId === line.varietyId);
-    const availableQty = gatepassItem
-      ? (gatepassItem.availableQty ?? gatepassItem.issuedQty - gatepassItem.soldQty)
-      : 0;
-    if (line.quantity > availableQty) {
+    const sellableQty = gatepassItem?.sellableQty ?? 0;
+    if (line.quantity > sellableQty) {
       shortfalls.push(
-        `${line.productName} (${line.varietyName}): need ${line.quantity}, gate pass has ${availableQty}`,
+        `${line.productName} (${line.varietyName}): need ${line.quantity}, gate pass has ${sellableQty}`,
       );
     }
   }
@@ -71,8 +67,7 @@ function getBookNowBlockReasons(
 export function useCheckoutWizard() {
   const tx = useTranslate();
   const router = useRouter();
-  const { cartLines, totalCartQuantity, totalCartAmount, setQuantityForVariety, removeLine, clearCart } =
-    useCart();
+  const { cartLines, totalCartQuantity, setQuantityForVariety, removeLine, clearCart } = useCart();
 
   const businessDateKey = format(new Date(), "yyyy-MM-dd");
   const nextDayDate = addDays(new Date(), 1);
@@ -200,15 +195,18 @@ export function useCheckoutWizard() {
             });
       clearCart();
       setPlacedOrder({
-        orderCode: placedOrderResponse.data.order.orderCode,
         type: orderType,
-        totalQuantity: placedOrderResponse.data.order.totalQuantity,
-        totalAmount: placedOrderResponse.data.order.totalAmount,
+        totalQuantity: placedOrderResponse.data.items.reduce(
+          (runningTotal, item) => runningTotal + item.quantity,
+          0,
+        ),
         placedAt: new Date(placedOrderResponse.data.order.placedAt),
       });
     } catch (placeOrderError) {
       const errorMessage =
-        placeOrderError instanceof Error ? placeOrderError.message : tx("salesman.checkout.error.placeOrder");
+        placeOrderError instanceof Error
+          ? placeOrderError.message
+          : tx("salesman.checkout.error.placeOrder");
       toast.error(errorMessage);
     }
   }
@@ -216,7 +214,6 @@ export function useCheckoutWizard() {
   return {
     cartLines,
     totalCartQuantity,
-    totalCartAmount,
     onCartQuantityChange: setQuantityForVariety,
     onCartLineRemove: removeLine,
 

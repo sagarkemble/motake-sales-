@@ -2,13 +2,11 @@
 
 import { CartItemRow } from "~/components/salesman/cart/cart-item-row";
 import { useTranslate } from "~/hooks/use-translate";
-import { formatInr } from "~/lib/format-money";
 import type { CartLine } from "~/providers/cart-provider";
 
 interface VerifyProductsStepProps {
   cartLines: CartLine[];
   totalCartQuantity: number;
-  totalCartAmount: number;
   onQuantityChange: (cartLine: CartLine, quantity: number) => void;
   onRemove: (varietyId: string) => void;
 }
@@ -16,7 +14,6 @@ interface VerifyProductsStepProps {
 export function VerifyProductsStep({
   cartLines,
   totalCartQuantity,
-  totalCartAmount,
   onQuantityChange,
   onRemove,
 }: VerifyProductsStepProps) {
@@ -43,10 +40,8 @@ export function VerifyProductsStep({
       </div>
 
       <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">
-          Total items <span className="font-medium text-foreground">{totalCartQuantity}</span>
-        </span>
-        <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
+        <span className="text-muted-foreground">{tx("salesman.checkout.success.totalItems")}</span>
+        <span className="font-semibold text-brand">{totalCartQuantity}</span>
       </div>
     </div>
   );

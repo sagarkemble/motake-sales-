@@ -3,9 +3,13 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../index";
 import { profilesTable, type InsertProfile, type SelectProfile } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
 
-export async function createProfile(newProfile: InsertProfile): Promise<SelectProfile> {
-  const insertedRows = await db.insert(profilesTable).values(newProfile).returning();
+export async function createProfile(
+  newProfile: InsertProfile,
+  executor: DbExecutor = db,
+): Promise<SelectProfile> {
+  const insertedRows = await executor.insert(profilesTable).values(newProfile).returning();
   return firstOrThrow(insertedRows, "createProfile");
 }
 
@@ -35,8 +39,9 @@ export async function listProfilesByRole(role: SelectProfile["role"]): Promise<S
 export async function updateProfile(
   profileId: string,
   changes: Partial<InsertProfile>,
+  executor: DbExecutor = db,
 ): Promise<SelectProfile | undefined> {
-  const [updatedProfile] = await db
+  const [updatedProfile] = await executor
     .update(profilesTable)
     .set(changes)
     .where(eq(profilesTable.id, profileId))
@@ -44,8 +49,11 @@ export async function updateProfile(
   return updatedProfile;
 }
 
-export async function softDeleteProfile(profileId: string): Promise<SelectProfile | undefined> {
-  const [deactivatedProfile] = await db
+export async function softDeleteProfile(
+  profileId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProfile | undefined> {
+  const [deactivatedProfile] = await executor
     .update(profilesTable)
     .set({ deletedAt: new Date(), status: "inactive" })
     .where(eq(profilesTable.id, profileId))

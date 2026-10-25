@@ -20,8 +20,9 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     { id: productId ?? "" },
     { enabled: enabled && Boolean(productId) },
   );
+  // Admin screens only: deactivated varieties stay listed so they can be reactivated.
   const productVarietiesQuery = trpc.products.listVarieties.useQuery(
-    { productId: productId ?? "" },
+    { productId: productId ?? "", includeInactive: true },
     { enabled: enabled && Boolean(productId) },
   );
 
@@ -52,6 +53,9 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     onSuccess: () => utils.products.invalidate(),
   });
   const deactivateProductVarietyMutation = trpc.products.deactivateVariety.useMutation({
+    onSuccess: () => utils.products.invalidate(),
+  });
+  const reactivateProductVarietyMutation = trpc.products.reactivateVariety.useMutation({
     onSuccess: () => utils.products.invalidate(),
   });
 
@@ -121,5 +125,8 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     deactivateProductVarietyAsync: deactivateProductVarietyMutation.mutateAsync,
     isDeactivatingProductVariety: deactivateProductVarietyMutation.isPending,
     deactivateProductVarietyError: deactivateProductVarietyMutation.error ?? null,
+
+    reactivateProductVarietyAsync: reactivateProductVarietyMutation.mutateAsync,
+    isReactivatingProductVariety: reactivateProductVarietyMutation.isPending,
   };
 }

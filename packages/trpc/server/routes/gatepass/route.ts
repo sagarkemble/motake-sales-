@@ -191,8 +191,8 @@ export const gatepassRouter = router({
     })
     .input(recordReturnInputSchema)
     .output(apiResponseSchema(gatepassItemSchema))
-    .mutation(async ({ input }) => {
-      const item = await gatepassService.recordReturn(input);
+    .mutation(async ({ ctx, input }) => {
+      const item = await gatepassService.recordReturn(input, ctx.user.id);
       return apiResponse(item);
     }),
 

@@ -15,10 +15,19 @@ import {
   type SelectGatepassItem,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
+
+// Sellable is issued minus sold, always computed (db-decisions/0009). Returned stock is not part
+// of it.
+export type GatepassItemWithSellable = SelectGatepassItem & { sellableQty: number };
+
+export function withSellableQty(item: SelectGatepassItem): GatepassItemWithSellable {
+  return { ...item, sellableQty: item.issuedQty - item.soldQty };
+}
 
 export interface GatepassWithItems {
   gatepass: SelectGatepass;
-  items: SelectGatepassItem[];
+  items: GatepassItemWithSellable[];
 }
 
 export async function createGatepassWithItems(
@@ -40,12 +49,15 @@ export async function createGatepassWithItems(
           )
           .returning()
       : [];
-    return { gatepass: createdGatepass, items: createdItems };
+    return { gatepass: createdGatepass, items: createdItems.map(withSellableQty) };
   });
 }
 
-export async function getGatepassById(gatepassId: string): Promise<SelectGatepass | undefined> {
-  const [gatepass] = await db
+export async function getGatepassById(
+  gatepassId: string,
+  executor: DbExecutor = db,
+): Promise<SelectGatepass | undefined> {
+  const [gatepass] = await executor
     .select()
     .from(gatepassesTable)
     .where(eq(gatepassesTable.id, gatepassId));
@@ -71,10 +83,7 @@ export async function getGatepassBySalesmanAndDate(
         eq(gatepassesTable.businessDate, businessDate),
       ),
     )
-    .orderBy(
-      sql`(${gatepassesTable.status} = 'active') desc`,
-      desc(gatepassesTable.createdAt),
-    )
+    .orderBy(sql`(${gatepassesTable.status} = 'active') desc`, desc(gatepassesTable.createdAt))
     .limit(1);
   return gatepass;
 }
@@ -111,8 +120,23 @@ export async function listGatepassesForDate(businessDate: string): Promise<Selec
 
 export async function listGatepassItemsByGatepassId(
   gatepassId: string,
-): Promise<SelectGatepassItem[]> {
-  return db.select().from(gatepassItemsTable).where(eq(gatepassItemsTable.gatepassId, gatepassId));
+): Promise<GatepassItemWithSellable[]> {
+  const items = await db
+    .select()
+    .from(gatepassItemsTable)
+    .where(eq(gatepassItemsTable.gatepassId, gatepassId));
+  return items.map(withSellableQty);
+}
+
+export async function getGatepassItemById(
+  gatepassItemId: string,
+  executor: DbExecutor = db,
+): Promise<SelectGatepassItem | undefined> {
+  const [item] = await executor
+    .select()
+    .from(gatepassItemsTable)
+    .where(eq(gatepassItemsTable.id, gatepassItemId));
+  return item;
 }
 
 export async function getGatepassItemByGatepassAndVariety(
@@ -178,8 +202,9 @@ export async function restoreSoldQtyOnCancellation(
 export async function recordReturnedQtyForItem(
   gatepassItemId: string,
   returnedQty: number,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepassItem | undefined> {
-  const [updatedItem] = await db
+  const [updatedItem] = await executor
     .update(gatepassItemsTable)
     .set({ returnedQty })
     .where(eq(gatepassItemsTable.id, gatepassItemId))
@@ -207,8 +232,9 @@ export async function submitHandoverForGatepass(
   gatepassId: string,
   salesmanId: string,
   handoverItems: HandoverItemInput[],
+  executor: DbExecutor = db,
 ): Promise<SubmitHandoverOutcome> {
-  return db.transaction(async (tx) => {
+  return executor.transaction(async (tx) => {
     const lockedGatepassRows = await tx
       .select()
       .from(gatepassesTable)
@@ -300,7 +326,7 @@ export async function submitHandoverForGatepass(
 
     return {
       status: "success",
-      gatepass: { gatepass: updatedGatepass, items: settledItems },
+      gatepass: { gatepass: updatedGatepass, items: settledItems.map(withSellableQty) },
     };
   });
 }
@@ -319,8 +345,9 @@ export async function updateGatepassStatus(
       | "notes"
     >
   >,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepass | undefined> {
-  const [updatedGatepass] = await db
+  const [updatedGatepass] = await executor
     .update(gatepassesTable)
     .set(changes)
     .where(eq(gatepassesTable.id, gatepassId))
@@ -332,6 +359,7 @@ export interface GatepassHistoryRow {
   gatepass: SelectGatepass;
   totalIssuedQty: number;
   totalSoldQty: number;
+  totalReturnedQty: number;
 }
 
 export async function getGatepassHistoryForSalesman(
@@ -342,6 +370,7 @@ export async function getGatepassHistoryForSalesman(
       gatepass: gatepassesTable,
       totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
       totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+      totalReturnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)::int`,
     })
     .from(gatepassesTable)
     .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
@@ -358,7 +387,7 @@ export interface AllotmentMatrixRow {
   varietyName: string;
   issuedQty: number;
   soldQty: number;
-  availableQty: number | null;
+  sellableQty: number;
   returnedQty: number;
   shortReason: GatepassShortReason | null;
   shortNote: string | null;
@@ -376,7 +405,7 @@ export async function getAllotmentMatrixForDate(
       varietyName: productVarietiesTable.name,
       issuedQty: gatepassItemsTable.issuedQty,
       soldQty: gatepassItemsTable.soldQty,
-      availableQty: gatepassItemsTable.availableQty,
+      sellableQty: sql<number>`(${gatepassItemsTable.issuedQty} - ${gatepassItemsTable.soldQty})::int`,
       returnedQty: gatepassItemsTable.returnedQty,
       shortReason: gatepassItemsTable.shortReason,
       shortNote: gatepassItemsTable.shortNote,
@@ -498,10 +527,7 @@ export async function getDiscrepancyGatepassesForDate(
     .leftJoin(closedByProfiles, eq(gatepassesTable.closedBy, closedByProfiles.id))
     .leftJoin(itemAggregates, eq(itemAggregates.gatepassId, gatepassesTable.id))
     .where(
-      and(
-        eq(gatepassesTable.businessDate, businessDate),
-        eq(gatepassesTable.hasDiscrepancy, true),
-      ),
+      and(eq(gatepassesTable.businessDate, businessDate), eq(gatepassesTable.hasDiscrepancy, true)),
     )
     .orderBy(desc(gatepassesTable.closedAt));
 }

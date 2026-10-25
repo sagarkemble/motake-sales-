@@ -11,7 +11,11 @@ interface UseOrderHistoryParams {
   salesmanId?: string;
 }
 
-export function useOrderHistory({ pageSize = 15, enabled = true, salesmanId }: UseOrderHistoryParams = {}) {
+export function useOrderHistory({
+  pageSize = 15,
+  enabled = true,
+  salesmanId,
+}: UseOrderHistoryParams = {}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedOrders, setLoadedOrders] = useState<OrderHistoryRow[]>([]);
 
@@ -31,8 +35,8 @@ export function useOrderHistory({ pageSize = 15, enabled = true, salesmanId }: U
 
     setLoadedOrders((existingOrders) => {
       if (currentPage === 1) return fetchedItems;
-      const existingOrderIds = new Set(existingOrders.map((row) => row.order.id));
-      const newlyFetchedOrders = fetchedItems.filter((row) => !existingOrderIds.has(row.order.id));
+      const existingOrderIds = new Set(existingOrders.map((row) => row.id));
+      const newlyFetchedOrders = fetchedItems.filter((row) => !existingOrderIds.has(row.id));
       return [...existingOrders, ...newlyFetchedOrders];
     });
   }, [orderHistoryQuery.data, currentPage]);

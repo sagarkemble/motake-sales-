@@ -1,16 +1,28 @@
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
-import { orderItemsTable, ordersTable, productVarietiesTable, productsTable } from "../../schema";
+import {
+  billItemsTable,
+  billsTable,
+  ordersTable,
+  productVarietiesTable,
+  productsTable,
+} from "../../schema";
+import { billIsNotCancelled } from "../bills/cancelled";
 import { getEndOfDayTotalsForDate, type GatepassEndOfDayTotals } from "../gatepass";
-import { getOrderCountsPerSalesmanInRange, type OrderCountBySalesman } from "../orders";
+import {
+  countOrdersPlacedInRange,
+  getOrderCountsPerSalesmanInRange,
+  type OrderCountBySalesman,
+} from "../orders";
 import { firstOrThrow } from "../shared/assertions";
+import { toIstBusinessDate } from "../shared/business-date";
 
 export interface DailyKpiSummary {
   bookNowOrderCount: number;
   preOrderCount: number;
   fulfilledOrderCount: number;
-  salesValue: number;
+  salesValuePaise: number;
   gatepassTotals: GatepassEndOfDayTotals;
 }
 
@@ -51,18 +63,15 @@ export async function getDailyKpiSummary(
       ),
     );
 
+  // Sales value is what was billed that business day, never order totals.
   const salesValueRows = await db
     .select({
-      salesValue: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
-    })
-    .from(ordersTable)
-    .where(
-      and(
-        sql`${ordersTable.status} <> 'cancelled'`,
-        gte(ordersTable.placedAt, placedRange.from),
-        lte(ordersTable.placedAt, placedRange.to),
+      salesValuePaise: sql<number>`coalesce(sum(${billsTable.totalPaise}), 0)::bigint`.mapWith(
+        Number,
       ),
-    );
+    })
+    .from(billsTable)
+    .where(and(eq(billsTable.billDate, businessDate), billIsNotCancelled()));
 
   const gatepassTotals = await getEndOfDayTotalsForDate(businessDate);
 
@@ -71,7 +80,7 @@ export async function getDailyKpiSummary(
     preOrderCount: firstOrThrow(preOrderRows, "getDailyKpiSummary pre-order count").orderCount,
     fulfilledOrderCount: firstOrThrow(fulfilledRows, "getDailyKpiSummary fulfilled count")
       .orderCount,
-    salesValue: firstOrThrow(salesValueRows, "getDailyKpiSummary sales value").salesValue,
+    salesValuePaise: firstOrThrow(salesValueRows, "getDailyKpiSummary sales value").salesValuePaise,
     gatepassTotals,
   };
 }
@@ -85,11 +94,11 @@ export async function getMonthlyOrderVolume(range: {
   from: Date;
   to: Date;
 }): Promise<MonthlyOrderVolume> {
-  const perSalesman = await getOrderCountsPerSalesmanInRange(range);
-  const totalOrderCount = perSalesman.reduce(
-    (runningTotal, row) => runningTotal + row.orderCount,
-    0,
-  );
+  // The total also counts orders with no salesman, which have no per-salesman row.
+  const [perSalesman, totalOrderCount] = await Promise.all([
+    getOrderCountsPerSalesmanInRange(range),
+    countOrdersPlacedInRange({}, range),
+  ]);
   return { totalOrderCount, perSalesman };
 }
 
@@ -98,28 +107,45 @@ export interface ProductSalesSummaryRow {
   productName: string;
   varietyName: string;
   totalQuantitySold: number;
-  totalAmountSold: number;
+  taxablePaise: number;
+  // CGST + SGST + IGST.
+  taxPaise: number;
 }
 
+// What shipped on Bills dated within the range (IST business dates); names are the current
+// catalog's.
 export async function getProductWiseSalesSummary(range: {
   from: Date;
   to: Date;
 }): Promise<ProductSalesSummaryRow[]> {
+  const quantitySold = sql<number>`coalesce(sum(${billItemsTable.quantity}), 0)::int`;
   return db
     .select({
-      varietyId: orderItemsTable.varietyId,
+      varietyId: billItemsTable.varietyId,
       productName: productsTable.name,
       varietyName: productVarietiesTable.name,
-      totalQuantitySold: sql<number>`coalesce(sum(${orderItemsTable.quantity}), 0)::int`,
-      totalAmountSold: sql<number>`coalesce(sum(${orderItemsTable.unitPrice} * ${orderItemsTable.quantity}), 0)::float8`,
+      totalQuantitySold: quantitySold,
+      taxablePaise: sql<number>`coalesce(sum(${billItemsTable.taxablePaise}), 0)::bigint`.mapWith(
+        Number,
+      ),
+      taxPaise:
+        sql<number>`coalesce(sum(${billItemsTable.cgstPaise} + ${billItemsTable.sgstPaise} + ${billItemsTable.igstPaise}), 0)::bigint`.mapWith(
+          Number,
+        ),
     })
-    .from(orderItemsTable)
-    .innerJoin(ordersTable, eq(orderItemsTable.orderId, ordersTable.id))
-    .innerJoin(productVarietiesTable, eq(orderItemsTable.varietyId, productVarietiesTable.id))
+    .from(billItemsTable)
+    .innerJoin(billsTable, eq(billItemsTable.billId, billsTable.id))
+    .innerJoin(productVarietiesTable, eq(billItemsTable.varietyId, productVarietiesTable.id))
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
-    .where(and(gte(ordersTable.placedAt, range.from), lte(ordersTable.placedAt, range.to)))
-    .groupBy(orderItemsTable.varietyId, productsTable.name, productVarietiesTable.name)
-    .orderBy(desc(sql`coalesce(sum(${orderItemsTable.quantity}), 0)`));
+    .where(
+      and(
+        gte(billsTable.billDate, toIstBusinessDate(range.from)),
+        lte(billsTable.billDate, toIstBusinessDate(range.to)),
+        billIsNotCancelled(),
+      ),
+    )
+    .groupBy(billItemsTable.varietyId, productsTable.name, productVarietiesTable.name)
+    .orderBy(desc(quantitySold));
 }
 
 export async function getAverageFulfillmentDurationSeconds(range: {

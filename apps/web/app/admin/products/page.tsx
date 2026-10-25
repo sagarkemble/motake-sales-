@@ -8,19 +8,12 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
 
-function getFromPrice(varieties: { unitPrice: number }[]): number | null {
-  if (varieties.length === 0) return null;
-  return Math.min(...varieties.map((variety) => variety.unitPrice));
-}
-
 function ProductsPageContent() {
   const tx = useTranslate();
-  const { formatInrCompact } = useFormatMoney();
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeDeleted, setIncludeDeleted] = useState(false);
@@ -85,62 +78,72 @@ function ProductsPageContent() {
           </p>
         ) : (
           productsPage.items.map(({ product, varieties }) => {
-            const fromPrice = getFromPrice(varieties);
+            const activeVarieties = varieties.filter((variety) => variety.status === "active");
+            const inactiveCount = varieties.length - activeVarieties.length;
             return (
-            <div
-              key={product.id}
-              className={`flex flex-col gap-2.5 rounded-3xl border bg-card p-3 shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
-                product.deletedAt ? "opacity-60" : ""
-              }`}
-            >
-              <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted/40">
-                {product.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="size-full object-contain p-3"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center">
-                    <PackageIcon className="size-8 text-muted-foreground" />
+              <div
+                key={product.id}
+                className={`flex flex-col gap-2.5 rounded-3xl border bg-card p-3 shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
+                  product.deletedAt ? "opacity-60" : ""
+                }`}
+              >
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted/40">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="size-full object-contain p-3"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center">
+                      <PackageIcon className="size-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+                    <StatusBadge status={product.status} />
+                    {product.deletedAt && (
+                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                        Deleted
+                      </span>
+                    )}
                   </div>
-                )}
-                <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
-                  <StatusBadge status={product.status} />
-                  {product.deletedAt && (
-                    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                      Deleted
-                    </span>
+                </div>
+
+                <div className="flex-1">
+                  <p className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {varieties.length === 0
+                      ? tx("admin.varieties.empty")
+                      : tx(
+                          varieties.length === 1
+                            ? "admin.products.varietyCountOne"
+                            : "admin.products.varietyCountOther",
+                          { count: varieties.length },
+                        )}
+                    {inactiveCount > 0 &&
+                      ` · ${tx("admin.products.inactiveCount", { count: inactiveCount })}`}
+                  </p>
+                  {activeVarieties.length > 0 && (
+                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
+                      {activeVarieties.map((variety) => variety.name).join(" · ")}
+                    </p>
                   )}
                 </div>
-              </div>
 
-              <div className="flex-1">
-                <p className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {varieties.length} {varieties.length === 1 ? "variety" : "varieties"}
-                </p>
-                {fromPrice !== null && (
-                  <p className="mt-0.5 text-xs font-semibold text-brand">
-                    {varieties.length === 1 ? formatInrCompact(fromPrice) : `from ${formatInrCompact(fromPrice)}`}
-                  </p>
-                )}
+                <Button
+                  asChild={!product.deletedAt}
+                  size="sm"
+                  variant="outline"
+                  disabled={Boolean(product.deletedAt)}
+                  className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+                >
+                  {product.deletedAt ? (
+                    "Edit"
+                  ) : (
+                    <Link href={`/admin/products/${product.id}`}>Edit</Link>
+                  )}
+                </Button>
               </div>
-
-              <Button
-                asChild={!product.deletedAt}
-                size="sm"
-                variant="outline"
-                disabled={Boolean(product.deletedAt)}
-                className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
-              >
-                {product.deletedAt ? (
-                  "Edit"
-                ) : (
-                  <Link href={`/admin/products/${product.id}`}>Edit</Link>
-                )}
-              </Button>
-            </div>
             );
           })
         )}
