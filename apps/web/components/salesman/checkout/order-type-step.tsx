@@ -9,7 +9,6 @@ import {
 
 import { cn } from "~/lib/utils";
 import { useFormatDate } from "~/hooks/use-format-date";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import type { OrderTypeChoice } from "~/hooks/salesman/use-checkout-wizard";
 
@@ -19,7 +18,6 @@ interface OrderTypeStepProps {
   isBookNowAllowed: boolean;
   bookNowBlockReasons: string[];
   nextDayDate: Date;
-  totalCartAmount: number;
 }
 
 export function OrderTypeStep({
@@ -28,11 +26,9 @@ export function OrderTypeStep({
   isBookNowAllowed,
   bookNowBlockReasons,
   nextDayDate,
-  totalCartAmount,
 }: OrderTypeStepProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
-  const { formatInr } = useFormatMoney();
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,7 +83,9 @@ export function OrderTypeStep({
           <CalendarClockIcon className="size-4" />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-medium">{tx("salesman.checkout.orderType.preOrderTomorrow")}</p>
+          <p className="text-sm font-medium">
+            {tx("salesman.checkout.orderType.preOrderTomorrow")}
+          </p>
           <p className="text-xs text-muted-foreground">
             {tx("salesman.checkout.orderType.preOrderHint", {
               date: formatDate(nextDayDate, "d MMM yyyy"),
@@ -96,11 +94,6 @@ export function OrderTypeStep({
         </div>
         {orderType === "pre_order" && <CheckCircle2Icon className="size-5 shrink-0 text-brand" />}
       </button>
-
-      <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-        <span className="text-muted-foreground">{tx("salesman.checkout.orderType.amountToCollect")}</span>
-        <span className="font-semibold text-brand">{formatInr(totalCartAmount)}</span>
-      </div>
     </div>
   );
 }

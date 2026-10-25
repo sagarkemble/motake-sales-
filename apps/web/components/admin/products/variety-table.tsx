@@ -6,11 +6,12 @@ import { BoxIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
+import { SkuChip } from "~/components/admin/products/sku-chip";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { getErrorMessage } from "~/lib/get-error-message";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import {
   VarietyFormDialog,
@@ -21,11 +22,11 @@ type ProductVariety = RouterOutputs["products"]["listVarieties"]["data"][number]
 
 interface VarietyTableProps {
   productId: string;
+  productName: string;
 }
 
-export function VarietyTable({ productId }: VarietyTableProps) {
+export function VarietyTable({ productId, productName }: VarietyTableProps) {
   const tx = useTranslate();
-  const { formatInr } = useFormatMoney();
   const {
     productVarieties,
     isProductVarietiesLoading,
@@ -38,6 +39,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
 
   const [editingVariety, setEditingVariety] = useState<ProductVariety | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [addedVarietyId, setAddedVarietyId] = useState<string | null>(null);
 
   function openAddDialog() {
     setEditingVariety(null);
@@ -54,7 +56,8 @@ export function VarietyTable({ productId }: VarietyTableProps) {
       await updateProductVarietyAsync({ id: editingVariety.id, ...values });
       toast.success(tx("admin.varieties.updateSuccess"));
     } else {
-      await createProductVarietyAsync({ productId, ...values });
+      const response = await createProductVarietyAsync({ productId, ...values });
+      setAddedVarietyId(response.data.id);
       toast.success(tx("admin.varieties.addSuccess"));
     }
     setIsDialogOpen(false);
@@ -72,7 +75,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium">Varieties</h2>
+        <h2 className="text-sm font-medium">{tx("admin.varieties.title")}</h2>
         <Button
           type="button"
           size="sm"
@@ -81,7 +84,7 @@ export function VarietyTable({ productId }: VarietyTableProps) {
           onClick={openAddDialog}
         >
           <PlusIcon />
-          Add variety
+          {tx("admin.varieties.addTitle")}
         </Button>
       </div>
 
@@ -89,66 +92,79 @@ export function VarietyTable({ productId }: VarietyTableProps) {
         {isProductVarietiesLoading ? (
           <ListItemSkeleton count={4} />
         ) : productVarieties.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">No varieties yet</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {tx("admin.varieties.empty")}
+          </p>
         ) : (
-          productVarieties.map((variety) => (
-            <div
-              key={variety.id}
-              className="flex items-center gap-3 rounded-xl border bg-background p-3"
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <BoxIcon className="size-4 text-muted-foreground" />
-              </div>
+          productVarieties.map((variety) => {
+            const isInactive = variety.status === "inactive";
+            return (
+              <div
+                key={variety.id}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border bg-background p-3",
+                  isInactive && "border-dashed bg-muted/30",
+                  variety.id === addedVarietyId && "border-brand ring-2 ring-brand/20",
+                )}
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <BoxIcon className="size-4 text-muted-foreground" />
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{variety.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {variety.sku} &middot; {variety.unit}
-                </p>
-                <p className="text-xs font-medium text-brand">{formatInr(variety.unitPrice)}</p>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      isInactive && "text-muted-foreground",
+                    )}
+                  >
+                    {variety.name}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      &middot; {variety.unit}
+                    </span>
+                  </p>
+                  <SkuChip sku={variety.sku} muted={isInactive} className="mt-1" />
+                  {variety.id === addedVarietyId && (
+                    <p className="mt-1 text-[11px] font-medium text-brand">
+                      {tx("admin.varieties.addedWithSku")}
+                    </p>
+                  )}
+                </div>
 
-              <StatusBadge status={variety.status} />
+                <StatusBadge status={variety.status} />
 
-              <div className="flex shrink-0 gap-1">
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => openEditDialog(variety)}
-                  aria-label={tx("admin.varieties.editAria")}
-                >
-                  <PencilIcon />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  disabled={variety.status === "inactive"}
-                  onClick={() => handleDeactivate(variety)}
-                  aria-label={tx("admin.varieties.deactivateAria")}
-                >
-                  <XIcon />
-                </Button>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => openEditDialog(variety)}
+                    aria-label={tx("admin.varieties.editAria")}
+                  >
+                    <PencilIcon />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    disabled={isInactive}
+                    onClick={() => handleDeactivate(variety)}
+                    aria-label={tx("admin.varieties.deactivateAria")}
+                  >
+                    <XIcon />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
       <VarietyFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        defaultValues={
-          editingVariety
-            ? {
-                sku: editingVariety.sku,
-                name: editingVariety.name,
-                unit: editingVariety.unit,
-                unitPrice: editingVariety.unitPrice,
-              }
-            : undefined
-        }
+        productName={productName}
+        editing={editingVariety ?? undefined}
         isSubmitting={isCreatingProductVariety || isUpdatingProductVariety}
         onSubmit={handleSubmit}
       />

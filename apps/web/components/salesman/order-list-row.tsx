@@ -1,18 +1,23 @@
+"use client";
+
 import { ClipboardListIcon } from "lucide-react";
 
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
-import { formatInrCompact } from "~/lib/format-money";
+import { useFormatMoney } from "~/hooks/use-format-money";
+import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 
 type OrderStatus = "confirmed" | "scheduled" | "due" | "fulfilled" | "cancelled";
 
 interface OrderListRowProps {
   primaryLabel: string;
   shopPhotoUrl?: string | null;
-  orderCode: string;
   timestampLabel: string;
-  totalQuantity: number;
-  totalAmount: number;
+  routeName?: string;
+  /** Unknown for a bare due Pre-order that another salesman placed. */
+  totalQuantity?: number;
+  bill: { number: string; totalPaise: number } | null;
   status: OrderStatus;
   onClick: () => void;
 }
@@ -20,18 +25,30 @@ interface OrderListRowProps {
 export function OrderListRow({
   primaryLabel,
   shopPhotoUrl,
-  orderCode,
   timestampLabel,
+  routeName,
   totalQuantity,
-  totalAmount,
+  bill,
   status,
   onClick,
 }: OrderListRowProps) {
+  const tx = useTranslate();
+  const { formatPaise } = useFormatMoney();
+  const isCancelled = status === "cancelled";
+  const metaParts = [
+    timestampLabel,
+    routeName,
+    totalQuantity === undefined ? undefined : tx("salesman.orders.qty", { count: totalQuantity }),
+  ].filter(Boolean);
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors active:bg-muted/40"
+      className={cn(
+        "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors active:bg-muted/40",
+        isCancelled && "opacity-70",
+      )}
     >
       {shopPhotoUrl !== undefined ? (
         <ShopPhotoThumbnail shopPhotoUrl={shopPhotoUrl} shopName={primaryLabel} size="md" />
@@ -42,14 +59,32 @@ export function OrderListRow({
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{primaryLabel}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {orderCode} · {timestampLabel} · {totalQuantity} items
-        </p>
-        <p className="text-xs font-semibold text-brand">{formatInrCompact(totalAmount)}</p>
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{primaryLabel}</p>
+        <p className="truncate text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+        <OrderStatusBadge status={status} className="mt-1" />
       </div>
 
-      <OrderStatusBadge status={status} className="max-w-[7.5rem] shrink-0" />
+      <div className="min-w-0 shrink-0 text-right">
+        {bill ? (
+          <>
+            <p
+              className={cn(
+                "whitespace-nowrap text-sm font-semibold tabular-nums",
+                isCancelled ? "text-muted-foreground line-through" : "text-brand",
+              )}
+            >
+              {formatPaise(bill.totalPaise)}
+            </p>
+            <p className="whitespace-nowrap font-mono text-[11px] text-muted-foreground">
+              {bill.number}
+            </p>
+          </>
+        ) : (
+          <p className="whitespace-nowrap text-xs text-muted-foreground">
+            {tx(isCancelled ? "salesman.orders.row.noBill" : "salesman.orders.row.noBillYet")}
+          </p>
+        )}
+      </div>
     </button>
   );
 }

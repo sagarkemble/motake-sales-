@@ -10,7 +10,6 @@ export interface CartLine {
   productName: string;
   varietyName: string;
   unit: string;
-  unitPrice: number;
   productImageUrl: string | null;
   quantity: number;
 }
@@ -18,7 +17,6 @@ export interface CartLine {
 interface CartContextValue {
   cartLines: CartLine[];
   totalCartQuantity: number;
-  totalCartAmount: number;
   getQuantityForVariety: (varietyId: string) => number;
   setQuantityForVariety: (line: Omit<CartLine, "quantity">, quantity: number) => void;
   removeLine: (varietyId: string) => void;
@@ -39,10 +37,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const normalizedCart: Record<string, CartLine> = {};
         for (const [varietyId, line] of Object.entries(parsedCart)) {
           if (!line?.varietyId) continue;
-          normalizedCart[varietyId] = {
-            ...line,
-            unitPrice: typeof line.unitPrice === "number" ? line.unitPrice : 0,
-          };
+          normalizedCart[varietyId] = line;
         }
         setCartLinesByVarietyId(normalizedCart);
       }
@@ -60,15 +55,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const cartLines = useMemo(() => Object.values(cartLinesByVarietyId), [cartLinesByVarietyId]);
   const totalCartQuantity = useMemo(
     () => cartLines.reduce((runningTotal, line) => runningTotal + line.quantity, 0),
-    [cartLines],
-  );
-  const totalCartAmount = useMemo(
-    () =>
-      cartLines.reduce(
-        (runningTotal, line) =>
-          Math.round((runningTotal + line.unitPrice * line.quantity) * 100) / 100,
-        0,
-      ),
     [cartLines],
   );
 
@@ -108,7 +94,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       value={{
         cartLines,
         totalCartQuantity,
-        totalCartAmount,
         getQuantityForVariety,
         setQuantityForVariety,
         removeLine,

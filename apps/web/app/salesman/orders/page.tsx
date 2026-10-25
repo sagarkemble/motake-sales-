@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import type { RouterOutputs } from "@repo/trpc/client";
+
 import { isPreorderPending } from "~/lib/is-preorder-pending";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -18,6 +20,16 @@ const ORDERS_PAGE_SIZE = 20;
 const PREORDERS_PAGE_SIZE = 20;
 
 type PreorderStatusFilter = "pending" | "fulfilled";
+
+type ListedOrder = RouterOutputs["orders"]["list"]["data"]["items"][number];
+type DuePreorder = RouterOutputs["orders"]["listDuePreorders"]["data"][number];
+
+/** A row from this salesman's list, or a bare due Pre-order from the due list. */
+type PreorderRow = { kind: "listed"; row: ListedOrder } | { kind: "bare"; order: DuePreorder };
+
+function preorderRowStatus(preorderRow: PreorderRow) {
+  return preorderRow.kind === "listed" ? preorderRow.row.status : preorderRow.order.status;
+}
 
 export default function SalesmanOrdersPage() {
   const tx = useTranslate();
@@ -43,26 +55,21 @@ export default function SalesmanOrdersPage() {
 
   const isPreordersLoading = isMyPreordersLoading || isDuePreordersLoading;
 
+  // The due list returns bare orders from every salesman; this salesman's own rows replace
+  // them so shop, Route, quantity and Bill show where the list has them.
   const allPreorderRows = useMemo(() => {
-    const rowsById = new Map<
-      string,
-      {
-        order: (typeof duePreorders)[number];
-        customerShopName?: string;
-        customerShopPhotoUrl?: string | null;
-      }
-    >();
-    for (const order of duePreorders) rowsById.set(order.id, { order });
-    for (const { order, customerShopName, customerShopPhotoUrl } of myPreordersPageData.items) {
-      rowsById.set(order.id, { order, customerShopName, customerShopPhotoUrl });
-    }
+    const rowsById = new Map<string, PreorderRow>();
+    for (const order of duePreorders) rowsById.set(order.id, { kind: "bare", order });
+    for (const row of myPreordersPageData.items) rowsById.set(row.id, { kind: "listed", row });
     return Array.from(rowsById.values());
   }, [duePreorders, myPreordersPageData.items]);
 
-  const pendingPreorderRows = allPreorderRows.filter(({ order }) =>
-    isPreorderPending(order.status),
+  const pendingPreorderRows = allPreorderRows.filter((preorderRow) =>
+    isPreorderPending(preorderRowStatus(preorderRow)),
   );
-  const fulfilledPreorderRows = allPreorderRows.filter(({ order }) => order.status === "fulfilled");
+  const fulfilledPreorderRows = allPreorderRows.filter(
+    (preorderRow) => preorderRowStatus(preorderRow) === "fulfilled",
+  );
   const visiblePreorderRows =
     preorderStatusFilter === "pending" ? pendingPreorderRows : fulfilledPreorderRows;
 
@@ -86,17 +93,17 @@ export default function SalesmanOrdersPage() {
               {tx("salesman.orders.empty.orders")}
             </p>
           ) : (
-            bookNowOrdersPage.items.map(({ order, customerShopName, customerShopPhotoUrl }) => (
+            bookNowOrdersPage.items.map((row) => (
               <OrderListRow
-                key={order.id}
-                primaryLabel={customerShopName}
-                shopPhotoUrl={customerShopPhotoUrl}
-                orderCode={order.orderCode}
-                timestampLabel={formatDate(new Date(order.placedAt), "d MMM, h:mm a")}
-                totalQuantity={order.totalQuantity}
-                totalAmount={order.totalAmount}
-                status={order.status}
-                onClick={() => setSelectedOrderId(order.id)}
+                key={row.id}
+                primaryLabel={row.customerShopName}
+                shopPhotoUrl={row.customerShopPhotoUrl}
+                timestampLabel={formatDate(new Date(row.placedAt), "d MMM, h:mm a")}
+                routeName={row.routeName}
+                totalQuantity={row.totalQuantity}
+                bill={row.bill}
+                status={row.status}
+                onClick={() => setSelectedOrderId(row.id)}
               />
             ))
           )}
@@ -148,22 +155,40 @@ export default function SalesmanOrdersPage() {
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {visiblePreorderRows.map(({ order, customerShopName, customerShopPhotoUrl }) => (
-                <OrderListRow
-                  key={order.id}
-                  primaryLabel={customerShopName ?? order.orderCode}
-                  shopPhotoUrl={customerShopPhotoUrl}
-                  orderCode={order.orderCode}
-                  timestampLabel={formatDate(
-                    new Date(order.fulfilledAt ?? order.scheduledDate ?? order.placedAt),
-                    "d MMM yyyy",
-                  )}
-                  totalQuantity={order.totalQuantity}
-                  totalAmount={order.totalAmount}
-                  status={order.status}
-                  onClick={() => setSelectedOrderId(order.id)}
-                />
-              ))}
+              {visiblePreorderRows.map((preorderRow) =>
+                preorderRow.kind === "listed" ? (
+                  <OrderListRow
+                    key={preorderRow.row.id}
+                    primaryLabel={preorderRow.row.customerShopName}
+                    shopPhotoUrl={preorderRow.row.customerShopPhotoUrl}
+                    timestampLabel={formatDate(
+                      new Date(
+                        preorderRow.row.fulfilledAt ??
+                          preorderRow.row.scheduledDate ??
+                          preorderRow.row.placedAt,
+                      ),
+                      "d MMM yyyy",
+                    )}
+                    routeName={preorderRow.row.routeName}
+                    totalQuantity={preorderRow.row.totalQuantity}
+                    bill={preorderRow.row.bill}
+                    status={preorderRow.row.status}
+                    onClick={() => setSelectedOrderId(preorderRow.row.id)}
+                  />
+                ) : (
+                  <OrderListRow
+                    key={preorderRow.order.id}
+                    primaryLabel={tx("common.orderType.preOrder")}
+                    timestampLabel={formatDate(
+                      new Date(preorderRow.order.scheduledDate ?? preorderRow.order.placedAt),
+                      "d MMM yyyy",
+                    )}
+                    bill={null}
+                    status={preorderRow.order.status}
+                    onClick={() => setSelectedOrderId(preorderRow.order.id)}
+                  />
+                ),
+              )}
             </div>
           )}
 

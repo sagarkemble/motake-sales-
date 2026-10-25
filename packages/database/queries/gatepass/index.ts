@@ -359,6 +359,7 @@ export interface GatepassHistoryRow {
   gatepass: SelectGatepass;
   totalIssuedQty: number;
   totalSoldQty: number;
+  totalReturnedQty: number;
 }
 
 export async function getGatepassHistoryForSalesman(
@@ -369,6 +370,7 @@ export async function getGatepassHistoryForSalesman(
       gatepass: gatepassesTable,
       totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
       totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
+      totalReturnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)::int`,
     })
     .from(gatepassesTable)
     .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))

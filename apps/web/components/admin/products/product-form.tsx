@@ -111,6 +111,11 @@ export function ProductForm({
                 <FormControl>
                   <Input placeholder="Product name" className="rounded-xl bg-muted/40" {...field} />
                 </FormControl>
+                {productId && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {tx("admin.products.renameKeepsSkus")}
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}

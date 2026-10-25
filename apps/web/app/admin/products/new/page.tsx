@@ -26,7 +26,7 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/products" title="admin.products.newAria" />
+      <BackHeader href="/admin/products" title={tx("admin.products.newAria")} />
       <ProductForm
         isSubmitting={isCreatingProduct}
         submitLabel="Create product"

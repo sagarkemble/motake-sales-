@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { CalendarIcon, PackageIcon, SearchIcon } from "lucide-react";
+import { CalendarIcon, LockIcon, PackageIcon, SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { BackHeader } from "~/components/admin/products/back-header";
@@ -76,7 +76,7 @@ function GatepassPageContent() {
       pageSize: MAX_CATALOG_PAGE_SIZE,
     },
   });
-  const { allotGatepassAsync, isAllottingGatepass } = useGatepasses({
+  const { allotGatepassAsync } = useGatepasses({
     businessDate: businessDateKey,
   });
 
@@ -176,7 +176,11 @@ function GatepassPageContent() {
         <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
           <SelectTrigger className="h-11 w-full rounded-xl bg-muted/40">
             <SelectValue
-              placeholder={isSalesmenListLoading ? tx("common.status.loading") : tx("admin.gatepass.allot.selectSalesmanPlaceholder")}
+              placeholder={
+                isSalesmenListLoading
+                  ? tx("common.status.loading")
+                  : tx("admin.gatepass.allot.selectSalesmanPlaceholder")
+              }
             />
           </SelectTrigger>
           <SelectContent>
@@ -250,14 +254,16 @@ function GatepassPageContent() {
         </div>
       </div>
 
+      {/* Allot needs a Route; it comes back with Routes in Spec C (#44). */}
       <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4">
         <Button
           type="button"
-          disabled={isAllottingGatepass}
+          disabled
           onClick={() => void handleAllotGatepass()}
-          className="h-auto min-h-11 w-full whitespace-normal rounded-full bg-brand py-2.5 text-brand-foreground hover:bg-brand/90"
+          className="h-auto min-h-11 w-full gap-2 whitespace-normal rounded-full bg-brand py-2.5 text-brand-foreground hover:bg-brand/90"
         >
-          {isAllottingGatepass ? tx("admin.gatepass.allot.allotting") : tx("admin.gatepass.allot.title")}
+          <LockIcon className="size-3.5" />
+          {tx("admin.gatepass.allot.waitingForRoutes")}
         </Button>
       </div>
     </div>

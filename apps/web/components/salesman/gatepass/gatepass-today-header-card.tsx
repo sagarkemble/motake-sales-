@@ -1,35 +1,41 @@
+"use client";
+
+import { parseISO } from "date-fns";
+
+import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { useFormatDate } from "~/hooks/use-format-date";
+import type { GatepassStatus } from "~/hooks/use-gatepasses";
+import { useTranslate } from "~/hooks/use-translate";
+
+import { GatepassStatGrid } from "./gatepass-stat-grid";
+import type { GatepassQuantityTotals } from "~/lib/gatepass-quantities";
 
 interface GatepassTodayHeaderCardProps {
-  totalAllocatedQty: number;
-  totalRemainingQty: number;
+  businessDate: string;
+  status: GatepassStatus;
+  hasDiscrepancy: boolean;
+  totals: GatepassQuantityTotals;
 }
 
 export function GatepassTodayHeaderCard({
-  totalAllocatedQty,
-  totalRemainingQty,
+  businessDate,
+  status,
+  hasDiscrepancy,
+  totals,
 }: GatepassTodayHeaderCardProps) {
+  const tx = useTranslate();
   const formatDate = useFormatDate();
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Today's Gate Pass</p>
-        <span className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">
-          Active
-        </span>
+        <p className="text-sm font-semibold">{tx("salesman.gatepass.todayTitle")}</p>
+        <GatepassStatusBadge status={status} hasDiscrepancy={hasDiscrepancy} />
       </div>
-      <p className="text-xs text-muted-foreground">{formatDate(new Date(), "d MMM yyyy")}</p>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <p className="text-xs text-muted-foreground">Total items</p>
-          <p className="text-lg font-semibold">{totalAllocatedQty}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Remaining items</p>
-          <p className="text-lg font-semibold">{totalRemainingQty}</p>
-        </div>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {formatDate(parseISO(businessDate), "d MMM yyyy")}
+      </p>
+      <GatepassStatGrid totals={totals} status={status} />
     </div>
   );
 }

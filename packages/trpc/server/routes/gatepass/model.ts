@@ -54,6 +54,7 @@ export const gatepassHistoryRowSchema = z.object({
   gatepass: gatepassSchema,
   totalIssuedQty: z.number(),
   totalSoldQty: z.number(),
+  totalReturnedQty: z.number(),
 });
 
 export const allotGatepassInputSchema = z.object({

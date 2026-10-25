@@ -17,7 +17,6 @@ import { Button } from "~/components/ui/button";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { useCustomers } from "~/hooks/use-customers";
 import { useFormatDate } from "~/hooks/use-format-date";
-import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
@@ -37,7 +36,6 @@ export function DeactivateCustomerDialog({
 }: DeactivateCustomerDialogProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
-  const { formatInrCompact } = useFormatMoney();
   const [resolvingOrderId, setResolvingOrderId] = useState<string | null>(null);
   const [initialOpenCount, setInitialOpenCount] = useState(0);
 
@@ -74,6 +72,23 @@ export function DeactivateCustomerDialog({
   const resolvedCount = Math.max(0, initialOpenCount - openOrderCount);
   const progressTotal = Math.max(initialOpenCount, openOrderCount);
 
+  type OpenOrder = (typeof openOrders)[number];
+
+  // Orders carry no code, so an order is identified by its type and date.
+  function getOrderTypeLabel(order: OpenOrder) {
+    return order.type === "pre_order"
+      ? tx("common.orderType.preOrder")
+      : tx("common.orderType.bookNow");
+  }
+
+  function getOrderDateLabel(order: OpenOrder) {
+    return formatDate(new Date(order.scheduledDate ?? order.placedAt), "d MMM yyyy");
+  }
+
+  function describeOrder(order: OpenOrder) {
+    return `${getOrderTypeLabel(order)} · ${getOrderDateLabel(order)}`;
+  }
+
   async function handleCloseOrder(orderId: string) {
     setResolvingOrderId(orderId);
     try {
@@ -106,7 +121,7 @@ export function DeactivateCustomerDialog({
       try {
         await fulfillOrderAsync({ id: order.id });
       } catch (error) {
-        toast.error(getErrorMessage(error, `Could not close ${order.orderCode}.`));
+        toast.error(getErrorMessage(error, `Could not close ${describeOrder(order)}.`));
         setResolvingOrderId(null);
         await refetchOpenOrders();
         return;
@@ -123,7 +138,7 @@ export function DeactivateCustomerDialog({
       try {
         await cancelOrderAsync({ id: order.id });
       } catch (error) {
-        toast.error(getErrorMessage(error, `Could not cancel ${order.orderCode}.`));
+        toast.error(getErrorMessage(error, `Could not cancel ${describeOrder(order)}.`));
         setResolvingOrderId(null);
         await refetchOpenOrders();
         return;
@@ -174,17 +189,12 @@ export function DeactivateCustomerDialog({
               {openOrders.map((order) => (
                 <div key={order.id} className="rounded-xl border p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium">{order.orderCode}</p>
+                    <p className="font-medium">{getOrderTypeLabel(order)}</p>
                     <OrderStatusBadge status={order.status} />
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {order.type === "pre_order" ? tx("common.orderType.preOrder") : tx("common.orderType.bookNow")}
-                    {order.scheduledDate
-                      ? ` · ${formatDate(new Date(order.scheduledDate), "d MMM yyyy")}`
-                      : ` · ${formatDate(new Date(order.placedAt), "d MMM yyyy")}`}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{getOrderDateLabel(order)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {order.totalQuantity} {tx("common.units.qty")} · {formatInrCompact(order.totalAmount)}
+                    {order.totalQuantity} {tx("common.units.qty")}
                   </p>
                   <div className="mt-2 flex gap-2">
                     <Button

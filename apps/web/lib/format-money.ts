@@ -5,27 +5,23 @@ export function toMoneyLocale(appLocale?: string | null): string {
   return resolveAppLocale(appLocale) === "mr" ? "mr-IN" : "en-IN";
 }
 
-/** Format INR amounts for Motake UI (e.g. ₹1,140.00). */
-export function formatInr(amount: number, appLocale?: string | null): string {
+/** Format INR from integer paise for Motake UI (e.g. 114000 → ₹1,140.00). The API carries paise. */
+export function formatPaise(paise: number, appLocale?: string | null): string {
   return new Intl.NumberFormat(toMoneyLocale(appLocale), {
     style: "currency",
     currency: "INR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(paise / 100);
 }
 
-/** Compact INR for KPI cards (e.g. ₹48,260). */
-export function formatInrCompact(amount: number, appLocale?: string | null): string {
+/** Compact INR from paise for KPI tiles (e.g. 4826000 → ₹48,260). */
+export function formatPaiseCompact(paise: number, appLocale?: string | null): string {
   return new Intl.NumberFormat(toMoneyLocale(appLocale), {
     style: "currency",
     currency: "INR",
-    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-  }).format(amount);
-}
-
-export function lineTotal(unitPrice: number, quantity: number): number {
-  return Math.round(unitPrice * quantity * 100) / 100;
+    maximumFractionDigits: paise % 100 === 0 ? 0 : 2,
+  }).format(paise / 100);
 }
 
 export type { AppLocale };

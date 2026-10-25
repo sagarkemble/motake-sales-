@@ -34,7 +34,6 @@ export default function SalesmanCheckoutPage() {
       <VerifyProductsStep
         cartLines={wizard.cartLines}
         totalCartQuantity={wizard.totalCartQuantity}
-        totalCartAmount={wizard.totalCartAmount}
         onQuantityChange={wizard.onCartQuantityChange}
         onRemove={wizard.onCartLineRemove}
       />
@@ -45,7 +44,6 @@ export default function SalesmanCheckoutPage() {
         isBookNowAllowed={wizard.isBookNowAllowed}
         bookNowBlockReasons={wizard.bookNowBlockReasons}
         nextDayDate={wizard.nextDayDate}
-        totalCartAmount={wizard.totalCartAmount}
       />
     ) : (
       <CustomerDetailsStep
@@ -58,7 +56,7 @@ export default function SalesmanCheckoutPage() {
         onClearSelectedCustomer={wizard.clearSelectedCustomer}
         newCustomerForm={wizard.newCustomerForm}
         onNewCustomerFormChange={wizard.updateNewCustomerForm}
-        totalCartAmount={wizard.totalCartAmount}
+        totalCartQuantity={wizard.totalCartQuantity}
       />
     );
 

@@ -22,7 +22,7 @@ import { useTranslate } from "~/hooks/use-translate";
 export default function CustomerDetailPage() {
   const tx = useTranslate();
   const formatDate = useFormatDate();
-  const { formatInrCompact } = useFormatMoney();
+  const { formatPaiseCompact } = useFormatMoney();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const router = useRouter();
@@ -135,7 +135,7 @@ export default function CustomerDetailPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <KpiCard
               label="admin.salesmen.kpi.itemsSold"
-              value={customerStats?.totalQuantitySold ?? 0}
+              value={customerStats?.billedQuantity ?? 0}
               icon={PackageIcon}
             />
             <KpiCard
@@ -145,7 +145,7 @@ export default function CustomerDetailPage() {
             />
             <KpiCard
               label="Lifetime value"
-              value={formatInrCompact(customerStats?.lifetimeValue ?? 0)}
+              value={formatPaiseCompact(customerStats?.lifetimeValuePaise ?? 0)}
               icon={IndianRupeeIcon}
             />
             <div className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card p-3 sm:col-span-3">

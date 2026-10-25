@@ -11,14 +11,12 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "~/components/ui/drawer";
-import { formatInr, lineTotal } from "~/lib/format-money";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductVarietyOption {
   varietyId: string;
   varietyName: string;
   unit: string;
-  unitPrice: number;
 }
 
 interface AddToCartDrawerProps {
@@ -48,17 +46,16 @@ export function AddToCartDrawer({
         productName,
         varietyName: variety.varietyName,
         unit: variety.unit,
-        unitPrice: variety.unitPrice,
         productImageUrl,
       },
       quantity,
     );
   }
 
-  const selectedAmount = varieties.reduce((runningTotal, variety) => {
-    const quantity = getQuantityForVariety(variety.varietyId);
-    return Math.round((runningTotal + lineTotal(variety.unitPrice, quantity)) * 100) / 100;
-  }, 0);
+  const selectedQuantity = varieties.reduce(
+    (runningTotal, variety) => runningTotal + getQuantityForVariety(variety.varietyId),
+    0,
+  );
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -92,9 +89,6 @@ export function AddToCartDrawer({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{variety.varietyName}</p>
                   <p className="text-xs text-muted-foreground">{variety.unit}</p>
-                  <p className="text-xs font-medium text-brand">
-                    {formatInr(variety.unitPrice)} / unit
-                  </p>
                 </div>
                 <QuantityStepper
                   quantity={getQuantityForVariety(variety.varietyId)}
@@ -106,10 +100,10 @@ export function AddToCartDrawer({
         </div>
 
         <DrawerFooter>
-          {selectedAmount > 0 && (
+          {selectedQuantity > 0 && (
             <div className="mb-1 flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
               <span className="text-muted-foreground">Selected</span>
-              <span className="font-semibold text-brand">{formatInr(selectedAmount)}</span>
+              <span className="font-semibold text-brand">{selectedQuantity}</span>
             </div>
           )}
           <Button
