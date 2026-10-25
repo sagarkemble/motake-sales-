@@ -2,12 +2,16 @@ import { and, asc, count, eq, ilike, inArray, isNull, ne, or, sql } from "drizzl
 
 import { db } from "../../index";
 import {
+  billsTable,
   customersTable,
   ordersTable,
   type InsertCustomer,
   type SelectCustomer,
 } from "../../schema";
+import { billCustomerId } from "../bills";
+import { billIsNotCancelled } from "../bills/cancelled";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -20,18 +24,14 @@ export async function createCustomer(newCustomer: InsertCustomer): Promise<Selec
   return firstOrThrow(insertedRows, "createCustomer");
 }
 
-export async function getCustomerById(customerId: string): Promise<SelectCustomer | undefined> {
-  const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, customerId));
-  return customer;
-}
-
-export async function findActiveCustomerByPhone(
-  phone: string,
+export async function getCustomerById(
+  customerId: string,
+  executor: DbExecutor = db,
 ): Promise<SelectCustomer | undefined> {
-  const [customer] = await db
+  const [customer] = await executor
     .select()
     .from(customersTable)
-    .where(and(eq(customersTable.phone, phone), isNull(customersTable.deletedAt)));
+    .where(eq(customersTable.id, customerId));
   return customer;
 }
 
@@ -87,8 +87,9 @@ export async function searchActiveCustomers(
 export async function updateCustomer(
   customerId: string,
   changes: Partial<InsertCustomer>,
+  executor: DbExecutor = db,
 ): Promise<SelectCustomer | undefined> {
-  const [updatedCustomer] = await db
+  const [updatedCustomer] = await executor
     .update(customersTable)
     .set(changes)
     .where(eq(customersTable.id, customerId))
@@ -97,35 +98,47 @@ export async function updateCustomer(
 }
 
 export interface CustomerStats {
+  // Orders that are not cancelled, billed or not.
   totalOrderCount: number;
-  totalQuantitySold: number;
-  lifetimeValue: number;
+  billedQuantity: number;
+  // Gross Bill totals; Notes do not adjust them yet.
+  lifetimeValuePaise: number;
   lastOrderAt: Date | null;
 }
 
 export async function getCustomerStats(customerId: string): Promise<CustomerStats> {
-  const [statsRow] = await db
+  const [orderRow] = await db
     .select({
       totalOrderCount: count(),
-      totalQuantitySold: sql<number>`coalesce(sum(${ordersTable.totalQuantity}), 0)::int`,
-      lifetimeValue: sql<number>`coalesce(sum(${ordersTable.totalAmount}), 0)::float8`,
       lastOrderAt: sql<string | null>`max(${ordersTable.placedAt})`,
     })
     .from(ordersTable)
     .where(and(eq(ordersTable.customerId, customerId), ne(ordersTable.status, "cancelled")));
 
-  if (!statsRow) {
-    return { totalOrderCount: 0, totalQuantitySold: 0, lifetimeValue: 0, lastOrderAt: null };
-  }
+  // Same Customer rule as Bill reads (Ledger Bill debit, else the order), so office Bills count.
+  const [billRow] = await db
+    .select({
+      billedQuantity: sql<number>`coalesce(sum(${billsTable.totalQuantity}), 0)::int`,
+      lifetimeValuePaise: sql<number>`coalesce(sum(${billsTable.totalPaise}), 0)::bigint`.mapWith(
+        Number,
+      ),
+    })
+    .from(billsTable)
+    .where(and(sql`${billCustomerId} = ${customerId}`, billIsNotCancelled()));
 
   return {
-    ...statsRow,
-    lastOrderAt: statsRow.lastOrderAt ? new Date(statsRow.lastOrderAt) : null,
+    totalOrderCount: orderRow?.totalOrderCount ?? 0,
+    billedQuantity: billRow?.billedQuantity ?? 0,
+    lifetimeValuePaise: billRow?.lifetimeValuePaise ?? 0,
+    lastOrderAt: orderRow?.lastOrderAt ? new Date(orderRow.lastOrderAt) : null,
   };
 }
 
-export async function softDeleteCustomer(customerId: string): Promise<SelectCustomer | undefined> {
-  const [deletedCustomer] = await db
+export async function softDeleteCustomer(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<SelectCustomer | undefined> {
+  const [deletedCustomer] = await executor
     .update(customersTable)
     .set({ deletedAt: new Date(), status: "inactive" })
     .where(eq(customersTable.id, customerId))
@@ -133,8 +146,11 @@ export async function softDeleteCustomer(customerId: string): Promise<SelectCust
   return deletedCustomer;
 }
 
-export async function reactivateCustomer(customerId: string): Promise<SelectCustomer | undefined> {
-  const [reactivatedCustomer] = await db
+export async function reactivateCustomer(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<SelectCustomer | undefined> {
+  const [reactivatedCustomer] = await executor
     .update(customersTable)
     .set({ deletedAt: null, status: "active" })
     .where(eq(customersTable.id, customerId))

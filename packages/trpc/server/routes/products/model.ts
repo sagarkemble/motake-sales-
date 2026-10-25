@@ -20,7 +20,6 @@ export const productVarietySchema = z.object({
   sku: z.string(),
   name: z.string(),
   unit: z.string(),
-  unitPrice: z.number(),
   status: entityStatusSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -60,10 +59,8 @@ export const listProductsInputSchema = z.object({
 
 export const createProductVarietyInputSchema = z.object({
   productId: z.string().uuid(),
-  sku: z.string().min(1).max(64),
   name: z.string().min(1).max(120),
   unit: z.string().min(1).max(32),
-  unitPrice: z.number().min(0),
 });
 
 export const updateProductVarietyInputSchema = createProductVarietyInputSchema

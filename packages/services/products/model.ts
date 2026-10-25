@@ -19,12 +19,11 @@ export const createImageUploadUrlInputSchema = z.object({
 });
 export type CreateImageUploadUrlInput = z.infer<typeof createImageUploadUrlInputSchema>;
 
+// No price (Route prices replace it) and no SKU (the server mints it).
 export const createProductVarietyInputSchema = z.object({
   productId: z.string().uuid(),
-  sku: z.string().min(1).max(64),
-  name: z.string().min(1).max(120),
-  unit: z.string().min(1).max(32),
-  unitPrice: z.number().min(0),
+  name: z.string().trim().min(1).max(120),
+  unit: z.string().trim().min(1).max(32),
 });
 export type CreateProductVarietyInput = z.infer<typeof createProductVarietyInputSchema>;
 

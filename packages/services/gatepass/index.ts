@@ -6,6 +6,7 @@ import {
   getEndOfDayTotalsForDate,
   getGatepassById,
   getGatepassHistoryForSalesman,
+  getGatepassItemById,
   getGatepassWithItemsForSalesmanAndDate,
   incrementSoldQtyIfAvailable,
   listGatepassesForDate,
@@ -13,17 +14,21 @@ import {
   restoreSoldQtyOnCancellation,
   submitHandoverForGatepass,
   updateGatepassStatus,
+  withSellableQty,
   type AllotmentMatrixRow,
   type DiscrepancyGatepassRow,
   type GatepassEndOfDayTotals,
   type GatepassHistoryRow,
+  type GatepassItemWithSellable,
   type GatepassWithItems,
 } from "@repo/database/queries/gatepass";
 import { getProfileById } from "@repo/database/queries/auth";
 import { toIstBusinessDate } from "@repo/database/queries/shared/business-date";
+import { runInTransaction } from "@repo/database/queries/shared/executor";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
 import { badRequest, conflict, forbidden, notFound } from "../errors";
+import { changedFields, recordAudit } from "../shared/audit";
 import {
   allotGatepassInputSchema,
   closeGatepassInputSchema,
@@ -126,7 +131,7 @@ class GatepassService {
     return getAllotmentMatrixForDate(businessDate);
   }
 
-  public async recordSale(input: RecordSaleInput): Promise<SelectGatepassItem> {
+  public async recordSale(input: RecordSaleInput): Promise<GatepassItemWithSellable> {
     const parsedInput = recordSaleInputSchema.parse(input);
     const updatedItem = await incrementSoldQtyIfAvailable(
       parsedInput.gatepassItemId,
@@ -135,7 +140,7 @@ class GatepassService {
     if (!updatedItem) {
       throw conflict("Insufficient gatepass quantity available for this sale");
     }
-    return updatedItem;
+    return withSellableQty(updatedItem);
   }
 
   public async restoreSaleOnCancellation(
@@ -149,25 +154,60 @@ class GatepassService {
     return restoredItem;
   }
 
-  public async recordReturn(input: RecordReturnInput): Promise<SelectGatepassItem> {
+  public async recordReturn(
+    input: RecordReturnInput,
+    actorProfileId: string,
+  ): Promise<GatepassItemWithSellable> {
     const parsedInput = recordReturnInputSchema.parse(input);
-    const updatedItem = await recordReturnedQtyForItem(
-      parsedInput.gatepassItemId,
-      parsedInput.returnedQty,
-    );
-    if (!updatedItem) {
-      throw notFound(`Gatepass item ${parsedInput.gatepassItemId} not found`);
-    }
-    return updatedItem;
+    return runInTransaction(async (transaction) => {
+      const itemBefore = await getGatepassItemById(parsedInput.gatepassItemId, transaction);
+      const updatedItem = await recordReturnedQtyForItem(
+        parsedInput.gatepassItemId,
+        parsedInput.returnedQty,
+        transaction,
+      );
+      if (!itemBefore || !updatedItem) {
+        throw notFound(`Gatepass item ${parsedInput.gatepassItemId} not found`);
+      }
+      const returnedChange = changedFields(itemBefore, updatedItem, ["returnedQty"]);
+      await recordAudit(
+        {
+          actorId: actorProfileId,
+          action: "updated",
+          entityType: "gatepass",
+          entityId: updatedItem.gatepassId,
+          payload: Object.keys(returnedChange).length
+            ? { varietyId: updatedItem.varietyId, ...returnedChange }
+            : {},
+        },
+        transaction,
+      );
+      return withSellableQty(updatedItem);
+    });
   }
 
   public async submitHandover(input: SubmitHandoverInput): Promise<GatepassWithItems> {
     const parsedInput = submitHandoverInputSchema.parse(input);
-    const outcome = await submitHandoverForGatepass(
-      parsedInput.gatepassId,
-      parsedInput.salesmanId,
-      parsedInput.items,
-    );
+    const outcome = await runInTransaction(async (transaction) => {
+      const handoverOutcome = await submitHandoverForGatepass(
+        parsedInput.gatepassId,
+        parsedInput.salesmanId,
+        parsedInput.items,
+        transaction,
+      );
+      if (handoverOutcome.status === "success") {
+        await recordAudit(
+          {
+            actorId: parsedInput.salesmanId,
+            action: "handover_submitted",
+            entityType: "gatepass",
+            entityId: parsedInput.gatepassId,
+          },
+          transaction,
+        );
+      }
+      return handoverOutcome;
+    });
 
     if (outcome.status === "not_found") {
       throw notFound(`Gatepass ${parsedInput.gatepassId} not found`);
@@ -184,23 +224,40 @@ class GatepassService {
     return outcome.gatepass;
   }
 
+  // Verify: approves a handed-over GatePass with no discrepancy.
   public async closeGatepass(
     gatepassId: string,
     input: CloseGatepassInput,
   ): Promise<SelectGatepass | undefined> {
     const parsedInput = closeGatepassInputSchema.parse(input);
-    const gatepass = await getGatepassById(gatepassId);
-    if (!gatepass) return undefined;
-    if (gatepass.status !== "pending_verification") {
-      throw conflict("Only gatepasses awaiting verification can be approved");
-    }
-    return updateGatepassStatus(gatepassId, {
-      status: "closed",
-      closedBy: parsedInput.closedBy,
-      closedAt: new Date(),
-      hasDiscrepancy: false,
-      discrepancyReason: null,
-      notes: parsedInput.notes,
+    return runInTransaction(async (transaction) => {
+      const gatepass = await getGatepassById(gatepassId, transaction);
+      if (!gatepass) return undefined;
+      if (gatepass.status !== "pending_verification") {
+        throw conflict("Only gatepasses awaiting verification can be approved");
+      }
+      const closedGatepass = await updateGatepassStatus(
+        gatepassId,
+        {
+          status: "closed",
+          closedBy: parsedInput.closedBy,
+          closedAt: new Date(),
+          hasDiscrepancy: false,
+          discrepancyReason: null,
+          notes: parsedInput.notes,
+        },
+        transaction,
+      );
+      await recordAudit(
+        {
+          actorId: parsedInput.closedBy,
+          action: "closed",
+          entityType: "gatepass",
+          entityId: gatepassId,
+        },
+        transaction,
+      );
+      return closedGatepass;
     });
   }
 
@@ -209,18 +266,41 @@ class GatepassService {
     input: FlagGatepassInput,
   ): Promise<SelectGatepass | undefined> {
     const parsedInput = flagGatepassInputSchema.parse(input);
-    const gatepass = await getGatepassById(gatepassId);
-    if (!gatepass) return undefined;
-    if (gatepass.status !== "pending_verification") {
-      throw conflict("Only gatepasses awaiting verification can be flagged");
-    }
-    return updateGatepassStatus(gatepassId, {
-      status: "closed",
-      closedBy: parsedInput.closedBy,
-      closedAt: new Date(),
-      hasDiscrepancy: true,
-      discrepancyReason: parsedInput.reason,
-      notes: parsedInput.notes,
+    return runInTransaction(async (transaction) => {
+      const gatepass = await getGatepassById(gatepassId, transaction);
+      if (!gatepass) return undefined;
+      if (gatepass.status !== "pending_verification") {
+        throw conflict("Only gatepasses awaiting verification can be flagged");
+      }
+      const flaggedGatepass = await updateGatepassStatus(
+        gatepassId,
+        {
+          status: "closed",
+          closedBy: parsedInput.closedBy,
+          closedAt: new Date(),
+          hasDiscrepancy: true,
+          discrepancyReason: parsedInput.reason,
+          notes: parsedInput.notes,
+        },
+        transaction,
+      );
+      if (flaggedGatepass) {
+        await recordAudit(
+          {
+            actorId: parsedInput.closedBy,
+            action: "updated",
+            entityType: "gatepass",
+            entityId: gatepassId,
+            payload: changedFields(gatepass, flaggedGatepass, [
+              "status",
+              "hasDiscrepancy",
+              "discrepancyReason",
+            ]),
+          },
+          transaction,
+        );
+      }
+      return flaggedGatepass;
     });
   }
 

@@ -1,4 +1,4 @@
-import { and, asc, count, eq, ilike, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, isNull, like } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -10,6 +10,7 @@ import {
   type SelectProductVariety,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -22,13 +23,19 @@ export interface ProductWithVarieties {
   varieties: SelectProductVariety[];
 }
 
-export async function createProduct(newProduct: InsertProduct): Promise<SelectProduct> {
-  const insertedRows = await db.insert(productsTable).values(newProduct).returning();
+export async function createProduct(
+  newProduct: InsertProduct,
+  executor: DbExecutor = db,
+): Promise<SelectProduct> {
+  const insertedRows = await executor.insert(productsTable).values(newProduct).returning();
   return firstOrThrow(insertedRows, "createProduct");
 }
 
-export async function getProductById(productId: string): Promise<SelectProduct | undefined> {
-  const [product] = await db
+export async function getProductById(
+  productId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProduct | undefined> {
+  const [product] = await executor
     .select()
     .from(productsTable)
     .where(and(eq(productsTable.id, productId), isNull(productsTable.deletedAt)));
@@ -38,8 +45,10 @@ export async function getProductById(productId: string): Promise<SelectProduct |
 export async function updateProduct(
   productId: string,
   changes: Partial<InsertProduct>,
+
+  executor: DbExecutor = db,
 ): Promise<SelectProduct | undefined> {
-  const [updatedProduct] = await db
+  const [updatedProduct] = await executor
     .update(productsTable)
     .set(changes)
     .where(eq(productsTable.id, productId))
@@ -47,8 +56,11 @@ export async function updateProduct(
   return updatedProduct;
 }
 
-export async function hardArchiveProduct(productId: string): Promise<SelectProduct | undefined> {
-  const [archivedProduct] = await db
+export async function hardArchiveProduct(
+  productId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProduct | undefined> {
+  const [archivedProduct] = await executor
     .update(productsTable)
     .set({ deletedAt: new Date() })
     .where(eq(productsTable.id, productId))
@@ -56,8 +68,11 @@ export async function hardArchiveProduct(productId: string): Promise<SelectProdu
   return archivedProduct;
 }
 
-export async function reactivateProduct(productId: string): Promise<SelectProduct | undefined> {
-  const [reactivatedProduct] = await db
+export async function reactivateProduct(
+  productId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProduct | undefined> {
+  const [reactivatedProduct] = await executor
     .update(productsTable)
     .set({ status: "active" })
     .where(eq(productsTable.id, productId))
@@ -193,15 +208,30 @@ export async function listProductsForAdminWithVarieties(
 
 export async function createProductVariety(
   newVariety: InsertProductVariety,
+  executor: DbExecutor = db,
 ): Promise<SelectProductVariety> {
-  const insertedRows = await db.insert(productVarietiesTable).values(newVariety).returning();
+  const insertedRows = await executor.insert(productVarietiesTable).values(newVariety).returning();
   return firstOrThrow(insertedRows, "createProductVariety");
+}
+
+// SKUs already minted under one `vr-{slug}-` prefix, used to pick the next counter.
+export async function listVarietySkusWithPrefix(
+  skuPrefix: string,
+  executor: DbExecutor = db,
+): Promise<string[]> {
+  const rows = await executor
+    .select({ sku: productVarietiesTable.sku })
+    .from(productVarietiesTable)
+    .where(like(productVarietiesTable.sku, `${skuPrefix}%`));
+  return rows.map((row) => row.sku);
 }
 
 export async function getProductVarietyById(
   varietyId: string,
+
+  executor: DbExecutor = db,
 ): Promise<SelectProductVariety | undefined> {
-  const [variety] = await db
+  const [variety] = await executor
     .select()
     .from(productVarietiesTable)
     .where(and(eq(productVarietiesTable.id, varietyId), isNull(productVarietiesTable.deletedAt)));
@@ -247,8 +277,10 @@ export async function listActiveVarietiesByIds(
 export async function updateProductVariety(
   varietyId: string,
   changes: Partial<InsertProductVariety>,
+
+  executor: DbExecutor = db,
 ): Promise<SelectProductVariety | undefined> {
-  const [updatedVariety] = await db
+  const [updatedVariety] = await executor
     .update(productVarietiesTable)
     .set(changes)
     .where(eq(productVarietiesTable.id, varietyId))
@@ -258,8 +290,10 @@ export async function updateProductVariety(
 
 export async function softDeleteProductVariety(
   varietyId: string,
+
+  executor: DbExecutor = db,
 ): Promise<SelectProductVariety | undefined> {
-  const [deletedVariety] = await db
+  const [deletedVariety] = await executor
     .update(productVarietiesTable)
     .set({ deletedAt: new Date(), status: "inactive" })
     .where(eq(productVarietiesTable.id, varietyId))

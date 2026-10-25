@@ -73,8 +73,8 @@ export const salesmanRouter = router({
     })
     .input(createSalesmanAccountInputSchema)
     .output(apiResponseSchema(salesmanSchema))
-    .mutation(async ({ input }) => {
-      const { salesman } = await authService.createSalesmanAccount(input);
+    .mutation(async ({ ctx, input }) => {
+      const { salesman } = await authService.createSalesmanAccount(input, ctx.user.id);
       return apiResponse(salesman);
     }),
 
@@ -91,8 +91,8 @@ export const salesmanRouter = router({
     })
     .input(salesmanIdInputSchema)
     .output(apiResponseSchema(z.object({ deactivated: z.literal(true) })))
-    .mutation(async ({ input }) => {
-      await authService.deactivateSalesmanAccount(input.id);
+    .mutation(async ({ ctx, input }) => {
+      await authService.deactivateSalesmanAccount(input.id, ctx.user.id);
       return apiResponse({ deactivated: true as const });
     }),
 
@@ -109,10 +109,10 @@ export const salesmanRouter = router({
     })
     .input(salesmanIdInputSchema)
     .output(apiResponseSchema(z.object({ reactivated: z.literal(true) })))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const profile = await authService.getProfileById(input.id);
       if (!profile || profile.role !== "salesman") throw notFound("Salesman profile not found");
-      await authService.reactivateSalesmanAccount(input.id);
+      await authService.reactivateSalesmanAccount(input.id, ctx.user.id);
       return apiResponse({ reactivated: true as const });
     }),
 
@@ -129,10 +129,10 @@ export const salesmanRouter = router({
     })
     .input(salesmanIdInputSchema)
     .output(apiResponseSchema(z.object({ deleted: z.literal(true) })))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const profile = await authService.getProfileById(input.id);
       if (!profile || profile.role !== "salesman") throw notFound("Salesman profile not found");
-      await authService.deleteSalesmanAccount(input.id);
+      await authService.deleteSalesmanAccount(input.id, ctx.user.id);
       return apiResponse({ deleted: true as const });
     }),
 
@@ -149,9 +149,9 @@ export const salesmanRouter = router({
     })
     .input(salesmanIdInputSchema.extend(updateSalesmanAccountInputSchema.shape))
     .output(apiResponseSchema(profileSchema))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...changes } = input;
-      const profile = await authService.updateSalesmanAccount(id, changes);
+      const profile = await authService.updateSalesmanAccount(id, changes, ctx.user.id);
       return apiResponse(profile);
     }),
 

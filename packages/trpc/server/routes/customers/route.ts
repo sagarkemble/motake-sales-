@@ -73,7 +73,7 @@ export const customersRouter = router({
         protect: true,
         summary: "Get customer stats",
         description:
-          "Return lifetime order count, quantity sold, and last order date for a customer.",
+          "Return order count, billed quantity, lifetime Bill value in paise, and last order date for a customer.",
       },
     })
     .input(customerIdInputSchema)
@@ -148,14 +148,15 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Update a customer",
-        description: "Change the details of an existing customer, including shop photo. Admin only.",
+        description:
+          "Change the details of an existing customer, including shop photo. Admin only.",
       },
     })
     .input(customerIdInputSchema.extend(updateCustomerInputSchema.shape))
     .output(apiResponseSchema(customerSchema))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...changes } = input;
-      const customer = await customerService.updateCustomer(id, changes);
+      const customer = await customerService.updateCustomer(id, changes, ctx.user.id);
       if (!customer) throw notFound(`Customer ${id} not found`);
       return apiResponse(customer);
     }),
@@ -173,8 +174,8 @@ export const customersRouter = router({
     })
     .input(customerIdInputSchema)
     .output(apiResponseSchema(customerSchema))
-    .mutation(async ({ input }) => {
-      const customer = await customerService.deleteCustomerShopPhoto(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const customer = await customerService.deleteCustomerShopPhoto(input.id, ctx.user.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
       return apiResponse(customer);
     }),
@@ -193,8 +194,8 @@ export const customersRouter = router({
     })
     .input(customerIdInputSchema)
     .output(apiResponseSchema(customerSchema))
-    .mutation(async ({ input }) => {
-      const customer = await customerService.deactivateCustomer(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const customer = await customerService.deactivateCustomer(input.id, ctx.user.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
       return apiResponse(customer);
     }),
@@ -212,8 +213,8 @@ export const customersRouter = router({
     })
     .input(customerIdInputSchema)
     .output(apiResponseSchema(customerSchema))
-    .mutation(async ({ input }) => {
-      const customer = await customerService.reactivateCustomer(input.id);
+    .mutation(async ({ ctx, input }) => {
+      const customer = await customerService.reactivateCustomer(input.id, ctx.user.id);
       return apiResponse(customer);
     }),
 });

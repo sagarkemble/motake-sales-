@@ -15,17 +15,12 @@ import {
 } from '../lib/http.js';
 import { getAdminCredentials } from '../lib/users.js';
 import {
-  assertDailySalesValue,
   assertDiscrepancyRow,
   assertGatepassApproved,
   assertGatepassFlagged,
-  assertLifetimeValue,
-  assertOrderDetailMoney,
-  assertOrderMoney,
   assertShopPhoto,
   assertShopPhotoCleared,
-  assertVarietyPrices,
-} from '../lib/pricing.js';
+} from '../lib/checks.js';
 
 let sessionReady = false;
 
@@ -57,7 +52,6 @@ export function adminFlow() {
     `${base}/api/reports/daily?businessDate=${businessDate}&placedFrom=${encodeURIComponent(placedFrom)}&placedTo=${encodeURIComponent(placedTo)}`,
     { role: 'admin', name: 'reports_daily' },
   );
-  assertDailySalesValue(parseData(dailyRes));
 
   apiGet(
     `${base}/api/reports/monthly?from=${encodeURIComponent(placedFrom)}&to=${encodeURIComponent(placedTo)}`,
@@ -137,22 +131,19 @@ export function adminFlow() {
     role: 'admin',
     name: 'products_list',
   });
-  assertVarietyPrices(parseData(productsRes));
 
   const ordersRes = apiGet(`${base}/api/orders/?page=1&pageSize=20`, {
     role: 'admin',
     name: 'orders_list',
   });
   const ordersPayload = parseData(ordersRes);
-  const firstOrder = ordersPayload?.items?.[0]?.order;
-  assertOrderMoney(firstOrder);
+  const firstOrder = ordersPayload?.items?.[0];
   if (firstOrder?.id) {
     const detailRes = apiGet(`${base}/api/orders/${firstOrder.id}/detail`, {
       role: 'admin',
       name: 'order_detail',
     });
     const detail = parseData(detailRes);
-    assertOrderDetailMoney(detail);
     if (detail?.customer) {
       check(detail.customer, {
         'order detail customer has shopPhotoUrl key': (c) => 'shopPhotoUrl' in c,
@@ -174,11 +165,10 @@ export function adminFlow() {
 
   const firstCustomer = customersPayload?.items?.[0];
   if (firstCustomer?.id) {
-    const statsRes = apiGet(`${base}/api/customers/${firstCustomer.id}/stats`, {
+    apiGet(`${base}/api/customers/${firstCustomer.id}/stats`, {
       role: 'admin',
       name: 'customer_stats',
     });
-    assertLifetimeValue(parseData(statsRes));
   }
 
   const actionRoll = randomIntBetween(1, 100);

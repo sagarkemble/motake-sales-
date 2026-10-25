@@ -7,13 +7,7 @@ export const gatepassStatusSchema = z.enum([
   "closed",
 ]);
 
-export const gatepassShortReasonSchema = z.enum([
-  "damaged",
-  "expired",
-  "lost",
-  "leaked",
-  "other",
-]);
+export const gatepassShortReasonSchema = z.enum(["damaged", "expired", "lost", "leaked", "other"]);
 
 export const gatepassSchema = z.object({
   id: z.string(),
@@ -38,7 +32,8 @@ export const gatepassItemSchema = z.object({
   issuedQty: z.number(),
   soldQty: z.number(),
   returnedQty: z.number(),
-  availableQty: z.number().nullable(),
+  // issued − sold, computed on read.
+  sellableQty: z.number().int(),
   shortReason: gatepassShortReasonSchema.nullable(),
   shortNote: z.string().nullable(),
   createdAt: z.date(),
@@ -79,7 +74,7 @@ export const allotmentMatrixRowSchema = z.object({
   varietyName: z.string(),
   issuedQty: z.number(),
   soldQty: z.number(),
-  availableQty: z.number().nullable(),
+  sellableQty: z.number().int(),
   returnedQty: z.number(),
   shortReason: gatepassShortReasonSchema.nullable(),
   shortNote: z.string().nullable(),

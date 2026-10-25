@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizz
 
 import { db } from "../../index";
 import {
+  billsTable,
   customersTable,
   gatepassItemsTable,
   gatepassesTable,
@@ -10,6 +11,7 @@ import {
   productVarietiesTable,
   productsTable,
   profilesTable,
+  routesTable,
   salesmenTable,
   type InsertOrder,
   type SelectOrder,
@@ -24,9 +26,17 @@ import {
   type PaginationParams,
 } from "../shared/pagination";
 
+export interface OrderLineStamp {
+  name: string;
+  unit: string;
+  hsn: string;
+}
+
+export type OrderItem = Omit<SelectOrderItem, "stamp"> & { stamp: OrderLineStamp };
+
 export interface OrderWithItems {
   order: SelectOrder;
-  items: SelectOrderItem[];
+  items: OrderItem[];
 }
 
 export interface OrderLineQuantityInput {
@@ -88,7 +98,10 @@ export async function createOrderWithItems(
   lineItems: OrderLineQuantityInput[],
 ): Promise<OrderWithItems> {
   return db.transaction(async (tx) => {
-    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(tx, lineItems);
+    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(
+      tx,
+      lineItems,
+    );
     const insertedOrderRows = await tx
       .insert(ordersTable)
       .values({ ...newOrder, totalQuantity, totalAmount })
@@ -114,11 +127,6 @@ export async function getOrderById(orderId: string): Promise<SelectOrder | undef
   return order;
 }
 
-export async function getOrderByCode(orderCode: string): Promise<SelectOrder | undefined> {
-  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.orderCode, orderCode));
-  return order;
-}
-
 export async function getOrderByIdempotencyKey(
   idempotencyKey: string,
 ): Promise<SelectOrder | undefined> {
@@ -129,8 +137,13 @@ export async function getOrderByIdempotencyKey(
   return order;
 }
 
-export async function listOrderItemsByOrderId(orderId: string): Promise<SelectOrderItem[]> {
-  return db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, orderId));
+export async function listOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
+  const items = await db
+    .select()
+    .from(orderItemsTable)
+    .where(eq(orderItemsTable.orderId, orderId))
+    .orderBy(asc(orderItemsTable.createdAt), asc(orderItemsTable.id));
+  return items.map((item) => ({ ...item, stamp: item.stamp as OrderLineStamp }));
 }
 
 export async function getOrderWithItemsById(orderId: string): Promise<OrderWithItems | undefined> {
@@ -140,13 +153,20 @@ export async function getOrderWithItemsById(orderId: string): Promise<OrderWithI
   return { order, items };
 }
 
+export interface OrderBillSummary {
+  id: string;
+  number: string;
+  totalPaise: number;
+}
+
 export interface OrderDetailItem {
   varietyId: string;
   productName: string;
-  varietyName: string;
-  unit: string;
+  stamp: OrderLineStamp;
   quantity: number;
-  unitPrice: number;
+  routePricePaise: number;
+  exempt: boolean;
+  gstRateBps: number;
   imageUrl: string | null;
 }
 
@@ -159,66 +179,102 @@ export interface OrderDetail {
     address: string;
     shopPhotoUrl: string | null;
   };
-  salesmanCode: string;
+  routeName: string;
+  routeCode: string;
+  salesmanCode: string | null;
   salesmanName: string | null;
   fulfilledBySalesmanName: string | null;
+  totalQuantity: number;
+  bill: OrderBillSummary | null;
   items: OrderDetailItem[];
 }
 
+const billSummaryColumns = {
+  billId: billsTable.id,
+  billNumber: billsTable.number,
+  billTotalPaise: billsTable.totalPaise,
+};
+
+function toBillSummary(row: {
+  billId: string | null;
+  billNumber: string | null;
+  billTotalPaise: number | null;
+}): OrderBillSummary | null {
+  if (!row.billId || !row.billNumber || row.billTotalPaise === null) return null;
+  return { id: row.billId, number: row.billNumber, totalPaise: row.billTotalPaise };
+}
+
+// Qualified by hand: Drizzle drops table names in single-table selects, which would bind
+// the correlated "id" to order_items.
+const orderQuantity = sql<number>`(
+  SELECT coalesce(sum("order_items"."quantity"), 0)::int FROM "order_items"
+  WHERE "order_items"."order_id" = "orders"."id"
+)`;
+
 export async function getOrderDetailById(orderId: string): Promise<OrderDetail | undefined> {
-  const order = await getOrderById(orderId);
-  if (!order) return undefined;
-
-  const customerRows = await db
+  const [headerRow] = await db
     .select({
-      shopName: customersTable.shopName,
-      contactName: customersTable.contactName,
-      phone: customersTable.phone,
-      address: customersTable.address,
-      shopPhotoUrl: customersTable.shopPhotoUrl,
+      order: ordersTable,
+      customer: {
+        shopName: customersTable.shopName,
+        contactName: customersTable.contactName,
+        phone: customersTable.phone,
+        address: customersTable.address,
+        shopPhotoUrl: customersTable.shopPhotoUrl,
+      },
+      routeName: routesTable.name,
+      routeCode: routesTable.code,
+      salesmanCode: salesmenTable.salesmanCode,
+      salesmanName: profilesTable.name,
+      totalQuantity: orderQuantity,
+      ...billSummaryColumns,
     })
-    .from(customersTable)
-    .where(eq(customersTable.id, order.customerId));
+    .from(ordersTable)
+    .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+    .innerJoin(routesTable, eq(ordersTable.routeId, routesTable.id))
+    .leftJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
+    .leftJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
+    .leftJoin(billsTable, eq(billsTable.orderId, ordersTable.id))
+    .where(eq(ordersTable.id, orderId));
+  if (!headerRow) return undefined;
 
-  const salesmanRows = await db
-    .select({ salesmanCode: salesmenTable.salesmanCode, salesmanName: profilesTable.name })
-    .from(salesmenTable)
-    .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
-    .where(eq(salesmenTable.id, order.salesmanId));
-
-  const items = await db
+  const itemRows = await db
     .select({
       varietyId: orderItemsTable.varietyId,
       productName: productsTable.name,
-      varietyName: productVarietiesTable.name,
-      unit: productVarietiesTable.unit,
+      stamp: orderItemsTable.stamp,
       quantity: orderItemsTable.quantity,
-      unitPrice: orderItemsTable.unitPrice,
+      routePricePaise: orderItemsTable.routePricePaise,
+      exempt: orderItemsTable.exempt,
+      gstRateBps: orderItemsTable.gstRateBps,
       imageUrl: productsTable.imageUrl,
     })
     .from(orderItemsTable)
     .innerJoin(productVarietiesTable, eq(orderItemsTable.varietyId, productVarietiesTable.id))
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
-    .where(eq(orderItemsTable.orderId, orderId));
-
-  const salesmanRow = firstOrThrow(salesmanRows, `getOrderDetailById salesman for order ${orderId}`);
+    .where(eq(orderItemsTable.orderId, orderId))
+    .orderBy(asc(orderItemsTable.createdAt), asc(orderItemsTable.id));
 
   let fulfilledBySalesmanName: string | null = null;
-  if (order.fulfilledBy) {
+  if (headerRow.order.fulfilledBy) {
     const fulfilledByRows = await db
       .select({ name: profilesTable.name })
       .from(profilesTable)
-      .where(eq(profilesTable.id, order.fulfilledBy));
+      .where(eq(profilesTable.id, headerRow.order.fulfilledBy));
     fulfilledBySalesmanName = fulfilledByRows[0]?.name ?? null;
   }
 
   return {
-    order,
-    customer: firstOrThrow(customerRows, `getOrderDetailById customer for order ${orderId}`),
-    salesmanCode: salesmanRow.salesmanCode,
-    salesmanName: salesmanRow.salesmanName,
+    order: headerRow.order,
+    customer: headerRow.customer,
+    routeName: headerRow.routeName,
+    routeCode: headerRow.routeCode,
+    salesmanCode: headerRow.salesmanCode,
+    salesmanName: headerRow.salesmanName,
     fulfilledBySalesmanName,
-    items,
+    totalQuantity: headerRow.totalQuantity,
+    bill: toBillSummary(headerRow),
+    items: itemRows.map((itemRow) => ({ ...itemRow, stamp: itemRow.stamp as OrderLineStamp })),
   };
 }
 
@@ -226,11 +282,9 @@ const OPEN_ORDER_STATUSES = ["scheduled", "due", "confirmed"] as const;
 
 export interface OpenOrderSummary {
   id: string;
-  orderCode: string;
   type: SelectOrder["type"];
   status: SelectOrder["status"];
   totalQuantity: number;
-  totalAmount: number;
   scheduledDate: string | null;
   placedAt: Date;
 }
@@ -239,11 +293,9 @@ export async function listOpenOrdersByCustomerId(customerId: string): Promise<Op
   return db
     .select({
       id: ordersTable.id,
-      orderCode: ordersTable.orderCode,
       type: ordersTable.type,
       status: ordersTable.status,
-      totalQuantity: ordersTable.totalQuantity,
-      totalAmount: ordersTable.totalAmount,
+      totalQuantity: orderQuantity,
       scheduledDate: ordersTable.scheduledDate,
       placedAt: ordersTable.placedAt,
     })
@@ -286,19 +338,34 @@ export interface OrderItemPreview {
 }
 
 export interface OrderListRow {
-  order: SelectOrder;
+  id: string;
+  type: SelectOrder["type"];
+  status: SelectOrder["status"];
+  customerId: string;
   customerShopName: string;
   customerPhone: string;
   customerShopPhotoUrl: string | null;
-  salesmanCode: string;
+  salesmanId: string | null;
+  salesmanCode: string | null;
   salesmanName: string | null;
+  routeId: string;
+  routeName: string;
+  routeCode: string;
+  totalQuantity: number;
+  scheduledDate: string | null;
+  placedAt: Date;
+  fulfilledAt: Date | null;
+  cancelledAt: Date | null;
+  bill: OrderBillSummary | null;
   itemPreviews: OrderItemPreview[];
 }
 
-async function attachItemPreviews(rows: Omit<OrderListRow, "itemPreviews">[]): Promise<OrderListRow[]> {
+async function attachItemPreviews(
+  rows: Omit<OrderListRow, "itemPreviews">[],
+): Promise<OrderListRow[]> {
   if (rows.length === 0) return [];
 
-  const orderIds = rows.map((row) => row.order.id);
+  const orderIds = rows.map((row) => row.id);
   const itemRows = await db
     .selectDistinct({
       orderId: orderItemsTable.orderId,
@@ -319,7 +386,7 @@ async function attachItemPreviews(rows: Omit<OrderListRow, "itemPreviews">[]): P
 
   return rows.map((row) => ({
     ...row,
-    itemPreviews: (itemPreviewsByOrderId.get(row.order.id) ?? []).slice(0, 4),
+    itemPreviews: (itemPreviewsByOrderId.get(row.id) ?? []).slice(0, 4),
   }));
 }
 
@@ -341,19 +408,34 @@ export async function listOrders(
   const [rows, countRows] = await Promise.all([
     db
       .select({
-        order: ordersTable,
+        id: ordersTable.id,
+        type: ordersTable.type,
+        status: ordersTable.status,
+        customerId: ordersTable.customerId,
         customerShopName: customersTable.shopName,
         customerPhone: customersTable.phone,
         customerShopPhotoUrl: customersTable.shopPhotoUrl,
+        salesmanId: ordersTable.salesmanId,
         salesmanCode: salesmenTable.salesmanCode,
         salesmanName: profilesTable.name,
+        routeId: ordersTable.routeId,
+        routeName: routesTable.name,
+        routeCode: routesTable.code,
+        totalQuantity: orderQuantity,
+        scheduledDate: ordersTable.scheduledDate,
+        placedAt: ordersTable.placedAt,
+        fulfilledAt: ordersTable.fulfilledAt,
+        cancelledAt: ordersTable.cancelledAt,
+        ...billSummaryColumns,
       })
       .from(ordersTable)
       .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
-      .innerJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
-      .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
+      .innerJoin(routesTable, eq(ordersTable.routeId, routesTable.id))
+      .leftJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
+      .leftJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
+      .leftJoin(billsTable, eq(billsTable.orderId, ordersTable.id))
       .where(whereClause)
-      .orderBy(desc(ordersTable.placedAt))
+      .orderBy(desc(ordersTable.placedAt), desc(ordersTable.id))
       .limit(limit)
       .offset(offset),
     db
@@ -364,7 +446,12 @@ export async function listOrders(
   ]);
 
   const { totalCount } = firstOrThrow(countRows, "listOrders count");
-  const rowsWithItemPreviews = await attachItemPreviews(rows);
+  const rowsWithItemPreviews = await attachItemPreviews(
+    rows.map(({ billId, billNumber, billTotalPaise, ...row }) => ({
+      ...row,
+      bill: toBillSummary({ billId, billNumber, billTotalPaise }),
+    })),
+  );
   return toPaginatedResult(rowsWithItemPreviews, totalCount, pagination);
 }
 
@@ -425,7 +512,11 @@ export async function cancelOrder(
     .update(ordersTable)
     .set({ status: "cancelled", cancelledAt, cancelledBy })
     .where(
-      and(eq(ordersTable.id, orderId), isNull(ordersTable.fulfilledAt), isNull(ordersTable.cancelledAt)),
+      and(
+        eq(ordersTable.id, orderId),
+        isNull(ordersTable.fulfilledAt),
+        isNull(ordersTable.cancelledAt),
+      ),
     )
     .returning();
   return cancelledOrder;
@@ -455,19 +546,21 @@ export interface OrderCountBySalesman {
   orderCount: number;
 }
 
-export async function getOrderCountsPerSalesmanInRange(
-  range: { from: Date; to: Date },
-): Promise<OrderCountBySalesman[]> {
+// Orders with no salesman (placed from the office) have no per-salesman row.
+export async function getOrderCountsPerSalesmanInRange(range: {
+  from: Date;
+  to: Date;
+}): Promise<OrderCountBySalesman[]> {
   return db
     .select({
-      salesmanId: ordersTable.salesmanId,
+      salesmanId: salesmenTable.id,
       salesmanCode: salesmenTable.salesmanCode,
       orderCount: count(),
     })
     .from(ordersTable)
     .innerJoin(salesmenTable, eq(ordersTable.salesmanId, salesmenTable.id))
     .where(and(gte(ordersTable.placedAt, range.from), lte(ordersTable.placedAt, range.to)))
-    .groupBy(ordersTable.salesmanId, salesmenTable.salesmanCode)
+    .groupBy(salesmenTable.id, salesmenTable.salesmanCode)
     .orderBy(desc(count()));
 }
 
@@ -528,7 +621,9 @@ export async function createBookNowOrderWithGatepassDeduction(
         .returning();
 
       if (!deductedGatepassItem) {
-        throw new Error(`Variety ${lineItem.varietyId} not allotted or insufficient gatepass quantity`);
+        throw new Error(
+          `Variety ${lineItem.varietyId} not allotted or insufficient gatepass quantity`,
+        );
       }
     }
 
@@ -547,7 +642,10 @@ export async function createBookNowOrderWithGatepassDeduction(
         notes: params.notes,
       })
       .returning();
-    const createdOrder = firstOrThrow(insertedOrderRows, "createBookNowOrderWithGatepassDeduction order");
+    const createdOrder = firstOrThrow(
+      insertedOrderRows,
+      "createBookNowOrderWithGatepassDeduction order",
+    );
 
     const createdItems = await tx
       .insert(orderItemsTable)
@@ -637,4 +735,3 @@ export async function cancelBookNowOrderWithGatepassRestoration(
     return firstOrThrow(cancelledOrderRows, "cancelBookNowOrderWithGatepassRestoration");
   });
 }
-

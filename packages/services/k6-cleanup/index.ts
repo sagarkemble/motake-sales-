@@ -5,7 +5,7 @@ import { supabaseAdminClient } from "../clients/supabase-admin";
 export type K6CleanupTargets = {
   profiles: Array<{ id: string; email: string; role: string; name: string | null }>;
   customers: Array<{ id: string; shop_name: string; phone: string; notes: string | null }>;
-  orders: Array<{ id: string; order_code: string; notes: string | null; idempotency_key: string | null }>;
+  orders: Array<{ id: string; notes: string | null; idempotency_key: string | null }>;
   gatepasses: Array<{ id: string; business_date: string; status: string; notes: string | null }>;
   auditLogs: Array<{ id: string }>;
   authUsers: Array<{ id: string; email: string }>;
@@ -64,7 +64,9 @@ async function listSupabaseUsersByEmails(emails: Set<string>) {
   return authUsers;
 }
 
-export async function collectK6CleanupTargets(extraEmails: string[] = []): Promise<K6CleanupTargets> {
+export async function collectK6CleanupTargets(
+  extraEmails: string[] = [],
+): Promise<K6CleanupTargets> {
   const profileResult = await db.execute<ProfileRow>(sql`
     SELECT id, email, role, name
     FROM profiles
@@ -96,7 +98,7 @@ export async function collectK6CleanupTargets(extraEmails: string[] = []): Promi
   const customerIds = customers.map((row) => row.id);
 
   const orderResult = await db.execute(sql`
-    SELECT id, order_code, notes, idempotency_key
+    SELECT id, notes, idempotency_key
     FROM orders
     WHERE notes ILIKE '%k6%'
        OR idempotency_key LIKE 'k6-%'

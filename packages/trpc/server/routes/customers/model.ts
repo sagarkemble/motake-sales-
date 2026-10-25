@@ -46,8 +46,8 @@ export const customerIdInputSchema = z.object({ id: z.string().uuid() });
 
 export const customerStatsSchema = z.object({
   totalOrderCount: z.number(),
-  totalQuantitySold: z.number(),
-  lifetimeValue: z.number(),
+  billedQuantity: z.number().int(),
+  lifetimeValuePaise: z.number().int(),
   lastOrderAt: z.date().nullable(),
 });
 
@@ -60,11 +60,9 @@ export const listCustomersInputSchema = z.object({
 
 export const openOrderSummarySchema = z.object({
   id: z.string(),
-  orderCode: z.string(),
   type: z.enum(["book_now", "pre_order"]),
   status: z.enum(["confirmed", "scheduled", "due", "fulfilled", "cancelled"]),
-  totalQuantity: z.number(),
-  totalAmount: z.number(),
+  totalQuantity: z.number().int(),
   scheduledDate: z.string().nullable(),
   placedAt: z.date(),
 });
@@ -72,7 +70,11 @@ export const openOrderSummarySchema = z.object({
 export const createShopPhotoUploadUrlInputSchema = z.object({
   fileName: z.string().min(1).max(200),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-  contentLength: z.number().int().positive().max(5 * 1024 * 1024),
+  contentLength: z
+    .number()
+    .int()
+    .positive()
+    .max(5 * 1024 * 1024),
 });
 
 export const createShopPhotoUploadUrlOutputSchema = z.object({

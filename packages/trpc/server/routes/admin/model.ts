@@ -25,7 +25,6 @@ export const k6CleanupTargetsSchema = z.object({
   orders: z.array(
     z.object({
       id: z.string().uuid(),
-      order_code: z.string(),
       notes: z.string().nullable(),
       idempotency_key: z.string().nullable(),
     }),

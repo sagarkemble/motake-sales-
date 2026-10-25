@@ -8,8 +8,11 @@ import type { InsertProfile, SelectProfile, SelectSalesman } from "@repo/databas
 
 import { supabaseAdminClient } from "../clients/supabase-admin";
 import { env } from "../env";
+import { runInTransaction } from "@repo/database/queries/shared/executor";
+
 import { badRequest, notFound, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
+import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   createProfileAvatarUploadUrl,
   deleteProfileAvatar,
@@ -52,8 +55,7 @@ class AuthService {
     password: string,
   ): Promise<{ accessToken: string; user: AuthenticatedUser }> {
     const supabaseAnonKey =
-      process.env.SUPABASE_ANON_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseAnonKey) {
       throw badRequest("Server is missing Supabase anon key configuration");
     }
@@ -82,6 +84,7 @@ class AuthService {
 
   public async createSalesmanAccount(
     input: CreateSalesmanAccountInput,
+    actorProfileId: string,
   ): Promise<{ salesman: SelectSalesman; supabaseUserId: string }> {
     const parsedInput = createSalesmanAccountInputSchema.parse(input);
     const salesmanRole: AppRole = "salesman";
@@ -96,21 +99,43 @@ class AuthService {
       throw badRequest(`Failed to create Supabase account: ${error?.message ?? "unknown error"}`);
     }
 
+    const supabaseUserId = data.user.id;
     try {
-      await createProfile({
-        id: data.user.id,
-        role: salesmanRole,
-        email: parsedInput.email,
-        name: parsedInput.name,
-        phone: parsedInput.phone,
+      const salesman = await runInTransaction(async (transaction) => {
+        await createProfile(
+          {
+            id: supabaseUserId,
+            role: salesmanRole,
+            email: parsedInput.email,
+            name: parsedInput.name,
+            phone: parsedInput.phone,
+          },
+          transaction,
+        );
+        const createdSalesman = await this.salesmanService.createSalesman(
+          { id: supabaseUserId, salesmanCode: parsedInput.salesmanCode },
+          transaction,
+        );
+        await recordAudit(
+          {
+            actorId: actorProfileId,
+            action: "created",
+            entityType: "salesman",
+            entityId: supabaseUserId,
+            payload: createdFields({
+              email: parsedInput.email,
+              name: parsedInput.name,
+              phone: parsedInput.phone,
+              salesmanCode: parsedInput.salesmanCode,
+            }),
+          },
+          transaction,
+        );
+        return createdSalesman;
       });
-      const salesman = await this.salesmanService.createSalesman({
-        id: data.user.id,
-        salesmanCode: parsedInput.salesmanCode,
-      });
-      return { salesman, supabaseUserId: data.user.id };
+      return { salesman, supabaseUserId };
     } catch (appRecordCreationError) {
-      await supabaseAdminClient.auth.admin.deleteUser(data.user.id);
+      await supabaseAdminClient.auth.admin.deleteUser(supabaseUserId);
       throw appRecordCreationError;
     }
   }
@@ -141,6 +166,7 @@ class AuthService {
   public async updateSalesmanAccount(
     profileId: string,
     changes: UpdateSalesmanAccountInput,
+    actorProfileId: string,
   ): Promise<SelectProfile> {
     const parsedChanges = updateSalesmanAccountInputSchema.parse(changes);
 
@@ -157,12 +183,30 @@ class AuthService {
     if (parsedChanges.phone !== undefined) profileChanges.phone = parsedChanges.phone;
     if (parsedChanges.email !== undefined) profileChanges.email = parsedChanges.email;
 
-    const updatedProfile =
-      Object.keys(profileChanges).length > 0
-        ? await updateProfile(profileId, profileChanges)
-        : await getProfileById(profileId);
-    if (!updatedProfile) throw notFound("Profile not found");
-    return updatedProfile;
+    const profileBefore = await getProfileById(profileId);
+    if (!profileBefore) throw notFound("Profile not found");
+    return runInTransaction(async (transaction) => {
+      const updatedProfile =
+        Object.keys(profileChanges).length > 0
+          ? await updateProfile(profileId, profileChanges, transaction)
+          : profileBefore;
+      if (!updatedProfile) throw notFound("Profile not found");
+      // Passwords are never written to the audit log; only that one was set.
+      await recordAudit(
+        {
+          actorId: actorProfileId,
+          action: "updated",
+          entityType: "salesman",
+          entityId: profileId,
+          payload: {
+            ...changedFields(profileBefore, updatedProfile, ["name", "phone", "email"]),
+            ...(parsedChanges.password ? { passwordReset: true } : {}),
+          },
+        },
+        transaction,
+      );
+      return updatedProfile;
+    });
   }
 
   public async updateMyProfile(
@@ -183,18 +227,46 @@ class AuthService {
     return createProfileAvatarUploadUrl(profileId, input);
   }
 
-  public async deactivateSalesmanAccount(profileId: string): Promise<void> {
-    await updateProfile(profileId, { status: "inactive" });
+  public async deactivateSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
+    await runInTransaction(async (transaction) => {
+      await updateProfile(profileId, { status: "inactive" }, transaction);
+      await recordAudit(
+        {
+          actorId: actorProfileId,
+          action: "deactivated",
+          entityType: "salesman",
+          entityId: profileId,
+        },
+        transaction,
+      );
+    });
   }
 
-  public async deleteSalesmanAccount(profileId: string): Promise<void> {
+  public async deleteSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
     await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "876000h" });
-    await softDeleteProfile(profileId);
+    await runInTransaction(async (transaction) => {
+      await softDeleteProfile(profileId, transaction);
+      await recordAudit(
+        { actorId: actorProfileId, action: "deleted", entityType: "salesman", entityId: profileId },
+        transaction,
+      );
+    });
   }
 
-  public async reactivateSalesmanAccount(profileId: string): Promise<void> {
+  public async reactivateSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
     await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "none" });
-    await updateProfile(profileId, { status: "active", deletedAt: null });
+    await runInTransaction(async (transaction) => {
+      await updateProfile(profileId, { status: "active", deletedAt: null }, transaction);
+      await recordAudit(
+        {
+          actorId: actorProfileId,
+          action: "activated",
+          entityType: "salesman",
+          entityId: profileId,
+        },
+        transaction,
+      );
+    });
   }
 }
 

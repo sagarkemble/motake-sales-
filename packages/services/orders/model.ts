@@ -37,4 +37,4 @@ export const listOrdersInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
 });
-export type ListOrdersInput = z.infer<typeof listOrdersInputSchema>;
+export type ListOrdersInput = z.input<typeof listOrdersInputSchema>;
