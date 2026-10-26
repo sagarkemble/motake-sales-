@@ -207,6 +207,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 | `R2_SECRET_ACCESS_KEY` | `R2_SECRET_ACCESS_KEY` |
 | `R2_BUCKET_NAME` | `R2_BUCKET_NAME` |
 | `R2_PUBLIC_BASE_URL` | `R2_PUBLIC_BASE_URL` |
+| `R2_DOCUMENTS_BUCKET_NAME` | `R2_DOCUMENTS_BUCKET_NAME` (private PDF bucket, no public access) |
 
 #### Build-time + runtime (web — baked into Next.js at CI build)
 
