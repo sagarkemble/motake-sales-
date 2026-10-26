@@ -1,7 +1,7 @@
 import { customerService } from "../../services";
 import { adminProcedure, protectedProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { notFound } from "@repo/services/errors";
+import { badRequest, notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import { z } from "../../schema";
 import {
@@ -11,7 +11,9 @@ import {
   customerIdInputSchema,
   customerSchema,
   customerStatsSchema,
+  customerWithRouteSchema,
   listCustomersInputSchema,
+  moveCustomerRouteInputSchema,
   openOrderSummarySchema,
   paginatedCustomersSchema,
   updateCustomerInputSchema,
@@ -28,17 +30,21 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "List customers",
-        description: "Return a page of customers. Search by name or phone number.",
+        description:
+          "Return a page of customers with their Route. Admin sees every Route and may filter by one; both search by name, contact, phone or address. A salesman sees only active Customers on their Active GatePass Route and is refused with no Active GatePass.",
       },
     })
     .input(listCustomersInputSchema)
     .output(apiResponseSchema(paginatedCustomersSchema))
     .query(async ({ ctx, input }) => {
-      const includeInactive = ctx.user.role === "admin" && Boolean(input.includeInactive);
-      const result = await customerService.searchCustomers({
-        ...input,
-        includeInactive,
-      });
+      if (ctx.user.role !== "admin") {
+        const result = await customerService.searchCustomersForSalesman(
+          { searchTerm: input.searchTerm, page: input.page, pageSize: input.pageSize },
+          ctx.user.id,
+        );
+        return apiResponse(result);
+      }
+      const result = await customerService.searchCustomers(input);
       return apiResponse(result);
     }),
 
@@ -50,17 +56,18 @@ export const customersRouter = router({
         tags: ["Customers"],
         protect: true,
         summary: "Get a customer",
-        description: "Return one customer by id.",
+        description:
+          "Return one customer by id with its Route. A salesman gets not found for a Customer off their Active GatePass Route.",
       },
     })
     .input(customerIdInputSchema)
-    .output(apiResponseSchema(customerSchema))
+    .output(apiResponseSchema(customerWithRouteSchema))
     .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") {
+        return apiResponse(await customerService.getCustomerForSalesman(input.id, ctx.user.id));
+      }
       const customer = await customerService.getCustomerById(input.id);
       if (!customer) throw notFound(`Customer ${input.id} not found`);
-      if (ctx.user.role !== "admin" && customer.deletedAt) {
-        throw notFound(`Customer ${input.id} not found`);
-      }
       return apiResponse(customer);
     }),
 
@@ -78,7 +85,10 @@ export const customersRouter = router({
     })
     .input(customerIdInputSchema)
     .output(apiResponseSchema(customerStatsSchema))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") {
+        await customerService.getCustomerForSalesman(input.id, ctx.user.id);
+      }
       const stats = await customerService.getCustomerStats(input.id);
       return apiResponse(stats);
     }),
@@ -130,13 +140,22 @@ export const customersRouter = router({
         protect: true,
         summary: "Add a customer",
         description:
-          "Create a customer record with a required shop photo. Admin or salesman can add to the shared list.",
+          "Create a customer with a required shop photo and a Preferred language (Marathi by default, fixed afterwards). Admin picks the Route and may set GSTIN and E-invoicing required; a salesman's Customer goes on their Active GatePass Route.",
       },
     })
     .input(createCustomerInputSchema)
     .output(apiResponseSchema(customerSchema))
     .mutation(async ({ ctx, input }) => {
-      const customer = await customerService.createCustomer({ ...input, createdBy: ctx.user.id });
+      const { routeId, gstin, einvoicingRequired, ...details } = input;
+      if (ctx.user.role !== "admin") {
+        const customer = await customerService.createCustomerAsSalesman(details, ctx.user.id);
+        return apiResponse(customer);
+      }
+      if (!routeId) throw badRequest("Pick a Route for the Customer");
+      const customer = await customerService.createCustomerAsAdmin(
+        { ...details, routeId, gstin, einvoicingRequired },
+        ctx.user.id,
+      );
       return apiResponse(customer);
     }),
 
@@ -149,7 +168,7 @@ export const customersRouter = router({
         protect: true,
         summary: "Update a customer",
         description:
-          "Change the details of an existing customer, including shop photo. Admin only.",
+          "Change the details of an existing customer, including shop photo, GSTIN and E-invoicing required. The Route (see Move to Route) and Preferred language are not changed here. Admin only.",
       },
     })
     .input(customerIdInputSchema.extend(updateCustomerInputSchema.shape))
@@ -158,6 +177,29 @@ export const customersRouter = router({
       const { id, ...changes } = input;
       const customer = await customerService.updateCustomer(id, changes, ctx.user.id);
       if (!customer) throw notFound(`Customer ${id} not found`);
+      return apiResponse(customer);
+    }),
+
+  moveRoute: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/{id}/move-route"),
+        tags: ["Customers"],
+        protect: true,
+        summary: "Move a customer to another Route",
+        description:
+          "Move the customer to another listed Route. Refused while the customer has an open Pre-order. Balance, Ledger and Bills stay with the customer. Admin only.",
+      },
+    })
+    .input(moveCustomerRouteInputSchema)
+    .output(apiResponseSchema(customerSchema))
+    .mutation(async ({ ctx, input }) => {
+      const customer = await customerService.moveCustomerToRoute(
+        input.id,
+        input.toRouteId,
+        ctx.user.id,
+      );
       return apiResponse(customer);
     }),
 

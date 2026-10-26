@@ -20,6 +20,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
+import { RouteTag } from "~/components/shared/route-tag";
 import { TableRowsSkeleton } from "~/components/shared/table-rows-skeleton";
 
 import { GatepassLinesTable, GatepassQuantityKpis } from "./gatepass-tab";
@@ -66,7 +67,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
     );
   }
 
-  const pendingItems = allotmentMatrix.filter((row) => row.salesmanId === salesmanId);
+  const pendingItems = allotmentMatrix.filter((row) => row.gatepassId === pendingGatepass.id);
 
   const totals = sumGatepassQuantities(pendingItems);
 
@@ -114,6 +115,11 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
               ? tx("admin.salesmen.verify.submittedAt", { time: submittedAt })
               : tx("admin.salesmen.verify.submitted")}
           </p>
+          <RouteTag
+            name={pendingGatepass.routeName}
+            code={pendingGatepass.routeCode}
+            className="mt-1"
+          />
         </div>
         {totals.short > 0 ? (
           <Badge variant="outline" className="border-transparent bg-amber-500/10 text-amber-600">

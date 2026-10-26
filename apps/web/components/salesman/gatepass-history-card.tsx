@@ -5,6 +5,7 @@ import { ChevronRightIcon } from "lucide-react";
 
 import { GatepassStatGrid } from "~/components/salesman/gatepass/gatepass-stat-grid";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { RouteTag } from "~/components/shared/route-tag";
 import { useFormatDate } from "~/hooks/use-format-date";
 import type { GatepassHistoryRow } from "~/hooks/use-gatepasses";
 
@@ -15,7 +16,8 @@ interface GatepassHistoryCardProps {
 
 export function GatepassHistoryCard({ historyRow, onViewDetails }: GatepassHistoryCardProps) {
   const formatDate = useFormatDate();
-  const { gatepass, totalIssuedQty, totalSoldQty, totalReturnedQty } = historyRow;
+  const { gatepass, routeName, routeCode, totalIssuedQty, totalSoldQty, totalReturnedQty } =
+    historyRow;
   // The history row carries totals only, not lines, so short is not known here.
   const totals = {
     issued: totalIssuedQty,
@@ -33,6 +35,7 @@ export function GatepassHistoryCard({ historyRow, onViewDetails }: GatepassHisto
         </p>
         <GatepassStatusBadge status={gatepass.status} hasDiscrepancy={gatepass.hasDiscrepancy} />
       </div>
+      <RouteTag name={routeName} code={routeCode} />
 
       <GatepassStatGrid totals={totals} status={gatepass.status} />
 

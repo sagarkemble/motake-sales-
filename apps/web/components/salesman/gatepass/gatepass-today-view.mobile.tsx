@@ -10,6 +10,8 @@ import {
 import { GatepassTodayHeaderCard } from "./gatepass-today-header-card";
 
 interface GatepassTodayViewMobileProps {
+  routeName: string;
+  routeCode: string;
   businessDate: string;
   status: GatepassStatus;
   hasDiscrepancy: boolean;
@@ -18,6 +20,8 @@ interface GatepassTodayViewMobileProps {
 }
 
 export function GatepassTodayViewMobile({
+  routeName,
+  routeCode,
   businessDate,
   status,
   hasDiscrepancy,
@@ -27,6 +31,8 @@ export function GatepassTodayViewMobile({
   return (
     <div className="flex flex-col gap-4">
       <GatepassTodayHeaderCard
+        routeName={routeName}
+        routeCode={routeCode}
         businessDate={businessDate}
         status={status}
         hasDiscrepancy={hasDiscrepancy}

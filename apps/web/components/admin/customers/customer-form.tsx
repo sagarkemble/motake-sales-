@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo } from "react";
+import { LockIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -9,16 +10,25 @@ import { Button } from "~/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUpload } from "~/components/shared/image-upload";
+import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
+import { RouteTag } from "~/components/shared/route-tag";
 import { useCustomers } from "~/hooks/use-customers";
 import { useTranslate } from "~/hooks/use-translate";
+import { preferredLanguageLabelKey, type PreferredLanguage } from "~/lib/preferred-language";
+
+import { RouteChoiceSelect } from "./route-choice-select";
+
+const GSTIN_PATTERN = /^[A-Z0-9]{15}$/;
 
 export type CustomerFormValues = {
   shopName: string;
@@ -28,27 +38,46 @@ export type CustomerFormValues = {
   notes?: string;
   shopPhotoKey: string;
   shopPhotoUrl: string;
+  routeId: string;
+  preferredLanguage: PreferredLanguage;
+  gstin: string;
+  einvoicingRequired: boolean;
 };
 
+/** Set when the Customer was added and not editable here. */
+export interface CustomerFixedDetails {
+  routeName: string;
+  routeCode: string;
+  routeHidden: boolean;
+  preferredLanguage: PreferredLanguage;
+}
+
 interface CustomerFormProps {
+  mode: "create" | "edit";
   customerId?: string;
   defaultValues?: Partial<CustomerFormValues>;
+  fixedDetails?: CustomerFixedDetails;
   isSubmitting: boolean;
   submitLabel: string;
-  requireShopPhoto?: boolean;
   onSubmit: (values: CustomerFormValues) => void;
 }
 
+export function normalizeGstin(gstin: string): string {
+  return gstin.trim().toUpperCase();
+}
+
 export function CustomerForm({
+  mode,
   customerId,
   defaultValues,
+  fixedDetails,
   isSubmitting,
   submitLabel,
-  requireShopPhoto = true,
   onSubmit,
 }: CustomerFormProps) {
   const tx = useTranslate();
   const { createShopPhotoUploadUrlAsync, deleteCustomerShopPhotoAsync } = useCustomers();
+  const isCreate = mode === "create";
 
   const formSchema = useMemo(
     () =>
@@ -61,17 +90,33 @@ export function CustomerForm({
           notes: z.string().optional(),
           shopPhotoKey: z.string(),
           shopPhotoUrl: z.string(),
+          routeId: z.string(),
+          preferredLanguage: z.enum(["mr", "hi", "en"]),
+          gstin: z
+            .string()
+            .refine(
+              (gstin) => !normalizeGstin(gstin) || GSTIN_PATTERN.test(normalizeGstin(gstin)),
+              tx("admin.customers.validation.gstin"),
+            ),
+          einvoicingRequired: z.boolean(),
         })
         .superRefine((values, context) => {
-          if (requireShopPhoto && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
+          if (isCreate && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
               message: tx("admin.customers.validation.shopPhoto"),
               path: ["shopPhotoUrl"],
             });
           }
+          if (isCreate && !values.routeId) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: tx("admin.customers.validation.route"),
+              path: ["routeId"],
+            });
+          }
         }),
-    [requireShopPhoto, tx],
+    [isCreate, tx],
   );
 
   const form = useForm<CustomerFormValues>({
@@ -84,8 +129,24 @@ export function CustomerForm({
       notes: defaultValues?.notes ?? "",
       shopPhotoKey: defaultValues?.shopPhotoKey ?? "",
       shopPhotoUrl: defaultValues?.shopPhotoUrl ?? "",
+      routeId: defaultValues?.routeId ?? "",
+      preferredLanguage: defaultValues?.preferredLanguage ?? "mr",
+      gstin: defaultValues?.gstin ?? "",
+      einvoicingRequired: defaultValues?.einvoicingRequired ?? false,
     },
   });
+
+  // E-invoicing required follows the GSTIN (on when one is entered) until the Admin sets it.
+  const [isEinvoicingSetByAdmin, setIsEinvoicingSetByAdmin] = useState(
+    () =>
+      !isCreate &&
+      (defaultValues?.einvoicingRequired ?? false) !== Boolean(defaultValues?.gstin?.trim()),
+  );
+
+  function handleGstinChange(gstin: string) {
+    form.setValue("gstin", gstin, { shouldValidate: form.formState.isSubmitted });
+    if (!isEinvoicingSetByAdmin) form.setValue("einvoicingRequired", gstin.trim().length > 0);
+  }
 
   return (
     <Form {...form}>
@@ -96,14 +157,18 @@ export function CustomerForm({
             name="shopPhotoUrl"
             render={() => (
               <FormItem className="items-center">
-                <FormLabel>Shop photo{requireShopPhoto ? " *" : ""}</FormLabel>
+                <FormLabel>
+                  {isCreate
+                    ? tx("salesman.checkout.customer.shopPhoto")
+                    : tx("admin.customers.form.shopPhoto")}
+                </FormLabel>
                 <FormControl>
                   <ImageUpload
                     imageUrl={form.watch("shopPhotoUrl") || null}
                     requestUploadUrl={createShopPhotoUploadUrlAsync}
-                    altText="Shop"
+                    altText={tx("admin.customers.form.shopPhoto")}
                     shape="square"
-                    uploadButtonLabel="salesman.checkout.customer.uploadPhoto"
+                    uploadButtonLabel={tx("salesman.checkout.customer.uploadPhoto")}
                     onUploaded={(result) => {
                       form.setValue("shopPhotoKey", result.imageKey, { shouldValidate: true });
                       form.setValue("shopPhotoUrl", result.imageUrl, { shouldValidate: true });
@@ -127,15 +192,76 @@ export function CustomerForm({
           />
         </div>
 
+        {isCreate ? (
+          <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+            <FormField
+              control={form.control}
+              name="routeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tx("admin.customers.form.route")}</FormLabel>
+                  <FormControl>
+                    <RouteChoiceSelect value={field.value} onValueChange={field.onChange} />
+                  </FormControl>
+                  <FormDescription>{tx("admin.customers.form.routeHint")}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="preferredLanguage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tx("common.preferredLanguage.label")}</FormLabel>
+                  <PreferredLanguagePicker value={field.value} onValueChange={field.onChange} />
+                </FormItem>
+              )}
+            />
+          </div>
+        ) : (
+          fixedDetails && (
+            <div className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {tx("admin.customers.form.route")}
+                </span>
+                <RouteTag
+                  name={fixedDetails.routeName}
+                  code={fixedDetails.routeCode}
+                  hidden={fixedDetails.routeHidden}
+                  className="justify-end"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {tx("common.preferredLanguage.label")}
+                </span>
+                <span className="inline-flex items-center gap-1 text-sm">
+                  {tx(preferredLanguageLabelKey(fixedDetails.preferredLanguage))}
+                  <LockIcon className="size-3 text-muted-foreground" />
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {tx("admin.customers.form.fixedDetailsHint")}
+              </p>
+            </div>
+          )
+        )}
+
         <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
           <FormField
             control={form.control}
             name="shopName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Shop name</FormLabel>
+                <FormLabel>{tx("salesman.checkout.customer.shopName")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="salesman.checkout.customer.shopName" className="rounded-full bg-muted/40" />
+                  <Input
+                    {...field}
+                    placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
+                    className="rounded-full bg-muted/40"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -147,11 +273,11 @@ export function CustomerForm({
             name="contactName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contact name</FormLabel>
+                <FormLabel>{tx("admin.customers.form.contactName")}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="Contact name"
+                    placeholder={tx("admin.customers.form.contactName")}
                     className="rounded-full bg-muted/40"
                   />
                 </FormControl>
@@ -165,9 +291,14 @@ export function CustomerForm({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>{tx("common.fields.phone")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Phone" className="rounded-full bg-muted/40" />
+                  <Input
+                    {...field}
+                    type="tel"
+                    placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
+                    className="rounded-full bg-muted/40"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -179,11 +310,11 @@ export function CustomerForm({
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Address</FormLabel>
+                <FormLabel>{tx("common.fields.address")}</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
-                    placeholder="common.fields.address"
+                    placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
                     className="min-h-20 rounded-2xl bg-muted/40"
                   />
                 </FormControl>
@@ -197,15 +328,86 @@ export function CustomerForm({
             name="notes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Notes</FormLabel>
+                <FormLabel>{tx("admin.customers.form.notes")}</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
-                    placeholder="Optional notes"
+                    placeholder={tx("admin.customers.form.notesPlaceholder")}
                     className="min-h-20 rounded-2xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+          <FormField
+            control={form.control}
+            name="gstin"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{tx("admin.customers.form.gstin")}</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    onChange={(event) => handleGstinChange(event.target.value)}
+                    onBlur={() => {
+                      field.onBlur();
+                      form.setValue("gstin", normalizeGstin(field.value));
+                    }}
+                    placeholder="27AABCS1234F1Z5"
+                    autoCapitalize="characters"
+                    maxLength={20}
+                    className="rounded-full bg-muted/40 font-mono uppercase"
+                  />
+                </FormControl>
+                <FormDescription>{tx("admin.customers.form.gstinHint")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="einvoicingRequired"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <FormLabel>{tx("admin.customers.form.einvoicing")}</FormLabel>
+                  <FormDescription>
+                    {isEinvoicingSetByAdmin ? (
+                      <>
+                        {tx("admin.customers.form.einvoicingSetByAdmin")}{" "}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => {
+                            setIsEinvoicingSetByAdmin(false);
+                            form.setValue(
+                              "einvoicingRequired",
+                              form.getValues("gstin").trim().length > 0,
+                            );
+                          }}
+                        >
+                          {tx("admin.customers.form.einvoicingFollowGstin")}
+                        </button>
+                      </>
+                    ) : (
+                      tx("admin.customers.form.einvoicingFollowsGstin")
+                    )}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      setIsEinvoicingSetByAdmin(true);
+                      field.onChange(checked);
+                    }}
+                  />
+                </FormControl>
               </FormItem>
             )}
           />
@@ -216,7 +418,7 @@ export function CustomerForm({
           disabled={isSubmitting}
           className="h-11 w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isSubmitting ? "Saving…" : submitLabel}
+          {isSubmitting ? tx("common.status.saving") : submitLabel}
         </Button>
       </form>
     </Form>

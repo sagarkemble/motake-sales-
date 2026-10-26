@@ -2,7 +2,15 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { CalendarIcon, IndianRupeeIcon, PackageIcon, ShoppingCartIcon } from "lucide-react";
+import {
+  ArrowRightLeftIcon,
+  CalendarIcon,
+  CheckCircle2Icon,
+  IndianRupeeIcon,
+  LockIcon,
+  PackageIcon,
+  ShoppingCartIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { BackHeader } from "~/components/admin/products/back-header";
@@ -10,6 +18,8 @@ import { StatusBadge } from "~/components/admin/products/status-badge";
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderList } from "~/components/admin/orders/order-list";
 import { DeactivateCustomerDialog } from "~/components/admin/customers/deactivate-customer-dialog";
+import { MoveToRoutePanel } from "~/components/admin/customers/move-to-route-panel";
+import { RouteTag } from "~/components/shared/route-tag";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -18,6 +28,7 @@ import { useCustomers } from "~/hooks/use-customers";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
+import { preferredLanguageLabelKey } from "~/lib/preferred-language";
 
 export default function CustomerDetailPage() {
   const tx = useTranslate();
@@ -27,6 +38,8 @@ export default function CustomerDetailPage() {
   const customerId = params.id;
   const router = useRouter();
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+  const [isMovingRoute, setIsMovingRoute] = useState(false);
+  const [movedToRouteMessage, setMovedToRouteMessage] = useState<string | null>(null);
 
   const {
     customer,
@@ -62,7 +75,9 @@ export default function CustomerDetailPage() {
   }
 
   if (!customer) {
-    return <div className="p-4 text-sm text-muted-foreground">Customer not found</div>;
+    return (
+      <div className="p-4 text-sm text-muted-foreground">{tx("admin.customers.notFound")}</div>
+    );
   }
 
   const isInactive = customer.status === "inactive" || Boolean(customer.deletedAt);
@@ -82,7 +97,9 @@ export default function CustomerDetailPage() {
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">{customer.contactName ?? "No contact name"}</p>
+              <p className="text-sm font-medium">
+                {customer.contactName ?? tx("admin.customers.noContactName")}
+              </p>
               <StatusBadge status={customer.status} />
             </div>
             <p className="text-sm text-muted-foreground">{customer.phone}</p>
@@ -91,36 +108,115 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/admin/customers/${customer.id}/edit`)}
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 border-t pt-3 text-sm sm:grid-cols-2">
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
+            <dd className="min-w-0">
+              <RouteTag
+                name={customer.routeName}
+                code={customer.routeCode}
+                hidden={customer.routeHidden}
+              />
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">
+              {tx("common.preferredLanguage.label")}
+            </dt>
+            <dd className="inline-flex items-center gap-1">
+              {tx(preferredLanguageLabelKey(customer.preferredLanguage))}
+              <LockIcon
+                className="size-3 text-muted-foreground"
+                aria-label={tx("common.preferredLanguage.fixedHint")}
+              />
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">
+              {tx("admin.customers.form.gstinLabel")}
+            </dt>
+            <dd>
+              {customer.gstin ? (
+                <span className="font-mono">{customer.gstin}</span>
+              ) : (
+                <span className="text-muted-foreground">{tx("admin.customers.noGstin")}</span>
+              )}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">
+              {tx("admin.customers.form.einvoicing")}
+            </dt>
+            <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
+          </div>
+        </dl>
+
+        {movedToRouteMessage && (
+          <p
+            role="status"
+            className="flex items-start gap-2 rounded-xl border border-brand/30 bg-brand/10 p-3 text-sm"
           >
-            Edit
-          </Button>
-          {isInactive ? (
+            <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-brand" />
+            {movedToRouteMessage}
+          </p>
+        )}
+
+        {isMovingRoute ? (
+          <MoveToRoutePanel
+            customerId={customer.id}
+            currentRouteId={customer.routeId}
+            onCancel={() => setIsMovingRoute(false)}
+            onMoved={() => {
+              setIsMovingRoute(false);
+              setMovedToRouteMessage(tx("admin.customers.move.success"));
+            }}
+          />
+        ) : (
+          <div className="flex flex-wrap gap-2 pt-1">
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full border-brand text-brand hover:bg-brand/10"
-              disabled={isReactivatingCustomer}
-              onClick={handleReactivate}
+              className="rounded-full"
+              onClick={() => router.push(`/admin/customers/${customer.id}/edit`)}
             >
-              {isReactivatingCustomer ? "Reactivating…" : "Reactivate"}
+              {tx("admin.customers.edit")}
             </Button>
-          ) : (
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
-              onClick={() => setIsDeactivateOpen(true)}
+              className="rounded-full"
+              onClick={() => {
+                setMovedToRouteMessage(null);
+                setIsMovingRoute(true);
+              }}
             >
-              Deactivate
+              <ArrowRightLeftIcon />
+              {tx("admin.customers.move.title")}
             </Button>
-          )}
-        </div>
+            {isInactive ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full border-brand text-brand hover:bg-brand/10"
+                disabled={isReactivatingCustomer}
+                onClick={handleReactivate}
+              >
+                {isReactivatingCustomer
+                  ? tx("admin.customers.reactivating")
+                  : tx("admin.customers.reactivate")}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => setIsDeactivateOpen(true)}
+              >
+                {tx("admin.customers.deactivate")}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

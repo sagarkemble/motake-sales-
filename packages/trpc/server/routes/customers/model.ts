@@ -1,5 +1,10 @@
 import { z } from "../../schema";
 
+export const preferredLanguageSchema = z.enum(["mr", "hi", "en"]);
+
+// Empty = no GSTIN; otherwise 15 letters or digits (checked again by the service).
+const gstinInputSchema = z.string().max(20).nullable();
+
 export const customerSchema = z.object({
   id: z.string(),
   shopName: z.string(),
@@ -9,6 +14,11 @@ export const customerSchema = z.object({
   notes: z.string().nullable(),
   shopPhotoKey: z.string().nullable(),
   shopPhotoUrl: z.string().nullable(),
+  routeId: z.string(),
+  gstin: z.string().nullable(),
+  einvoicingRequired: z.boolean(),
+  // Fixed once the Customer is added.
+  preferredLanguage: preferredLanguageSchema,
   createdBy: z.string(),
   status: z.enum(["active", "inactive"]),
   createdAt: z.date(),
@@ -16,8 +26,15 @@ export const customerSchema = z.object({
   deletedAt: z.date().nullable(),
 });
 
+// Reads carry the live Route; a hidden Route is still shown, labelled.
+export const customerWithRouteSchema = customerSchema.extend({
+  routeName: z.string(),
+  routeCode: z.string(),
+  routeHidden: z.boolean(),
+});
+
 export const paginatedCustomersSchema = z.object({
-  items: z.array(customerSchema),
+  items: z.array(customerWithRouteSchema),
   totalCount: z.number(),
   page: z.number(),
   pageSize: z.number(),
@@ -31,6 +48,12 @@ export const createCustomerInputSchema = z.object({
   address: z.string().min(1),
   notes: z.string().optional(),
   shopPhotoKey: z.string().min(1),
+  preferredLanguage: preferredLanguageSchema.optional(),
+  // Admin only, and required for Admin. A salesman's Customer goes on their Active GatePass Route.
+  routeId: z.string().uuid().optional(),
+  // Admin only; the salesman form does not ask for them.
+  gstin: gstinInputSchema.optional(),
+  einvoicingRequired: z.boolean().optional(),
 });
 
 export const updateCustomerInputSchema = z.object({
@@ -40,6 +63,8 @@ export const updateCustomerInputSchema = z.object({
   address: z.string().min(1).optional(),
   notes: z.string().optional(),
   shopPhotoKey: z.string().min(1).nullable().optional(),
+  gstin: gstinInputSchema.optional(),
+  einvoicingRequired: z.boolean().optional(),
 });
 
 export const customerIdInputSchema = z.object({ id: z.string().uuid() });
@@ -51,8 +76,15 @@ export const customerStatsSchema = z.object({
   lastOrderAt: z.date().nullable(),
 });
 
+export const moveCustomerRouteInputSchema = z.object({
+  id: z.string().uuid(),
+  toRouteId: z.string().uuid(),
+});
+
 export const listCustomersInputSchema = z.object({
   searchTerm: z.string().optional(),
+  // Admin only; a salesman always sees their Active GatePass Route.
+  routeId: z.string().uuid().optional(),
   includeInactive: z.boolean().optional().default(false),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),

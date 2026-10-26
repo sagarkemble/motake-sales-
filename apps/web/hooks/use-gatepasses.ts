@@ -2,6 +2,7 @@ import type { RouterOutputs } from "@repo/trpc/client";
 
 import { trpc } from "~/trpc/client";
 
+export type DayGatepass = RouterOutputs["gatepasses"]["listForDate"]["data"][number];
 export type GatepassHistoryRow = RouterOutputs["gatepasses"]["getMyHistory"]["data"][number];
 export type GatepassStatus = GatepassHistoryRow["gatepass"]["status"];
 export type AllotmentMatrixRow = RouterOutputs["gatepasses"]["getAllotmentMatrix"]["data"][number];
@@ -40,6 +41,9 @@ export function useGatepasses({
     { businessDate: businessDate ?? "" },
     {
       enabled: dateIsSet && includeMyGatepass,
+      // Admin allots and closes GatePasses from another device; a salesman screen opens on the
+      // current one, not the one cached earlier.
+      refetchOnMount: "always",
       retry: (failedAttemptCount, queryError) =>
         queryError.message !== "No gatepass for today" && failedAttemptCount < 3,
     },

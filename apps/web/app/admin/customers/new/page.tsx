@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BackHeader } from "~/components/admin/products/back-header";
 import {
   CustomerForm,
+  normalizeGstin,
   type CustomerFormValues,
 } from "~/components/admin/customers/customer-form";
 import { getErrorMessage } from "~/lib/get-error-message";
@@ -26,6 +27,10 @@ export default function NewCustomerPage() {
         address: values.address,
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey,
+        routeId: values.routeId,
+        preferredLanguage: values.preferredLanguage,
+        gstin: normalizeGstin(values.gstin) || null,
+        einvoicingRequired: values.einvoicingRequired,
       });
       toast.success(tx("admin.customers.createSuccess"));
       router.push(`/admin/customers/${response.data.id}`);
@@ -36,11 +41,11 @@ export default function NewCustomerPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/customers" title="admin.customers.newAria" />
+      <BackHeader href="/admin/customers" title={tx("admin.customers.newAria")} />
       <CustomerForm
+        mode="create"
         isSubmitting={isCreatingCustomer}
-        submitLabel="Save customer"
-        requireShopPhoto
+        submitLabel={tx("admin.customers.form.saveCustomer")}
         onSubmit={handleSubmit}
       />
     </div>

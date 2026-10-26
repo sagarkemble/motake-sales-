@@ -26,37 +26,43 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     { enabled: enabled && Boolean(productId) },
   );
 
+  // The Route price form lists every product variety, so a product or variety change refreshes the
+  // Routes too.
+  function invalidateProductAndRouteViews() {
+    return Promise.all([utils.products.invalidate(), utils.routes.invalidate()]);
+  }
+
   const createImageUploadUrlMutation = trpc.products.createImageUploadUrl.useMutation();
   const deleteProductImageMutation = trpc.products.deleteImage.useMutation({
     onSuccess: () => utils.products.invalidate(),
   });
 
   const createProductMutation = trpc.products.create.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const updateProductMutation = trpc.products.update.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const deactivateProductMutation = trpc.products.deactivate.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const reactivateProductMutation = trpc.products.reactivate.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const deleteProductMutation = trpc.products.delete.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const createProductVarietyMutation = trpc.products.createVariety.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const updateProductVarietyMutation = trpc.products.updateVariety.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const deactivateProductVarietyMutation = trpc.products.deactivateVariety.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
   const reactivateProductVarietyMutation = trpc.products.reactivateVariety.useMutation({
-    onSuccess: () => utils.products.invalidate(),
+    onSuccess: invalidateProductAndRouteViews,
   });
 
   return {

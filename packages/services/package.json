@@ -11,11 +11,13 @@
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
     "./gst-credit-note-deadline": "./gst-credit-note-deadline/index.ts",
+    "./indian-states": "./indian-states/index.ts",
     "./k6-cleanup": "./k6-cleanup/index.ts",
     "./ledger": "./ledger/index.ts",
     "./orders": "./orders/index.ts",
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",
+    "./routes": "./routes/index.ts",
     "./salesman": "./salesman/index.ts",
     "./uploads": "./uploads/r2-client.ts"
   },

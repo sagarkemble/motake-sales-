@@ -18,6 +18,8 @@ import {
   gatepassSchema,
   gatepassWithItemsSchema,
   gatepassWithItemsAndNamesSchema,
+  gatepassWithRouteAndItemsSchema,
+  gatepassWithRouteSchema,
   recordReturnInputSchema,
   recordSaleInputSchema,
   submitHandoverInputSchema,
@@ -52,11 +54,12 @@ export const gatepassRouter = router({
         tags: ["GatePass"],
         protect: true,
         summary: "Allot a daily gatepass",
-        description: "Give a salesman a set quantity of each product for the day. Admin only.",
+        description:
+          "Give a salesman a set quantity of each product for the day on one Route, fixed afterwards. Hidden Routes and varieties with no Route price on the Route are refused. Admin only.",
       },
     })
     .input(allotGatepassInputSchema)
-    .output(apiResponseSchema(gatepassWithItemsSchema))
+    .output(apiResponseSchema(gatepassWithRouteAndItemsSchema))
     .mutation(async ({ ctx, input }) => {
       const gatepassWithItems = await gatepassService.allotGatepass({
         ...input,
@@ -77,7 +80,7 @@ export const gatepassRouter = router({
       },
     })
     .input(gatepassDateInputSchema)
-    .output(apiResponseSchema(z.array(gatepassSchema)))
+    .output(apiResponseSchema(z.array(gatepassWithRouteSchema)))
     .query(async ({ input }) => {
       const gatepasses = await gatepassService.listGatepassesForDate(input.businessDate);
       return apiResponse(gatepasses);
