@@ -324,7 +324,7 @@
         "shopPhoto": "Shop photo",
         "route": "Route",
         "routeHint": "Set once here. Later changes go through Move to Route.",
-        "fixedDetailsHint": "Preferred language is fixed once the Customer is added. The Route changes only through Move to Route.",
+        "fixedDetailsLabel": "Read-only",
         "contactName": "Contact name",
         "notes": "Notes",
         "notesPlaceholder": "Optional notes",

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -151,12 +152,13 @@ export function CustomerForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div className="rounded-2xl border bg-card p-4">
+        {/* Phone: photo, then Route + language. Wider: photo at its own width, details beside it. */}
+        <div className="grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)]">
           <FormField
             control={form.control}
             name="shopPhotoUrl"
             render={() => (
-              <FormItem className="items-center">
+              <FormItem className="items-center sm:items-start">
                 <FormLabel>
                   {isCreate
                     ? tx("salesman.checkout.customer.shopPhoto")
@@ -190,66 +192,70 @@ export function CustomerForm({
               </FormItem>
             )}
           />
+
+          {isCreate ? (
+            <div className="flex flex-col gap-4">
+              <FormField
+                control={form.control}
+                name="routeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{tx("admin.customers.form.route")}</FormLabel>
+                    <FormControl>
+                      <RouteChoiceSelect value={field.value} onValueChange={field.onChange} />
+                    </FormControl>
+                    <FormDescription>{tx("admin.customers.form.routeHint")}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="preferredLanguage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{tx("common.preferredLanguage.label")}</FormLabel>
+                    <PreferredLanguagePicker value={field.value} onValueChange={field.onChange} />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ) : (
+            fixedDetails && (
+              <div className="flex flex-col gap-3 border-t pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+                <div className="flex justify-end">
+                  <Badge variant="outline" className="gap-1 text-muted-foreground">
+                    <LockIcon className="size-3" />
+                    {tx("admin.customers.form.fixedDetailsLabel")}
+                  </Badge>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">
+                      {tx("admin.customers.form.route")}
+                    </dt>
+                    <dd className="min-w-0">
+                      <RouteTag
+                        name={fixedDetails.routeName}
+                        code={fixedDetails.routeCode}
+                        hidden={fixedDetails.routeHidden}
+                      />
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">
+                      {tx("common.preferredLanguage.label")}
+                    </dt>
+                    <dd>{tx(preferredLanguageLabelKey(fixedDetails.preferredLanguage))}</dd>
+                  </div>
+                </dl>
+              </div>
+            )
+          )}
         </div>
 
-        {isCreate ? (
-          <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
-            <FormField
-              control={form.control}
-              name="routeId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{tx("admin.customers.form.route")}</FormLabel>
-                  <FormControl>
-                    <RouteChoiceSelect value={field.value} onValueChange={field.onChange} />
-                  </FormControl>
-                  <FormDescription>{tx("admin.customers.form.routeHint")}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="preferredLanguage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{tx("common.preferredLanguage.label")}</FormLabel>
-                  <PreferredLanguagePicker value={field.value} onValueChange={field.onChange} />
-                </FormItem>
-              )}
-            />
-          </div>
-        ) : (
-          fixedDetails && (
-            <div className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {tx("admin.customers.form.route")}
-                </span>
-                <RouteTag
-                  name={fixedDetails.routeName}
-                  code={fixedDetails.routeCode}
-                  hidden={fixedDetails.routeHidden}
-                  className="justify-end"
-                />
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {tx("common.preferredLanguage.label")}
-                </span>
-                <span className="inline-flex items-center gap-1 text-sm">
-                  {tx(preferredLanguageLabelKey(fixedDetails.preferredLanguage))}
-                  <LockIcon className="size-3 text-muted-foreground" />
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {tx("admin.customers.form.fixedDetailsHint")}
-              </p>
-            </div>
-          )
-        )}
-
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        {/* Phone: one column. Wider: shop | contact, phone, address | notes. */}
+        <div className="grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="shopName"
@@ -309,7 +315,7 @@ export function CustomerForm({
             control={form.control}
             name="address"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="sm:col-start-1">
                 <FormLabel>{tx("common.fields.address")}</FormLabel>
                 <FormControl>
                   <Textarea
