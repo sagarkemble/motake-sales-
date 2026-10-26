@@ -7,12 +7,23 @@ import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { RouteTag } from "~/components/shared/route-tag";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { useCustomers } from "~/hooks/use-customers";
+import { useRoutes } from "~/hooks/use-routes";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
+
+const ALL_ROUTES = "all";
 
 function CustomersPageContent() {
   const tx = useTranslate();
@@ -20,10 +31,14 @@ function CustomersPageContent() {
   const pageSize = 20;
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [routeFilter, setRouteFilter] = useState(ALL_ROUTES);
 
+  // Hidden Routes too: their Customers are still listed, so Admin can find and move them.
+  const { routes } = useRoutes({ listFilters: { includeHidden: true } });
   const { customersPage, isCustomersListLoading } = useCustomers({
     listFilters: {
       searchTerm: debouncedSearchTerm || undefined,
+      routeId: routeFilter === ALL_ROUTES ? undefined : routeFilter,
       page,
       pageSize,
       includeInactive,
@@ -38,7 +53,7 @@ function CustomersPageContent() {
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search by shop, contact, or phone"
+            placeholder={tx("admin.customers.searchPlaceholder")}
             className="rounded-full bg-muted/40 pl-9 pr-9"
           />
           {searchTerm && (
@@ -63,10 +78,30 @@ function CustomersPageContent() {
         </Button>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          {isCustomersListLoading ? "common.status.loading" : `${customersPage.totalCount} total`}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Select
+          value={routeFilter}
+          onValueChange={(nextRouteFilter) => {
+            setRouteFilter(nextRouteFilter);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger
+            aria-label={tx("admin.customers.routeFilter")}
+            className="w-full rounded-full bg-card sm:w-64"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_ROUTES}>{tx("admin.customers.allRoutes")}</SelectItem>
+            {routes.map((route) => (
+              <SelectItem key={route.id} value={route.id}>
+                {route.name} · {route.code}
+                {route.hidden && ` (${tx("admin.routes.hidden")})`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
           <input
             type="checkbox"
@@ -77,9 +112,15 @@ function CustomersPageContent() {
             }}
             className="rounded border-gray-300"
           />
-          Show inactive customers
+          {tx("admin.customers.showInactive")}
         </label>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        {isCustomersListLoading
+          ? tx("common.status.loading")
+          : tx("admin.customers.totalCount", { count: customersPage.totalCount })}
+      </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isCustomersListLoading ? (
@@ -87,7 +128,7 @@ function CustomersPageContent() {
         ) : customersPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
-              ? `No customers match "${debouncedSearchTerm}"`
+              ? tx("admin.customers.noMatch", { term: debouncedSearchTerm })
               : tx("admin.customers.empty")}
           </p>
         ) : (
@@ -115,6 +156,12 @@ function CustomersPageContent() {
                   {customer.contactName ? `${customer.contactName} · ` : ""}
                   {customer.phone}
                 </p>
+                <RouteTag
+                  name={customer.routeName}
+                  code={customer.routeCode}
+                  hidden={customer.routeHidden}
+                  className="mt-0.5"
+                />
               </div>
 
               <StatusBadge status={customer.status} />
@@ -126,7 +173,10 @@ function CustomersPageContent() {
       {customersPage.totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
-            Page {customersPage.page} of {customersPage.totalPages}
+            {tx("common.pagination.pageOf", {
+              page: customersPage.page,
+              total: customersPage.totalPages,
+            })}
           </p>
           <div className="flex gap-2">
             <Button
@@ -136,7 +186,7 @@ function CustomersPageContent() {
               disabled={customersPage.page <= 1}
               onClick={() => setPage(customersPage.page - 1)}
             >
-              Previous
+              {tx("common.pagination.previous")}
             </Button>
             <Button
               size="sm"
@@ -145,7 +195,7 @@ function CustomersPageContent() {
               disabled={customersPage.page >= customersPage.totalPages}
               onClick={() => setPage(customersPage.page + 1)}
             >
-              Next
+              {tx("common.pagination.next")}
             </Button>
           </div>
         </div>

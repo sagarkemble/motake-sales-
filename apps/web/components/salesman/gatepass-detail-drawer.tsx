@@ -13,6 +13,7 @@ import { GatepassStatGrid } from "~/components/salesman/gatepass/gatepass-stat-g
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
+import { RouteTag } from "~/components/shared/route-tag";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
@@ -67,6 +68,12 @@ export function GatepassDetailDrawer({
                     hasDiscrepancy={myGatepass.gatepass.hasDiscrepancy}
                   />
                 </div>
+
+                <RouteTag
+                  name={myGatepass.gatepass.routeName}
+                  code={myGatepass.gatepass.routeCode}
+                  className="text-sm"
+                />
 
                 <div className="flex flex-col gap-3 text-sm">
                   <div>

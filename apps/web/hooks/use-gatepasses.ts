@@ -2,6 +2,7 @@ import type { RouterOutputs } from "@repo/trpc/client";
 
 import { trpc } from "~/trpc/client";
 
+export type DayGatepass = RouterOutputs["gatepasses"]["listForDate"]["data"][number];
 export type GatepassHistoryRow = RouterOutputs["gatepasses"]["getMyHistory"]["data"][number];
 export type GatepassStatus = GatepassHistoryRow["gatepass"]["status"];
 export type AllotmentMatrixRow = RouterOutputs["gatepasses"]["getAllotmentMatrix"]["data"][number];

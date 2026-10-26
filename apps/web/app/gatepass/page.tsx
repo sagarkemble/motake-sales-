@@ -1,43 +1,53 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { CalendarIcon, LockIcon, PackageIcon, SearchIcon } from "lucide-react";
+import { CheckCircle2Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { BackHeader } from "~/components/admin/products/back-header";
-import { QuantityStepper } from "~/components/shared/quantity-stepper";
-import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import { Input } from "~/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+  AllotQuantitiesStep,
+  type AllotCatalogItem,
+} from "~/components/admin/gatepass/allot-quantities-step";
+import {
+  AllotReviewStep,
+  type AllotReviewItem,
+} from "~/components/admin/gatepass/allot-review-step";
+import { AllotRouteStep } from "~/components/admin/gatepass/allot-route-step";
+import { AllotSalesmanStep } from "~/components/admin/gatepass/allot-salesman-step";
+import { GatepassDayList } from "~/components/admin/gatepass/gatepass-day-list";
+import { RouteFixedCard } from "~/components/admin/gatepass/route-fixed-card";
+import { BackHeader } from "~/components/admin/products/back-header";
+import { RouteTag } from "~/components/shared/route-tag";
+import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { cn } from "~/lib/utils";
 import { useAuth } from "~/hooks/use-auth";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
+import { useRoutes } from "~/hooks/use-routes";
 import { useSalesmen } from "~/hooks/use-salesmen";
-import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
-import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 
 const MAX_CATALOG_PAGE_SIZE = 200;
+const STEP_LABEL_KEYS = [
+  "admin.gatepass.allot.steps.salesman",
+  "admin.gatepass.allot.steps.route",
+  "admin.gatepass.allot.steps.quantities",
+  "admin.gatepass.allot.steps.review",
+] as const;
 
-interface CatalogItem {
-  varietyId: string;
-  varietyName: string;
-  unit: string;
-  productName: string;
-  productImageUrl: string | null;
+interface AllottedGatepass {
+  salesmanId: string;
+  salesmanName: string;
+  businessDate: Date;
+  routeName: string;
+  routeCode: string;
+  reviewItems: AllotReviewItem[];
 }
 
 function GatepassPageContent() {
@@ -59,10 +69,13 @@ function GatepassPageContent() {
     if (!isAdmin) router.replace("/salesman");
   }, [signedInUser, isSignedInUserLoading, isSignedInUserError, isAdmin, router]);
 
+  const [stepIndex, setStepIndex] = useState(0);
   const [selectedSalesmanId, setSelectedSalesmanId] = useState(preselectedSalesmanId);
   const [businessDate, setBusinessDate] = useState(new Date());
-  const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
+  const [selectedRouteId, setSelectedRouteId] = useState("");
   const [quantitiesByVarietyId, setQuantitiesByVarietyId] = useState<Record<string, number>>({});
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const [allottedGatepass, setAllottedGatepass] = useState<AllottedGatepass | null>(null);
 
   const businessDateKey = format(businessDate, "yyyy-MM-dd");
 
@@ -70,71 +83,118 @@ function GatepassPageContent() {
     listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
   const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: {
-      searchTerm: debouncedSearchTerm || undefined,
-      page: 1,
-      pageSize: MAX_CATALOG_PAGE_SIZE,
-    },
+    listFilters: { page: 1, pageSize: MAX_CATALOG_PAGE_SIZE },
   });
-  const { allotGatepassAsync } = useGatepasses({
-    businessDate: businessDateKey,
+  const {
+    gatepasses: dayGatepasses,
+    allotmentMatrix,
+    isGatepassesLoading,
+    isAllotmentMatrixLoading,
+    allotGatepassAsync,
+    isAllottingGatepass,
+  } = useGatepasses({ businessDate: businessDateKey, includeAdminOverview: true });
+  const { routeChoices, isRouteChoicesLoading, routes } = useRoutes({
+    choicesFilters: {},
+    listFilters: { includeHidden: false },
   });
+  const { routePriceForm } = useRoutes({ routeId: selectedRouteId || undefined });
 
-  const catalogItems: CatalogItem[] = useMemo(
+  const salesmen = useMemo(
     () =>
-      productsPage.items.flatMap(({ product, varieties }) =>
-        varieties.map((variety) => ({
-          varietyId: variety.id,
-          varietyName: variety.name,
-          unit: variety.unit,
-          productName: product.name,
-          productImageUrl: product.imageUrl,
-        })),
-      ),
+      salesmenPage.items.map(({ salesman, profile }) => ({
+        id: salesman.id,
+        name: profile.name ?? salesman.salesmanCode,
+      })),
+    [salesmenPage.items],
+  );
+
+  // Only active varieties of active products can go on a GatePass.
+  const catalogItems: AllotCatalogItem[] = useMemo(
+    () =>
+      productsPage.items
+        .filter(({ product }) => product.status === "active" && !product.deletedAt)
+        .flatMap(({ product, varieties }) =>
+          varieties
+            .filter((variety) => variety.status === "active" && !variety.deletedAt)
+            .map((variety) => ({
+              varietyId: variety.id,
+              varietyName: variety.name,
+              unit: variety.unit,
+              productName: product.name,
+              productImageUrl: product.imageUrl,
+            })),
+        ),
     [productsPage.items],
   );
 
-  const visibleCatalogItems = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
-    if (!normalizedSearchTerm) return catalogItems;
-    return catalogItems.filter((item) =>
-      `${item.productName} ${item.varietyName}`.toLowerCase().includes(normalizedSearchTerm),
-    );
-  }, [catalogItems, searchTerm]);
+  const pricedCountByRouteId = useMemo(
+    () => new Map(routes.map((route) => [route.id, route.pricedVarietyCount])),
+    [routes],
+  );
+  const pricedVarietyIds = useMemo(
+    () =>
+      new Set(
+        routePriceForm
+          .filter((variety) => variety.pricePaise != null)
+          .map((variety) => variety.varietyId),
+      ),
+    [routePriceForm],
+  );
 
-  const selectedItemCount = Object.values(quantitiesByVarietyId).filter((qty) => qty > 0).length;
+  const selectedSalesman = salesmen.find((salesman) => salesman.id === selectedSalesmanId);
+  const selectedRoute = routeChoices.find((route) => route.id === selectedRouteId);
+  const selectedSalesmanHasActiveGatepass = dayGatepasses.some(
+    (gatepass) => gatepass.salesmanId === selectedSalesmanId && gatepass.status === "active",
+  );
+  // Quantities typed for a variety the chosen Route does not price are not allotted.
+  const reviewItems: AllotReviewItem[] = catalogItems
+    .filter(
+      (item) =>
+        pricedVarietyIds.has(item.varietyId) && (quantitiesByVarietyId[item.varietyId] ?? 0) > 0,
+    )
+    .map((item) => ({ item, issuedQty: quantitiesByVarietyId[item.varietyId] ?? 0 }));
 
-  function handleQuantityChange(varietyId: string, quantity: number) {
-    setQuantitiesByVarietyId((currentQuantities) => ({
-      ...currentQuantities,
-      [varietyId]: quantity,
-    }));
+  const canGoNext = [
+    Boolean(selectedSalesmanId) && !selectedSalesmanHasActiveGatepass,
+    Boolean(selectedRoute),
+    reviewItems.length > 0,
+  ][stepIndex];
+
+  function goToStep(nextStepIndex: number) {
+    setRefusal(null);
+    setStepIndex(nextStepIndex);
   }
 
-  async function handleAllotGatepass() {
-    if (!selectedSalesmanId) {
-      toast.error(tx("admin.gatepass.allot.selectSalesmanError"));
-      return;
-    }
-    const items = Object.entries(quantitiesByVarietyId)
-      .filter(([, issuedQty]) => issuedQty > 0)
-      .map(([varietyId, issuedQty]) => ({ varietyId, issuedQty }));
-    if (items.length === 0) {
-      toast.error(tx("admin.gatepass.allot.qtyRequired"));
-      return;
-    }
-
+  async function handleAllot() {
+    if (!selectedSalesman || !selectedRoute) return;
+    setRefusal(null);
     try {
       await allotGatepassAsync({
-        salesmanId: selectedSalesmanId,
+        salesmanId: selectedSalesman.id,
+        routeId: selectedRoute.id,
         businessDate: businessDateKey,
-        items,
+        items: reviewItems.map(({ item, issuedQty }) => ({ varietyId: item.varietyId, issuedQty })),
       });
       toast.success(tx("admin.gatepass.allot.success"));
-      router.push(`/admin/salesman/${selectedSalesmanId}`);
+      setAllottedGatepass({
+        salesmanId: selectedSalesman.id,
+        salesmanName: selectedSalesman.name,
+        businessDate,
+        routeName: selectedRoute.name,
+        routeCode: selectedRoute.code,
+        reviewItems,
+      });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.gatepass.allot.failed")));
+      setRefusal(getErrorMessage(error, tx("admin.gatepass.allot.failed")));
     }
+  }
+
+  function startAnotherAllotment() {
+    setAllottedGatepass(null);
+    setSelectedSalesmanId("");
+    setSelectedRouteId("");
+    setQuantitiesByVarietyId({});
+    setStepIndex(0);
   }
 
   if (isSignedInUserLoading || !isAdmin) {
@@ -142,130 +202,183 @@ function GatepassPageContent() {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-4 pb-28">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4">
       <BackHeader
         href={preselectedSalesmanId ? `/admin/salesman/${preselectedSalesmanId}` : "/admin"}
         title={tx("admin.gatepass.allot.title")}
       />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{tx("common.fields.date")}</label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 justify-between rounded-xl bg-muted/40 font-normal"
-            >
-              {formatDate(businessDate, "d MMM yyyy")}
-              <CalendarIcon className="size-4 text-muted-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={businessDate}
-              onSelect={(selectedDate) => selectedDate && setBusinessDate(selectedDate)}
+      <section className="flex flex-col gap-4 rounded-3xl border bg-card p-4 shadow-sm sm:p-6">
+        {allottedGatepass ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-brand">
+              <CheckCircle2Icon className="size-5 shrink-0" />
+              <p className="font-semibold">
+                {tx("admin.gatepass.allot.allottedTo", { name: allottedGatepass.salesmanName })}
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(allottedGatepass.businessDate, "d MMM yyyy")}
+            </p>
+            <RouteFixedCard
+              routeName={allottedGatepass.routeName}
+              routeCode={allottedGatepass.routeCode}
             />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{tx("admin.gatepass.allot.selectSalesman")}</label>
-        <Select value={selectedSalesmanId} onValueChange={setSelectedSalesmanId}>
-          <SelectTrigger className="h-11 w-full rounded-xl bg-muted/40">
-            <SelectValue
-              placeholder={
-                isSalesmenListLoading
-                  ? tx("common.status.loading")
-                  : tx("admin.gatepass.allot.selectSalesmanPlaceholder")
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {salesmenPage.items.map(({ salesman, profile }) => (
-              <SelectItem key={salesman.id} value={salesman.id}>
-                {profile.name ?? salesman.salesmanCode}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Allocate Items</h2>
-          {selectedItemCount > 0 && (
-            <span className="text-xs text-muted-foreground">{selectedItemCount} selected</span>
-          )}
-        </div>
-
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="rounded-full bg-muted/40 pl-9"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {isProductsListLoading ? (
-            <ListItemSkeleton count={6} />
-          ) : visibleCatalogItems.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No items found</p>
-          ) : (
-            visibleCatalogItems.map((item) => (
-              <div
-                key={item.varietyId}
-                className="flex items-center gap-3 rounded-2xl border bg-card p-3"
+            <div className="flex flex-col divide-y rounded-xl border">
+              {allottedGatepass.reviewItems.map(({ item, issuedQty }) => (
+                <div
+                  key={item.varietyId}
+                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0">
+                    {item.productName}{" "}
+                    <span className="text-muted-foreground">
+                      {item.varietyName} ({item.unit})
+                    </span>
+                  </span>
+                  <span className="font-semibold tabular-nums">{issuedQty}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                onClick={startAnotherAllotment}
               >
-                <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/40">
-                  {item.productImageUrl ? (
-                    <img
-                      src={item.productImageUrl}
-                      alt={item.productName}
-                      className="size-full object-cover"
+                {tx("admin.gatepass.allot.another")}
+              </Button>
+              <Button asChild variant="ghost" className="rounded-full">
+                <Link href={`/admin/salesman/${allottedGatepass.salesmanId}`}>
+                  {tx("admin.gatepass.allot.openSalesman")}
+                </Link>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <ol className="grid grid-cols-4 gap-1.5">
+              {STEP_LABEL_KEYS.map((labelKey, index) => (
+                <li key={labelKey}>
+                  <button
+                    type="button"
+                    disabled={index > stepIndex}
+                    onClick={() => goToStep(index)}
+                    className="flex w-full flex-col gap-1 text-left disabled:cursor-default"
+                  >
+                    <span
+                      className={cn(
+                        "h-1.5 rounded-full",
+                        index <= stepIndex ? "bg-brand" : "bg-muted",
+                      )}
                     />
-                  ) : (
-                    <PackageIcon className="size-5 text-muted-foreground" />
-                  )}
-                </div>
+                    <span
+                      className={cn(
+                        "text-[11px] leading-tight sm:text-xs",
+                        index === stepIndex ? "font-semibold" : "text-muted-foreground",
+                      )}
+                    >
+                      {index + 1}. {tx(labelKey)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{item.productName}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {item.varietyName} ({item.unit})
+            {stepIndex === 0 && (
+              <>
+                <AllotSalesmanStep
+                  businessDate={businessDate}
+                  onBusinessDateChange={setBusinessDate}
+                  salesmen={salesmen}
+                  isSalesmenLoading={isSalesmenListLoading}
+                  dayGatepasses={dayGatepasses}
+                  selectedSalesmanId={selectedSalesmanId}
+                  onSelectSalesman={setSelectedSalesmanId}
+                />
+                {selectedSalesmanHasActiveGatepass && (
+                  <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                    {tx("admin.gatepass.allot.activeBlocks")}
                   </p>
-                </div>
-
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs text-muted-foreground">{tx("common.fields.qty")}</span>
-                  <QuantityStepper
-                    quantity={quantitiesByVarietyId[item.varietyId] ?? 0}
-                    onQuantityChange={(quantity) => handleQuantityChange(item.varietyId, quantity)}
-                  />
-                </div>
+                )}
+              </>
+            )}
+            {stepIndex === 1 && (
+              <AllotRouteStep
+                routeChoices={routeChoices}
+                isRouteChoicesLoading={isRouteChoicesLoading}
+                pricedCountByRouteId={pricedCountByRouteId}
+                catalogVarietyCount={catalogItems.length}
+                selectedRouteId={selectedRouteId}
+                onSelectRoute={setSelectedRouteId}
+              />
+            )}
+            {stepIndex === 2 && selectedRoute && (
+              <div className="flex flex-col gap-3">
+                <RouteTag name={selectedRoute.name} code={selectedRoute.code} />
+                <AllotQuantitiesStep
+                  routeName={selectedRoute.name}
+                  catalogItems={catalogItems}
+                  isCatalogLoading={isProductsListLoading}
+                  pricedVarietyIds={pricedVarietyIds}
+                  quantitiesByVarietyId={quantitiesByVarietyId}
+                  onQuantityChange={(varietyId, quantity) =>
+                    setQuantitiesByVarietyId((currentQuantities) => ({
+                      ...currentQuantities,
+                      [varietyId]: quantity,
+                    }))
+                  }
+                />
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            )}
+            {stepIndex === 3 && selectedSalesman && selectedRoute && (
+              <AllotReviewStep
+                salesmanName={selectedSalesman.name}
+                businessDate={businessDate}
+                routeName={selectedRoute.name}
+                routeCode={selectedRoute.code}
+                reviewItems={reviewItems}
+                refusal={refusal}
+                isAllotting={isAllottingGatepass}
+                onChangeRoute={() => goToStep(1)}
+                onAllot={() => void handleAllot()}
+              />
+            )}
 
-      {/* Allot needs a Route; it comes back with Routes in Spec C (#44). */}
-      <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4">
-        <Button
-          type="button"
-          disabled
-          onClick={() => void handleAllotGatepass()}
-          className="h-auto min-h-11 w-full gap-2 whitespace-normal rounded-full bg-brand py-2.5 text-brand-foreground hover:bg-brand/90"
-        >
-          <LockIcon className="size-3.5" />
-          {tx("admin.gatepass.allot.waitingForRoutes")}
-        </Button>
-      </div>
+            {stepIndex < 3 && (
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={stepIndex === 0}
+                  onClick={() => goToStep(stepIndex - 1)}
+                >
+                  <ChevronLeftIcon className="size-4" />
+                  {tx("common.actions.back")}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!canGoNext}
+                  onClick={() => goToStep(stepIndex + 1)}
+                  className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                >
+                  {tx("common.pagination.next")}
+                  <ChevronRightIcon className="size-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <GatepassDayList
+        businessDate={businessDate}
+        salesmen={salesmen}
+        dayGatepasses={dayGatepasses}
+        allotmentMatrix={allotmentMatrix}
+        isLoading={isGatepassesLoading || isAllotmentMatrixLoading || isSalesmenListLoading}
+      />
     </div>
   );
 }

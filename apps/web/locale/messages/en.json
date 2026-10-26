@@ -23,7 +23,8 @@
       "notSet": "Not set",
       "active": "Active",
       "inactive": "Inactive",
-      "new": "New"
+      "new": "New",
+      "saving": "Saving…"
     },
     "a11y": {
       "openMenu": "Open menu",
@@ -79,6 +80,15 @@
       "pageOf": "Page {page} of {total}",
       "previous": "Previous",
       "next": "Next"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "preferredLanguage": {
+      "label": "Preferred language",
+      "mr": "Marathi",
+      "hi": "Hindi",
+      "en": "English",
+      "fixedHint": "Messages to this Customer go in this language. It cannot be changed later."
     }
   },
   "auth": {
@@ -155,7 +165,8 @@
       "quickAddSalesman": "Add Salesman",
       "quickViewCustomers": "View Customers",
       "quickViewOrders": "View Orders",
-      "openAccountMenu": "Open account menu"
+      "openAccountMenu": "Open account menu",
+      "routes": "Routes"
     },
     "dashboard": {
       "kpi": {
@@ -231,7 +242,9 @@
         "shopName": "Enter a shop name",
         "phone": "Enter a phone number",
         "address": "Enter an address",
-        "shopPhoto": "Add a shop photo"
+        "shopPhoto": "Add a shop photo",
+        "gstin": "GSTIN must be 15 letters or digits",
+        "route": "Pick a Route"
       },
       "createSuccess": "Customer created",
       "createFailed": "Could not create customer. Try again.",
@@ -247,7 +260,43 @@
       "orderCancelled": "Order cancelled",
       "orderCancelFailed": "Could not cancel order. Try again.",
       "allOrdersClosed": "All open orders closed",
-      "allOrdersCancelled": "All open orders cancelled"
+      "allOrdersCancelled": "All open orders cancelled",
+      "searchPlaceholder": "Search by shop, contact, phone or address",
+      "routeFilter": "Filter by Route",
+      "allRoutes": "All Routes",
+      "showInactive": "Show inactive customers",
+      "totalCount": "{count} total",
+      "noMatch": "No customers match \"{term}\"",
+      "notFound": "Customer not found",
+      "editTitle": "Edit customer",
+      "edit": "Edit",
+      "noContactName": "No contact name",
+      "noGstin": "None",
+      "form": {
+        "shopPhoto": "Shop photo",
+        "route": "Route",
+        "routeHint": "Set once here. Later changes go through Move to Route.",
+        "fixedDetailsHint": "Preferred language is fixed once the Customer is added. The Route changes only through Move to Route.",
+        "contactName": "Contact name",
+        "notes": "Notes",
+        "notesPlaceholder": "Optional notes",
+        "gstin": "GSTIN (optional)",
+        "gstinLabel": "GSTIN",
+        "gstinHint": "15 letters or digits. Leave blank if none.",
+        "einvoicing": "E-invoicing required",
+        "einvoicingFollowsGstin": "Follows the GSTIN: on when a GSTIN is entered. You can change it.",
+        "einvoicingSetByAdmin": "Set by you.",
+        "einvoicingFollowGstin": "Follow the GSTIN again",
+        "saveCustomer": "Save customer",
+        "saveChanges": "Save changes"
+      },
+      "move": {
+        "title": "Move to Route",
+        "hint": "Hidden Routes and the current Route are not offered. Balance, Ledger and Bills stay with the Customer.",
+        "cta": "Move customer",
+        "failed": "Could not move the customer. Try again.",
+        "success": "Customer moved. Balance, Ledger and Bills stay with the Customer."
+      }
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -313,7 +362,10 @@
         "noItemsToday": "No items allocated today",
         "footnote": "Only orders deduct from Gate Pass. Left = issued − sold; returned does not change it.",
         "variety": "Variety",
-        "noReason": "No reason"
+        "noReason": "No reason",
+        "allot": "Allot",
+        "allotAgain": "Allot again",
+        "alreadyActive": "Has an Active GatePass"
       }
     },
     "orders": {
@@ -367,8 +419,38 @@
         "failed": "Could not allot gate pass. Try again.",
         "selectSalesmanError": "Select a salesman",
         "qtyRequired": "Set a quantity for at least one item",
-        "waitingForRoutes": "Allot · waiting for Routes",
-        "waitingForRoutesHint": "Allot comes back when Routes are added."
+        "steps": {
+          "salesman": "Salesman & date",
+          "route": "Route",
+          "quantities": "Quantities",
+          "review": "Review"
+        },
+        "hasActive": "Has an Active GatePass",
+        "freeToAllot": "Free to allot",
+        "activeBlocks": "This salesman has an Active GatePass on this date. Allot a new one after it is handed over.",
+        "routeHint": "Pick the Route for this GatePass. It cannot change after allotment. Only varieties priced on the Route can be given.",
+        "pricedOf": "{count} of {total} varieties priced",
+        "allocateItems": "Allocate items",
+        "selectedCount": "{count} selected",
+        "searchItems": "Search items...",
+        "noItems": "No items found",
+        "showUnpriced": "Show {count} with no price on {route}",
+        "hideUnpriced": "Hide {count} with no price on {route}",
+        "noPriceOnRoute": "No price on this Route",
+        "salesman": "Salesman",
+        "changeRoute": "Change Route",
+        "cta": "Allot GatePass",
+        "allottedTo": "GatePass allotted to {name}",
+        "another": "Allot another GatePass",
+        "openSalesman": "Open salesman"
+      },
+      "routeFixedHint": "Fixed at allotment. To work another Route, close this GatePass and allot a new one.",
+      "list": {
+        "title": "GatePasses",
+        "hint": "GatePasses on {date}. Tap one to open it.",
+        "none": "No GatePass on {date}",
+        "issuedSold": "{time} · issued {issued} · sold {sold}",
+        "allottedAt": "{date} · allotted {time}"
       }
     },
     "bills": {
@@ -419,6 +501,51 @@
       },
       "loadFailed": "Could not load the Bill",
       "hideCancelled": "Hide cancelled Bills"
+    },
+    "routes": {
+      "searchPlaceholder": "Search by name, code or state",
+      "newTitle": "New Route",
+      "codeGeneratedHint": "The Route code is generated when you save. You cannot edit it.",
+      "name": "Route name",
+      "deliveryState": "Delivery state",
+      "deliveryStatePlaceholder": "Pick a state or union territory",
+      "deliveryStateHint": "Bills started later use this as place of supply. Bills already issued keep theirs.",
+      "code": "Route code",
+      "create": "Create Route",
+      "createFailed": "Could not create the Route. Try again.",
+      "updateFailed": "Could not save the Route. Try again.",
+      "validation": {
+        "name": "Enter a Route name",
+        "deliveryState": "Pick a delivery state"
+      },
+      "showHidden": "Show hidden Routes",
+      "hidden": "Hidden",
+      "empty": "No Routes yet. Add one with the plus button.",
+      "noMatch": "No Routes match \"{term}\"",
+      "pricedCount": "{count} priced",
+      "selectHint": "Select a Route.",
+      "notFound": "Route not found",
+      "statusHint": "Inactive stays on this list. Hide is separate.",
+      "hide": "Hide {name}",
+      "hideHint": "Hide removes it from lists and GatePass allotment. Its Customers, prices and history stay.",
+      "hideFailed": "Could not hide the Route. Try again.",
+      "showAgain": "Show {name} again",
+      "showFailed": "Could not show the Route again. Try again.",
+      "pickRoute": "Pick a Route",
+      "noChoices": "No Routes to pick. Add one under Routes.",
+      "prices": {
+        "title": "Route prices",
+        "hint": "Tax-exclusive rupees. A saved price makes the variety Sellable on this Route; switching it to Unsellable removes the price. Placed orders keep their price.",
+        "empty": "No varieties in the catalog yet.",
+        "sellable": "Sellable",
+        "unsellable": "Unsellable",
+        "price": "Price",
+        "priceAria": "{variety} price",
+        "invalid": "Enter a price above zero, or switch off Sellable.",
+        "unsellableUntilPriced": "Unsellable until a price is set",
+        "saveFailed": "Could not save the price. Try again.",
+        "clearFailed": "Could not remove the price. Try again."
+      }
     }
   },
   "salesman": {
@@ -470,7 +597,7 @@
         "title": "Customer details",
         "hint": "Select an existing customer or enter new customer details.",
         "openScanner": "Open payment scanner",
-        "searchPlaceholder": "Search existing customers...",
+        "searchPlaceholder": "Search name, phone or address",
         "clearSelected": "Clear selected customer",
         "noMatch": "No customer matches \"{term}\"",
         "orEnterNew": "Or enter new customer details",
@@ -480,7 +607,17 @@
         "shopNamePlaceholder": "Enter shop name",
         "phonePlaceholder": "Enter phone number",
         "addressPlaceholder": "Enter full address",
-        "placeOrderFor": "Place order for"
+        "placeOrderFor": "Place order for",
+        "routeHint": "Customers on your Route {route}",
+        "countOnRoute": "{count} active Customers on {route}",
+        "noneOnRoute": "No Customers on {route} yet",
+        "noMatchOnRoute": "No Customer on {route} matches \"{term}\"",
+        "onlyRouteListed": "Only active Customers on your Active GatePass Route are listed.",
+        "addAsNew": "Add \"{term}\" as a new Customer",
+        "addedOnRoute": "Will be added on Route {route} (your Active GatePass)",
+        "detailTitle": "Customer details",
+        "useForOrder": "Use for this order",
+        "notFoundHint": "This Customer is not on your Route, or is no longer active."
       },
       "success": {
         "title": "Order placed successfully!",
@@ -492,6 +629,13 @@
       },
       "gatepass": {
         "noneToday": "No gate pass has been given to you for today yet."
+      },
+      "noActiveGatepass": {
+        "title": "No Active GatePass",
+        "customers": "Customer list is not available.",
+        "addCustomer": "You cannot add a Customer.",
+        "handedOver": "You handed over today's GatePass on Route {route}. Selling is closed for today.",
+        "none": "You have no GatePass today. Ask the admin to allot stock to you on a Route."
       }
     },
     "orders": {
@@ -574,7 +718,8 @@
       "soldOut": "Sold out",
       "flaggedBy": "Flagged by {name}",
       "shortLine": "Short {count} · {reason}",
-      "admin": "Admin"
+      "admin": "Admin",
+      "route": "Route"
     },
     "handover": {
       "reason": {

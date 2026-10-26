@@ -12,6 +12,8 @@ import {
 import { GatepassTodayHeaderCard } from "./gatepass-today-header-card";
 
 interface GatepassTodayViewDesktopProps {
+  routeName: string;
+  routeCode: string;
   businessDate: string;
   status: GatepassStatus;
   hasDiscrepancy: boolean;
@@ -20,6 +22,8 @@ interface GatepassTodayViewDesktopProps {
 }
 
 export function GatepassTodayViewDesktop({
+  routeName,
+  routeCode,
   businessDate,
   status,
   hasDiscrepancy,
@@ -32,6 +36,8 @@ export function GatepassTodayViewDesktop({
   return (
     <div className="flex flex-col gap-4">
       <GatepassTodayHeaderCard
+        routeName={routeName}
+        routeCode={routeCode}
         businessDate={businessDate}
         status={status}
         hasDiscrepancy={hasDiscrepancy}

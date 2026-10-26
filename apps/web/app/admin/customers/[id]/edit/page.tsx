@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BackHeader } from "~/components/admin/products/back-header";
 import {
   CustomerForm,
+  normalizeGstin,
   type CustomerFormValues,
 } from "~/components/admin/customers/customer-form";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
@@ -33,6 +34,8 @@ export default function EditCustomerPage() {
         address: values.address,
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey || null,
+        gstin: normalizeGstin(values.gstin) || null,
+        einvoicingRequired: values.einvoicingRequired,
       });
       toast.success(tx("admin.customers.updateSuccess"));
       router.push(`/admin/customers/${customerId}`);
@@ -46,13 +49,16 @@ export default function EditCustomerPage() {
   }
 
   if (!customer) {
-    return <div className="p-4 text-sm text-muted-foreground">Customer not found</div>;
+    return (
+      <div className="p-4 text-sm text-muted-foreground">{tx("admin.customers.notFound")}</div>
+    );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href={`/admin/customers/${customerId}`} title="Edit customer" />
+      <BackHeader href={`/admin/customers/${customerId}`} title={tx("admin.customers.editTitle")} />
       <CustomerForm
+        mode="edit"
         customerId={customerId}
         defaultValues={{
           shopName: customer.shopName,
@@ -62,10 +68,17 @@ export default function EditCustomerPage() {
           notes: customer.notes ?? "",
           shopPhotoKey: customer.shopPhotoKey ?? "",
           shopPhotoUrl: customer.shopPhotoUrl ?? "",
+          gstin: customer.gstin ?? "",
+          einvoicingRequired: customer.einvoicingRequired,
+        }}
+        fixedDetails={{
+          routeName: customer.routeName,
+          routeCode: customer.routeCode,
+          routeHidden: customer.routeHidden,
+          preferredLanguage: customer.preferredLanguage,
         }}
         isSubmitting={isUpdatingCustomer}
-        submitLabel="Save changes"
-        requireShopPhoto={false}
+        submitLabel={tx("admin.customers.form.saveChanges")}
         onSubmit={handleSubmit}
       />
     </div>
