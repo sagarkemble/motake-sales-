@@ -126,7 +126,8 @@ export type CheckoutRefusalReason =
   | "field_payment_kept_zero"
   | "bill_total_zero"
   | "seller_master_missing"
-  | "balance_changed";
+  | "balance_changed"
+  | "idempotency_key_reused";
 
 export type CheckoutRefusal = Refusal<CheckoutRefusalReason>;
 
@@ -150,6 +151,7 @@ const checkoutRefusalCodes: Record<CheckoutRefusalReason, TRPCError["code"]> = {
   bill_total_zero: "BAD_REQUEST",
   seller_master_missing: "CONFLICT",
   balance_changed: "CONFLICT",
+  idempotency_key_reused: "CONFLICT",
 };
 
 export const checkoutRefusal = (

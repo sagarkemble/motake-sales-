@@ -206,6 +206,7 @@ export const billedCheckoutResultSchema = z.object({
       returnedPaise: z.number().int(),
     })
     .nullable(),
+  returnedPaise: z.number().int(),
   balancePaise: z.number().int(),
 });
 

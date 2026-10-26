@@ -1,3 +1,4 @@
+import { db } from "@repo/database";
 import { getProfileById } from "@repo/database/queries/auth";
 import { getBillByOrderId } from "@repo/database/queries/bills";
 import { getCustomerById, lockCustomerRow } from "@repo/database/queries/customers";
@@ -30,7 +31,7 @@ import {
   type OrderListRow,
   type OrderWithItems,
 } from "@repo/database/queries/orders";
-import { getPaymentByIdempotencyKey } from "@repo/database/queries/payments";
+import { getCheckoutPaymentForBill } from "@repo/database/queries/payments";
 import { listSellableVarietiesBySkus } from "@repo/database/queries/products";
 import { getRouteById } from "@repo/database/queries/routes";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
@@ -92,6 +93,15 @@ import {
 } from "./model";
 
 const orderIdempotencyConstraint = "orders_idempotency_key_unique";
+const paymentIdempotencyConstraint = "payments_idempotency_key_unique";
+
+// Packs per merged line, which keeps quantities inside int4.
+const MAX_LINE_QTY = 100_000;
+
+// Route price × qty with GST (under 100%) on top must stay a safe integer in paise.
+function lineAmountTooLarge(routePricePaise: number, quantity: number): boolean {
+  return BigInt(routePricePaise) * BigInt(quantity) * 2n > BigInt(Number.MAX_SAFE_INTEGER);
+}
 
 interface ParsedCheckoutPayment {
   mode: CheckoutPaymentInput["mode"];
@@ -130,6 +140,16 @@ function mapOrderCancellationError(caughtError: unknown) {
   if (message.includes("no gatepass found")) return conflict(message);
   if (message.includes("sold quantity would go negative")) return conflict(message);
   return caughtError;
+}
+
+// The checkout Payment key `{key}:pay` already belongs to another checkout (a fulfil key reused on
+// another Pre-order, or a Book Now and a fulfil sharing a key): refused, nothing written.
+function keyReusedOr(caughtError: unknown): unknown {
+  if (violatedUniqueConstraint(caughtError) !== paymentIdempotencyConstraint) return caughtError;
+  return checkoutRefusal(
+    "idempotency_key_reused",
+    "This checkout key was already used for another sale. Try again.",
+  );
 }
 
 function routeStampOf(route: { name: string; code: string; deliveryState: string }): RouteStamp {
@@ -246,7 +266,7 @@ class OrderService {
     const parsedInput = placeBookNowInputSchema.parse(input);
     assertOnlySkuAndQty(parsedInput.lines);
     const firstOrder = await getOrderByIdempotencyKey(parsedInput.idempotencyKey);
-    if (firstOrder) return this.billedResultOf(firstOrder, parsedInput.idempotencyKey);
+    if (firstOrder) return this.billedResultOf(firstOrder, parsedInput.payment);
     assertBasketNotEmpty(parsedInput.lines);
 
     const run = await this.runCheckout<BilledCheckoutResult>(
@@ -329,7 +349,7 @@ class OrderService {
       },
     );
 
-    if (run.kind === "replay") return this.billedResultOf(run.order, parsedInput.idempotencyKey);
+    if (run.kind === "replay") return this.billedResultOf(run.order, parsedInput.payment);
     await notifyAfterCommit(this.afterCommit, run.outcome);
     return run.result;
   }
@@ -524,9 +544,11 @@ class OrderService {
           transaction,
         );
       },
-    );
+    ).catch((fulfilError: unknown) => {
+      throw keyReusedOr(fulfilError);
+    });
 
-    if (run.kind === "replay") return this.billedResultOf(run.order, parsedInput.idempotencyKey);
+    if (run.kind === "replay") return this.billedResultOf(run.order, parsedInput.payment);
     await notifyAfterCommit(this.afterCommit, run.outcome);
     return run.result;
   }
@@ -694,13 +716,15 @@ class OrderService {
         const winner = await getOrderByIdempotencyKey(idempotencyKey);
         if (winner) return { kind: "replay", order: winner };
       }
-      throw checkoutError;
+      throw keyReusedOr(checkoutError);
     }
   }
 
   // Book Now and fulfil, once the sale is checked: decide the checkout Payment from the unlocked
   // Balance, allocate MB then MP, lock the Customer and re-check, then write the order, issue the
-  // Bill and post the Payment (Bill debit first, Payment credit 1 ms later).
+  // Bill and post the Payment (Bill debit first, Payment credit 1 ms later). The Bill date and the
+  // numbers' FYs come from `now`; the Ledger time is read once the Customer lock is held, so it
+  // follows every posting that committed while this call waited.
   private async billAndCollect(
     params: {
       actorId: string;
@@ -727,7 +751,6 @@ class OrderService {
     const keptBeforeLock = splitFor(customer.balancePaise).keptPaise;
 
     const billDate = businessDateOf(now);
-    const paymentOccurredAt = new Date(now.getTime() + 1);
     const billNumber = await this.documentNumbers.allocate(
       { kind: "bill", financialYear: financialYearOf(billDate), actorId },
       transaction,
@@ -735,12 +758,18 @@ class OrderService {
     const paymentNumber =
       keptBeforeLock > 0
         ? await this.documentNumbers.allocate(
-            { kind: "payment", financialYear: financialYearOfInstant(paymentOccurredAt), actorId },
+            {
+              kind: "payment",
+              financialYear: financialYearOfInstant(new Date(now.getTime() + 1)),
+              actorId,
+            },
             transaction,
           )
         : null;
 
     const lockedCustomer = await lockCustomerRow(customer.id, "update", transaction);
+    const billOccurredAt = new Date();
+    const paymentOccurredAt = new Date(billOccurredAt.getTime() + 1);
     assertCustomerOnRoute(lockedCustomer, customer.id, params.routeId);
     const split = splitFor(lockedCustomer.balancePaise);
     if (split.keptPaise > 0 !== (paymentNumber !== null)) {
@@ -762,7 +791,7 @@ class OrderService {
         gatepassId: params.gatepassId,
         billDate,
         billNumber: billNumber.number,
-        occurredAt: now,
+        occurredAt: billOccurredAt,
       },
       transaction,
     );
@@ -800,6 +829,7 @@ class OrderService {
               returnedPaise: split.returnedPaise,
             }
           : null,
+        returnedPaise: split.returnedPaise,
         balancePaise: posted ? posted.balanceAfterPaise : issued.balanceAfterPaise,
       },
       outcome: {
@@ -864,13 +894,14 @@ class OrderService {
     return items;
   }
 
-  // Merges repeated SKUs, then checks every line: qty a whole number from 1, SKU sellable, a
-  // Route price on this Route, a tax period covering `day`. Every failure is collected.
+  // Merges repeated SKUs, then checks every line: qty a whole number from 1 to MAX_LINE_QTY (after
+  // merging), SKU sellable, a Route price on this Route, a tax period covering `day`, and an amount
+  // that fits. Every failure is collected.
   private async resolveBasket(
     lines: CheckoutLineInput[],
     routeId: string,
     day: string,
-    executor?: DbExecutor,
+    executor: DbExecutor = db,
   ): Promise<ResolvedBasket> {
     const badLines: BadLine[] = [];
     const quantityBySku = new Map<string, number>();
@@ -878,6 +909,9 @@ class OrderService {
     for (const line of lines) {
       if (!Number.isInteger(line.qty) || line.qty < 1) badQtySkus.add(line.sku);
       quantityBySku.set(line.sku, (quantityBySku.get(line.sku) ?? 0) + line.qty);
+    }
+    for (const [sku, quantity] of quantityBySku) {
+      if (quantity > MAX_LINE_QTY) badQtySkus.add(sku);
     }
     for (const sku of badQtySkus) {
       badLines.push({ sku, reason: "bad_qty" });
@@ -905,6 +939,10 @@ class OrderService {
       if (routePricePaise === undefined) badLines.push({ sku, reason: "no_route_price" });
       if (!facts) badLines.push({ sku, reason: "no_tax_period" });
       if (routePricePaise === undefined || !facts) continue;
+      if (lineAmountTooLarge(routePricePaise, quantity)) {
+        badLines.push({ sku, reason: "bad_qty" });
+        continue;
+      }
       resolved.push({
         sku,
         varietyId: variety.id,
@@ -974,14 +1012,16 @@ class OrderService {
   }
 
   // The first result of a Book Now or fulfil: its Bill and MB, the checkout Payment and MP if
-  // any (found by `{key}:pay`), and the current Balance. Fires nothing.
+  // any (found from the Bill, so a fulfil retried under another key still sees it), and the
+  // current Balance. With no Payment nothing was kept, so all cash received (as the retry sends
+  // it again) was handed back. Fires nothing.
   private async billedResultOf(
     order: SelectOrder,
-    idempotencyKey: string,
+    retryPayment: ParsedCheckoutPayment,
   ): Promise<BilledCheckoutResult> {
     const bill = await getBillByOrderId(order.id);
     if (!bill) throw conflict("This checkout key was already used to place a Pre-order");
-    const payment = await getPaymentByIdempotencyKey(`${idempotencyKey}:pay`);
+    const payment = await getCheckoutPaymentForBill(bill.id);
     const balanceAfterBillPaise = await getBalanceThroughBillDebit(bill.id);
     const balance = await this.ledgerService.getBalance(order.customerId);
     return {
@@ -990,14 +1030,18 @@ class OrderService {
       billNumber: bill.number,
       billTotalPaise: bill.totalPaise,
       balanceAfterBillPaise: balanceAfterBillPaise ?? balance.balancePaise,
-      payment:
-        payment?.customerId === order.customerId
-          ? {
-              number: payment.number,
-              keptPaise: payment.amountKeptPaise,
-              returnedPaise: payment.amountReturnedPaise,
-            }
-          : null,
+      payment: payment
+        ? {
+            number: payment.number,
+            keptPaise: payment.amountKeptPaise,
+            returnedPaise: payment.amountReturnedPaise,
+          }
+        : null,
+      returnedPaise: payment
+        ? payment.amountReturnedPaise
+        : retryPayment.mode === "cash"
+          ? retryPayment.receivedPaise
+          : 0,
       balancePaise: balance.balancePaise,
     };
   }

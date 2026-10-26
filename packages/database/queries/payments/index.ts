@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, like, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
+  ledgerEntriesTable,
   paymentEventsTable,
   paymentsTable,
   type InsertPayment,
@@ -49,4 +50,28 @@ export async function getPostedPaymentEvent(
     .from(paymentEventsTable)
     .where(and(eq(paymentEventsTable.paymentId, paymentId), eq(paymentEventsTable.kind, "posted")));
   return event;
+}
+
+// The checkout Payment taken with a Bill (Book Now or fulfil), found from the Bill rather than the
+// request key, so a fulfil retried under another key still sees it. Checkout posts it in the
+// Bill's transaction by the same actor for the same Customer, 1 ms after the Bill debit, under a
+// `{key}:pay` key; a field Payment never has that suffix.
+export async function getCheckoutPaymentForBill(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectPayment | undefined> {
+  const [row] = await executor
+    .select({ payment: paymentsTable })
+    .from(ledgerEntriesTable)
+    .innerJoin(
+      paymentsTable,
+      and(
+        eq(paymentsTable.customerId, ledgerEntriesTable.customerId),
+        eq(paymentsTable.actorId, ledgerEntriesTable.actorId),
+        eq(paymentsTable.occurredAt, sql`${ledgerEntriesTable.occurredAt} + interval '1 millisecond'`),
+        like(paymentsTable.idempotencyKey, "%:pay"),
+      ),
+    )
+    .where(and(eq(ledgerEntriesTable.billId, billId), eq(ledgerEntriesTable.entryType, "bill")));
+  return row?.payment;
 }

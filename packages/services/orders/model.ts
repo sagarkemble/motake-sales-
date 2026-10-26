@@ -111,6 +111,8 @@ export interface BilledCheckoutResult {
   balanceAfterBillPaise: number;
   // Null when nothing was kept.
   payment: CheckoutPaymentResult | null;
+  // Cash handed back, also when nothing was kept (cash change over a Bill an Advance covers).
+  returnedPaise: number;
   balancePaise: number;
 }
 

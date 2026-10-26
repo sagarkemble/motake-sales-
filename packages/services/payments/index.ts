@@ -128,7 +128,7 @@ class PaymentService {
     let posted: PostedPayment & { split: PaymentSplit };
     try {
       posted = await runInTransaction(async (transaction) => {
-        const occurredAt = new Date();
+        const now = new Date();
         const activeGatepass = await this.gatepassService.lockActiveGatepassForSalesman(
           actorSalesmanId,
           "share",
@@ -144,13 +144,16 @@ class PaymentService {
         const allocated = await this.documentNumbers.allocate(
           {
             kind: "payment",
-            financialYear: financialYearOfInstant(occurredAt),
+            financialYear: financialYearOfInstant(now),
             actorId: actorSalesmanId,
           },
           transaction,
         );
 
         const lockedCustomer = await lockCustomerRow(parsedInput.customerId, "update", transaction);
+        // Read under the lock, so the Ledger time follows every posting that committed while
+        // this call waited; the MP's FY stays the one read before allocating.
+        const occurredAt = new Date();
         // A concurrent call with the same key committed while this one waited for the Customer;
         // roll back (freeing the MP number) and show its result.
         if (await getPaymentByIdempotencyKey(parsedInput.idempotencyKey, transaction)) {
