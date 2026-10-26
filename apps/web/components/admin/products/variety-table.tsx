@@ -56,6 +56,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
     updateProductVarietyAsync,
     isUpdatingProductVariety,
     deactivateProductVarietyAsync,
+    isDeactivatingProductVariety,
     reactivateProductVarietyAsync,
     isReactivatingProductVariety,
   } = useProducts({ productId });
@@ -63,6 +64,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
   const [editingVariety, setEditingVariety] = useState<ProductVariety | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [addedVarietyId, setAddedVarietyId] = useState<string | null>(null);
+  const [deactivatingVariety, setDeactivatingVariety] = useState<ProductVariety | null>(null);
   const [reactivatingVariety, setReactivatingVariety] = useState<ProductVariety | null>(null);
   const [taxVarietyId, setTaxVarietyId] = useState<string | null>(null);
 
@@ -98,10 +100,12 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
     setIsDialogOpen(false);
   }
 
-  async function handleDeactivate(variety: ProductVariety) {
+  async function handleDeactivate() {
+    if (!deactivatingVariety) return;
     try {
-      await deactivateProductVarietyAsync({ id: variety.id });
+      await deactivateProductVarietyAsync({ id: deactivatingVariety.id });
       toast.success(tx("admin.varieties.deactivateSuccess"));
+      setDeactivatingVariety(null);
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.varieties.deactivateFailed")));
     }
@@ -244,7 +248,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                       type="button"
                       size="icon-sm"
                       variant="ghost"
-                      onClick={() => handleDeactivate(variety)}
+                      onClick={() => setDeactivatingVariety(variety)}
                       aria-label={tx("admin.varieties.deactivateAria")}
                       title={tx("admin.varieties.deactivateAria")}
                     >
@@ -257,6 +261,39 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
           })
         )}
       </div>
+
+      <AlertDialog
+        open={Boolean(deactivatingVariety)}
+        onOpenChange={(open) => !open && setDeactivatingVariety(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tx("admin.varieties.deactivateTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tx("admin.varieties.deactivateBody", {
+                name: deactivatingVariety
+                  ? `${deactivatingVariety.name} · ${deactivatingVariety.unit}`
+                  : "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeactivatingProductVariety}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeactivatingProductVariety}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeactivate();
+              }}
+            >
+              {tx("admin.varieties.deactivateConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={Boolean(reactivatingVariety)}
