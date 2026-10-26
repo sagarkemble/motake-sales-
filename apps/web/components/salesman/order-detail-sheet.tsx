@@ -77,7 +77,12 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   async function handleConfirmFulfil() {
     if (!orderId) return;
     try {
-      await fulfillOrderAsync({ id: orderId });
+      // No Payment step yet (Spec F UI): fulfil takes ₹0, so the whole Bill stays Pending.
+      await fulfillOrderAsync({
+        orderId,
+        idempotencyKey: crypto.randomUUID(),
+        payment: { mode: "cash", receivedPaise: 0 },
+      });
       toast.success(tx("salesman.orders.fulfilSuccess"));
     } catch (fulfilOrderError) {
       const errorMessage =

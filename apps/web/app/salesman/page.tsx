@@ -82,6 +82,7 @@ function SalesmanCatalogContent() {
           productImageUrl={openProduct.product.imageUrl}
           varieties={openProduct.varieties.map((variety) => ({
             varietyId: variety.id,
+            sku: variety.sku,
             varietyName: variety.name,
             unit: variety.unit,
           }))}

@@ -16,6 +16,7 @@ import { useCart } from "~/providers/cart-provider";
 
 interface ProductVarietyOption {
   varietyId: string;
+  sku: string;
   varietyName: string;
   unit: string;
 }
@@ -43,6 +44,7 @@ export function AddToCartDrawer({
     setQuantityForVariety(
       {
         varietyId: variety.varietyId,
+        sku: variety.sku,
         productId,
         productName,
         varietyName: variety.varietyName,
