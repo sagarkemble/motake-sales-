@@ -280,6 +280,42 @@ export async function listActiveVarietiesByIds(
     );
 }
 
+export interface SellableVarietyBySku {
+  id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  productName: string;
+}
+
+// Varieties a sale may name by SKU: the variety and its Product both active and not deleted.
+// Unknown, inactive and deleted SKUs are absent.
+export async function listSellableVarietiesBySkus(
+  skus: string[],
+  executor: DbExecutor = db,
+): Promise<SellableVarietyBySku[]> {
+  if (skus.length === 0) return [];
+  return executor
+    .select({
+      id: productVarietiesTable.id,
+      sku: productVarietiesTable.sku,
+      name: productVarietiesTable.name,
+      unit: productVarietiesTable.unit,
+      productName: productsTable.name,
+    })
+    .from(productVarietiesTable)
+    .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
+    .where(
+      and(
+        inArray(productVarietiesTable.sku, skus),
+        eq(productVarietiesTable.status, "active"),
+        isNull(productVarietiesTable.deletedAt),
+        eq(productsTable.status, "active"),
+        isNull(productsTable.deletedAt),
+      ),
+    );
+}
+
 export async function updateProductVariety(
   varietyId: string,
   changes: Partial<InsertProductVariety>,

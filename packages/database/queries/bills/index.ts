@@ -4,11 +4,18 @@ import { db } from "../../index";
 import {
   billItemsTable,
   billsTable,
+  billVersionsTable,
   customersTable,
   ordersTable,
+  type InsertBill,
+  type InsertBillItem,
+  type InsertBillVersion,
   type SelectBill,
+  type SelectBillItem,
+  type SelectBillVersion,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
+import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -181,4 +188,34 @@ export async function listBills(
 
   const { totalCount } = firstOrThrow(countRows, "listBills count");
   return toPaginatedResult(rows, totalCount, pagination);
+}
+
+// --- Bill issue (Spec F): the paper, its lines and bill_versions v1.
+
+export async function insertBill(newBill: InsertBill, executor: DbExecutor = db): Promise<SelectBill> {
+  const insertedRows = await executor.insert(billsTable).values(newBill).returning();
+  return firstOrThrow(insertedRows, "insertBill");
+}
+
+export async function insertBillItems(
+  newItems: InsertBillItem[],
+  executor: DbExecutor = db,
+): Promise<SelectBillItem[]> {
+  return executor.insert(billItemsTable).values(newItems).returning();
+}
+
+export async function insertBillVersion(
+  newVersion: InsertBillVersion,
+  executor: DbExecutor = db,
+): Promise<SelectBillVersion> {
+  const insertedRows = await executor.insert(billVersionsTable).values(newVersion).returning();
+  return firstOrThrow(insertedRows, "insertBillVersion");
+}
+
+export async function getBillByOrderId(
+  orderId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor.select().from(billsTable).where(eq(billsTable.orderId, orderId));
+  return bill;
 }

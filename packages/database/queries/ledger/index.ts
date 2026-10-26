@@ -1,4 +1,5 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, lte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "../../index";
 import {
@@ -167,4 +168,28 @@ export async function findLedgerEntryForNote(noteId: string, executor: DbExecuto
     .from(ledgerEntriesTable)
     .where(eq(ledgerEntriesTable.noteId, noteId));
   return row;
+}
+
+// The Balance as the Ledger reads it up to and including a Bill's debit (every row of that Customer
+// whose posting time is not after it), for showing a retried checkout its first result.
+export async function getBalanceThroughBillDebit(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<number | undefined> {
+  const billDebit = alias(ledgerEntriesTable, "bill_debit");
+  const [row] = await executor
+    .select({
+      balancePaise: sql<string>`coalesce(sum(CASE WHEN ${ledgerEntriesTable.side} = 'debit' THEN ${ledgerEntriesTable.amountPaise} ELSE -${ledgerEntriesTable.amountPaise} END), 0)`,
+    })
+    .from(billDebit)
+    .innerJoin(
+      ledgerEntriesTable,
+      and(
+        eq(ledgerEntriesTable.customerId, billDebit.customerId),
+        lte(ledgerEntriesTable.occurredAt, billDebit.occurredAt),
+      ),
+    )
+    .where(and(eq(billDebit.billId, billId), eq(billDebit.entryType, "bill")))
+    .groupBy(billDebit.id);
+  return row ? Number(row.balancePaise) : undefined;
 }
