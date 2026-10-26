@@ -180,8 +180,7 @@ export const placePreOrderInputSchema = z.object({
   notes: z.string().trim().max(1000).optional(),
 });
 
-export const fulfilPreOrderInputSchema = z.object({
-  orderId: z.string().uuid(),
+export const fulfilPreOrderInputSchema = orderIdInputSchema.extend({
   idempotencyKey: idempotencyKeySchema,
   payment: checkoutPaymentInputSchema,
 });

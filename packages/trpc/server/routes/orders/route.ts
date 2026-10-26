@@ -1,6 +1,12 @@
 import { orderService } from "../../services";
 import { z, zodUndefinedModel } from "../../schema";
-import { adminProcedure, router, salesmanProcedure, protectedProcedure } from "../../trpc";
+import {
+  adminOrSalesmanProcedure,
+  adminProcedure,
+  router,
+  salesmanProcedure,
+  protectedProcedure,
+} from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { forbidden, notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
@@ -60,11 +66,11 @@ export const ordersRouter = router({
       apiResponse(await orderService.placePreOrder(ctx.user.id, input)),
     ),
 
-  fulfilPreOrder: protectedProcedure
+  fulfilPreOrder: adminOrSalesmanProcedure
     .meta({
       openapi: {
         method: "PATCH",
-        path: path("/{orderId}/fulfil"),
+        path: path("/{id}/fulfil"),
         tags: ["Orders"],
         protect: true,
         summary: "Fulfil a Pre-order",
@@ -74,9 +80,12 @@ export const ordersRouter = router({
     })
     .input(fulfilPreOrderInputSchema)
     .output(apiResponseSchema(billedCheckoutResultSchema))
-    .mutation(async ({ ctx, input }) =>
+    .mutation(async ({ ctx, input: { id, ...fulfilInput } }) =>
       apiResponse(
-        await orderService.fulfilPreOrder({ profileId: ctx.user.id, role: ctx.user.role }, input),
+        await orderService.fulfilPreOrder(
+          { profileId: ctx.user.id, role: ctx.user.role },
+          { orderId: id, ...fulfilInput },
+        ),
       ),
     ),
 

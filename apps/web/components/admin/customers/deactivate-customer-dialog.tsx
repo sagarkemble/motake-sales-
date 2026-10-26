@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { useCustomers } from "~/hooks/use-customers";
+import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
@@ -52,6 +53,8 @@ export function DeactivateCustomerDialog({
   });
 
   const { fulfillOrderAsync, cancelOrderAsync } = useOrders();
+  // A retried close keeps its key per order, so a lost response cannot bill twice.
+  const { keyFor, clearKey } = useIdempotencyKeys();
 
   useEffect(() => {
     if (open) {
@@ -95,10 +98,11 @@ export function DeactivateCustomerDialog({
     try {
       // No Payment step yet (Spec F UI): fulfil takes ₹0, so the whole Bill stays Pending.
       await fulfillOrderAsync({
-        orderId,
-        idempotencyKey: crypto.randomUUID(),
+        id: orderId,
+        idempotencyKey: keyFor(orderId),
         payment: { mode: "cash", receivedPaise: 0 },
       });
+      clearKey(orderId);
       toast.success(tx("admin.customers.orderClosed"));
       await refetchOpenOrders();
     } catch (error) {
@@ -126,10 +130,11 @@ export function DeactivateCustomerDialog({
       setResolvingOrderId(order.id);
       try {
         await fulfillOrderAsync({
-          orderId: order.id,
-          idempotencyKey: crypto.randomUUID(),
+          id: order.id,
+          idempotencyKey: keyFor(order.id),
           payment: { mode: "cash", receivedPaise: 0 },
         });
+        clearKey(order.id);
       } catch (error) {
         toast.error(getErrorMessage(error, `Could not close ${describeOrder(order)}.`));
         setResolvingOrderId(null);

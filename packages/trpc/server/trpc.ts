@@ -62,15 +62,26 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx });
 });
 
+// A deactivated salesman can still read but cannot write.
+async function assertSalesmanActive(salesmanId: string): Promise<void> {
+  const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(salesmanId);
+  if (salesmanWithProfile?.profile.status === "inactive") {
+    throw forbidden("Account is deactivated. Contact admin.");
+  }
+}
+
 export const salesmanProcedure = protectedProcedure.use(async ({ ctx, next, type }) => {
   if (ctx.user?.role !== "salesman") throw forbidden();
 
-  if (type === "mutation" && ctx.user?.id) {
-    const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(ctx.user.id);
-    if (salesmanWithProfile?.profile.status === "inactive") {
-      throw forbidden("Account is deactivated. Contact admin.");
-    }
-  }
+  if (type === "mutation" && ctx.user?.id) await assertSalesmanActive(ctx.user.id);
+
+  return next({ ctx });
+});
+
+// Admin and salesman (the only two roles); a salesman's mutations get the same
+// deactivated-account check as salesmanProcedure.
+export const adminOrSalesmanProcedure = protectedProcedure.use(async ({ ctx, next, type }) => {
+  if (type === "mutation" && ctx.user.role === "salesman") await assertSalesmanActive(ctx.user.id);
 
   return next({ ctx });
 });
