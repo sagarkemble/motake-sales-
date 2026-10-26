@@ -131,6 +131,30 @@ describe("tax_invoice", () => {
     expect(text).not.toContain("SGST");
   });
 
+  it("prints a Marathi buyer name, address and Route next to Latin text and ₹", async () => {
+    const values = taxInvoice({
+      buyer: {
+        ...parties.buyer,
+        shopName: "श्री गणेश Traders",
+        address: "ज्ञानेश्वर नगर, कोल्हापूर",
+      },
+      route: { name: "कोल्हापूर शहर", code: "rt-kolhapur-city-001" },
+    });
+
+    const text = await printed(await renderDocument("tax_invoice", values));
+
+    // Text extraction reads glyphs in drawn order, so a pre-base matra (ि) or a reph would come
+    // back moved (these words have neither), and it puts a space after a conjunct glyph
+    // ("श्र ी"), so whole names are checked with spaces removed.
+    expect(text).toContain("गणेश Traders");
+    expect(text).toContain("नगर, कोल्हापूर");
+    expect(text).toContain("कोल्हापूर शहर (rt-kolhapur-city-001)");
+    const unspaced = text.replaceAll(" ", "");
+    expect(unspaced).toContain("श्रीगणेशTraders");
+    expect(unspaced).toContain("ज्ञानेश्वरनगर,कोल्हापूर");
+    expect(text).toContain("₹944.50");
+  });
+
   it("prints Unregistered for a buyer without GSTIN, and Version 2 on a corrected Bill", async () => {
     const values = taxInvoice({ buyer: { ...parties.buyer, gstin: null }, versionNumber: 2 });
 

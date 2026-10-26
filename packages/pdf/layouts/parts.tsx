@@ -3,16 +3,30 @@ import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/rendere
 import type { ReactNode } from "react";
 
 import { notoSansBoldBase64, notoSansRegularBase64 } from "../fonts/noto-sans";
+import {
+  notoSansDevanagariBoldBase64,
+  notoSansDevanagariRegularBase64,
+} from "../fonts/noto-sans-devanagari";
 import { DRAFT_MARK, formatPaise, formatSignedPaise } from "../format";
 import type { BuyerValues, PartyBlocks, SellerValues, SupplyType } from "../types";
 
-// One embedded family with the ₹ glyph, so the rupee sign never prints as a blank box.
+// Embedded fonts, so neither the ₹ sign nor Marathi text ever prints as a blank box. Noto Sans
+// draws Latin and ₹; react-pdf falls back character by character to Noto Sans Devanagari for
+// Marathi shop names, addresses and Customer names, shaping conjuncts and matras from its tables.
 const FONT_FAMILY = "Noto Sans";
+const DEVANAGARI_FONT_FAMILY = "Noto Sans Devanagari";
 Font.register({
   family: FONT_FAMILY,
   fonts: [
     { src: `data:font/ttf;base64,${notoSansRegularBase64}`, fontWeight: 400 },
     { src: `data:font/ttf;base64,${notoSansBoldBase64}`, fontWeight: 700 },
+  ],
+});
+Font.register({
+  family: DEVANAGARI_FONT_FAMILY,
+  fonts: [
+    { src: `data:font/ttf;base64,${notoSansDevanagariRegularBase64}`, fontWeight: 400 },
+    { src: `data:font/ttf;base64,${notoSansDevanagariBoldBase64}`, fontWeight: 700 },
   ],
 });
 // Words are never split with a hyphen; a long IRN or reference wraps at any character instead.
@@ -25,7 +39,7 @@ const FILL = "#efefef";
 
 export const styles = StyleSheet.create({
   page: {
-    fontFamily: FONT_FAMILY,
+    fontFamily: [FONT_FAMILY, DEVANAGARI_FONT_FAMILY],
     fontSize: 8.5,
     color: INK,
     paddingTop: 28,
