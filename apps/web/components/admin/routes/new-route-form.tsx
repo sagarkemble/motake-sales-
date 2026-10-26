@@ -8,7 +8,7 @@ import { Label } from "~/components/ui/label";
 import { useRoutes } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
-import type { DeliveryState } from "~/lib/delivery-states";
+import type { IndianStateName } from "@repo/trpc/client";
 
 import { DeliveryStateSelect } from "./delivery-state-select";
 
@@ -22,7 +22,7 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
   const tx = useTranslate();
   const { createRouteAsync, isCreatingRoute } = useRoutes();
   const [name, setName] = useState("");
-  const [deliveryState, setDeliveryState] = useState<DeliveryState | "">("");
+  const [deliveryState, setDeliveryState] = useState<IndianStateName | "">("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {

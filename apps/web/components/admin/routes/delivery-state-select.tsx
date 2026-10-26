@@ -8,15 +8,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useTranslate } from "~/hooks/use-translate";
-import { DELIVERY_STATES, type DeliveryState } from "~/lib/delivery-states";
+import { INDIAN_STATES, type IndianStateName } from "@repo/trpc/client";
 import { cn } from "~/lib/utils";
 
 interface DeliveryStateSelectProps {
   id?: string;
-  value: DeliveryState | "";
+  value: IndianStateName | "";
   disabled?: boolean;
   className?: string;
-  onValueChange: (deliveryState: DeliveryState) => void;
+  onValueChange: (deliveryState: IndianStateName) => void;
 }
 
 /** Indian states and union territories by full official name. */
@@ -33,13 +33,13 @@ export function DeliveryStateSelect({
     <Select
       value={value}
       disabled={disabled}
-      onValueChange={(nextValue) => onValueChange(nextValue as DeliveryState)}
+      onValueChange={(nextValue) => onValueChange(nextValue as IndianStateName)}
     >
       <SelectTrigger id={id} className={cn("w-full rounded-full bg-muted/40", className)}>
         <SelectValue placeholder={tx("admin.routes.deliveryStatePlaceholder")} />
       </SelectTrigger>
       <SelectContent>
-        {DELIVERY_STATES.map((deliveryState) => (
+        {INDIAN_STATES.map(({ name: deliveryState }) => (
           <SelectItem key={deliveryState} value={deliveryState}>
             {deliveryState}
           </SelectItem>

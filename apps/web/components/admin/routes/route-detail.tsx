@@ -12,7 +12,7 @@ import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
-import type { DeliveryState } from "~/lib/delivery-states";
+import type { IndianStateName } from "@repo/trpc/client";
 
 import { DeliveryStateSelect } from "./delivery-state-select";
 import { RoutePriceRow } from "./route-price-row";
@@ -79,7 +79,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     }
   }
 
-  async function commitDeliveryState(deliveryState: DeliveryState) {
+  async function commitDeliveryState(deliveryState: IndianStateName) {
     if (!route || deliveryState === route.deliveryState) return;
     try {
       await updateRouteAsync({ id: route.id, deliveryState });
@@ -142,7 +142,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
           <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
           <DeliveryStateSelect
             id={`route-state-${route.id}`}
-            value={route.deliveryState as DeliveryState}
+            value={route.deliveryState as IndianStateName}
             onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
           />
           <p className="text-xs text-muted-foreground">{tx("admin.routes.deliveryStateHint")}</p>
