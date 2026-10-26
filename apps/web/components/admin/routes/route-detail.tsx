@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -22,6 +22,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
+import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { getErrorMessage } from "~/lib/get-error-message";
 import type { IndianStateName } from "@repo/trpc/client";
 
@@ -50,6 +51,11 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
   const [nameText, setNameText] = useState("");
   const [hideRefusal, setHideRefusal] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const varietyIds = useMemo(
+    () => routePriceForm.map((variety) => variety.varietyId),
+    [routePriceForm],
+  );
+  const { currentTaxes, isCurrentTaxesLoading } = useVarietyTaxPeriods({ varietyIds });
 
   useEffect(() => {
     setNameText(route?.name ?? "");
@@ -228,7 +234,17 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                   {group.productName}
                 </h3>
                 {group.varieties.map((variety) => (
-                  <RoutePriceRow key={variety.varietyId} routeId={route.id} variety={variety} />
+                  <RoutePriceRow
+                    key={variety.varietyId}
+                    routeId={route.id}
+                    variety={variety}
+                    currentTax={
+                      isCurrentTaxesLoading
+                        ? undefined
+                        : (currentTaxes.find((tax) => tax.varietyId === variety.varietyId)
+                            ?.period ?? null)
+                    }
+                  />
                 ))}
               </div>
             ))

@@ -10,13 +10,19 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { bpsToPercent } from "~/lib/gst-rate";
 import { keepRupeeInputCharacters, paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
+
+type VarietyTaxToday = { exempt: boolean; gstRateBps: number };
 
 interface RoutePriceRowProps {
   routeId: string;
   variety: RoutePriceFormRow;
+  /** The Variety's GST for today; null when it has none, undefined while loading. */
+  currentTax?: VarietyTaxToday | null;
 }
 
 /**
@@ -24,7 +30,7 @@ interface RoutePriceRowProps {
  * saved price) beside the field; a saved price makes it Sellable. The switch turning off removes
  * the price straight away. Switching on with no price saves nothing until a price is saved.
  */
-export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
+export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowProps) {
   const tx = useTranslate();
   const { setRoutePriceAsync, clearRoutePriceAsync } = useRoutes();
   const savedPaise = variety.pricePaise;
@@ -213,8 +219,45 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
             className="text-right"
           />
         </div>
-        {errorMessage && <p className="mt-1 text-[11px] text-destructive">{errorMessage}</p>}
+        {errorMessage ? (
+          <p className="mt-1 text-[11px] text-destructive">{errorMessage}</p>
+        ) : (
+          <PriceWithGst
+            pricePaise={parseRupeesToPaise(priceText) ?? null}
+            currentTax={currentTax}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+/** One unit's price after today's GST, under the price box: it follows the price as it is typed. */
+function PriceWithGst({
+  pricePaise,
+  currentTax,
+}: {
+  pricePaise: number | null;
+  currentTax: VarietyTaxToday | null | undefined;
+}) {
+  const tx = useTranslate();
+  const { formatPaise } = useFormatMoney();
+  if (pricePaise == null || currentTax === undefined) return null;
+  if (currentTax === null) {
+    return (
+      <p className="mt-1 text-right text-[11px] text-destructive">
+        {tx("admin.varietyTax.noGstToday")}
+      </p>
+    );
+  }
+  const gstRateBps = currentTax.exempt ? 0 : currentTax.gstRateBps;
+  const withGstPaise = Math.round((pricePaise * (10_000 + gstRateBps)) / 10_000);
+  const amount = formatPaise(withGstPaise);
+  return (
+    <p className="mt-1 text-right text-[11px] text-muted-foreground tabular-nums">
+      {currentTax.exempt
+        ? tx("admin.routes.prices.withGstExempt", { amount })
+        : tx("admin.routes.prices.withGst", { amount, rate: `${bpsToPercent(gstRateBps)}%` })}
+    </p>
   );
 }

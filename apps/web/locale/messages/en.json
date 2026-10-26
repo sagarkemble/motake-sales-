@@ -721,7 +721,9 @@
         "saveFailed": "Could not save the price. Try again.",
         "clearFailed": "Could not remove the price. Try again.",
         "saveAria": "Save price",
-        "cancelAria": "Discard change"
+        "cancelAria": "Discard change",
+        "withGst": "{amount} with {rate} GST",
+        "withGstExempt": "{amount} · GST exempt"
       }
     }
   },

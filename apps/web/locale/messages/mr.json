@@ -721,7 +721,9 @@
         "saveFailed": "दर जतन करता आला नाही. पुन्हा प्रयत्न करा.",
         "clearFailed": "दर काढता आला नाही. पुन्हा प्रयत्न करा.",
         "saveAria": "दर जतन करा",
-        "cancelAria": "बदल रद्द करा"
+        "cancelAria": "बदल रद्द करा",
+        "withGst": "{rate} GST सह {amount}",
+        "withGstExempt": "{amount} · GST मुक्त"
       }
     }
   },
