@@ -11,7 +11,11 @@ import DocumentNumberService from "../document-numbers";
 import { checkoutRefusal } from "../errors";
 import GatepassService from "../gatepass";
 import LedgerService from "../ledger";
-import { assertCustomerOnRoute, noActiveGatepassRefusal } from "../shared/checkout";
+import {
+  assertCustomerActive,
+  assertCustomerOnRoute,
+  noActiveGatepassRefusal,
+} from "../shared/checkout";
 import {
   noCheckoutListener,
   notifyAfterCommit,
@@ -54,6 +58,10 @@ class PaymentService {
   // amount and records the `posted` event linked to that credit.
   public async post(input: PostPaymentInput, executor: DbExecutor): Promise<PostedPayment> {
     const parsedInput = postPaymentInputSchema.parse(input);
+    assertCustomerActive(
+      await getCustomerById(parsedInput.customerId, executor),
+      parsedInput.customerId,
+    );
     const payment = await insertPayment(
       {
         customerId: parsedInput.customerId,

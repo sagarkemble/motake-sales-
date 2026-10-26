@@ -354,7 +354,7 @@ class CustomerService {
     const openOrderCount = await countOpenOrdersByCustomerId(customerId);
     if (openOrderCount > 0) {
       throw conflict(
-        `Customer has ${openOrderCount} open order${openOrderCount === 1 ? "" : "s"} that must be closed or cancelled first`,
+        `Customer has ${openOrderCount} open Pre-order${openOrderCount === 1 ? "" : "s"} and cannot be deactivated`,
       );
     }
 

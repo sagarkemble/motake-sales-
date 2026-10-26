@@ -102,7 +102,7 @@ export const customersRouter = router({
         protect: true,
         summary: "List open orders for a customer",
         description:
-          "Return orders that must be closed or cancelled before the customer can be deactivated.",
+          "Return the Customer's open Pre-orders; a Customer with any cannot be deactivated.",
       },
     })
     .input(customerIdInputSchema)

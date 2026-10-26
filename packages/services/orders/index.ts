@@ -51,6 +51,7 @@ import type { CheckoutPaymentInput } from "../payments/model";
 import RouteService from "../routes";
 import SettingsService from "../settings";
 import {
+  assertCustomerActive,
   assertCustomerOnRoute,
   billTotalZeroRefusal,
   noActiveGatepassRefusal,
@@ -632,6 +633,8 @@ class OrderService {
       basket.lines,
       placeOfSupplyOf(routeStamp.delivery_state, seller.state),
     );
+    // Only to start a checkout, which a deactivated Customer cannot have.
+    if (customer) assertCustomerActive(customer, customer.id);
     const balance = customer ? await this.ledgerService.getBalance(customer.id) : null;
     const billsNow = Boolean(parsedInput.orderId) || parsedInput.orderType === "book_now";
     return {

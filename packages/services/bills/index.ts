@@ -17,7 +17,7 @@ import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import { notFound } from "../errors";
 import LedgerService from "../ledger";
 import SettingsService from "../settings";
-import { billTotalZeroRefusal } from "../shared/checkout";
+import { assertCustomerActive, billTotalZeroRefusal } from "../shared/checkout";
 import { computeBillTax, placeOfSupplyOf } from "../shared/tax-engine";
 import {
   issueBillInputSchema,
@@ -63,7 +63,7 @@ class BillService {
     const parsedInput = issueBillInputSchema.parse(input);
     const seller = await this.settingsService.requireSellerSettings(executor);
     const customer = await getCustomerById(parsedInput.customerId, executor);
-    if (!customer) throw notFound(`Customer ${parsedInput.customerId} not found`);
+    assertCustomerActive(customer, parsedInput.customerId);
 
     const tax = computeBillTax(
       parsedInput.lines,

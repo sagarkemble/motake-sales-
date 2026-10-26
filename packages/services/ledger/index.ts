@@ -15,12 +15,14 @@ import {
   insertLedgerEntry,
   lockLiveCustomerBalance,
 } from "@repo/database/queries/ledger";
+import { getCustomerById } from "@repo/database/queries/customers";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { InsertLedgerEntry } from "@repo/database/schema";
 
 import { badRequest, conflict, notFound } from "../errors";
 import { recordAudit } from "../shared/audit";
+import { assertCustomerActive } from "../shared/checkout";
 import {
   openingBalanceInputSchema,
   postInputSchema,
@@ -71,6 +73,10 @@ class LedgerService {
   ): Promise<PostResult> {
     const parsedInput = openingBalanceInputSchema.parse(input);
     return executor.transaction(async (transaction) => {
+      assertCustomerActive(
+        await getCustomerById(parsedInput.customerId, transaction),
+        parsedInput.customerId,
+      );
       await this.lockBalance(parsedInput.customerId, transaction);
       if (await hasOpeningBalance(parsedInput.customerId, transaction)) {
         throw conflict("This Customer already has an Opening balance");
