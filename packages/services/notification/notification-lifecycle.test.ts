@@ -290,6 +290,70 @@ describe("resend", () => {
     });
   });
 
+  describe("after Meta accepted the run but no status webhook came", () => {
+    async function ageSentAttempt(notificationId: string, hours: number) {
+      await db
+        .update(notificationAttemptsTable)
+        .set({ createdAt: sql`now() - make_interval(hours => ${hours})` })
+        .where(eq(notificationAttemptsTable.notificationId, notificationId));
+      await db
+        .update(notificationsTable)
+        .set({ updatedAt: sql`now() - make_interval(hours => ${hours + 1})` })
+        .where(eq(notificationsTable.id, notificationId));
+    }
+
+    it("is still refused 23 hours after the sent attempt", async () => {
+      const notificationId = await sentNotification("wamid.STALE23");
+      await ageSentAttempt(notificationId, 23);
+
+      await expect(harness.service.resend({ notificationId })).rejects.toMatchObject({
+        code: "CONFLICT",
+      });
+      expect((await notificationRow(notificationId)).status).toBe("pending");
+    });
+
+    it("is allowed 24 hours after the sent attempt, as a new run with a new key", async () => {
+      const notificationId = await sentNotification("wamid.STALE24");
+      await ageSentAttempt(notificationId, 24);
+      const oldRunKey = await currentRunKey(notificationId);
+
+      expect(await harness.service.resend({ notificationId })).toEqual({
+        notificationId,
+        status: "pending",
+      });
+      const newRunKey = await currentRunKey(notificationId);
+      expect(newRunKey).not.toBe(oldRunKey);
+      expect(harness.dispatcher.dispatched.at(-1)).toEqual({ notificationId, runKey: newRunKey });
+      // The new run has no sent attempt yet, so it sends again.
+      harness.provider.scriptSends({ ok: true, providerMessageId: "wamid.STALE24.NEW" });
+      expect(await harness.service.sendAttempt(notificationId, firstTry)).toEqual({
+        outcome: "sent",
+        failureCategory: null,
+      });
+    });
+
+    it("ignores the old attempt's late statuses before and after the new run sends", async () => {
+      const notificationId = await sentNotification("wamid.STALE.OLD");
+      await ageSentAttempt(notificationId, 25);
+      await harness.service.resend({ notificationId });
+
+      // Before the new run has an attempt, the old one is still the latest by number.
+      expect(
+        await harness.service.applyProviderStatus(status("wamid.STALE.OLD", "delivered")),
+      ).toEqual({ applied: false, status: "pending" });
+      harness.provider.scriptSends({ ok: true, providerMessageId: "wamid.STALE.NEW" });
+      await harness.service.sendAttempt(notificationId, firstTry);
+      expect(await harness.service.applyProviderStatus(status("wamid.STALE.OLD", "read"))).toEqual({
+        applied: false,
+        status: "pending",
+      });
+      expect((await notificationRow(notificationId)).status).toBe("pending");
+
+      await harness.service.applyProviderStatus(status("wamid.STALE.NEW", "delivered"));
+      expect((await notificationRow(notificationId)).status).toBe("delivered");
+    });
+  });
+
   it("works from failed, delivered and read, dispatching a new run", async () => {
     for (const [wamid, finalStatus] of [
       ["wamid.RF", "failed"],

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, inArray, lt, max, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, lt, lte, max, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -281,6 +281,33 @@ export async function listCurrentRunAttempts(
       ),
     )
     .orderBy(asc(notificationAttemptsTable.attemptNumber));
+}
+
+// Whether the current run has a sent attempt at least `olderThanMs` old by the database clock.
+export async function hasCurrentRunSentAttemptOlderThan(
+  notificationId: string,
+  olderThanMs: number,
+  executor: DbExecutor = db,
+): Promise<boolean> {
+  const [row] = await executor
+    .select({ id: notificationAttemptsTable.id })
+    .from(notificationAttemptsTable)
+    .where(
+      and(
+        eq(notificationAttemptsTable.notificationId, notificationId),
+        eq(notificationAttemptsTable.status, "sent"),
+        gte(
+          notificationAttemptsTable.createdAt,
+          sql`(SELECT run.updated_at FROM notifications AS run WHERE run.id = ${notificationId})`,
+        ),
+        lte(
+          notificationAttemptsTable.createdAt,
+          sql`now() - make_interval(secs => ${olderThanMs / 1000})`,
+        ),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
 }
 
 // attempt_number = max + 1; callers hold the notification lock.

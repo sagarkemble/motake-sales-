@@ -10,6 +10,7 @@ import {
   getLatestAttemptNumber,
   getNotificationByIdempotencyKey,
   getNotificationStatusRow,
+  hasCurrentRunSentAttemptOlderThan,
   hasHigherTemplateVersion,
   insertNotificationAttempt,
   insertNotificationIfNew,
@@ -93,6 +94,10 @@ const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 
 // A pending run with no attempt after this long lost its dispatch.
 const RECOVERY_AGE_SECONDS = 2 * 60;
+
+// Meta accepted the current run this long ago (database clock) and the row is still pending, so
+// no status webhook came: resend is allowed (the old run's late statuses are then older-attempt statuses and ignored).
+const STALE_SENT_RESEND_AFTER_MS = ONE_DAY_MS;
 
 // Resend and suppress wait at most this long for a send holding the row lock, then answer CONFLICT.
 const INSTRUCTION_LOCK_TIMEOUT_MS = 3_000;
@@ -343,7 +348,14 @@ class NotificationService {
     const { notification, runKey } = await this.withInstructionLock(async (transaction) => {
       const row = await lockNotificationWithTemplate(parsedInput.notificationId, transaction);
       if (!row) throw notFound(`Notification ${parsedInput.notificationId} not found`);
-      if (row.notification.status === "pending") {
+      if (
+        row.notification.status === "pending" &&
+        !(await hasCurrentRunSentAttemptOlderThan(
+          row.notification.id,
+          STALE_SENT_RESEND_AFTER_MS,
+          transaction,
+        ))
+      ) {
         throw conflict("This WhatsApp is still being sent; resend it once it has an outcome");
       }
       if (await hasHigherTemplateVersion(row.template, transaction)) {
