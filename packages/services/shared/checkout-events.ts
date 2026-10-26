@@ -1,5 +1,7 @@
 import { logger } from "@repo/logger";
 
+import { internalError } from "../errors";
+
 // What a checkout tells Spec J (WhatsApp) after its transaction commits. Every figure was captured
 // inside the transaction, so the listener never re-derives a Balance.
 
@@ -7,6 +9,13 @@ export interface RouteStamp {
   name: string;
   code: string;
   delivery_state: string;
+}
+
+// The Route stamp copied into order_versions v1 at place and carried forward unchanged.
+export function routeStampFromHeader(header: unknown): RouteStamp {
+  const stamp = (header as { route?: RouteStamp } | null)?.route;
+  if (!stamp) throw internalError("Order version has no Route stamp");
+  return stamp;
 }
 
 export interface BillIssuedEvent {

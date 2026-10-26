@@ -302,8 +302,9 @@ export async function incrementSoldQtyIfAvailable(
 export async function restoreSoldQtyOnCancellation(
   gatepassItemId: string,
   quantity: number,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepassItem | undefined> {
-  const [updatedItem] = await db
+  const [updatedItem] = await executor
     .update(gatepassItemsTable)
     .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${quantity}` })
     .where(

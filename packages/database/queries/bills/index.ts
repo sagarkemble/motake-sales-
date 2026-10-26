@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, ilike, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -7,6 +7,7 @@ import {
   billVersionsTable,
   customersTable,
   ordersTable,
+  profilesTable,
   type InsertBill,
   type InsertBillItem,
   type InsertBillVersion,
@@ -221,4 +222,159 @@ export async function getBillByOrderId(
 ): Promise<SelectBill | undefined> {
   const [bill] = await executor.select().from(billsTable).where(eq(billsTable.orderId, orderId));
   return bill;
+}
+
+// --- Admin Bill paper (Spec G): lock, Correct's live rewrite and Bill history reads.
+
+export async function lockBillRow(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor
+    .select()
+    .from(billsTable)
+    .where(eq(billsTable.id, billId))
+    .for("update");
+  return bill;
+}
+
+export async function getBillById(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor.select().from(billsTable).where(eq(billsTable.id, billId));
+  return bill;
+}
+
+// The Customer on the Bill's Ledger Bill debit (the order's Customer for an order-backed Bill; an
+// office Bill has no other link).
+export async function findBillCustomerId(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<string | null> {
+  const [row] = await executor
+    .select({ customerId: billCustomerId })
+    .from(billsTable)
+    .where(eq(billsTable.id, billId));
+  return row?.customerId ?? null;
+}
+
+export async function listBillItemsByBillId(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBillItem[]> {
+  return executor
+    .select()
+    .from(billItemsTable)
+    .where(eq(billItemsTable.billId, billId))
+    .orderBy(asc(billItemsTable.createdAt), asc(billItemsTable.id));
+}
+
+export async function updateBill(
+  billId: string,
+  changes: Partial<
+    Pick<
+      InsertBill,
+      | "legalType"
+      | "letterhead"
+      | "totalQuantity"
+      | "totalPaise"
+      | "taxablePaise"
+      | "cgstPaise"
+      | "sgstPaise"
+      | "igstPaise"
+      | "roundOffPaise"
+    >
+  >,
+  executor: DbExecutor = db,
+): Promise<SelectBill> {
+  const updatedRows = await executor
+    .update(billsTable)
+    .set(changes)
+    .where(eq(billsTable.id, billId))
+    .returning();
+  return firstOrThrow(updatedRows, "updateBill");
+}
+
+// Correct keeps a surviving line's id, so one line has one id in every version.
+export async function updateBillItem(
+  billItemId: string,
+  changes: Pick<
+    InsertBillItem,
+    "quantity" | "taxablePaise" | "cgstPaise" | "sgstPaise" | "igstPaise"
+  >,
+  executor: DbExecutor = db,
+): Promise<SelectBillItem> {
+  const updatedRows = await executor
+    .update(billItemsTable)
+    .set(changes)
+    .where(eq(billItemsTable.id, billItemId))
+    .returning();
+  return firstOrThrow(updatedRows, "updateBillItem");
+}
+
+export async function deleteBillItems(
+  billItemIds: string[],
+  executor: DbExecutor = db,
+): Promise<void> {
+  if (billItemIds.length === 0) return;
+  await executor.delete(billItemsTable).where(inArray(billItemsTable.id, billItemIds));
+}
+
+export async function getLatestBillVersion(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBillVersion | undefined> {
+  const [version] = await executor
+    .select()
+    .from(billVersionsTable)
+    .where(eq(billVersionsTable.billId, billId))
+    .orderBy(desc(billVersionsTable.versionNumber))
+    .limit(1);
+  return version;
+}
+
+export async function getBillVersionByNumber(
+  billId: string,
+  versionNumber: number,
+  executor: DbExecutor = db,
+): Promise<SelectBillVersion | undefined> {
+  const [version] = await executor
+    .select()
+    .from(billVersionsTable)
+    .where(
+      and(eq(billVersionsTable.billId, billId), eq(billVersionsTable.versionNumber, versionNumber)),
+    );
+  return version;
+}
+
+export interface BillVersionListRow {
+  id: string;
+  versionNumber: number;
+  reason: string;
+  actorId: string;
+  actorName: string | null;
+  hasPdf: boolean;
+  createdAt: Date;
+}
+
+// Bill history, newest first, with who made each version.
+export async function listBillVersions(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<BillVersionListRow[]> {
+  return executor
+    .select({
+      id: billVersionsTable.id,
+      versionNumber: billVersionsTable.versionNumber,
+      reason: billVersionsTable.reason,
+      actorId: billVersionsTable.actorId,
+      actorName: profilesTable.name,
+      hasPdf: sql<boolean>`${billVersionsTable.pdfKey} IS NOT NULL`,
+      createdAt: billVersionsTable.createdAt,
+    })
+    .from(billVersionsTable)
+    .leftJoin(profilesTable, eq(billVersionsTable.actorId, profilesTable.id))
+    .where(eq(billVersionsTable.billId, billId))
+    .orderBy(desc(billVersionsTable.versionNumber));
 }

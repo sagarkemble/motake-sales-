@@ -1,11 +1,9 @@
-import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
   billsTable,
   customersTable,
-  gatepassItemsTable,
-  gatepassesTable,
   orderItemsTable,
   ordersTable,
   orderVersionsTable,
@@ -22,7 +20,6 @@ import {
   type SelectOrderVersion,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
-import { businessDateOf } from "../shared/business-date";
 import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
@@ -385,25 +382,6 @@ export async function listOrders(
   return toPaginatedResult(rowsWithItemPreviews, totalCount, pagination);
 }
 
-export async function cancelOrder(
-  orderId: string,
-  cancelledBy: string,
-  cancelledAt: Date,
-): Promise<SelectOrder | undefined> {
-  const [cancelledOrder] = await db
-    .update(ordersTable)
-    .set({ status: "cancelled", cancelledAt, cancelledBy })
-    .where(
-      and(
-        eq(ordersTable.id, orderId),
-        isNull(ordersTable.fulfilledAt),
-        isNull(ordersTable.cancelledAt),
-      ),
-    )
-    .returning();
-  return cancelledOrder;
-}
-
 export async function countOrdersPlacedInRange(
   filters: { salesmanId?: string; type?: SelectOrder["type"] },
   range: { from: Date; to: Date },
@@ -446,83 +424,6 @@ export async function getOrderCountsPerSalesmanInRange(range: {
     .orderBy(desc(count()));
 }
 
-export async function cancelBookNowOrderWithGatepassRestoration(
-  orderId: string,
-  cancelledBy: string,
-): Promise<SelectOrder> {
-  return db.transaction(async (tx) => {
-    const [existingOrder] = await tx
-      .select()
-      .from(ordersTable)
-      .where(eq(ordersTable.id, orderId))
-      .for("update");
-
-    if (!existingOrder) {
-      throw new Error(`Order ${orderId} not found`);
-    }
-    if (existingOrder.fulfilledAt || existingOrder.cancelledAt) {
-      throw new Error(`Order ${orderId} cannot be cancelled, it is already fulfilled or cancelled`);
-    }
-
-    if (existingOrder.type === "book_now") {
-      const businessDate = businessDateOf(existingOrder.placedAt);
-      const salesmanId = existingOrder.salesmanId;
-      if (!salesmanId) {
-        throw new Error(`Cannot restore book_now order ${orderId}, no gatepass found for it`);
-      }
-      const [salesmanGatepass] = await tx
-        .select()
-        .from(gatepassesTable)
-        .where(
-          and(
-            eq(gatepassesTable.salesmanId, salesmanId),
-            eq(gatepassesTable.businessDate, businessDate),
-          ),
-        )
-        .for("update");
-
-      if (!salesmanGatepass) {
-        throw new Error(
-          `Cannot restore book_now order ${orderId}, no gatepass found for salesman ${existingOrder.salesmanId} on ${businessDate}`,
-        );
-      }
-
-      const orderLineItems = await tx
-        .select()
-        .from(orderItemsTable)
-        .where(eq(orderItemsTable.orderId, orderId));
-
-      for (const lineItem of orderLineItems) {
-        const [restoredGatepassItem] = await tx
-          .update(gatepassItemsTable)
-          .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${lineItem.quantity}` })
-          .where(
-            and(
-              eq(gatepassItemsTable.gatepassId, salesmanGatepass.id),
-              eq(gatepassItemsTable.varietyId, lineItem.varietyId),
-              sql`${gatepassItemsTable.soldQty} >= ${lineItem.quantity}`,
-            ),
-          )
-          .returning();
-
-        if (!restoredGatepassItem) {
-          throw new Error(
-            `Cannot restore ${lineItem.quantity} of variety ${lineItem.varietyId} to gatepass ${salesmanGatepass.id}, sold quantity would go negative`,
-          );
-        }
-      }
-    }
-
-    const cancelledOrderRows = await tx
-      .update(ordersTable)
-      .set({ status: "cancelled", cancelledAt: new Date(), cancelledBy })
-      .where(eq(ordersTable.id, orderId))
-      .returning();
-
-    return firstOrThrow(cancelledOrderRows, "cancelBookNowOrderWithGatepassRestoration");
-  });
-}
-
 // --- Checkout write path (Spec F): place, fulfil and their order_versions.
 
 export async function lockOrderRow(
@@ -555,7 +456,12 @@ export async function insertOrderItems(
 
 export async function updateOrder(
   orderId: string,
-  changes: Partial<Pick<InsertOrder, "status" | "fulfilledAt" | "fulfilledBy" | "gatepassId">>,
+  changes: Partial<
+    Pick<
+      InsertOrder,
+      "status" | "fulfilledAt" | "fulfilledBy" | "gatepassId" | "cancelledAt" | "cancelledBy"
+    >
+  >,
   executor: DbExecutor = db,
 ): Promise<SelectOrder> {
   const updatedRows = await executor
@@ -640,8 +546,24 @@ export async function listOpenPreordersOnRoute(
       ),
     )
     .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt), asc(ordersTable.id));
-  if (rows.length === 0) return [];
+  const linesByOrderId = await listPreorderLines(
+    rows.map((row) => row.id),
+    executor,
+  );
+  return rows.map((row) => ({
+    ...row,
+    // Every Pre-order has a scheduled date.
+    scheduledDate: row.scheduledDate ?? "",
+    lines: linesByOrderId.get(row.id) ?? [],
+  }));
+}
 
+async function listPreorderLines(
+  orderIds: string[],
+  executor: DbExecutor,
+): Promise<Map<string, RoutePreorderLine[]>> {
+  const linesByOrderId = new Map<string, RoutePreorderLine[]>();
+  if (orderIds.length === 0) return linesByOrderId;
   const itemRows = await executor
     .select({
       orderId: orderItemsTable.orderId,
@@ -650,14 +572,8 @@ export async function listOpenPreordersOnRoute(
       quantity: orderItemsTable.quantity,
     })
     .from(orderItemsTable)
-    .where(
-      inArray(
-        orderItemsTable.orderId,
-        rows.map((row) => row.id),
-      ),
-    )
+    .where(inArray(orderItemsTable.orderId, orderIds))
     .orderBy(asc(orderItemsTable.createdAt), asc(orderItemsTable.id));
-  const linesByOrderId = new Map<string, RoutePreorderLine[]>();
   for (const itemRow of itemRows) {
     const stamp = itemRow.stamp as OrderLineStamp;
     const lines = linesByOrderId.get(itemRow.orderId) ?? [];
@@ -669,10 +585,57 @@ export async function listOpenPreordersOnRoute(
     });
     linesByOrderId.set(itemRow.orderId, lines);
   }
+  return linesByOrderId;
+}
 
+export interface CustomerPreorderRow {
+  id: string;
+  status: SelectOrder["status"];
+  scheduledDate: string;
+  placedAt: Date;
+  // The place-time Route stamp carried in the latest order version.
+  route: { name: string; code: string; delivery_state: string } | null;
+  placedByName: string | null;
+  totalQuantity: number;
+  lines: RoutePreorderLine[];
+}
+
+// One Customer's unfulfilled Pre-orders (Spec G's Open Pre-orders list beside the Ledger),
+// earliest scheduled date first. Never Ledger rows.
+export async function listOpenPreordersForCustomer(
+  customerId: string,
+  executor: DbExecutor = db,
+): Promise<CustomerPreorderRow[]> {
+  const rows = await executor
+    .select({
+      id: ordersTable.id,
+      status: ordersTable.status,
+      scheduledDate: ordersTable.scheduledDate,
+      placedAt: ordersTable.placedAt,
+      route: sql<CustomerPreorderRow["route"]>`(
+        SELECT "order_versions"."header" -> 'route' FROM "order_versions"
+        WHERE "order_versions"."order_id" = "orders"."id"
+        ORDER BY "order_versions"."version_number" DESC LIMIT 1
+      )`,
+      placedByName: profilesTable.name,
+      totalQuantity: orderQuantity,
+    })
+    .from(ordersTable)
+    .leftJoin(profilesTable, eq(ordersTable.salesmanId, profilesTable.id))
+    .where(
+      and(
+        eq(ordersTable.customerId, customerId),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, [...OPEN_PREORDER_STATUSES]),
+      ),
+    )
+    .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt), asc(ordersTable.id));
+  const linesByOrderId = await listPreorderLines(
+    rows.map((row) => row.id),
+    executor,
+  );
   return rows.map((row) => ({
     ...row,
-    // Every Pre-order has a scheduled date.
     scheduledDate: row.scheduledDate ?? "",
     lines: linesByOrderId.get(row.id) ?? [],
   }));

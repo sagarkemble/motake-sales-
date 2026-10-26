@@ -316,6 +316,34 @@ export async function listSellableVarietiesBySkus(
     );
 }
 
+// Same rule as by SKU, for Admin Raise Bill (lines arrive as Variety ids).
+export async function listSellableVarietiesByIds(
+  varietyIds: string[],
+  executor: DbExecutor = db,
+): Promise<SellableVarietyBySku[]> {
+  if (varietyIds.length === 0) return [];
+  return executor
+    .select({
+      id: productVarietiesTable.id,
+      sku: productVarietiesTable.sku,
+      name: productVarietiesTable.name,
+      unit: productVarietiesTable.unit,
+      productName: productsTable.name,
+    })
+    .from(productVarietiesTable)
+    .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
+    .where(
+      and(
+        inArray(productVarietiesTable.id, varietyIds),
+        eq(productVarietiesTable.status, "active"),
+        isNull(productVarietiesTable.deletedAt),
+        eq(productsTable.status, "active"),
+        isNull(productsTable.deletedAt),
+      ),
+    )
+    .orderBy(asc(productsTable.name), asc(productVarietiesTable.name));
+}
+
 export async function updateProductVariety(
   varietyId: string,
   changes: Partial<InsertProductVariety>,
