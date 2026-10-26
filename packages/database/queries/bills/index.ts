@@ -192,7 +192,10 @@ export async function listBills(
 
 // --- Bill issue (Spec F): the paper, its lines and bill_versions v1.
 
-export async function insertBill(newBill: InsertBill, executor: DbExecutor = db): Promise<SelectBill> {
+export async function insertBill(
+  newBill: InsertBill,
+  executor: DbExecutor = db,
+): Promise<SelectBill> {
   const insertedRows = await executor.insert(billsTable).values(newBill).returning();
   return firstOrThrow(insertedRows, "insertBill");
 }

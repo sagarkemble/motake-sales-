@@ -461,7 +461,10 @@ describe("OrderService.fulfilPreOrder", () => {
     });
     expect(
       await refusalOf(
-        orderService.fulfilPreOrder({ profileId: idle.id, role: "salesman" }, fulfilInput(placed.orderId)),
+        orderService.fulfilPreOrder(
+          { profileId: idle.id, role: "salesman" },
+          fulfilInput(placed.orderId),
+        ),
       ),
     ).toMatchObject({ reason: "no_active_gatepass" });
     expect(await db.select().from(billsTable)).toHaveLength(0);
@@ -560,7 +563,9 @@ describe("OrderService.fulfilPreOrder", () => {
     ]);
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    const rejected = results.find((result) => result.status === "rejected") as PromiseRejectedResult;
+    const rejected = results.find(
+      (result) => result.status === "rejected",
+    ) as PromiseRejectedResult;
     expect(checkoutRefusalOf(rejected.reason)).toMatchObject({ reason: "already_fulfilled" });
     expect(await db.select().from(billsTable)).toHaveLength(1);
     expect(await db.select().from(ledgerEntriesTable)).toHaveLength(1);
@@ -747,7 +752,6 @@ describe("OrderService.fulfilPreOrder events", () => {
     ]);
   });
 });
-
 
 describe("OrderService.listRoutePreorders", () => {
   it("lists open Pre-orders on the GatePass Route from any salesman, with due state", async () => {

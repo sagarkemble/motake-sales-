@@ -24,11 +24,11 @@ export function assertCustomerOnRoute(
     });
   }
   if (customer.routeId !== routeId) {
-    throw checkoutRefusal(
-      "customer_not_on_route",
-      `${customer.shopName} is not on this Route`,
-      { customerId: customer.id, customerRouteId: customer.routeId, routeId },
-    );
+    throw checkoutRefusal("customer_not_on_route", `${customer.shopName} is not on this Route`, {
+      customerId: customer.id,
+      customerRouteId: customer.routeId,
+      routeId,
+    });
   }
 }
 

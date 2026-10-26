@@ -233,4 +233,10 @@ class PaymentService {
 export default PaymentService;
 export { splitPayment } from "./overpay";
 export type { OverpayChoice, PaymentMode, PaymentSplit } from "./overpay";
-export type { CheckoutPaymentInput, FieldPaymentResult, PostedPayment, PostPaymentInput, RecordFieldPaymentInput } from "./model";
+export type {
+  CheckoutPaymentInput,
+  FieldPaymentResult,
+  PostedPayment,
+  PostPaymentInput,
+  RecordFieldPaymentInput,
+} from "./model";

@@ -223,10 +223,14 @@ function totalsOf(tax: BillTax<ResolvedLine>): QuoteTotals {
 }
 
 function wrongRouteRefusal(order: SelectOrder, gatepassRouteId: string) {
-  return checkoutRefusal("wrong_route", "This Pre-order is on another Route than your Active GatePass.", {
-    preOrderRouteId: order.routeId,
-    gatepassRouteId,
-  });
+  return checkoutRefusal(
+    "wrong_route",
+    "This Pre-order is on another Route than your Active GatePass.",
+    {
+      preOrderRouteId: order.routeId,
+      gatepassRouteId,
+    },
+  );
 }
 
 function toBillLines(items: OrderItem[]): IssueBillInput["lines"] {
@@ -296,7 +300,10 @@ class OrderService {
         const gatepassItemIds = await this.lockStock(gatepass.id, basket.lines, transaction);
 
         const seller = await this.settingsService.requireSellerSettings(transaction);
-        const tax = computeBillTax(basket.lines, placeOfSupplyOf(route.deliveryState, seller.state));
+        const tax = computeBillTax(
+          basket.lines,
+          placeOfSupplyOf(route.deliveryState, seller.state),
+        );
         if (tax.totalPaise === 0) throw billTotalZeroRefusal();
         const routeStamp = routeStampOf(route);
 
@@ -397,7 +404,10 @@ class OrderService {
         assertNoBadLines(basket.badLines);
 
         const seller = await this.settingsService.requireSellerSettings(transaction);
-        const tax = computeBillTax(basket.lines, placeOfSupplyOf(route.deliveryState, seller.state));
+        const tax = computeBillTax(
+          basket.lines,
+          placeOfSupplyOf(route.deliveryState, seller.state),
+        );
         // It could never be fulfilled.
         if (tax.totalPaise === 0) throw billTotalZeroRefusal();
 
@@ -490,7 +500,8 @@ class OrderService {
             transaction,
           );
           if (!activeGatepass) throw noActiveGatepassRefusal();
-          if (activeGatepass.route.id !== order.routeId) throw wrongRouteRefusal(order, activeGatepass.route.id);
+          if (activeGatepass.route.id !== order.routeId)
+            throw wrongRouteRefusal(order, activeGatepass.route.id);
           gatepassId = activeGatepass.gatepass.id;
         }
 
@@ -581,7 +592,8 @@ class OrderService {
           parsedActor.profileId,
         );
         if (!activeGatepass) throw noActiveGatepassRefusal();
-        if (activeGatepass.route.id !== order.routeId) throw wrongRouteRefusal(order, activeGatepass.route.id);
+        if (activeGatepass.route.id !== order.routeId)
+          throw wrongRouteRefusal(order, activeGatepass.route.id);
       }
       const latestVersion = await getLatestOrderVersion(order.id);
       if (!latestVersion) throw internalError(`Order ${order.id} has no version`);
@@ -618,7 +630,10 @@ class OrderService {
     }
 
     const seller = await this.settingsService.requireSellerSettings();
-    const tax = computeBillTax(basket.lines, placeOfSupplyOf(routeStamp.delivery_state, seller.state));
+    const tax = computeBillTax(
+      basket.lines,
+      placeOfSupplyOf(routeStamp.delivery_state, seller.state),
+    );
     const balance = customer ? await this.ledgerService.getBalance(customer.id) : null;
     const billsNow = Boolean(parsedInput.orderId) || parsedInput.orderType === "book_now";
     return {

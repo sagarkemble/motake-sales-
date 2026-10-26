@@ -68,7 +68,10 @@ export async function getCheckoutPaymentForBill(
       and(
         eq(paymentsTable.customerId, ledgerEntriesTable.customerId),
         eq(paymentsTable.actorId, ledgerEntriesTable.actorId),
-        eq(paymentsTable.occurredAt, sql`${ledgerEntriesTable.occurredAt} + interval '1 millisecond'`),
+        eq(
+          paymentsTable.occurredAt,
+          sql`${ledgerEntriesTable.occurredAt} + interval '1 millisecond'`,
+        ),
         like(paymentsTable.idempotencyKey, "%:pay"),
       ),
     )

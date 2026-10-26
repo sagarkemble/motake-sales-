@@ -83,9 +83,12 @@ async function refusalOf(call: Promise<unknown>) {
 
 async function countRows() {
   const count = async (
-    table: typeof ordersTable | typeof billsTable | typeof ledgerEntriesTable | typeof paymentsTable,
-  ) =>
-    Number((await db.select({ total: sql<number>`count(*)` }).from(table))[0]!.total);
+    table:
+      | typeof ordersTable
+      | typeof billsTable
+      | typeof ledgerEntriesTable
+      | typeof paymentsTable,
+  ) => Number((await db.select({ total: sql<number>`count(*)` }).from(table))[0]!.total);
   return {
     orders: await count(ordersTable),
     bills: await count(billsTable),
@@ -128,7 +131,10 @@ describe("OrderService.placeBookNow", () => {
   it("writes the order, Bill, v1 versions, stock and Ledger once with correct links", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
 
-    const result = await orderService.placeBookNow(world.salesman.id, bookNowInput(world, { notes: " Leave at gate " }));
+    const result = await orderService.placeBookNow(
+      world.salesman.id,
+      bookNowInput(world, { notes: " Leave at gate " }),
+    );
 
     // 3 × ₹24.99 at 5% intra (₹1.87 + ₹1.87) + ₹40 exempt = ₹118.71 → ₹119.00.
     expect(result).toEqual({
@@ -354,7 +360,9 @@ describe("OrderService.placeBookNow", () => {
     it("for an empty basket", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       expect(
-        await refusalOf(orderService.placeBookNow(world.salesman.id, bookNowInput(world, { lines: [] }))),
+        await refusalOf(
+          orderService.placeBookNow(world.salesman.id, bookNowInput(world, { lines: [] })),
+        ),
       ).toMatchObject({ reason: "empty_basket" });
       await expectNothingWritten(world);
     });
@@ -481,9 +489,12 @@ describe("OrderService.placeBookNow", () => {
         orderService.placeBookNow(
           world.salesman.id,
           bookNowInput(world, {
-            lines: [inactiveVariety, deletedVariety, inactiveProductVariety, deletedProductVariety].map(
-              (variety) => ({ sku: variety.sku, qty: 1 }),
-            ),
+            lines: [
+              inactiveVariety,
+              deletedVariety,
+              inactiveProductVariety,
+              deletedProductVariety,
+            ].map((variety) => ({ sku: variety.sku, qty: 1 })),
           }),
         ),
       );
@@ -720,7 +731,11 @@ describe("OrderService.placeBookNow checkout Payment", () => {
       balancePaise: -3_100,
     });
     const [payment] = await paymentsOf(world.customer.id);
-    expect(payment).toMatchObject({ mode: "upi", reference: "UPI-77", amountReceivedPaise: 15_000 });
+    expect(payment).toMatchObject({
+      mode: "upi",
+      reference: "UPI-77",
+      amountReceivedPaise: 15_000,
+    });
   });
 
   it("clears Pending from an Advance first: any money is extra over a covered Bill", async () => {
@@ -749,7 +764,9 @@ describe("OrderService.placeBookNow checkout Payment", () => {
 
     const kept = await orderService.placeBookNow(
       world.salesman.id,
-      bookNowInput(world, { payment: { mode: "cash", receivedPaise: 1_000, overpay: "keep_advance" } }),
+      bookNowInput(world, {
+        payment: { mode: "cash", receivedPaise: 1_000, overpay: "keep_advance" },
+      }),
     );
     expect(kept).toMatchObject({
       balanceAfterBillPaise: 3_800,
@@ -819,7 +836,6 @@ describe("OrderService.placeBookNow checkout Payment", () => {
   });
 });
 
-
 describe("OrderService.placeBookNow idempotency and races", () => {
   it("returns the first result for the same key, with one of everything", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
@@ -861,7 +877,9 @@ describe("OrderService.placeBookNow idempotency and races", () => {
     ]);
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    const rejected = results.find((result) => result.status === "rejected") as PromiseRejectedResult;
+    const rejected = results.find(
+      (result) => result.status === "rejected",
+    ) as PromiseRejectedResult;
     expect(checkoutRefusalOf(rejected.reason)).toMatchObject({
       reason: "short_stock",
       details: { lines: [{ sku: world.milk.sku, name: "Milk 1 L", needQty: 3, leftQty: 0 }] },

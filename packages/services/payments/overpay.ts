@@ -32,7 +32,8 @@ export function splitPayment(input: {
     }
     return { receivedPaise, keptPaise: receivedPaise, returnedPaise: 0 };
   }
-  if (receivedPaise <= requiredPaise) return { receivedPaise, keptPaise: receivedPaise, returnedPaise: 0 };
+  if (receivedPaise <= requiredPaise)
+    return { receivedPaise, keptPaise: receivedPaise, returnedPaise: 0 };
   if (overpay === "return_change") {
     return {
       receivedPaise,
@@ -40,7 +41,8 @@ export function splitPayment(input: {
       returnedPaise: receivedPaise - requiredPaise,
     };
   }
-  if (overpay === "keep_advance") return { receivedPaise, keptPaise: receivedPaise, returnedPaise: 0 };
+  if (overpay === "keep_advance")
+    return { receivedPaise, keptPaise: receivedPaise, returnedPaise: 0 };
   throw checkoutRefusal(
     "overpay_choice_required",
     "Cash is more than needed to clear Pending. Choose return change or keep as Advance.",

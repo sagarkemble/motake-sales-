@@ -166,7 +166,10 @@ describe("PaymentService.recordFieldPayment", () => {
     ).toMatchObject({ reason: "field_payment_kept_zero" });
     expect(
       await refusalOf(
-        paymentService.recordFieldPayment(world.salesman.id, fieldInput(world, { receivedPaise: 0 })),
+        paymentService.recordFieldPayment(
+          world.salesman.id,
+          fieldInput(world, { receivedPaise: 0 }),
+        ),
       ),
     ).toMatchObject({ reason: "field_payment_kept_zero" });
     expect(
@@ -346,4 +349,3 @@ describe("PaymentService.recordFieldPayment", () => {
     expect((await ledger.getBalance(world.customer.id)).balancePaise).toBe(0);
   });
 });
-

@@ -2,10 +2,7 @@ import type { RoutePreorderRow } from "@repo/database/queries/orders";
 import { z } from "zod";
 
 import type { Balance } from "../ledger";
-import {
-  checkoutPaymentInputSchema,
-  idempotencyKeySchema,
-} from "../payments/model";
+import { checkoutPaymentInputSchema, idempotencyKeySchema } from "../payments/model";
 import type { LegalType } from "../shared/tax-engine";
 
 export const listOrdersInputSchema = z.object({
