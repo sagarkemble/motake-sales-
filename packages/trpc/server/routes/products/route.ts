@@ -1,4 +1,4 @@
-import { productService } from "../../services";
+import { productService, varietyTaxPeriodService } from "../../services";
 import { z } from "../../schema";
 import { adminProcedure, protectedProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
@@ -9,14 +9,21 @@ import {
   createImageUploadUrlOutputSchema,
   createProductInputSchema,
   createProductVarietyInputSchema,
+  currentTaxForVarietiesInputSchema,
+  currentTaxSchema,
+  deleteTaxPeriodOutputSchema,
   listProductsInputSchema,
+  listTaxPeriodsInputSchema,
   paginatedProductsSchema,
   productIdInputSchema,
   productSchema,
   productVarietiesInputSchema,
   productVarietySchema,
+  taxPeriodListSchema,
   updateProductInputSchema,
   updateProductVarietyInputSchema,
+  upsertTaxPeriodInputSchema,
+  upsertTaxPeriodOutputSchema,
   varietyIdInputSchema,
 } from "./model";
 
@@ -293,5 +300,81 @@ export const productsRouter = router({
       const variety = await productService.reactivateProductVariety(input.id, ctx.user.id);
       if (!variety) throw notFound(`Product variety ${input.id} not found`);
       return apiResponse(variety);
+    }),
+
+  listTaxPeriods: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/varieties/{varietyId}/tax-periods"),
+        tags: ["Products"],
+        protect: true,
+        summary: "List a variety's tax periods",
+        description:
+          "Return every GST period of a variety, newest start first, with the current financial year. Admin only.",
+      },
+    })
+    .input(listTaxPeriodsInputSchema)
+    .output(apiResponseSchema(taxPeriodListSchema))
+    .query(async ({ input }) => {
+      const list = await varietyTaxPeriodService.listForVariety(input.varietyId);
+      return apiResponse(list);
+    }),
+
+  currentTaxForVarieties: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/varieties/current-tax"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Today's tax for varieties",
+        description:
+          "Return the GST period covering today for each variety, or null when it cannot be sold today. Admin only.",
+      },
+    })
+    .input(currentTaxForVarietiesInputSchema)
+    .output(apiResponseSchema(z.array(currentTaxSchema)))
+    .query(async ({ input }) => {
+      const current = await varietyTaxPeriodService.getCurrentForVarieties(input.varietyIds);
+      return apiResponse(current);
+    }),
+
+  upsertTaxPeriod: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/varieties/{varietyId}/tax-periods"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Add or edit a tax period",
+        description:
+          "Add a GST period, or overwrite HSN, exempt and rate of the period with the same start. Only starts in the current financial year. Admin only.",
+      },
+    })
+    .input(upsertTaxPeriodInputSchema)
+    .output(apiResponseSchema(upsertTaxPeriodOutputSchema))
+    .mutation(async ({ ctx, input }) => {
+      const result = await varietyTaxPeriodService.upsert(input, ctx.user.id);
+      return apiResponse(result);
+    }),
+
+  deleteTaxPeriod: adminProcedure
+    .meta({
+      openapi: {
+        method: "DELETE",
+        path: path("/tax-periods/{id}"),
+        tags: ["Products"],
+        protect: true,
+        summary: "Delete a tax period",
+        description:
+          "Delete a GST period that starts in the current financial year and return what covers today afterwards. Admin only.",
+      },
+    })
+    .input(varietyIdInputSchema)
+    .output(apiResponseSchema(deleteTaxPeriodOutputSchema))
+    .mutation(async ({ ctx, input }) => {
+      const result = await varietyTaxPeriodService.delete(input.id, ctx.user.id);
+      return apiResponse(result);
     }),
 });

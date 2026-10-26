@@ -31,3 +31,21 @@ export const tooManyRequests = (
     cause:
       retryAfterMs !== undefined ? Object.assign(new Error(message), { retryAfterMs }) : undefined,
   });
+
+export interface UncoveredVariety {
+  id: string;
+  name: string;
+  sku: string;
+}
+
+// Every Variety in the request that has no tax period covering `day`, so the caller can refuse the
+// whole basket in one go.
+export const noCoveringTaxPeriod = (uncoveredVarieties: UncoveredVariety[], day: string) => {
+  const names = uncoveredVarieties.map((variety) => variety.name).join(", ");
+  const message = `No GST for ${day}, cannot be sold: ${names}`;
+  return new TRPCError({
+    code: "BAD_REQUEST",
+    message,
+    cause: Object.assign(new Error(message), { uncoveredVarieties, day }),
+  });
+};

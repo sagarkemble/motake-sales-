@@ -1,8 +1,16 @@
 "use client";
 
 import type { RouterOutputs } from "@repo/trpc/client";
-import { useState } from "react";
-import { BoxIcon, PencilIcon, PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  AlertTriangleIcon,
+  BoxIcon,
+  PencilIcon,
+  PercentIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  XIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -22,12 +30,14 @@ import { StatusBadge } from "~/components/admin/products/status-badge";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
+import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { cn } from "~/lib/utils";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import {
   VarietyFormDialog,
   type VarietyFormValues,
 } from "~/components/admin/products/variety-form-dialog";
+import { VarietyTaxPanel } from "~/components/admin/products/variety-tax-panel";
 
 type ProductVariety = RouterOutputs["products"]["listVarieties"]["data"][number];
 
@@ -54,6 +64,17 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [addedVarietyId, setAddedVarietyId] = useState<string | null>(null);
   const [reactivatingVariety, setReactivatingVariety] = useState<ProductVariety | null>(null);
+  const [taxVarietyId, setTaxVarietyId] = useState<string | null>(null);
+
+  const varietyIds = useMemo(
+    () => productVarieties.map((variety) => variety.id),
+    [productVarieties],
+  );
+  const { currentTaxes, isCurrentTaxesLoading, isCurrentTaxesError } = useVarietyTaxPeriods({
+    varietyIds,
+  });
+  // Kept by id so the panel shows the Variety's latest name and status after a refetch.
+  const taxVariety = productVarieties.find((variety) => variety.id === taxVarietyId) ?? null;
 
   function openAddDialog() {
     setEditingVariety(null);
@@ -127,7 +148,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
               <div
                 key={variety.id}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border bg-background p-3",
+                  "flex flex-wrap items-start gap-3 rounded-xl border bg-background p-3",
                   isInactive && "border-dashed bg-muted/30",
                   variety.id === addedVarietyId && "border-brand ring-2 ring-brand/20",
                 )}
@@ -149,6 +170,19 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                     </span>
                   </p>
                   <SkuChip sku={variety.sku} muted={isInactive} className="mt-1" />
+                  {!isCurrentTaxesLoading && !isCurrentTaxesError && (
+                    <button
+                      type="button"
+                      className="mt-1.5 block text-left"
+                      onClick={() => setTaxVarietyId(variety.id)}
+                    >
+                      <TodayTaxLine
+                        period={
+                          currentTaxes.find((tax) => tax.varietyId === variety.id)?.period ?? null
+                        }
+                      />
+                    </button>
+                  )}
                   {variety.id === addedVarietyId && (
                     <p className="mt-1 text-[11px] font-medium text-brand">
                       {tx("admin.varieties.addedWithSku")}
@@ -167,7 +201,21 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                   <StatusBadge status={variety.status} />
                 )}
 
-                <div className="flex shrink-0 gap-1">
+                {/* On a phone the actions drop to their own line so the name keeps its width. */}
+                <div className="flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 rounded-full px-2.5 text-xs"
+                    onClick={() => setTaxVarietyId(variety.id)}
+                    aria-label={tx("admin.varietyTax.gstButtonAria", {
+                      name: `${variety.name} · ${variety.unit}`,
+                    })}
+                  >
+                    <PercentIcon className="size-3" />
+                    {tx("admin.varietyTax.gstButton")}
+                  </Button>
                   <Button
                     type="button"
                     size="icon-sm"
@@ -242,6 +290,11 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
         </AlertDialogContent>
       </AlertDialog>
 
+      <VarietyTaxPanel
+        variety={taxVariety}
+        onOpenChange={(open) => !open && setTaxVarietyId(null)}
+      />
+
       <VarietyFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -251,5 +304,31 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
         onSubmit={handleSubmit}
       />
     </div>
+  );
+}
+
+type CurrentTax = RouterOutputs["products"]["currentTaxForVarieties"]["data"][number]["period"];
+
+/** Today's GST of a Variety under its name and SKU, or a warning when it cannot be sold. */
+function TodayTaxLine({ period }: { period: CurrentTax }) {
+  const tx = useTranslate();
+
+  if (!period) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+        <AlertTriangleIcon className="size-3" />
+        {tx("admin.varietyTax.noGstToday")}
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs text-muted-foreground">
+      {period.exempt
+        ? tx("admin.varietyTax.taxLineExempt", { hsn: period.hsn })
+        : tx("admin.varietyTax.taxLineRate", {
+            hsn: period.hsn,
+            rate: `${period.gstRateBps / 100}%`,
+          })}
+    </span>
   );
 }

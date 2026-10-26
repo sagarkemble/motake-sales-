@@ -8,6 +8,7 @@ import ReportService from "@repo/services/reports";
 import RouteService from "@repo/services/routes";
 import SalesmanService from "@repo/services/salesman";
 import SettingsService from "@repo/services/settings";
+import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 
 export const authService = new AuthService();
 export const billService = new BillService();
@@ -19,3 +20,4 @@ export const reportService = new ReportService();
 export const routeService = new RouteService();
 export const salesmanService = new SalesmanService();
 export const settingsService = new SettingsService();
+export const varietyTaxPeriodService = new VarietyTaxPeriodService();
