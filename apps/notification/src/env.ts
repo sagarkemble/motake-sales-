@@ -24,7 +24,8 @@ const envSchema = z.object({
   INNGEST_BASE_URL: z.string().url().default("http://127.0.0.1:8288"),
 
   // Private Documents bucket (Spec L) with this app's own read-only R2 key.
-  NOTIFICATION_R2_ENDPOINT: z.string().url().describe("https://<account>.r2.cloudflarestorage.com"),
+  // Cloudflare account id (same as the API's R2_ACCOUNT_ID); the endpoint is built from it.
+  NOTIFICATION_R2_ACCOUNT_ID: z.string().min(1),
   NOTIFICATION_R2_ACCESS_KEY_ID: z.string().min(1),
   NOTIFICATION_R2_SECRET_ACCESS_KEY: z.string().min(1),
   R2_DOCUMENTS_BUCKET_NAME: z.string().min(1),

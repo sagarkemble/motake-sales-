@@ -4,9 +4,6 @@ import { notificationRouter } from "../routes/notification/route";
 // never reachable from apps/web (ADR-0001).
 export { notificationRouter };
 export { createNotificationContextFactory, type NotificationTRPCContext } from "./context";
-export {
-  createNotificationClient,
-  type NotificationClient,
-  type NotificationClientConfig,
-} from "./client";
+// The typed client is not re-exported here: the main API imports it from
+// `@repo/trpc/server/notification/client`, which loads no service, S3 or Meta code.
 export type NotificationRouter = typeof notificationRouter;

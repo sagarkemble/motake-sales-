@@ -10,6 +10,9 @@ export const STATUS_RECEIVED_EVENT = "whatsapp/status.received";
 
 // Inngest's default backoff; 6 tries in total.
 const SEND_RETRIES = 5;
+// Each send holds a pooled database connection (and the row lock) across R2 and Meta, so the sends
+// in flight stay well below the pg pool size (10), leaving room for tRPC, webhooks and the sweep.
+const MAX_SENDS_IN_FLIGHT = 4;
 const HEALTH_TIMEOUT_MS = 3_000;
 
 export const inngest = new Inngest({
@@ -57,8 +60,23 @@ export function createNotificationFunctions(notificationService: NotificationSer
     {
       id: "send-notification",
       retries: SEND_RETRIES,
-      concurrency: { key: "event.data.notificationId", limit: 1 },
+      concurrency: [{ key: "event.data.notificationId", limit: 1 }, { limit: MAX_SENDS_IN_FLIGHT }],
       triggers: [{ event: SEND_REQUESTED_EVENT }],
+      // The last try threw (database or pool error) instead of marking the row, so the row would
+      // stay pending for good: the sweep skips runs with an attempt and resend refuses pending.
+      onFailure: async ({ event, error }) => {
+        const failedEvent = event.data.event;
+        const notificationId = String(failedEvent.data.notificationId);
+        if (!failedEvent.id) {
+          logger.error("Send failure without a run key; row left as is", { notificationId });
+          return { failed: false, status: null };
+        }
+        return notificationService.failRun({
+          notificationId,
+          runKey: failedEvent.id,
+          error: error.message,
+        });
+      },
     },
     async ({ event, step, attempt }) => {
       const notificationId = String(event.data.notificationId);

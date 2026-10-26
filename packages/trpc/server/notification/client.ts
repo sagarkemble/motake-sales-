@@ -9,7 +9,9 @@ export interface NotificationClientConfig {
   internalApiKey: string;
 }
 
-// Server-side typed client for the main API's delegate helper (Spec J). Queries go as POST so a
+// Server-side typed client for the main API's delegate helper (Spec J). Import it from
+// `@repo/trpc/server/notification/client`: the router is a type-only import, so this entry pulls
+// in only @trpc/client, never NotificationService, the R2 reader or the Meta provider. Queries go as POST so a
 // 200-ref status read never hits URL length limits.
 export function createNotificationClient(config: NotificationClientConfig) {
   return createTRPCClient<NotificationRouter>({

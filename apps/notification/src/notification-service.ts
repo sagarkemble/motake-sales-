@@ -13,7 +13,7 @@ export const notificationService = new NotificationService({
     phoneNumberId: env.META_PHONE_NUMBER_ID,
   }),
   documentReader: new R2DocumentReader({
-    endpoint: env.NOTIFICATION_R2_ENDPOINT,
+    accountId: env.NOTIFICATION_R2_ACCOUNT_ID,
     accessKeyId: env.NOTIFICATION_R2_ACCESS_KEY_ID,
     secretAccessKey: env.NOTIFICATION_R2_SECRET_ACCESS_KEY,
     bucketName: env.R2_DOCUMENTS_BUCKET_NAME,
