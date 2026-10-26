@@ -10,10 +10,12 @@ import {
   gatepassItemsTable,
   gatepassesTable,
   ledgerEntriesTable,
+  noteLinesTable,
   notesTable,
   orderItemsTable,
   ordersTable,
   orderVersionsTable,
+  paymentEventsTable,
   paymentsTable,
   productsTable,
   productVarietiesTable,
@@ -25,11 +27,14 @@ import {
   sellerSettingsTable,
   varietyTaxPeriodsTable,
   type SelectBill,
+  type SelectBillItem,
+  type SelectBillVersion,
   type SelectCustomer,
   type SelectGatepass,
   type SelectNote,
   type SelectOrder,
   type SelectPayment,
+  type SelectPaymentEvent,
   type SelectProduct,
   type SelectProductVariety,
   type SelectProfile,
@@ -476,6 +481,7 @@ export async function buildPayment(input: {
   actorId: string;
   keptPaise: number;
   occurredAt?: Date;
+  overrides?: Partial<typeof paymentsTable.$inferInsert>;
 }): Promise<SelectPayment> {
   const unique = nextUnique();
   const [payment] = await db
@@ -490,6 +496,7 @@ export async function buildPayment(input: {
       actorId: input.actorId,
       occurredAt: input.occurredAt ?? new Date(),
       idempotencyKey: randomUUID(),
+      ...input.overrides,
     })
     .returning();
   return payment!;
@@ -549,4 +556,171 @@ export async function buildNote(
     })
     .returning();
   return note!;
+}
+
+// Spec L: the shapes later specs write for real (Correct, Raise Note, Payment post), so Document
+// tests can read them before those procedures exist.
+
+// Appends a Bill version as Correct would: the header is the Bill row at that version, the items
+// its lines. The live Bill row is left as it is.
+export async function buildBillVersion(input: {
+  bill: SelectBill;
+  actorId: string;
+  versionNumber: number;
+  lines: LineInput[];
+  seller?: { legal_name: string; address: string; gstin: string };
+  reason?: string;
+}): Promise<SelectBillVersion> {
+  const lineAmounts = input.lines.map((line) => {
+    const taxablePaise = line.routePricePaise * line.quantity;
+    const rate = line.exempt ? 0 : (line.gstRateBps ?? 500);
+    const halfTaxPaise = Math.round((taxablePaise * rate) / 2 / 10_000);
+    return { taxablePaise, halfTaxPaise, rate };
+  });
+  const taxablePaise = lineAmounts.reduce((total, amount) => total + amount.taxablePaise, 0);
+  const halfTaxPaise = lineAmounts.reduce((total, amount) => total + amount.halfTaxPaise, 0);
+  const letterhead = input.bill.letterhead as Record<string, unknown>;
+  const header = {
+    ...input.bill,
+    letterhead: input.seller ? { ...letterhead, seller: input.seller } : letterhead,
+    totalQuantity: input.lines.reduce((total, line) => total + line.quantity, 0),
+    totalPaise: taxablePaise + 2 * halfTaxPaise,
+    taxablePaise,
+    cgstPaise: halfTaxPaise,
+    sgstPaise: halfTaxPaise,
+    igstPaise: 0,
+    roundOffPaise: 0,
+  };
+  const items: Array<Omit<SelectBillItem, "createdAt" | "updatedAt">> = input.lines.map(
+    (line, index) => ({
+      id: randomUUID(),
+      billId: input.bill.id,
+      varietyId: line.variety.id,
+      orderItemId: null,
+      stamp: lineStamp(line),
+      quantity: line.quantity,
+      routePricePaise: line.routePricePaise,
+      exempt: line.exempt ?? false,
+      gstRateBps: lineAmounts[index]!.rate,
+      taxablePaise: lineAmounts[index]!.taxablePaise,
+      cgstPaise: lineAmounts[index]!.halfTaxPaise,
+      sgstPaise: lineAmounts[index]!.halfTaxPaise,
+      igstPaise: 0,
+    }),
+  );
+  const [version] = await db
+    .insert(billVersionsTable)
+    .values({
+      billId: input.bill.id,
+      versionNumber: input.versionNumber,
+      header,
+      items,
+      reason: input.reason ?? "Corrected",
+      actorId: input.actorId,
+    })
+    .returning();
+  return version!;
+}
+
+export interface NoteLineInput {
+  billVersionId: string;
+  snapshotLineId: string;
+  quantity: number;
+  amountPaise: number;
+  cgstPaise?: number;
+  sgstPaise?: number;
+  igstPaise?: number;
+}
+
+// A Note with its lines and its Ledger row, in one transaction (deferred FK pair). Credit Notes
+// post a credit, Debit Notes a debit; the stored Balance is not touched.
+export async function buildNoteWithLines(input: {
+  bill: SelectBill;
+  customer: SelectCustomer;
+  actorId: string;
+  kind: SelectNote["kind"];
+  amountPaise: number;
+  lines: NoteLineInput[];
+  number?: string;
+  reason?: string;
+  issuedOn?: string;
+  returnOrDamageOn?: string | null;
+}): Promise<SelectNote> {
+  return db.transaction(async (transaction) => {
+    const ledgerEntryId = randomUUID();
+    const note = await buildNote(transaction, {
+      bill: input.bill,
+      kind: input.kind,
+      amountPaise: input.amountPaise,
+      ledgerEntryId,
+      reason: input.reason,
+    });
+    const [updated] = await transaction
+      .update(notesTable)
+      .set({
+        ...(input.number ? { number: input.number } : {}),
+        issuedOn: input.issuedOn ?? input.bill.billDate,
+        returnOrDamageOn: input.returnOrDamageOn ?? null,
+        cgstPaise: input.lines.reduce((total, line) => total + (line.cgstPaise ?? 0), 0),
+        sgstPaise: input.lines.reduce((total, line) => total + (line.sgstPaise ?? 0), 0),
+        igstPaise: input.lines.reduce((total, line) => total + (line.igstPaise ?? 0), 0),
+      })
+      .where(sql`${notesTable.id} = ${note.id}`)
+      .returning();
+    await transaction.insert(ledgerEntriesTable).values({
+      id: ledgerEntryId,
+      customerId: input.customer.id,
+      entryType: input.kind === "debit_note" ? "debit_note" : "credit_note",
+      side: input.kind === "debit_note" ? "debit" : "credit",
+      amountPaise: input.amountPaise,
+      occurredAt: new Date(`${input.bill.billDate}T08:00:00Z`),
+      actorId: input.actorId,
+      noteId: note.id,
+      reason: note.reason,
+    });
+    if (input.lines.length > 0) {
+      await transaction.insert(noteLinesTable).values(
+        input.lines.map((line) => ({
+          noteId: note.id,
+          billVersionId: line.billVersionId,
+          snapshotLineId: line.snapshotLineId,
+          quantity: line.quantity,
+          amountPaise: line.amountPaise,
+          cgstPaise: line.cgstPaise ?? 0,
+          sgstPaise: line.sgstPaise ?? 0,
+          igstPaise: line.igstPaise ?? 0,
+        })),
+      );
+    }
+    return updated!;
+  });
+}
+
+// The `posted` (or later `adjusted`) history row of a Payment.
+export async function buildPaymentEvent(input: {
+  payment: SelectPayment;
+  actorId: string;
+  kind?: SelectPaymentEvent["kind"];
+  keptPaise?: number;
+  reference?: string | null;
+  reason?: string;
+}): Promise<SelectPaymentEvent> {
+  const kind = input.kind ?? "posted";
+  const keptPaise = input.keptPaise ?? input.payment.amountKeptPaise;
+  const [event] = await db
+    .insert(paymentEventsTable)
+    .values({
+      paymentId: input.payment.id,
+      kind,
+      amountKeptPaise: keptPaise,
+      previousKeptPaise: kind === "posted" ? 0 : input.payment.amountKeptPaise,
+      differencePaise: kind === "posted" ? keptPaise : keptPaise - input.payment.amountKeptPaise,
+      reason: input.reason ?? (kind === "posted" ? null : "Corrected"),
+      mode: input.payment.mode,
+      reference: input.reference === undefined ? input.payment.reference : input.reference,
+      actorId: input.actorId,
+      occurredAt: input.payment.occurredAt,
+    })
+    .returning();
+  return event!;
 }

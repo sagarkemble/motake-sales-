@@ -49,3 +49,33 @@ export const noCoveringTaxPeriod = (uncoveredVarieties: UncoveredVariety[], day:
     cause: Object.assign(new Error(message), { uncoveredVarieties, day }),
   });
 };
+
+// Why a Document call was refused, for callers that branch on it (Specs G, I, J).
+export type DocumentRefusalReason =
+  | "irn_missing"
+  | "irn_not_recorded"
+  | "irn_not_pending"
+  | "not_found"
+  | "not_posted_event"
+  | "nothing_kept"
+  | "bad_image"
+  | "forbidden";
+
+const documentRefusalCodes: Record<DocumentRefusalReason, TRPCError["code"]> = {
+  irn_missing: "BAD_REQUEST",
+  irn_not_recorded: "BAD_REQUEST",
+  irn_not_pending: "BAD_REQUEST",
+  not_found: "NOT_FOUND",
+  not_posted_event: "BAD_REQUEST",
+  nothing_kept: "BAD_REQUEST",
+  bad_image: "BAD_REQUEST",
+  forbidden: "FORBIDDEN",
+};
+
+// The machine reason rides on `cause.reason`; the message is for the Admin.
+export const documentRefused = (reason: DocumentRefusalReason, message: string) =>
+  new TRPCError({
+    code: documentRefusalCodes[reason],
+    message,
+    cause: Object.assign(new Error(message), { reason }),
+  });

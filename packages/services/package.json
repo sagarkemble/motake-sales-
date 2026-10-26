@@ -9,6 +9,7 @@
     "./clients": "./clients/index.ts",
     "./customers": "./customers/index.ts",
     "./document-numbers": "./document-numbers/index.ts",
+    "./documents": "./documents/index.ts",
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
     "./gst-credit-note-deadline": "./gst-credit-note-deadline/index.ts",
@@ -30,6 +31,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "dotenv-cli": "^11.0.0",
     "typescript": "^5.9.3",
+    "unpdf": "^1.9.1",
     "vitest": "^3"
   },
   "dependencies": {
@@ -37,6 +39,7 @@
     "@aws-sdk/s3-request-presigner": "^3.925.0",
     "@repo/database": "workspace:*",
     "@repo/logger": "workspace:*",
+    "@repo/pdf": "workspace:*",
     "@supabase/supabase-js": "^2.75.0",
     "@trpc/server": "^11.8.1",
     "google-auth-library": "^10.5.0",
