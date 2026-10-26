@@ -21,3 +21,15 @@ export async function wipeApplicationTables(): Promise<void> {
   const tableList = tableRows.rows.map((row) => `"public"."${row.tablename}"`).join(", ");
   await db.execute(sql.raw(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`));
 }
+
+// Waits until some backend is blocked on a row lock (the call queued behind a test's lock holder).
+export async function waitForLockWaiter(): Promise<void> {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const rows = await db.execute<{ waiting: number }>(
+      sql`SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()`,
+    );
+    if ((rows.rows[0]?.waiting ?? 0) > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error("No transaction ever waited on the lock");
+}

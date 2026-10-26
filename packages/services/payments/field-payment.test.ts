@@ -11,11 +11,14 @@ import {
 } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { runInTransaction } from "@repo/database/queries/shared/executor";
+
 import { checkoutRefusalOf } from "../errors";
 import LedgerService from "../ledger";
 import type { CheckoutOutcome } from "../shared/checkout-events";
-import { buildCheckoutWorld, buildRoute, type CheckoutWorld } from "../test/builders";
-import { wipeApplicationTables } from "../test/database";
+import OrderService from "../orders";
+import { buildCheckoutWorld, buildPayment, buildRoute, type CheckoutWorld } from "../test/builders";
+import { waitForLockWaiter, wipeApplicationTables } from "../test/database";
 import PaymentService, { type RecordFieldPaymentInput } from "./index";
 
 const paymentService = new PaymentService();
@@ -274,4 +277,73 @@ describe("PaymentService.recordFieldPayment", () => {
 
     expect(result.number).toBe("MP/27-28/000001");
   });
+
+  it("numbers checkout and field Payments from one MP series", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const orderService = new OrderService();
+
+    const bookNow = await orderService.placeBookNow(world.salesman.id, {
+      customerId: world.customer.id,
+      idempotencyKey: randomUUID(),
+      lines: [{ sku: world.milk.sku, qty: 3 }],
+      payment: { mode: "cash", receivedPaise: 1_000 },
+    });
+    const field = await paymentService.recordFieldPayment(world.salesman.id, fieldInput(world));
+
+    expect(bookNow.payment?.number).toBe("MP/26-27/000001");
+    expect(field.number).toBe("MP/26-27/000002");
+    expect(await paymentSeriesNextSeq()).toBe(3);
+  });
+
+  it("refuses kept ₹0 when a concurrent post settles the Customer first, burning no MP", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    await owe(world, 5_000);
+    const otherPayment = await buildPayment({
+      customer: world.customer,
+      actorId: world.admin.id,
+      keptPaise: 5_000,
+    });
+
+    let releaseHolder!: () => void;
+    const holderMayCommit = new Promise<void>((resolve) => {
+      releaseHolder = resolve;
+    });
+    let holderLocked!: () => void;
+    const holderHasLock = new Promise<void>((resolve) => {
+      holderLocked = resolve;
+    });
+    // Holds the Customer while the field Payment reads ₹50 Pending, then clears it.
+    const holder = runInTransaction(async (transaction) => {
+      await ledger.lockBalance(world.customer.id, transaction);
+      holderLocked();
+      await holderMayCommit;
+      await ledger.post(
+        {
+          entryType: "payment",
+          paymentId: otherPayment.id,
+          customerId: world.customer.id,
+          actorId: world.admin.id,
+        },
+        transaction,
+      );
+    });
+    await holderHasLock;
+
+    const field = refusalOf(
+      paymentService.recordFieldPayment(
+        world.salesman.id,
+        fieldInput(world, { overpay: "return_change" }),
+      ),
+    );
+    await waitForLockWaiter();
+    releaseHolder();
+    await holder;
+
+    expect(await field).toMatchObject({ reason: "field_payment_kept_zero" });
+    // Only the holder's own Payment row exists; the MP allocation rolled back.
+    expect(await db.select().from(paymentsTable)).toHaveLength(1);
+    expect(await paymentSeriesNextSeq()).toBe(1);
+    expect((await ledger.getBalance(world.customer.id)).balancePaise).toBe(0);
+  });
 });
+

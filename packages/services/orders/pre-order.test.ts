@@ -4,6 +4,7 @@ import { db, eq, sql } from "@repo/database";
 import {
   billItemsTable,
   billsTable,
+  billVersionsTable,
   customersTable,
   documentNumberSeriesTable,
   gatepassItemsTable,
@@ -12,17 +13,22 @@ import {
   orderItemsTable,
   ordersTable,
   orderVersionsTable,
+  paymentEventsTable,
   paymentsTable,
   routePricesTable,
   routesTable,
 } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { runInTransaction } from "@repo/database/queries/shared/executor";
+
 import { checkoutRefusalOf } from "../errors";
 import LedgerService from "../ledger";
+import type { CheckoutOutcome } from "../shared/checkout-events";
 import {
   buildCheckoutWorld,
   buildCustomer,
+  buildPayment,
   buildGatepass,
   buildRoute,
   buildSalesman,
@@ -30,7 +36,7 @@ import {
   buildVarietyTaxPeriod,
   type CheckoutWorld,
 } from "../test/builders";
-import { wipeApplicationTables } from "../test/database";
+import { waitForLockWaiter, wipeApplicationTables } from "../test/database";
 import OrderService, { type PlacePreOrderInput } from "./index";
 
 const orderService = new OrderService();
@@ -194,6 +200,33 @@ describe("OrderService.placePreOrder", () => {
 
     expect(retry).toEqual(first);
     expect(await db.select().from(ordersTable)).toHaveLength(1);
+  });
+
+  it("gives one Pre-order for two concurrent calls with one key", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const input = preOrderInput(world);
+
+    const [first, second] = await Promise.all([
+      orderService.placePreOrder(world.salesman.id, input),
+      orderService.placePreOrder(world.salesman.id, input),
+    ]);
+
+    expect(second).toEqual(first);
+    expect(await db.select().from(ordersTable)).toHaveLength(1);
+    expect(await db.select().from(orderItemsTable)).toHaveLength(2);
+    expect(await db.select().from(orderVersionsTable)).toHaveLength(1);
+  });
+
+  it("tells the listener nothing", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const outcomes: CheckoutOutcome[] = [];
+    const service = new OrderService((outcome) => {
+      outcomes.push(outcome);
+    });
+
+    await service.placePreOrder(world.salesman.id, preOrderInput(world));
+
+    expect(outcomes).toEqual([]);
   });
 
   describe("refuses, writing nothing", () => {
@@ -533,6 +566,188 @@ describe("OrderService.fulfilPreOrder", () => {
     expect(await db.select().from(ledgerEntriesTable)).toHaveLength(1);
   });
 });
+
+describe("OrderService.fulfilPreOrder checkout Payment", () => {
+  it("returns the MP on a retry with the same key, and on a retry under a new key", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    await moveToDay(world, tomorrow);
+    const input = fulfilInput(placed.orderId, 5_000);
+
+    const first = await orderService.fulfilPreOrder(salesmanActor(world), input);
+    expect(first).toMatchObject({
+      payment: { number: "MP/26-27/000001", keptPaise: 5_000, returnedPaise: 0 },
+      returnedPaise: 0,
+      balancePaise: 6_900,
+    });
+    expect(await orderService.fulfilPreOrder(salesmanActor(world), input)).toEqual(first);
+    // The app lost the key (e.g. a reload) and fulfils again: same actor, so the first result.
+    expect(
+      await orderService.fulfilPreOrder(salesmanActor(world), fulfilInput(placed.orderId, 5_000)),
+    ).toEqual(first);
+    expect(await db.select().from(paymentsTable)).toHaveLength(1);
+  });
+
+  it("refuses cash overpay with no choice, and return change on bank", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    await moveToDay(world, tomorrow);
+
+    expect(
+      await refusalOf(
+        orderService.fulfilPreOrder(salesmanActor(world), fulfilInput(placed.orderId, 20_000)),
+      ),
+    ).toEqual({
+      reason: "overpay_choice_required",
+      details: { requiredPaise: 11_900, receivedPaise: 20_000 },
+    });
+    expect(
+      await refusalOf(
+        orderService.fulfilPreOrder(salesmanActor(world), {
+          ...fulfilInput(placed.orderId),
+          payment: { mode: "bank", receivedPaise: 1_000, overpay: "return_change" },
+        }),
+      ),
+    ).toMatchObject({ reason: "return_change_cash_only" });
+    expect(await db.select().from(billsTable)).toHaveLength(0);
+    expect(await billSeriesNextSeq()).toBe(1);
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, placed.orderId));
+    expect(order!.status).toBe("scheduled");
+  });
+
+  it("refuses balance_changed when a concurrent post flips whether a Payment exists", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    await moveToDay(world, tomorrow);
+    const otherPayment = await buildPayment({
+      customer: world.customer,
+      actorId: world.admin.id,
+      keptPaise: 11_900,
+    });
+
+    let releaseHolder!: () => void;
+    const holderMayCommit = new Promise<void>((resolve) => {
+      releaseHolder = resolve;
+    });
+    let holderLocked!: () => void;
+    const holderHasLock = new Promise<void>((resolve) => {
+      holderLocked = resolve;
+    });
+    const holder = runInTransaction(async (transaction) => {
+      await ledger.lockBalance(world.customer.id, transaction);
+      holderLocked();
+      await holderMayCommit;
+      await ledger.post(
+        {
+          entryType: "payment",
+          paymentId: otherPayment.id,
+          customerId: world.customer.id,
+          actorId: world.admin.id,
+        },
+        transaction,
+      );
+    });
+    await holderHasLock;
+
+    // Before the lock ₹119 cash clears the ₹119 Bill; under it the Bill is covered, so all change.
+    const fulfil = refusalOf(
+      orderService.fulfilPreOrder(adminActor(world), {
+        ...fulfilInput(placed.orderId),
+        payment: { mode: "cash", receivedPaise: 11_900, overpay: "return_change" },
+      }),
+    );
+    await waitForLockWaiter();
+    releaseHolder();
+    await holder;
+
+    expect(await fulfil).toMatchObject({ reason: "balance_changed" });
+    expect(await db.select().from(billsTable)).toHaveLength(0);
+    expect(await billSeriesNextSeq()).toBe(1);
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, placed.orderId));
+    expect(order!.status).toBe("scheduled");
+  });
+
+  it("refuses a fulfil key already used on another Pre-order or a Book Now, writing nothing", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const first = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    const second = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    await moveToDay(world, tomorrow);
+    const input = fulfilInput(first.orderId, 1_000);
+    await orderService.fulfilPreOrder(salesmanActor(world), input);
+
+    expect(
+      await refusalOf(
+        orderService.fulfilPreOrder(salesmanActor(world), { ...input, orderId: second.orderId }),
+      ),
+    ).toEqual({ reason: "idempotency_key_reused", details: null });
+
+    const bookNowKey = randomUUID();
+    await orderService.placeBookNow(world.salesman.id, {
+      customerId: world.customer.id,
+      idempotencyKey: bookNowKey,
+      lines: [{ sku: world.milk.sku, qty: 1 }],
+      payment: { mode: "cash", receivedPaise: 1_000 },
+    });
+    expect(
+      await refusalOf(
+        orderService.fulfilPreOrder(salesmanActor(world), {
+          ...fulfilInput(second.orderId, 1_000),
+          idempotencyKey: bookNowKey,
+        }),
+      ),
+    ).toEqual({ reason: "idempotency_key_reused", details: null });
+
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, second.orderId));
+    expect(order!.status).toBe("scheduled");
+    expect(await db.select().from(billsTable)).toHaveLength(2);
+    expect(await db.select().from(paymentsTable)).toHaveLength(2);
+  });
+});
+
+describe("OrderService.fulfilPreOrder events", () => {
+  it("tells the listener Bill then Payment once, and nothing on a replay", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await orderService.placePreOrder(world.salesman.id, preOrderInput(world));
+    await moveToDay(world, tomorrow);
+    const outcomes: CheckoutOutcome[] = [];
+    const service = new OrderService((outcome) => {
+      outcomes.push(outcome);
+    });
+    const input = fulfilInput(placed.orderId, 5_000);
+
+    const result = await service.fulfilPreOrder(salesmanActor(world), input);
+    await service.fulfilPreOrder(salesmanActor(world), input);
+
+    const [payment] = await db.select().from(paymentsTable);
+    const [event] = await db.select().from(paymentEventsTable);
+    const [version] = await db.select().from(billVersionsTable);
+    expect(outcomes).toEqual([
+      {
+        bill: {
+          billId: result.billId,
+          billVersionId: version!.id,
+          versionNumber: 1,
+          billNumber: "MB/26-27/000001",
+          customerId: world.customer.id,
+          routeId: world.route.id,
+          route: { name: world.route.name, code: world.route.code, delivery_state: "Maharashtra" },
+          totalPaise: 11_900,
+          balanceAfterBillPaise: 11_900,
+        },
+        payment: {
+          paymentId: payment!.id,
+          postedEventId: event!.id,
+          paymentNumber: "MP/26-27/000001",
+          customerId: world.customer.id,
+          keptPaise: 5_000,
+          returnedPaise: 0,
+          balanceAfterPaise: 6_900,
+        },
+      },
+    ]);
+  });
+});
+
 
 describe("OrderService.listRoutePreorders", () => {
   it("lists open Pre-orders on the GatePass Route from any salesman, with due state", async () => {

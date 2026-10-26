@@ -16,6 +16,8 @@ import {
   orderVersionsTable,
   paymentEventsTable,
   paymentsTable,
+  productsTable,
+  productVarietiesTable,
   routePricesTable,
 } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,7 +34,7 @@ import {
   buildVarietyTaxPeriod,
   type CheckoutWorld,
 } from "../test/builders";
-import { wipeApplicationTables } from "../test/database";
+import { waitForLockWaiter, wipeApplicationTables } from "../test/database";
 import OrderService, { type PlaceBookNowInput } from "./index";
 
 const orderService = new OrderService();
@@ -136,6 +138,7 @@ describe("OrderService.placeBookNow", () => {
       billTotalPaise: 11_900,
       balanceAfterBillPaise: 11_900,
       payment: null,
+      returnedPaise: 0,
       balancePaise: 11_900,
     });
 
@@ -396,6 +399,129 @@ describe("OrderService.placeBookNow", () => {
       await expectNothingWritten(world);
     });
 
+    it("for a qty over the cap, also when it is reached by merging a repeated SKU", async () => {
+      const world = await buildCheckoutWorld({ businessDate: today });
+      const refusal = await refusalOf(
+        orderService.placeBookNow(
+          world.salesman.id,
+          bookNowInput(world, {
+            lines: [
+              { sku: world.milk.sku, qty: 60_000 },
+              { sku: world.milk.sku, qty: 60_000 },
+              { sku: world.curd.sku, qty: 3_000_000_000 },
+            ],
+          }),
+        ),
+      );
+      expect(refusal.reason).toBe("bad_lines");
+      expect(refusal.details!.lines).toEqual(
+        expect.arrayContaining([
+          { sku: world.milk.sku, reason: "bad_qty" },
+          { sku: world.curd.sku, reason: "bad_qty" },
+        ]),
+      );
+      expect((refusal.details!.lines as unknown[]).length).toBe(2);
+      await expectNothingWritten(world);
+    });
+
+    it("for a Route price × qty too large to bill", async () => {
+      const world = await buildCheckoutWorld({ businessDate: today });
+      await db
+        .update(routePricesTable)
+        .set({ pricePaise: Number.MAX_SAFE_INTEGER })
+        .where(eq(routePricesTable.varietyId, world.milk.id));
+      const refusal = await refusalOf(
+        orderService.placeBookNow(
+          world.salesman.id,
+          bookNowInput(world, { lines: [{ sku: world.milk.sku, qty: 1 }] }),
+        ),
+      );
+      expect(refusal).toEqual({
+        reason: "bad_lines",
+        details: { lines: [{ sku: world.milk.sku, reason: "bad_qty" }] },
+      });
+      await expectNothingWritten(world);
+    });
+
+    it("as unknown SKUs for an inactive or deleted Variety or Product", async () => {
+      const world = await buildCheckoutWorld({ businessDate: today });
+      const priced = async (name: string, productId?: string) => {
+        const variety = await buildVariety({ name, ...(productId ? { productId } : {}) });
+        await buildVarietyTaxPeriod(variety.id);
+        await db
+          .insert(routePricesTable)
+          .values({ routeId: world.route.id, varietyId: variety.id, pricePaise: 1_000 });
+        await db
+          .insert(gatepassItemsTable)
+          .values({ gatepassId: world.gatepass.id, varietyId: variety.id, issuedQty: 5 });
+        return variety;
+      };
+      const inactiveVariety = await priced("Buttermilk 200 ml");
+      const deletedVariety = await priced("Lassi 200 ml");
+      const inactiveProductVariety = await priced("Shrikhand 250 g");
+      const deletedProductVariety = await priced("Basundi 250 g");
+      await db
+        .update(productVarietiesTable)
+        .set({ status: "inactive" })
+        .where(eq(productVarietiesTable.id, inactiveVariety.id));
+      await db
+        .update(productVarietiesTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(productVarietiesTable.id, deletedVariety.id));
+      await db
+        .update(productsTable)
+        .set({ status: "inactive" })
+        .where(eq(productsTable.id, inactiveProductVariety.productId));
+      await db
+        .update(productsTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(productsTable.id, deletedProductVariety.productId));
+
+      const refusal = await refusalOf(
+        orderService.placeBookNow(
+          world.salesman.id,
+          bookNowInput(world, {
+            lines: [inactiveVariety, deletedVariety, inactiveProductVariety, deletedProductVariety].map(
+              (variety) => ({ sku: variety.sku, qty: 1 }),
+            ),
+          }),
+        ),
+      );
+      expect(refusal.reason).toBe("bad_lines");
+      expect(refusal.details!.lines).toEqual(
+        expect.arrayContaining(
+          [inactiveVariety, deletedVariety, inactiveProductVariety, deletedProductVariety].map(
+            (variety) => ({ sku: variety.sku, reason: "unknown_sku" }),
+          ),
+        ),
+      );
+      expect((refusal.details!.lines as unknown[]).length).toBe(4);
+      await expectNothingWritten(world);
+    });
+
+    it("for a basket that rounds to ₹0", async () => {
+      const world = await buildCheckoutWorld({ businessDate: today });
+      const toffee = await buildVariety({ name: "Toffee" });
+      await buildVarietyTaxPeriod(toffee.id, { exempt: true, gstRateBps: 0 });
+      await db
+        .insert(routePricesTable)
+        .values({ routeId: world.route.id, varietyId: toffee.id, pricePaise: 1 });
+      await db
+        .insert(gatepassItemsTable)
+        .values({ gatepassId: world.gatepass.id, varietyId: toffee.id, issuedQty: 5 });
+
+      // ₹0.01 exempt rounds half-up to ₹0.
+      expect(
+        await refusalOf(
+          orderService.placeBookNow(
+            world.salesman.id,
+            bookNowInput(world, { lines: [{ sku: toffee.sku, qty: 1 }] }),
+          ),
+        ),
+      ).toEqual({ reason: "bill_total_zero", details: null });
+      await expectNothingWritten(world);
+    });
+
     it("for a price field sent on a line", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       const refusal = await refusalOf(
@@ -607,18 +733,19 @@ describe("OrderService.placeBookNow checkout Payment", () => {
       actorId: world.admin.id,
     });
 
-    // The ₹119 Bill leaves ₹81 Advance, so nothing is needed; returning the cash keeps nothing.
-    const returned = await orderService.placeBookNow(
-      world.salesman.id,
-      bookNowInput(world, {
-        payment: { mode: "cash", receivedPaise: 1_000, overpay: "return_change" },
-      }),
-    );
+    // The ₹119 Bill leaves ₹81 Advance, so nothing is needed; returning the cash keeps nothing
+    // and hands all ₹10 back.
+    const returnedInput = bookNowInput(world, {
+      payment: { mode: "cash", receivedPaise: 1_000, overpay: "return_change" },
+    });
+    const returned = await orderService.placeBookNow(world.salesman.id, returnedInput);
     expect(returned).toMatchObject({
       balanceAfterBillPaise: -8_100,
       payment: null,
+      returnedPaise: 1_000,
       balancePaise: -8_100,
     });
+    expect(await orderService.placeBookNow(world.salesman.id, returnedInput)).toEqual(returned);
 
     const kept = await orderService.placeBookNow(
       world.salesman.id,
@@ -627,6 +754,7 @@ describe("OrderService.placeBookNow checkout Payment", () => {
     expect(kept).toMatchObject({
       balanceAfterBillPaise: 3_800,
       payment: { keptPaise: 1_000 },
+      returnedPaise: 0,
       balancePaise: 2_800,
     });
   });
@@ -691,17 +819,6 @@ describe("OrderService.placeBookNow checkout Payment", () => {
   });
 });
 
-// Waits until some backend is blocked on a row lock (the Book Now behind the holder).
-async function waitForLockWaiter() {
-  for (let attempt = 0; attempt < 200; attempt += 1) {
-    const rows = await db.execute<{ waiting: number }>(
-      sql`SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()`,
-    );
-    if ((rows.rows[0]?.waiting ?? 0) > 0) return;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("No transaction ever waited on the lock");
-}
 
 describe("OrderService.placeBookNow idempotency and races", () => {
   it("returns the first result for the same key, with one of everything", async () => {
@@ -862,5 +979,68 @@ describe("OrderService lock order", () => {
     expect(results).toHaveLength(3);
     expect(await db.select().from(paymentsTable)).toHaveLength(3);
     expect(await balanceOf(world.customer.id)).toBe(11_900 - 2_000 - 1_000 - 1_000);
+  });
+});
+
+describe("OrderService.placeBookNow and the Customer afterwards", () => {
+  it("leaves no open order, so the Customer can still be deactivated", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { default: CustomerService } = await import("../customers");
+    const customerService = new CustomerService();
+
+    await orderService.placeBookNow(world.salesman.id, bookNowInput(world));
+
+    expect(await customerService.listOpenOrders(world.customer.id)).toEqual([]);
+    const deactivated = await customerService.deactivateCustomer(world.customer.id, world.admin.id);
+    expect(deactivated?.status).toBe("inactive");
+  });
+
+  it("stamps the Ledger after the Customer lock, so a retry shows the same Balance after the Bill", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const otherPayment = await buildPayment({
+      customer: world.customer,
+      actorId: world.admin.id,
+      keptPaise: 5_000,
+    });
+
+    let releaseHolder!: () => void;
+    const holderMayCommit = new Promise<void>((resolve) => {
+      releaseHolder = resolve;
+    });
+    let holderLocked!: () => void;
+    const holderHasLock = new Promise<void>((resolve) => {
+      holderLocked = resolve;
+    });
+    // Holds the Customer while the Book Now starts, then credits ₹50 stamped after its start.
+    const holder = runInTransaction(async (transaction) => {
+      await ledger.lockBalance(world.customer.id, transaction);
+      holderLocked();
+      await holderMayCommit;
+      await ledger.post(
+        {
+          entryType: "payment",
+          paymentId: otherPayment.id,
+          customerId: world.customer.id,
+          actorId: world.admin.id,
+          occurredAt: new Date("2026-10-25T06:00:05Z"),
+        },
+        transaction,
+      );
+    });
+    await holderHasLock;
+
+    const input = bookNowInput(world);
+    const bookNow = orderService.placeBookNow(world.salesman.id, input);
+    await waitForLockWaiter();
+    // The Book Now started at 06:00:00; it gets the Customer only after the 06:00:05 credit.
+    vi.setSystemTime(new Date("2026-10-25T06:00:10Z"));
+    releaseHolder();
+    await holder;
+
+    const first = await bookNow;
+    expect(first.balanceAfterBillPaise).toBe(11_900 - 5_000);
+    expect(await orderService.placeBookNow(world.salesman.id, input)).toEqual(first);
+    const rows = await ledgerOf(world.customer.id);
+    expect(rows.map((row) => row.entryType)).toEqual(["payment", "bill"]);
   });
 });
