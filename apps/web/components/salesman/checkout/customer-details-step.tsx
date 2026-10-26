@@ -115,7 +115,7 @@ export function CustomerDetailsStep({
           />
         </>
       ) : selectedCustomer ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand bg-brand/5 p-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-brand bg-accent/50 p-3">
           <ShopPhotoThumbnail
             shopPhotoUrl={selectedCustomer.shopPhotoUrl}
             shopName={selectedCustomer.shopName}

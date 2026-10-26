@@ -108,7 +108,7 @@ function RoutesPageContent() {
                 onClick={() => selectRoute(route.id)}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50",
-                  activeRouteId === route.id && "border-brand bg-brand/5",
+                  activeRouteId === route.id && "border-brand bg-accent/50",
                   route.hidden && "border-dashed",
                 )}
               >
