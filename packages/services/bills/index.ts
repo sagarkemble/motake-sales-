@@ -17,7 +17,7 @@ import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import { notFound } from "../errors";
 import LedgerService from "../ledger";
 import SettingsService from "../settings";
-import { billTotalZeroRefusal, sellerMasterMissingRefusal } from "../shared/checkout";
+import { billTotalZeroRefusal } from "../shared/checkout";
 import { computeBillTax, placeOfSupplyOf } from "../shared/tax-engine";
 import {
   issueBillInputSchema,
@@ -61,8 +61,7 @@ class BillService {
   // drawn after commit (Spec J / L), so v1 has no pdf_key yet.
   public async issueBill(input: IssueBillInput, executor: DbExecutor): Promise<IssuedBill> {
     const parsedInput = issueBillInputSchema.parse(input);
-    const seller = await this.settingsService.getSellerSettings(executor);
-    if (!seller) throw sellerMasterMissingRefusal();
+    const seller = await this.settingsService.requireSellerSettings(executor);
     const customer = await getCustomerById(parsedInput.customerId, executor);
     if (!customer) throw notFound(`Customer ${parsedInput.customerId} not found`);
 

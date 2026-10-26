@@ -38,7 +38,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import { listVarietyLabelsByIds } from "@repo/database/queries/variety-tax-periods";
-import type { SelectCustomer, SelectOrder, SelectSellerSettings } from "@repo/database/schema";
+import type { SelectCustomer, SelectOrder } from "@repo/database/schema";
 
 import BillService, { type IssueBillInput } from "../bills";
 import DocumentNumberService from "../document-numbers";
@@ -53,7 +53,6 @@ import {
   assertCustomerOnRoute,
   billTotalZeroRefusal,
   noActiveGatepassRefusal,
-  sellerMasterMissingRefusal,
 } from "../shared/checkout";
 import {
   noCheckoutListener,
@@ -276,7 +275,7 @@ class OrderService {
         assertNoBadLines(basket.badLines);
         const gatepassItemIds = await this.lockStock(gatepass.id, basket.lines, transaction);
 
-        const seller = await this.requireSeller(transaction);
+        const seller = await this.settingsService.requireSellerSettings(transaction);
         const tax = computeBillTax(basket.lines, placeOfSupplyOf(route.deliveryState, seller.state));
         if (tax.totalPaise === 0) throw billTotalZeroRefusal();
         const routeStamp = routeStampOf(route);
@@ -377,7 +376,7 @@ class OrderService {
         );
         assertNoBadLines(basket.badLines);
 
-        const seller = await this.requireSeller(transaction);
+        const seller = await this.settingsService.requireSellerSettings(transaction);
         const tax = computeBillTax(basket.lines, placeOfSupplyOf(route.deliveryState, seller.state));
         // It could never be fulfilled.
         if (tax.totalPaise === 0) throw billTotalZeroRefusal();
@@ -479,7 +478,7 @@ class OrderService {
         const latestVersion = await getLatestOrderVersion(order.id, transaction);
         if (!latestVersion) throw internalError(`Order ${order.id} has no version`);
         const routeStamp = routeStampFromHeader(latestVersion.header);
-        const seller = await this.requireSeller(transaction);
+        const seller = await this.settingsService.requireSellerSettings(transaction);
         const tax = computeBillTax(items, placeOfSupplyOf(routeStamp.delivery_state, seller.state));
         if (tax.totalPaise === 0) throw billTotalZeroRefusal();
 
@@ -596,7 +595,7 @@ class OrderService {
       basket = await this.resolveBasket(parsedInput.lines, route.id, today);
     }
 
-    const seller = await this.requireSeller();
+    const seller = await this.settingsService.requireSellerSettings();
     const tax = computeBillTax(basket.lines, placeOfSupplyOf(routeStamp.delivery_state, seller.state));
     const balance = customer ? await this.ledgerService.getBalance(customer.id) : null;
     const billsNow = Boolean(parsedInput.orderId) || parsedInput.orderType === "book_now";
@@ -959,12 +958,6 @@ class OrderService {
     }));
   }
 
-  private async requireSeller(executor?: DbExecutor): Promise<SelectSellerSettings> {
-    const seller = await this.settingsService.getSellerSettings(executor);
-    if (!seller) throw sellerMasterMissingRefusal();
-    return seller;
-  }
-
   private async alreadyFulfilledRefusal(order: SelectOrder, executor: DbExecutor) {
     const bill = await getBillByOrderId(order.id, executor);
     const fulfilledBy = order.fulfilledBy ? await getProfileById(order.fulfilledBy) : undefined;
@@ -1018,7 +1011,7 @@ class OrderService {
     const latestVersion = await getLatestOrderVersion(order.id);
     if (!latestVersion) throw internalError(`Order ${order.id} has no version`);
     const routeStamp = routeStampFromHeader(latestVersion.header);
-    const seller = await this.requireSeller();
+    const seller = await this.settingsService.requireSellerSettings();
     const tax = computeBillTax(items, placeOfSupplyOf(routeStamp.delivery_state, seller.state));
     const balance = await this.ledgerService.getBalance(order.customerId);
     return {
