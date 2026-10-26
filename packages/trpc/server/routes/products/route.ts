@@ -343,7 +343,7 @@ export const productsRouter = router({
   upsertTaxPeriod: adminProcedure
     .meta({
       openapi: {
-        method: "PUT",
+        method: "POST",
         path: path("/varieties/{varietyId}/tax-periods"),
         tags: ["Products"],
         protect: true,
