@@ -407,15 +407,15 @@ describe("OrderService.placeBookNow", () => {
       await expectNothingWritten(world);
     });
 
-    it("for a qty over the cap, also when it is reached by merging a repeated SKU", async () => {
+    it("for a qty over int4, also when it is reached by merging a repeated SKU", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       const refusal = await refusalOf(
         orderService.placeBookNow(
           world.salesman.id,
           bookNowInput(world, {
             lines: [
-              { sku: world.milk.sku, qty: 60_000 },
-              { sku: world.milk.sku, qty: 60_000 },
+              { sku: world.milk.sku, qty: 1_500_000_000 },
+              { sku: world.milk.sku, qty: 1_500_000_000 },
               { sku: world.curd.sku, qty: 3_000_000_000 },
             ],
           }),
@@ -430,6 +430,35 @@ describe("OrderService.placeBookNow", () => {
       );
       expect((refusal.details!.lines as unknown[]).length).toBe(2);
       await expectNothingWritten(world);
+    });
+
+    it("for a basket whose total qty would not fit int4, with no business cap below that", async () => {
+      const world = await buildCheckoutWorld({ businessDate: today });
+      const refusal = await refusalOf(
+        orderService.placeBookNow(
+          world.salesman.id,
+          bookNowInput(world, {
+            lines: [
+              { sku: world.milk.sku, qty: 2_000_000_000 },
+              { sku: world.curd.sku, qty: 2_000_000_000 },
+            ],
+          }),
+        ),
+      );
+      expect(refusal.reason).toBe("bad_lines");
+      // The first line fits; the second would take the basket past int4.
+      expect(refusal.details!.lines).toHaveLength(1);
+      await expectNothingWritten(world);
+
+      // A large qty that fits is not refused for its size, only for the stock on the GatePass.
+      expect(
+        await refusalOf(
+          orderService.placeBookNow(
+            world.salesman.id,
+            bookNowInput(world, { lines: [{ sku: world.milk.sku, qty: 500_000 }] }),
+          ),
+        ),
+      ).toMatchObject({ reason: "short_stock" });
     });
 
     it("for a Route price × qty too large to bill", async () => {

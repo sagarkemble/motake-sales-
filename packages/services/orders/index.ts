@@ -95,13 +95,11 @@ import {
 const orderIdempotencyConstraint = "orders_idempotency_key_unique";
 const paymentIdempotencyConstraint = "payments_idempotency_key_unique";
 
-// Packs per merged line, which keeps quantities inside int4.
-const MAX_LINE_QTY = 100_000;
-
-// Route price × qty with GST (under 100%) on top must stay a safe integer in paise.
-function lineAmountTooLarge(routePricePaise: number, quantity: number): boolean {
-  return BigInt(routePricePaise) * BigInt(quantity) * 2n > BigInt(Number.MAX_SAFE_INTEGER);
-}
+// Technical limits only, no business cap: quantities are int4 columns (order_items.quantity,
+// bills.total_quantity), and Route price × qty with GST (under 100%) on top must stay a safe
+// integer in paise, for each line and for the basket.
+const MAX_INT4 = 2_147_483_647;
+const MAX_SAFE_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
 
 interface ParsedCheckoutPayment {
   mode: CheckoutPaymentInput["mode"];
@@ -909,9 +907,9 @@ class OrderService {
     return items;
   }
 
-  // Merges repeated SKUs, then checks every line: qty a whole number from 1 to MAX_LINE_QTY (after
-  // merging), SKU sellable, a Route price on this Route, a tax period covering `day`, and an amount
-  // that fits. Every failure is collected.
+  // Merges repeated SKUs, then checks every line: qty a whole number from 1 that fits int4 (after
+  // merging), SKU sellable, a Route price on this Route, a tax period covering `day`, and a qty and
+  // amount that still fit once added to the basket. Every failure is collected.
   private async resolveBasket(
     lines: CheckoutLineInput[],
     routeId: string,
@@ -926,7 +924,7 @@ class OrderService {
       quantityBySku.set(line.sku, (quantityBySku.get(line.sku) ?? 0) + line.qty);
     }
     for (const [sku, quantity] of quantityBySku) {
-      if (quantity > MAX_LINE_QTY) badQtySkus.add(sku);
+      if (quantity > MAX_INT4) badQtySkus.add(sku);
     }
     for (const sku of badQtySkus) {
       badLines.push({ sku, reason: "bad_qty" });
@@ -943,6 +941,8 @@ class OrderService {
     );
 
     const resolved: ResolvedLine[] = [];
+    let basketQuantity = 0;
+    let basketAmount = 0n;
     for (const [sku, quantity] of quantityBySku) {
       const variety = varietyBySku.get(sku);
       if (!variety) {
@@ -954,10 +954,13 @@ class OrderService {
       if (routePricePaise === undefined) badLines.push({ sku, reason: "no_route_price" });
       if (!facts) badLines.push({ sku, reason: "no_tax_period" });
       if (routePricePaise === undefined || !facts) continue;
-      if (lineAmountTooLarge(routePricePaise, quantity)) {
+      const amountWithTax = BigInt(routePricePaise) * BigInt(quantity) * 2n;
+      if (basketQuantity + quantity > MAX_INT4 || basketAmount + amountWithTax > MAX_SAFE_AMOUNT) {
         badLines.push({ sku, reason: "bad_qty" });
         continue;
       }
+      basketQuantity += quantity;
+      basketAmount += amountWithTax;
       resolved.push({
         sku,
         varietyId: variety.id,
