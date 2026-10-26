@@ -41,6 +41,7 @@ export default function EditProductPage() {
     deleteProductAsync,
     isDeletingProduct,
   } = useProducts({ productId });
+  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   async function handleSubmit(values: ProductFormValues) {
@@ -58,6 +59,8 @@ export default function EditProductPage() {
       toast.success(tx("admin.products.deactivateSuccess"));
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.products.deactivateFailed")));
+    } finally {
+      setIsDeactivateConfirmOpen(false);
     }
   }
 
@@ -111,7 +114,7 @@ export default function EditProductPage() {
               variant="outline"
               className="rounded-full"
               disabled={isDeactivatingProduct || Boolean(product.deletedAt)}
-              onClick={handleDeactivate}
+              onClick={() => setIsDeactivateConfirmOpen(true)}
             >
               Deactivate
             </Button>
@@ -152,6 +155,32 @@ export default function EditProductPage() {
       />
 
       <VarietyTable productId={productId} productName={product.name} />
+
+      <AlertDialog open={isDeactivateConfirmOpen} onOpenChange={setIsDeactivateConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tx("admin.products.deactivateTitle", { name: product.name })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{tx("admin.products.deactivateBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeactivatingProduct}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeactivatingProduct}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeactivate();
+              }}
+            >
+              {tx("admin.products.deactivateConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
