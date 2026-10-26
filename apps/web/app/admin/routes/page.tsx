@@ -138,7 +138,8 @@ function RoutesPageContent() {
 
       <section
         ref={detailRef}
-        className="min-w-0 scroll-mt-20 overflow-hidden rounded-2xl border bg-card p-4"
+        // Fits the screen under the navbar (and above the phone tab bar); the prices scroll inside.
+        className="flex h-[calc(100dvh-9.5rem)] min-w-0 scroll-mt-20 flex-col overflow-hidden rounded-2xl border bg-card p-4 md:h-[calc(100dvh-7rem)] lg:sticky lg:top-[4.5rem]"
       >
         {activeRouteId ? (
           <RouteDetail routeId={activeRouteId} />

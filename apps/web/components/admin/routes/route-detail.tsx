@@ -17,6 +17,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
@@ -132,8 +133,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <header className="flex shrink-0 flex-col gap-4">
         {isHidden && (
           <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
             {tx("admin.routes.hidden")}
@@ -211,25 +212,28 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
         </div>
       </header>
 
-      <section>
+      <section className="flex min-h-0 flex-1 flex-col">
         <h2 className="text-sm font-medium">{tx("admin.routes.prices.title")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">{tx("admin.routes.prices.hint")}</p>
-        {productGroups.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {tx("admin.routes.prices.empty")}
-          </p>
-        ) : (
-          productGroups.map((group) => (
-            <div key={group.productName}>
-              <h3 className="pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {group.productName}
-              </h3>
-              {group.varieties.map((variety) => (
-                <RoutePriceRow key={variety.varietyId} routeId={route.id} variety={variety} />
-              ))}
-            </div>
-          ))
-        )}
+        {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
+        <ScrollArea className="mt-1 min-h-0 flex-1 pr-3 [&_[data-slot=scroll-area-viewport]>div]:block!">
+          {productGroups.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {tx("admin.routes.prices.empty")}
+            </p>
+          ) : (
+            productGroups.map((group) => (
+              <div key={group.productName}>
+                <h3 className="pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {group.productName}
+                </h3>
+                {group.varieties.map((variety) => (
+                  <RoutePriceRow key={variety.varietyId} routeId={route.id} variety={variety} />
+                ))}
+              </div>
+            ))
+          )}
+        </ScrollArea>
       </section>
 
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
