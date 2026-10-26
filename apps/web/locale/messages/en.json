@@ -324,6 +324,7 @@
         "shopPhoto": "Shop photo",
         "route": "Route",
         "routeHint": "Set once here. Later changes go through Move to Route.",
+        "fixedDetailsTitle": "Route & language",
         "fixedDetailsLabel": "Read-only",
         "contactName": "Contact name",
         "notes": "Notes",

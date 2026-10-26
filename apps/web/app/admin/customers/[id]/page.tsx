@@ -8,7 +8,9 @@ import {
   CheckCircle2Icon,
   IndianRupeeIcon,
   LockIcon,
+  MapPinIcon,
   PackageIcon,
+  PhoneIcon,
   ShoppingCartIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -87,8 +89,8 @@ export default function CustomerDetailPage() {
       <BackHeader href="/admin/customers" title={customer.shopName} />
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
-        {/* Phone: photo + contact, details below. Wider: photo | contact | details. */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.2fr)]">
+        {/* Phone: photo + contact, details panel below. Wider: photo | contact | details panel. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]">
           <ShopPhotoThumbnail
             shopPhotoUrl={customer.shopPhotoUrl}
             shopName={customer.shopName}
@@ -96,19 +98,22 @@ export default function CustomerDetailPage() {
             shape="rounded"
             className="rounded-2xl"
           />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-sm font-medium">
-                {customer.contactName ?? tx("admin.customers.noContactName")}
-              </p>
-              <StatusBadge status={customer.status} />
-            </div>
-            <p className="text-sm text-muted-foreground">{customer.phone}</p>
-            <p className="text-sm text-muted-foreground">{customer.address}</p>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="truncate text-base font-semibold">
+              {customer.contactName ?? tx("admin.customers.noContactName")}
+            </p>
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <PhoneIcon className="size-3.5 shrink-0" />
+              {customer.phone}
+            </p>
+            <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+              <MapPinIcon className="mt-0.5 size-3.5 shrink-0" />
+              {customer.address}
+            </p>
             {customer.notes && <p className="text-xs text-muted-foreground">{customer.notes}</p>}
           </div>
 
-          <dl className="col-span-2 grid grid-cols-2 content-start gap-x-4 gap-y-3 border-t pt-4 text-sm md:col-span-1 md:border-t-0 md:border-l md:pt-0 md:pl-4">
+          <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted/40 p-3 text-sm md:col-span-1">
             <div className="min-w-0">
               <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
               <dd className="min-w-0">
@@ -173,7 +178,7 @@ export default function CustomerDetailPage() {
             }}
           />
         ) : (
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button
               size="sm"
               variant="outline"
@@ -216,6 +221,10 @@ export default function CustomerDetailPage() {
                 {tx("admin.customers.deactivate")}
               </Button>
             )}
+            {/* Phone: on its own line above the buttons, left. Wider: at the end of the row, right. */}
+            <span className="order-first basis-full sm:order-none sm:ml-auto sm:basis-auto">
+              <StatusBadge status={customer.status} />
+            </span>
           </div>
         )}
       </div>

@@ -152,49 +152,51 @@ export function CustomerForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        {/* Phone: photo, then Route + language. Wider: photo at its own width, details beside it. */}
-        <div className="grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)]">
-          <FormField
-            control={form.control}
-            name="shopPhotoUrl"
-            render={() => (
-              <FormItem className="items-center sm:items-start">
-                <FormLabel>
-                  {isCreate
-                    ? tx("salesman.checkout.customer.shopPhoto")
-                    : tx("admin.customers.form.shopPhoto")}
-                </FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    imageUrl={form.watch("shopPhotoUrl") || null}
-                    requestUploadUrl={createShopPhotoUploadUrlAsync}
-                    altText={tx("admin.customers.form.shopPhoto")}
-                    shape="square"
-                    uploadButtonLabel={tx("salesman.checkout.customer.uploadPhoto")}
-                    onUploaded={(result) => {
-                      form.setValue("shopPhotoKey", result.imageKey, { shouldValidate: true });
-                      form.setValue("shopPhotoUrl", result.imageUrl, { shouldValidate: true });
-                    }}
-                    onDelete={
-                      customerId || form.watch("shopPhotoUrl")
-                        ? async () => {
-                            if (customerId && defaultValues?.shopPhotoKey) {
-                              await deleteCustomerShopPhotoAsync({ id: customerId });
+        {/* Two cards. Phone: photo card, then Route + language card. Wider: side by side, same height. */}
+        <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+          <div className="rounded-2xl border bg-card p-4">
+            <FormField
+              control={form.control}
+              name="shopPhotoUrl"
+              render={() => (
+                <FormItem className="h-full content-center justify-items-center">
+                  <FormLabel>
+                    {isCreate
+                      ? tx("salesman.checkout.customer.shopPhoto")
+                      : tx("admin.customers.form.shopPhoto")}
+                  </FormLabel>
+                  <FormControl>
+                    <ImageUpload
+                      imageUrl={form.watch("shopPhotoUrl") || null}
+                      requestUploadUrl={createShopPhotoUploadUrlAsync}
+                      altText={tx("admin.customers.form.shopPhoto")}
+                      shape="square"
+                      uploadButtonLabel={tx("salesman.checkout.customer.uploadPhoto")}
+                      onUploaded={(result) => {
+                        form.setValue("shopPhotoKey", result.imageKey, { shouldValidate: true });
+                        form.setValue("shopPhotoUrl", result.imageUrl, { shouldValidate: true });
+                      }}
+                      onDelete={
+                        customerId || form.watch("shopPhotoUrl")
+                          ? async () => {
+                              if (customerId && defaultValues?.shopPhotoKey) {
+                                await deleteCustomerShopPhotoAsync({ id: customerId });
+                              }
+                              form.setValue("shopPhotoKey", "", { shouldValidate: true });
+                              form.setValue("shopPhotoUrl", "", { shouldValidate: true });
                             }
-                            form.setValue("shopPhotoKey", "", { shouldValidate: true });
-                            form.setValue("shopPhotoUrl", "", { shouldValidate: true });
-                          }
-                        : undefined
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {isCreate ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
               <FormField
                 control={form.control}
                 name="routeId"
@@ -222,14 +224,17 @@ export function CustomerForm({
             </div>
           ) : (
             fixedDetails && (
-              <div className="flex flex-col gap-3 border-t pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
-                <div className="flex justify-end">
+              <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">
+                    {tx("admin.customers.form.fixedDetailsTitle")}
+                  </p>
                   <Badge variant="outline" className="gap-1 text-muted-foreground">
                     <LockIcon className="size-3" />
                     {tx("admin.customers.form.fixedDetailsLabel")}
                   </Badge>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <dl className="grid gap-y-3 text-sm">
                   <div className="min-w-0">
                     <dt className="text-xs text-muted-foreground">
                       {tx("admin.customers.form.route")}
