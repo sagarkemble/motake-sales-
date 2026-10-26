@@ -445,7 +445,10 @@ describe("resend", () => {
 
     await expect(
       harness.service.resend({ notificationId, to: "+919800000003" }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", cause: { reason: "template_superseded" } });
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      cause: { refusal: { reason: "template_superseded" } },
+    });
 
     const after = await notificationRow(notificationId);
     expect(after).toMatchObject({ status: "failed", recipientPhone: before.recipientPhone });

@@ -46,7 +46,7 @@ async function notificationRows() {
 async function expectRefused(input: EnqueueInput, reason: string) {
   await expect(harness.service.enqueue(input)).rejects.toMatchObject({
     code: "BAD_REQUEST",
-    cause: { reason },
+    cause: { refusal: { reason } },
   });
 }
 

@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { unauthorized } from "@repo/services/errors";
+import { refusalOf, unauthorized } from "@repo/services/errors";
 import { initTRPC } from "@trpc/server";
 import { ZodError } from "zod";
 
@@ -12,23 +12,19 @@ const BEARER_PREFIX = "Bearer ";
 export const notificationTRPC = initTRPC.context<NotificationTRPCContext>().create({
   errorFormatter({ shape, error }) {
     const zodError = error.cause instanceof ZodError ? error.cause : null;
-    // Refused instructions carry a machine code (template_not_found, ...) in their cause.
-    const reason =
-      error.cause && "reason" in error.cause && typeof error.cause.reason === "string"
-        ? error.cause.reason
-        : null;
     return {
       ...shape,
       message: zodError ? "Validation failed" : shape.message,
       data: {
         ...shape.data,
         stack: undefined,
-        reason,
         issues:
           zodError?.issues.map((issue) => ({
             path: issue.path.join("."),
             message: issue.message,
           })) ?? null,
+        // Refused instructions: the machine reason (template_not_found, ...), as on the app router.
+        refusal: refusalOf(error),
       },
     };
   },
