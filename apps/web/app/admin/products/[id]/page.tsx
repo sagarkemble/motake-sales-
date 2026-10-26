@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 
 export default function EditProductPage() {
   const tx = useTranslate();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const productId = params.id;
 
@@ -77,6 +78,7 @@ export default function EditProductPage() {
     try {
       await deleteProductAsync({ id: productId });
       toast.success(tx("admin.products.deleteSuccess"));
+      router.push("/admin/products");
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.products.deleteFailed")));
     } finally {
