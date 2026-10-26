@@ -32,6 +32,14 @@ export const tooManyRequests = (
       retryAfterMs !== undefined ? Object.assign(new Error(message), { retryAfterMs }) : undefined,
   });
 
+// A refused notification instruction; `reason` is the machine code callers branch on (Spec K).
+export const notificationRefused = (reason: string, message: string) =>
+  new TRPCError({
+    code: "BAD_REQUEST",
+    message,
+    cause: Object.assign(new Error(message), { reason }),
+  });
+
 export interface UncoveredVariety {
   id: string;
   name: string;

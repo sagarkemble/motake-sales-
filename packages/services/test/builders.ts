@@ -12,6 +12,7 @@ import {
   ledgerEntriesTable,
   noteLinesTable,
   notesTable,
+  notificationTemplatesTable,
   orderItemsTable,
   ordersTable,
   orderVersionsTable,
@@ -32,6 +33,7 @@ import {
   type SelectCustomer,
   type SelectGatepass,
   type SelectNote,
+  type SelectNotificationTemplate,
   type SelectOrder,
   type SelectPayment,
   type SelectPaymentEvent,
@@ -770,4 +772,24 @@ export async function buildCheckoutWorld(input: {
     ],
   });
   return { admin, salesman, route, milk, curd, customer, gatepass };
+}
+
+// A provider-approved template row, inserted by hand as a developer would (db-decisions/0014).
+export async function buildNotificationTemplate(
+  overrides: Partial<typeof notificationTemplatesTable.$inferInsert> = {},
+): Promise<SelectNotificationTemplate> {
+  const [template] = await db
+    .insert(notificationTemplatesTable)
+    .values({
+      provider: "whatsapp",
+      templateId: `motake_template_${nextUnique()}`,
+      language: "mr",
+      version: 1,
+      templateVariables: ["shop_name", "bill_number"],
+      documentType: "none",
+      verified: true,
+      ...overrides,
+    })
+    .returning();
+  return template!;
 }
