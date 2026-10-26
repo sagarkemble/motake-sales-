@@ -12,6 +12,7 @@ import {
   getGatepassWithItemsForSalesmanAndDate,
   incrementSoldQtyIfAvailable,
   listGatepassesForDate,
+  lockActiveGatepassWithRoute,
   recordReturnedQtyForItem,
   restoreSoldQtyOnCancellation,
   submitHandoverForGatepass,
@@ -72,6 +73,22 @@ class GatepassService {
     const activeGatepass = await getActiveGatepassWithRoute(
       salesmanId,
       businessDateOf(new Date()),
+      executor,
+    );
+    return activeGatepass ?? null;
+  }
+
+  // Same as getActiveGatepassForSalesman, locking the GatePass row in the caller's transaction:
+  // `update` when stock moves (Book Now), `share` when it only must not be handed over meanwhile.
+  public async lockActiveGatepassForSalesman(
+    salesmanId: string,
+    strength: "update" | "share",
+    executor: DbExecutor,
+  ): Promise<ActiveGatepassWithRoute | null> {
+    const activeGatepass = await lockActiveGatepassWithRoute(
+      salesmanId,
+      businessDateOf(new Date()),
+      strength,
       executor,
     );
     return activeGatepass ?? null;

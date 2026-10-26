@@ -17,6 +17,7 @@
     "./k6-cleanup": "./k6-cleanup/index.ts",
     "./ledger": "./ledger/index.ts",
     "./orders": "./orders/index.ts",
+    "./payments": "./payments/index.ts",
     "./products": "./products/index.ts",
     "./reports": "./reports/index.ts",
     "./routes": "./routes/index.ts",
