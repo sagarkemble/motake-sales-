@@ -11,6 +11,7 @@
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
     "./gst-credit-note-deadline": "./gst-credit-note-deadline/index.ts",
+    "./indian-states": "./shared/indian-states.ts",
     "./k6-cleanup": "./k6-cleanup/index.ts",
     "./ledger": "./ledger/index.ts",
     "./orders": "./orders/index.ts",

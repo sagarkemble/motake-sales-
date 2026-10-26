@@ -419,6 +419,110 @@
       },
       "loadFailed": "Could not load the Bill",
       "hideCancelled": "Hide cancelled Bills"
+    },
+    "settings": {
+      "title": "Settings",
+      "accountEntry": {
+        "title": "Settings",
+        "description": "Seller details, number prefixes and GST Credit Note deadline"
+      },
+      "tabs": {
+        "seller": "Seller",
+        "prefixes": "Prefixes",
+        "deadline": "CN deadline"
+      },
+      "loadFailed": "Could not load settings.",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "e.g. CA instruction 12 Oct",
+      "fields": {
+        "legalName": "Legal name",
+        "address": "Address",
+        "state": "State",
+        "gstin": "GSTIN",
+        "phone": "Phone",
+        "email": "Email",
+        "prefix": "Prefix",
+        "deadlineDate": "Deadline",
+        "defaultDate": "Default deadline"
+      },
+      "history": {
+        "title": "History",
+        "sellerTitle": "Change history",
+        "empty": "No changes yet.",
+        "loadFailed": "Could not load the history.",
+        "created": "created",
+        "updated": "updated",
+        "none": "(none)",
+        "emptyValue": "(empty)"
+      },
+      "seller": {
+        "title": "Seller master",
+        "notSetUpTitle": "Seller master not set up",
+        "notSetUpBody": "Bills and Notes cannot be issued until you confirm the seller details.",
+        "prefilledHint": "Filled with the CA-confirmed details. Check them and confirm once.",
+        "edit": "Edit",
+        "emailOptional": "Email (optional)",
+        "statePlaceholder": "Select a state",
+        "appliesNote": "Changes apply only to Bills and Notes issued after you save. Old papers keep the details they were issued with.",
+        "confirm": "Confirm seller details",
+        "saveChanges": "Save changes",
+        "setUpSuccess": "Seller master set up",
+        "setUpFailed": "Could not set up the Seller master. Try again.",
+        "updateSuccess": "Seller master saved",
+        "updateFailed": "Could not save the Seller master. Try again.",
+        "validation": {
+          "legalName": "Enter the legal name (up to 200 characters).",
+          "address": "Enter the address.",
+          "state": "Pick a state from the list.",
+          "gstinLength": "GSTIN must be exactly 15 characters.",
+          "gstinShape": "GSTIN shape is not valid.",
+          "gstinState": "GSTIN starts with {code} but {state} is {stateCode}.",
+          "phone": "Enter the phone number (up to 20 characters).",
+          "email": "Email is not valid."
+        }
+      },
+      "prefixes": {
+        "kinds": {
+          "bill": "Bill",
+          "credit_note": "Credit Note",
+          "debit_note": "Debit Note",
+          "payment": "Payment",
+          "refund": "Refund"
+        },
+        "financialYear": "FY {year}",
+        "now": "now",
+        "next": "next",
+        "missing": "{count} of 5 series not created yet.",
+        "allExist": "All five series exist.",
+        "prepare": "Prepare next year",
+        "prepareSuccess": "Next year's series are ready",
+        "prepareFailed": "Could not prepare next year. Try again.",
+        "nextNumber": "Next {number}",
+        "frozenSince": "Frozen since {date}",
+        "readOnly": "Read-only",
+        "default": "default",
+        "editable": "Editable",
+        "editableNextYear": "Editable · next year",
+        "prefixLabel": "{kind} prefix",
+        "save": "Save prefix",
+        "saveSuccess": "Prefix saved",
+        "saveFailed": "Could not save the prefix. Try again.",
+        "invalid": "A prefix is 1 or 2 letters A–Z.",
+        "sharedNote": "GST and Commercial Credit Notes share the Credit Note series. The next number and first-issued time are set only by issuing."
+      },
+      "deadline": {
+        "intro": "Last day a GST Credit Note may reverse tax on Bills of that year. After it, reductions become Commercial Credit Notes. Changes apply to new Credit Note decisions only.",
+        "billsOf": "Bills of FY {year}",
+        "default": "default",
+        "setByAdmin": "set by Admin",
+        "set": "Set",
+        "label": "Deadline for Bills of FY {year}",
+        "useDefault": "Use default ({date})",
+        "save": "Save deadline",
+        "saveSuccess": "Deadline saved",
+        "saveFailed": "Could not save the deadline. Try again.",
+        "invalid": "Pick a date after {date}."
+      }
     }
   },
   "salesman": {
