@@ -25,6 +25,7 @@ import {
   buildVariety,
 } from "../test/builders";
 import DocumentNumberService from "../document-numbers";
+import { checkoutRefusalOf } from "../errors";
 import LedgerService, { type PostInput } from "./index";
 
 const ledger = new LedgerService();
@@ -471,7 +472,7 @@ describe("LedgerService.post refusals", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
-  it("refuses a soft-deleted Customer but allows an Inactive one", async () => {
+  it("refuses a deactivated Customer, soft-deleted or Inactive, as customer_inactive", async () => {
     const { admin, customer } = await setup();
     const removed = await buildCustomer(admin.id);
     const payment = await buildPayment({ customer, actorId: admin.id, keptPaise: 1_000 });
@@ -489,22 +490,20 @@ describe("LedgerService.post refusals", () => {
       .set({ deletedAt: new Date() })
       .where(eq(customersTable.id, removed.id));
 
-    await expect(
-      post({
+    for (const [customerId, paymentId] of [
+      [customer.id, payment.id],
+      [removed.id, removedPayment.id],
+    ] as const) {
+      const refused = await post({
         entryType: "payment",
-        paymentId: payment.id,
-        customerId: customer.id,
+        paymentId,
+        customerId,
         actorId: admin.id,
-      }),
-    ).resolves.toMatchObject({ balanceAfterPaise: -1_000 });
-    await expect(
-      post({
-        entryType: "payment",
-        paymentId: removedPayment.id,
-        customerId: removed.id,
-        actorId: admin.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      }).catch((caught: unknown) => caught);
+      expect(checkoutRefusalOf(refused)).toMatchObject({ reason: "customer_inactive" });
+    }
+    expect(await ledgerRows(customer.id)).toHaveLength(0);
+    expect(await ledgerRows(removed.id)).toHaveLength(0);
   });
 
   it("refuses a Refund, or a bigger Refund, past the Customer's Advance", async () => {

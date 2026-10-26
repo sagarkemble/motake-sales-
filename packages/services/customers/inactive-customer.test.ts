@@ -16,7 +16,7 @@ import { checkoutRefusalOf } from "../errors";
 import LedgerService from "../ledger";
 import OrderService from "../orders";
 import PaymentService from "../payments";
-import { buildCheckoutWorld, buildRoute, type CheckoutWorld } from "../test/builders";
+import { buildCheckoutWorld, buildPayment, buildRoute, type CheckoutWorld } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import CustomerService from "./index";
 
@@ -238,6 +238,46 @@ describe("A deactivated Customer", () => {
         ),
       ),
     ).toMatchObject({ reason: "customer_inactive" });
+  });
+
+  it("keeps its Balance readable and refuses any Ledger post", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    await ledger.setOpeningBalance({
+      customerId: world.customer.id,
+      direction: "pending",
+      amountPaise: 10_000,
+      reason: "Carried over",
+      actorId: world.admin.id,
+    });
+    await deactivate(world);
+    const payment = await buildPayment({
+      customer: world.customer,
+      actorId: world.admin.id,
+      keptPaise: 1_000,
+    });
+
+    expect(await ledger.getBalance(world.customer.id)).toEqual({
+      balancePaise: 10_000,
+      state: "pending",
+      amountPaise: 10_000,
+    });
+    expect(
+      await refusalOf(
+        runInTransaction((transaction) =>
+          ledger.post(
+            {
+              entryType: "payment",
+              paymentId: payment.id,
+              customerId: world.customer.id,
+              actorId: world.admin.id,
+            },
+            transaction,
+          ),
+        ),
+      ),
+    ).toMatchObject({ reason: "customer_inactive" });
+    expect(await ledger.getBalance(world.customer.id)).toMatchObject({ balancePaise: 10_000 });
+    expect(await db.select().from(ledgerEntriesTable)).toHaveLength(1);
   });
 
   it("still allows reads and profile updates: details, photo and Route", async () => {

@@ -13,9 +13,8 @@ import {
   getStoredBalance,
   hasOpeningBalance,
   insertLedgerEntry,
-  lockLiveCustomerBalance,
 } from "@repo/database/queries/ledger";
-import { getCustomerById } from "@repo/database/queries/customers";
+import { lockCustomerRow } from "@repo/database/queries/customers";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { InsertLedgerEntry } from "@repo/database/schema";
@@ -73,10 +72,6 @@ class LedgerService {
   ): Promise<PostResult> {
     const parsedInput = openingBalanceInputSchema.parse(input);
     return executor.transaction(async (transaction) => {
-      assertCustomerActive(
-        await getCustomerById(parsedInput.customerId, transaction),
-        parsedInput.customerId,
-      );
       await this.lockBalance(parsedInput.customerId, transaction);
       if (await hasOpeningBalance(parsedInput.customerId, transaction)) {
         throw conflict("This Customer already has an Opening balance");
@@ -108,18 +103,19 @@ class LedgerService {
     });
   }
 
-  // The stored copy, as Pending / Advance / Settled.
+  // The stored copy, as Pending / Advance / Settled. Also for a deactivated Customer: reads stay.
   public async getBalance(customerId: string, executor: DbExecutor = db): Promise<Balance> {
     const balancePaise = await getStoredBalance(customerId, executor);
     if (balancePaise === undefined) throw notFound(`Customer ${customerId} not found`);
     return toBalance(balancePaise);
   }
 
-  // Locks the live Customer row FOR UPDATE, for callers that decide what to post from the Balance.
+  // Locks the Customer row FOR UPDATE, for callers that decide what to post from the Balance, and
+  // for every post. A deactivated Customer allows no write, so it is refused customer_inactive.
   public async lockBalance(customerId: string, executor: DbExecutor): Promise<Balance> {
-    const balancePaise = await lockLiveCustomerBalance(customerId, executor);
-    if (balancePaise === undefined) throw notFound(`Customer ${customerId} not found`);
-    return toBalance(balancePaise);
+    const customer = await lockCustomerRow(customerId, "update", executor);
+    assertCustomerActive(customer, customerId);
+    return toBalance(customer.balancePaise);
   }
 
   // Reads the linked paper (already inserted or updated by the caller) for side, amount and reason.

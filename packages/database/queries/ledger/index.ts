@@ -29,18 +29,7 @@ export async function applyBalanceChange(
   return row?.balancePaise;
 }
 
-export async function lockLiveCustomerBalance(
-  customerId: string,
-  executor: DbExecutor = db,
-): Promise<number | undefined> {
-  const [row] = await executor
-    .select({ balancePaise: customersTable.balancePaise })
-    .from(customersTable)
-    .where(and(eq(customersTable.id, customerId), isNull(customersTable.deletedAt)))
-    .for("update");
-  return row?.balancePaise;
-}
-
+// A read: a deactivated (soft-deleted) Customer's Balance stays readable.
 export async function getStoredBalance(
   customerId: string,
   executor: DbExecutor = db,
@@ -48,7 +37,7 @@ export async function getStoredBalance(
   const [row] = await executor
     .select({ balancePaise: customersTable.balancePaise })
     .from(customersTable)
-    .where(and(eq(customersTable.id, customerId), isNull(customersTable.deletedAt)));
+    .where(eq(customersTable.id, customerId));
   return row?.balancePaise;
 }
 
