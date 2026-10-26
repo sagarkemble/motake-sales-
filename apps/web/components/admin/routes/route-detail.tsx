@@ -152,13 +152,9 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                 : tx("admin.routes.hide", { name: route.name })}
             </Button>
           </div>
-          {isHidden ? null : hideRefusal ? (
+          {!isHidden && hideRefusal && (
             <p role="alert" className="text-right text-xs text-destructive">
               {hideRefusal}
-            </p>
-          ) : (
-            <p className="text-right text-xs text-muted-foreground">
-              {tx("admin.routes.hideHint")}
             </p>
           )}
         </div>

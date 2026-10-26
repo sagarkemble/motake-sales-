@@ -682,7 +682,6 @@
       "notFound": "Route not found",
       "statusHint": "Inactive stays on this list. Hide is separate.",
       "hide": "Hide {name}",
-      "hideHint": "Hide removes it from lists and GatePass allotment. Its Customers, prices and history stay.",
       "hideFailed": "Could not hide the Route. Try again.",
       "showAgain": "Show {name} again",
       "showFailed": "Could not show the Route again. Try again.",
