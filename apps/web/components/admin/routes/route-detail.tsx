@@ -140,7 +140,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
           </Badge>
         )}
         <div className="flex flex-col gap-1.5">
-          <div className="grid grid-cols-[4fr_1fr] items-end gap-3">
+          {/* Phone: name + Hide (80:20), Delivery state below. Wider: name 40, state 40, Hide 20. */}
+          <div className="grid grid-cols-[4fr_1fr] items-start gap-3 sm:grid-cols-[2fr_2fr_1fr]">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
               <Input
@@ -155,10 +156,23 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                 className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
               />
             </div>
+            <div className="col-span-2 row-start-2 flex min-w-0 flex-col gap-1.5 sm:col-span-1 sm:row-start-1">
+              <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
+              <DeliveryStateSelect
+                id={`route-state-${route.id}`}
+                value={route.deliveryState as IndianStateName}
+                onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
+                className="data-[size=default]:h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                {tx("admin.routes.deliveryStateHint")}
+              </p>
+            </div>
+            {/* mt-5 lines the button up with the fields below their labels. */}
             <Button
               type="button"
               variant="outline"
-              className="h-auto min-h-11 w-full whitespace-normal rounded-full px-3 leading-tight"
+              className="mt-5 h-auto min-h-11 w-full whitespace-normal rounded-full px-3 leading-tight"
               disabled={isHidden ? isShowingRoute : isHidingRoute}
               onClick={() => setIsConfirmOpen(true)}
             >
@@ -172,15 +186,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
               {hideRefusal}
             </p>
           )}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
-          <DeliveryStateSelect
-            id={`route-state-${route.id}`}
-            value={route.deliveryState as IndianStateName}
-            onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
-          />
-          <p className="text-xs text-muted-foreground">{tx("admin.routes.deliveryStateHint")}</p>
         </div>
         <div>
           <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
