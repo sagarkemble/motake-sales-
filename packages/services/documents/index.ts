@@ -421,7 +421,8 @@ class DocumentService {
   }
 
   // Spec J for the Receipt. Writes no column: the key lives on the notification. The seller is
-  // the current Seller master (Payments keep no seller snapshot); the stored PDF never changes.
+  // the Seller master at the first draw (Payments keep no seller snapshot); the stored PDF never
+  // changes, so a retry after a Payment Correct or a Settings edit returns the stored object.
   public async drawPaymentReceipt(
     input: DrawPaymentReceiptInput,
     options: DrawOptions = {},
@@ -439,12 +440,13 @@ class DocumentService {
     if (event.amountKeptPaise === 0) {
       throw documentRefused("nothing_kept", `Payment ${payment.number} kept ₹0; it has no receipt`);
     }
+    const key = documentKeys.receipt(payment.id, event.id);
+    const filename = documentFileName("payment_receipt", payment.number);
+    if (await this.store.exists(key)) return this.toResult(key, filename, options);
+
     const customer = await getCustomerWithRouteById(payment.customerId);
     if (!customer) throw documentRefused("not_found", `Customer ${payment.customerId} not found`);
     const settings = await this.settingsService.requireSellerSettings();
-
-    const key = documentKeys.receipt(payment.id, event.id);
-    const filename = documentFileName("payment_receipt", payment.number);
     const bytes = await draw({
       layout: "payment_receipt",
       values: {

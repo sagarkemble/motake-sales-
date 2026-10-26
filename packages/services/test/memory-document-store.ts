@@ -28,4 +28,8 @@ export class MemoryDocumentStore extends R2DocumentStore {
     if (!stored) throw new Error(`No object stored under ${key}`);
     return stored;
   }
+
+  public override async exists(key: string): Promise<boolean> {
+    return this.objects.has(key);
+  }
 }

@@ -1,4 +1,10 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  NotFound,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Documents live in their own private R2 bucket: no public access, no public base URL. Browsers
@@ -33,6 +39,7 @@ export interface SignedLinkOptions {
 export interface DocumentStore {
   put(key: string, bytes: Uint8Array, contentType: string): Promise<void>;
   get(key: string): Promise<StoredObject>;
+  exists(key: string): Promise<boolean>;
   signedGetLink(key: string, options: SignedLinkOptions): Promise<SignedLink>;
 }
 
@@ -40,6 +47,11 @@ function contentDisposition(downloadFileName: string | undefined): string {
   if (!downloadFileName) return "inline";
   const asciiName = downloadFileName.replace(/[^\x20-\x7e]|"/g, "_");
   return `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(downloadFileName)}`;
+}
+
+// A HEAD on a missing key has no body, so some S3-compatible stores send a bare 404.
+function isNotFoundStatus(error: unknown): boolean {
+  return (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404;
 }
 
 // Same S3 client pattern as the services uploads R2 client, pointed at the documents bucket.
@@ -77,6 +89,16 @@ export class R2DocumentStore implements DocumentStore {
       bytes: await response.Body.transformToByteArray(),
       contentType: response.ContentType ?? "application/octet-stream",
     };
+  }
+
+  public async exists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(new HeadObjectCommand({ Bucket: this.config.bucketName, Key: key }));
+      return true;
+    } catch (error) {
+      if (error instanceof NotFound || isNotFoundStatus(error)) return false;
+      throw error;
+    }
   }
 
   // Signing happens locally; no network call.

@@ -441,7 +441,7 @@ describe("DocumentService.drawPaymentReceipt", () => {
     expect(result.key).toBe(`documents/receipts/${payment.id}/${posted.id}.pdf`);
     expect(result.filename).toBe("Motake Receipt MP-26-27-000010.pdf");
     expect(retried.key).toBe(result.key);
-    expect(new Set(store.puts)).toEqual(new Set([result.key]));
+    expect(store.puts).toEqual([result.key]);
     const [paymentAfter] = await db
       .select()
       .from(paymentsTable)
@@ -460,6 +460,39 @@ describe("DocumentService.drawPaymentReceipt", () => {
     expect(text).toContain("Cash returned");
     expect(text).toContain("₹565.00");
     expect(text).toContain("Pending ₹1,250.50");
+  });
+
+  it("returns the stored receipt on a retry after a Payment Correct and a Settings edit", async () => {
+    const { admin, customer } = await setup();
+    const payment = await buildPayment({
+      customer,
+      actorId: admin.id,
+      keptPaise: 443_500,
+      overrides: { amountReceivedPaise: 500_000, amountReturnedPaise: 56_500 },
+    });
+    const posted = await buildPaymentEvent({ payment, actorId: admin.id });
+    const [seller] = await db.select().from(sellerSettingsTable);
+    const store = new MemoryDocumentStore();
+    const documents = documentsWith(store);
+    const input = { paymentId: payment.id, postedPaymentEventId: posted.id, balanceAfterPaise: 0 };
+
+    const first = await documents.drawPaymentReceipt(input, { bytes: true });
+    await db
+      .update(paymentsTable)
+      .set({ amountReceivedPaise: 400_000, amountKeptPaise: 400_000, amountReturnedPaise: 0 })
+      .where(eq(paymentsTable.id, payment.id));
+    await buildPaymentEvent({ payment, actorId: admin.id, kind: "adjusted", keptPaise: 400_000 });
+    await db.update(sellerSettingsTable).set({ legalName: "Motake Receipt Renamed LLP" });
+    const retried = await documents.drawPaymentReceipt(input, { bytes: true });
+
+    expect(retried.key).toBe(first.key);
+    expect(store.puts).toEqual([first.key]);
+    expect(retried.bytes).toEqual(first.bytes);
+    const text = await printedText(retried.bytes!);
+    expect(text).toContain(seller!.legalName);
+    expect(text).not.toContain("Motake Receipt Renamed LLP");
+    expect(text).toContain("₹4,435.00");
+    expect(text).toContain("₹565.00");
   });
 
   it("refuses an event that is not the posted event of that Payment, and a ₹0 kept", async () => {
