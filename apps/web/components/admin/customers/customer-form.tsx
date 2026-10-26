@@ -402,6 +402,7 @@ export function CustomerForm({
                 <FormControl>
                   <Switch
                     checked={field.value}
+                    className="data-[state=checked]:bg-brand"
                     onCheckedChange={(checked) => {
                       setIsEinvoicingSetByAdmin(true);
                       field.onChange(checked);

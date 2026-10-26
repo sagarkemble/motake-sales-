@@ -199,6 +199,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
             id={`route-status-${route.id}`}
             checked={route.status === "active"}
             disabled={isSettingRouteStatus}
+            className="data-[state=checked]:bg-brand"
             onCheckedChange={(checked) => void handleStatusChange(checked)}
           />
         </div>
@@ -243,6 +244,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isHidingRoute || isShowingRoute}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
               onClick={(event) => {
                 event.preventDefault();
                 void (isHidden ? handleShow() : handleHide());

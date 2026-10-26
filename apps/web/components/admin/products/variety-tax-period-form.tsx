@@ -195,6 +195,7 @@ export function VarietyTaxPeriodForm({
                 <FormControl>
                   <Switch
                     checked={field.value}
+                    className="data-[state=checked]:bg-brand"
                     onCheckedChange={(checked) => {
                       field.onChange(checked);
                       // Exempt forces the rate to 0; switching back asks for a fresh rate.

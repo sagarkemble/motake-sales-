@@ -78,7 +78,7 @@ export function AllotRouteStep({
                 </div>
                 <Progress
                   value={catalogVarietyCount ? (pricedCount / catalogVarietyCount) * 100 : 0}
-                  className="h-1.5"
+                  className="h-1.5 [&>[data-slot=progress-indicator]]:bg-brand"
                 />
                 <p className="text-xs font-medium">
                   {tx("admin.gatepass.allot.pricedOf", {

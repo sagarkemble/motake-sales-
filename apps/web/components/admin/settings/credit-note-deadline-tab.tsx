@@ -167,7 +167,12 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
         onChange={(event) => setReason(event.target.value)}
       />
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={isSettingCreditNoteDeadline}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isSettingCreditNoteDeadline}
+          className="bg-brand text-brand-foreground hover:bg-brand/90"
+        >
           {isSettingCreditNoteDeadline ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {tx("admin.settings.deadline.save")}
         </Button>
