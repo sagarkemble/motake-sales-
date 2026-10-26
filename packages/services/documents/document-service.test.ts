@@ -454,6 +454,7 @@ describe("DocumentService.drawPaymentReceipt", () => {
     expect(text).toContain("25/10/2026 18:42");
     const [seller] = await db.select().from(sellerSettingsTable);
     expect(text).toContain(seller!.legalName);
+    expect(text).toContain("Maharashtra (27)");
     expect(text).toContain("Laxmi Dairy");
     expect(text).toContain(`${route.name} (${route.code})`);
     expect(text).toContain("₹4,435.00");

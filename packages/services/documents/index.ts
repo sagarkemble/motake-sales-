@@ -110,7 +110,8 @@ function stateByName(stateName: string) {
   return { stateName: state.name, stateCode: state.gstStateCode };
 }
 
-// The seller stamp has no state: it comes from the GSTIN's first two digits.
+// The seller stamp has no state: on every layout it comes from the GSTIN's first two digits
+// (Settings only accepts a GSTIN whose prefix is the selected state's GST code).
 function sellerFromStamp(stamp: {
   legalName: string;
   address: string;
@@ -450,12 +451,11 @@ class DocumentService {
     const bytes = await draw({
       layout: "payment_receipt",
       values: {
-        seller: {
+        seller: sellerFromStamp({
           legalName: settings.legalName,
           address: settings.address,
           gstin: settings.gstin,
-          ...stateByName(settings.state),
-        },
+        }),
         customer: { shopName: customer.shopName, phone: customer.phone },
         route: { name: customer.routeName, code: customer.routeCode },
         receiptNumber: payment.number,

@@ -173,6 +173,9 @@ describe("Seller master edits", () => {
       settings.updateSellerSettings({ gstin: "29EHCPP4509Q1ZP" }, admin.id),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
+      settings.updateSellerSettings({ state: "Karnataka" }, admin.id),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
       settings.updateSellerSettings({ email: "not-an-email" }, admin.id),
     ).rejects.toThrow();
 
