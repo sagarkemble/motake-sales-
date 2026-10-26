@@ -16,9 +16,9 @@ Interactive VPS deployment with PM2 + Caddy.
 
 Steps:
   1/3  Check ports (3000 web, 8000 api, 8100 notification) and assign free ports if busy
-  2/3  Configure domains, build production apps, start/restart PM2 processes, replace the
-       notification container
-  3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh
+  2/3  Configure domains, build production apps, start/restart PM2 processes
+  3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh, then replace the notification
+       container
 
 Processes managed by PM2:
   motake-api   Express API + tRPC + OpenAPI (bundled in one server)
@@ -166,12 +166,19 @@ step_domains_and_build() {
 
   verify_build_artifacts
   start_pm2_apps
+}
 
+# After api/web and Caddy, so a notification failure never holds them back.
+step_notification() {
   echo
   echo "Notification container"
   echo "──────────────────────"
   write_notification_env || true
-  deploy_notification_container
+  if ! deploy_notification_container; then
+    echo "  warn: notification container failed to deploy — API and web are live;" \
+      "check docker logs ${NOTIFICATION_CONTAINER_NAME}" >&2
+    return 1
+  fi
 }
 
 step_caddy() {
@@ -212,6 +219,8 @@ main() {
   step_domains_and_build
   exec 3<&-
   step_caddy
+  local notification_failed=false
+  step_notification || notification_failed=true
 
   echo
   echo "Deployment complete."
@@ -227,6 +236,12 @@ main() {
   echo "  pm2 status"
   echo "  pm2 logs"
   echo "  pm2 restart ${PM2_API_NAME} ${PM2_WEB_NAME}"
+
+  if [[ "$notification_failed" == true ]]; then
+    echo >&2
+    echo "error: the notification container did not come up (see above)." >&2
+    exit 1
+  fi
 }
 
 main "$@"

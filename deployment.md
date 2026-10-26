@@ -228,7 +228,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 #### Notification service (Spec K — `apps/notification` Docker container)
 
-Separate secrets, so leaking one does not open the others. Set all of them or none: with none, deploy skips the notification container with a warning; with only some, deploy fails. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
+Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNAL_API_KEY` switches the service on: unset, deploy skips the notification container (and Docker) with a warning; set, every secret below is required and deploy fails on a missing one. The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (above), which never switches the service on. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
 
 | Secret | Purpose |
 |--------|---------|
@@ -239,10 +239,9 @@ Separate secrets, so leaking one does not open the others. Set all of them or no
 | `META_WEBHOOK_VERIFY_TOKEN` | Any long random string; the same value goes into the Meta webhook settings |
 | `INNGEST_EVENT_KEY` | Self-hosted Inngest event key (`openssl rand -hex 16`) |
 | `INNGEST_SIGNING_KEY` | Self-hosted Inngest signing key, hex with an even length (`openssl rand -hex 32`) |
-| `NOTIFICATION_R2_ENDPOINT` | `https://<account>.r2.cloudflarestorage.com` |
+| `NOTIFICATION_R2_ACCOUNT_ID` | Cloudflare account id (same value as `R2_ACCOUNT_ID`); the endpoint is built from it |
 | `NOTIFICATION_R2_ACCESS_KEY_ID` | Read-only R2 token for the private Documents bucket only |
 | `NOTIFICATION_R2_SECRET_ACCESS_KEY` | Its secret |
-| `R2_DOCUMENTS_BUCKET_NAME` | Private Documents bucket (Spec L, #49) |
 
 ### 5.2 Variables (non-sensitive — repository variables)
 
@@ -605,9 +604,9 @@ motake-back.lunarstudio.dev {
 
 ### 9.1a Notification service (Spec K)
 
-`apps/notification` runs as one Docker container (`motake-notification`): the Express app plus a self-hosted Inngest server, with Inngest state on the named volume `motake-inngest-data`. It publishes only `127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-8100}`. The deploy builds the image on the VPS (`docker build -f apps/notification/Dockerfile .`) and replaces the container on every deploy; it is skipped when none of the notification secrets (§5.1) are set.
+`apps/notification` runs as one Docker container (`motake-notification`): the Express app plus a self-hosted Inngest server, with Inngest state on the named volume `motake-inngest-data`. It publishes only `127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-8100}`. The deploy builds the image on the VPS (`docker build -f apps/notification/Dockerfile .`) and replaces the container on every deploy (`docker stop -t 30` first, so an in-flight send can finish; dangling images are pruned after a healthy start); it is skipped while `NOTIFICATION_INTERNAL_API_KEY` (§5.1) is unset. It runs after PM2, Caddy and the api/web health checks: a notification failure leaves the API and web live and fails the deploy job loudly at the end.
 
-- `ensure-production.sh` installs Docker and adds the deploy user to the `docker` group (takes effect on the next SSH login). An **existing** VPS sudoers file must gain `/usr/sbin/usermod` (see `deploy/vps/sudoers-deploy-bootstrap.example`).
+- `ensure-production.sh` installs Docker only when `NOTIFICATION_INTERNAL_API_KEY` is set. It first rewrites the managed `/etc/sudoers.d/deploy-motake` (validated with `visudo -c`), so an existing VPS gains `/usr/sbin/usermod`, then adds the deploy user to the `docker` group. Until the next SSH login the deploy runs docker through `sg docker`.
 - The main API gets `NOTIFICATION_URL=http://127.0.0.1:<port>` and `NOTIFICATION_INTERNAL_API_KEY` in its `.env`.
 
 **Meta one-time setup** (WhatsApp Business account):
@@ -617,7 +616,7 @@ motake-back.lunarstudio.dev {
 3. In the app's WhatsApp → Configuration, set the callback URL `https://<api-domain>/webhooks/whatsapp` and the verify token `META_WEBHOOK_VERIFY_TOKEN`; subscribe the `messages` field.
 4. Create the message templates in WhatsApp Manager and wait for approval; then insert a matching `notification_templates` row per name/language/version with `verified = true` (nothing is sent for a template that is not in the table and verified).
 
-Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when DB, Inngest and config are ok; 503 when degraded).
+Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when the database and the in-container Inngest server answer; 503 when either is down). It does not check Meta or R2 credentials; a missing setting stops the app at start-up, so `/health` does not answer at all.
 
 ### 9.2 Non-interactive invocation (from CI)
 

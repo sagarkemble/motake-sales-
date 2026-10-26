@@ -47,13 +47,14 @@ Minimum:
 - `DATABASE_URL`, `JWT_SECRET`, Supabase, R2 keys
 - `NEXT_PUBLIC_*`, `BASE_URL`, `CORS_ALLOWED_ORIGIN`
 
-Notification service (Spec K, optional — all or none; none skips the container):
+Notification service (Spec K, optional — `NOTIFICATION_INTERNAL_API_KEY` switches it on, then all are required; unset skips the container and Docker):
 
 - `NOTIFICATION_INTERNAL_API_KEY`, `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`
 - `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` (hex: `openssl rand -hex 32`)
-- `NOTIFICATION_R2_ENDPOINT`, `NOTIFICATION_R2_ACCESS_KEY_ID`, `NOTIFICATION_R2_SECRET_ACCESS_KEY`, `R2_DOCUMENTS_BUCKET_NAME`
+- `NOTIFICATION_R2_ACCOUNT_ID`, `NOTIFICATION_R2_ACCESS_KEY_ID`, `NOTIFICATION_R2_SECRET_ACCESS_KEY`
+- The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (Spec L)
 
-They go to `deploy/generated/notification.env` for the Docker container, not to the API's `.env`. Docker is installed by `ensure-production.sh`; an existing sudoers file needs `/usr/sbin/usermod` added. Meta setup: [`deployment.md`](../../deployment.md) §9.1a.
+They go to `deploy/generated/notification.env` for the Docker container, not to the API's `.env`. Docker is installed by `ensure-production.sh` only when the key is set; it rewrites the managed sudoers file (validated with `visudo`) first, so an existing VPS gains `/usr/sbin/usermod`. Meta setup: [`deployment.md`](../../deployment.md) §9.1a.
 
 ## Required GitHub Variables
 

@@ -48,12 +48,14 @@ Required environment variables:
 Optional (defaults applied if unset):
   PORT, NODE_ENV, LOGGER_LEVEL, CORS_ALLOWED_ORIGIN, MOTAKE_NOTIFICATION_PORT
 
-Notification service (all or none; none skips the notification container):
+Notification service (switched on by NOTIFICATION_INTERNAL_API_KEY; then all are required,
+unset skips the notification container):
   NOTIFICATION_INTERNAL_API_KEY, META_ACCESS_TOKEN, META_PHONE_NUMBER_ID, META_APP_SECRET,
-  META_WEBHOOK_VERIFY_TOKEN, INNGEST_EVENT_KEY, INNGEST_SIGNING_KEY, NOTIFICATION_R2_ENDPOINT,
-  NOTIFICATION_R2_ACCESS_KEY_ID, NOTIFICATION_R2_SECRET_ACCESS_KEY, R2_DOCUMENTS_BUCKET_NAME
-  These go to deploy/generated/notification.env (mode 600), not the root .env; the root .env
-  only gets NOTIFICATION_URL and NOTIFICATION_INTERNAL_API_KEY for the main API.
+  META_WEBHOOK_VERIFY_TOKEN, INNGEST_EVENT_KEY, INNGEST_SIGNING_KEY, NOTIFICATION_R2_ACCOUNT_ID,
+  NOTIFICATION_R2_ACCESS_KEY_ID, NOTIFICATION_R2_SECRET_ACCESS_KEY
+  These go to deploy/generated/notification.env (mode 600) with R2_DOCUMENTS_BUCKET_NAME, not
+  the root .env; the root .env only gets NOTIFICATION_URL and NOTIFICATION_INTERNAL_API_KEY for
+  the main API.
 EOF
 }
 

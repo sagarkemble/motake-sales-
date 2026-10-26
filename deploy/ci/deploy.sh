@@ -155,11 +155,6 @@ main() {
   fi
   start_pm2_apps
 
-  echo
-  echo "Notification container"
-  echo "──────────────────────"
-  deploy_notification_container
-
   if [[ "$SKIP_CADDY" != true ]]; then
     echo
     echo "Caddy reverse proxy"
@@ -173,6 +168,15 @@ main() {
     health_check_local || true
   fi
 
+  # After api/web and Caddy: a notification failure never holds back the API or the web app.
+  local notification_failed=false
+  echo
+  echo "Notification container"
+  echo "──────────────────────"
+  if ! deploy_notification_container; then
+    notification_failed=true
+  fi
+
   echo
   echo "CI deployment complete."
   echo "  Frontend: https://${DEPLOY_FRONTEND_DOMAIN}"
@@ -180,6 +184,16 @@ main() {
     echo "  API:      https://${DEPLOY_API_DOMAIN}/trpc"
   else
     echo "  API:      https://${DEPLOY_FRONTEND_DOMAIN}/trpc"
+  fi
+
+  if [[ "$notification_failed" == true ]]; then
+    echo >&2
+    echo "════════════════════════════════════════════════════════════════════" >&2
+    echo "error: notification container failed to deploy (API and web are live)." >&2
+    echo "  WhatsApp sends are not running; see the log above and" >&2
+    echo "  docker logs ${NOTIFICATION_CONTAINER_NAME} on the VPS." >&2
+    echo "════════════════════════════════════════════════════════════════════" >&2
+    exit 1
   fi
 }
 

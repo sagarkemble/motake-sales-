@@ -27,7 +27,8 @@ LOCAL_CADDYFILE="$GENERATED_DIR/Caddyfile"
 # Only the notification container's secrets; kept out of the root .env the API process loads.
 NOTIFICATION_ENV_FILE="$GENERATED_DIR/notification.env"
 
-# Keys the notification container gets. Meta, Inngest and the R2 read key are separate secrets.
+# The notification container's own secrets: all or none, switched on by
+# NOTIFICATION_INTERNAL_API_KEY. Meta, Inngest and the R2 read key are separate secrets.
 NOTIFICATION_SECRET_VARS=(
   NOTIFICATION_INTERNAL_API_KEY
   META_ACCESS_TOKEN
@@ -36,9 +37,14 @@ NOTIFICATION_SECRET_VARS=(
   META_WEBHOOK_VERIFY_TOKEN
   INNGEST_EVENT_KEY
   INNGEST_SIGNING_KEY
-  NOTIFICATION_R2_ENDPOINT
+  NOTIFICATION_R2_ACCOUNT_ID
   NOTIFICATION_R2_ACCESS_KEY_ID
   NOTIFICATION_R2_SECRET_ACCESS_KEY
+)
+
+# Root values the container also gets. Always set for the API (Spec L), so they never decide
+# whether the notification service is configured.
+NOTIFICATION_SHARED_VARS=(
   R2_DOCUMENTS_BUCKET_NAME
 )
 
@@ -302,7 +308,28 @@ notification_container_owns_port() {
   local port="$1"
 
   command -v docker >/dev/null 2>&1 || return 1
-  docker port "$NOTIFICATION_CONTAINER_NAME" 2>/dev/null | grep -q ":${port}$"
+  docker_cmd port "$NOTIFICATION_CONTAINER_NAME" 2>/dev/null | grep -q ":${port}$"
+}
+
+# Runs docker as the deploy user. ensure-production.sh adds the user to the docker group, which
+# a running SSH session only picks up on the next login, so until then go through `sg docker`.
+DOCKER_VIA_SG=""
+docker_cmd() {
+  if [[ -z "$DOCKER_VIA_SG" ]]; then
+    if docker info >/dev/null 2>&1; then
+      DOCKER_VIA_SG=no
+    elif command -v sg >/dev/null 2>&1 && sg docker -c "docker info" >/dev/null 2>&1; then
+      DOCKER_VIA_SG=yes
+    else
+      DOCKER_VIA_SG=no
+    fi
+  fi
+
+  if [[ "$DOCKER_VIA_SG" == yes ]]; then
+    sg docker -c "$(printf '%q ' docker "$@")"
+  else
+    docker "$@"
+  fi
 }
 
 # Value of KEY from the environment, else from the root .env.
@@ -319,27 +346,29 @@ read_deploy_value() {
   fi
 }
 
-# Writes deploy/generated/notification.env (mode 600) for the container. Returns 1 and writes
-# nothing while no notification secret is configured yet; fails when only some are.
-write_notification_env() {
-  local configured=()
-  local missing=()
-  local var value
+# The notification service is switched on by NOTIFICATION_INTERNAL_API_KEY alone.
+notification_configured() {
+  [[ -n "$(read_deploy_value NOTIFICATION_INTERNAL_API_KEY)" ]]
+}
 
-  for var in "${NOTIFICATION_SECRET_VARS[@]}"; do
-    value="$(read_deploy_value "$var")"
-    if [[ -n "$value" ]]; then
-      configured+=("$var")
-    else
+# Writes deploy/generated/notification.env (mode 600) for the container. Returns 1 and writes
+# nothing while NOTIFICATION_INTERNAL_API_KEY is unset; fails when it is set and any other
+# notification secret or shared value is missing.
+write_notification_env() {
+  local missing=()
+  local var
+
+  if ! notification_configured; then
+    rm -f "$NOTIFICATION_ENV_FILE"
+    echo "  warn: NOTIFICATION_INTERNAL_API_KEY not set — the notification container is skipped" >&2
+    return 1
+  fi
+
+  for var in "${NOTIFICATION_SECRET_VARS[@]}" "${NOTIFICATION_SHARED_VARS[@]}"; do
+    if [[ -z "$(read_deploy_value "$var")" ]]; then
       missing+=("$var")
     fi
   done
-
-  if [[ ${#configured[@]} -eq 0 ]]; then
-    rm -f "$NOTIFICATION_ENV_FILE"
-    echo "  warn: notification secrets not configured — the notification container is skipped" >&2
-    return 1
-  fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
     echo "error: notification secrets missing: ${missing[*]}" >&2
@@ -354,7 +383,7 @@ write_notification_env() {
       echo "NODE_ENV=production"
       echo "LOGGER_LEVEL=$(read_deploy_value LOGGER_LEVEL)"
       echo "DATABASE_URL=$(read_deploy_value DATABASE_URL)"
-      for var in "${NOTIFICATION_SECRET_VARS[@]}"; do
+      for var in "${NOTIFICATION_SECRET_VARS[@]}" "${NOTIFICATION_SHARED_VARS[@]}"; do
         echo "${var}=$(read_deploy_value "$var")"
       done
     } >"$NOTIFICATION_ENV_FILE"
@@ -364,7 +393,8 @@ write_notification_env() {
 }
 
 # Builds the image from the repo, replaces the container and waits for /health. Inngest state
-# stays on the named volume, so queued sends survive the swap.
+# stays on the named volume, so queued sends survive the swap. Returns 1 on any failure (callers
+# run it after api/web are up and turn a failure into a loud warning), so every step checks.
 deploy_notification_container() {
   local port="${DEPLOY_NOTIFICATION_PORT:-$DEFAULT_NOTIFICATION_PORT}"
 
@@ -373,18 +403,25 @@ deploy_notification_container() {
     return 0
   fi
 
-  require_command "docker" "Install Docker (deploy/ci/ensure-production.sh installs it)"
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "error: docker not found — deploy/ci/ensure-production.sh installs it once" \
+      "NOTIFICATION_INTERNAL_API_KEY is set" >&2
+    return 1
+  fi
 
   echo
   echo "Building notification image..."
-  docker build -f "$ROOT_DIR/$NOTIFICATION_DOCKERFILE" -t "$NOTIFICATION_IMAGE" "$ROOT_DIR"
+  docker_cmd build -f "$ROOT_DIR/$NOTIFICATION_DOCKERFILE" -t "$NOTIFICATION_IMAGE" "$ROOT_DIR" ||
+    return 1
 
   echo "Replacing notification container..."
-  docker rm -f "$NOTIFICATION_CONTAINER_NAME" >/dev/null 2>&1 || true
-  docker volume create "$NOTIFICATION_VOLUME" >/dev/null
+  # Up to 30 s for an in-flight send to finish before the old container is killed.
+  docker_cmd stop -t 30 "$NOTIFICATION_CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker_cmd rm -f "$NOTIFICATION_CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker_cmd volume create "$NOTIFICATION_VOLUME" >/dev/null || return 1
   # Published on localhost only; Caddy forwards just the webhook path. The Inngest dashboard
   # port is not published.
-  docker run -d \
+  docker_cmd run -d \
     --name "$NOTIFICATION_CONTAINER_NAME" \
     --restart unless-stopped \
     --init \
@@ -393,9 +430,12 @@ deploy_notification_container() {
     -e PORT="$port" \
     -p "127.0.0.1:${port}:${port}" \
     -v "${NOTIFICATION_VOLUME}:/var/lib/inngest" \
-    "$NOTIFICATION_IMAGE" >/dev/null
+    "$NOTIFICATION_IMAGE" >/dev/null || return 1
 
-  health_check_notification
+  health_check_notification || return 1
+
+  # The previous image is now dangling; drop it so builds do not fill the disk.
+  docker_cmd image prune -f >/dev/null || true
 }
 
 health_check_notification() {
@@ -412,7 +452,7 @@ health_check_notification() {
 
   echo "  notification  FAIL  http://127.0.0.1:${port}/health" >&2
   curl -s "http://127.0.0.1:${port}/health" >&2 || true
-  docker logs --tail 50 "$NOTIFICATION_CONTAINER_NAME" >&2 || true
+  docker_cmd logs --tail 50 "$NOTIFICATION_CONTAINER_NAME" >&2 || true
   return 1
 }
 
