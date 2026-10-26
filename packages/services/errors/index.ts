@@ -189,3 +189,59 @@ export const checkoutRefusal = (
 // The checkout refusal carried by an error, or null for any other error.
 export const checkoutRefusalOf = (error: unknown): CheckoutRefusal | null =>
   refusalOf(error) as CheckoutRefusal | null;
+
+// Admin Ledger and Bill paper refusals (Spec G): the whole call is refused and nothing is written.
+// A deactivated Customer is refused as checkout's customer_inactive; a ₹0 Raise Bill as
+// bill_total_zero.
+export type LedgerRefusalReason =
+  | "empty_basket"
+  | "bad_lines"
+  | "bill_cancelled"
+  | "bill_locked"
+  | "stale_version"
+  | "nothing_changed"
+  | "all_lines_zero"
+  | "unknown_line"
+  | "below_credited_qty"
+  | "note_amount_zero"
+  | "nothing_to_cancel"
+  | "not_a_pre_order"
+  | "already_fulfilled"
+  | "already_cancelled"
+  | "no_lines"
+  | "credit_qty_above_remaining"
+  | "gst_credit_note_deadline_passed"
+  | "return_date_on_debit_note"
+  | "opening_balance_exists"
+  | "opening_date_in_future";
+
+export type LedgerRefusal = Refusal<LedgerRefusalReason>;
+
+const ledgerRefusalCodes: Record<LedgerRefusalReason, TRPCError["code"]> = {
+  empty_basket: "BAD_REQUEST",
+  bad_lines: "BAD_REQUEST",
+  bill_cancelled: "CONFLICT",
+  bill_locked: "CONFLICT",
+  stale_version: "CONFLICT",
+  nothing_changed: "BAD_REQUEST",
+  all_lines_zero: "BAD_REQUEST",
+  unknown_line: "BAD_REQUEST",
+  below_credited_qty: "BAD_REQUEST",
+  note_amount_zero: "BAD_REQUEST",
+  nothing_to_cancel: "CONFLICT",
+  not_a_pre_order: "BAD_REQUEST",
+  already_fulfilled: "CONFLICT",
+  already_cancelled: "CONFLICT",
+  no_lines: "BAD_REQUEST",
+  credit_qty_above_remaining: "BAD_REQUEST",
+  gst_credit_note_deadline_passed: "BAD_REQUEST",
+  return_date_on_debit_note: "BAD_REQUEST",
+  opening_balance_exists: "CONFLICT",
+  opening_date_in_future: "BAD_REQUEST",
+};
+
+export const ledgerRefusal = (
+  reason: LedgerRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(ledgerRefusalCodes[reason], reason, message, details);
