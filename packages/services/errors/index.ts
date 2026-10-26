@@ -105,3 +105,59 @@ export const documentRefused = (
   message: string,
   details: Record<string, unknown> | null = null,
 ) => refused(documentRefusalCodes[reason], reason, message, details);
+
+// Checkout refusals (Spec F): the whole call is refused and nothing is written.
+export type CheckoutRefusalReason =
+  | "no_active_gatepass"
+  | "customer_not_on_route"
+  | "customer_inactive"
+  | "empty_basket"
+  | "bad_lines"
+  | "short_stock"
+  | "price_field_refused"
+  | "scheduled_date_not_after_today"
+  | "fulfil_too_early"
+  | "already_fulfilled"
+  | "pre_order_cancelled"
+  | "wrong_route"
+  | "not_a_pre_order"
+  | "overpay_choice_required"
+  | "return_change_cash_only"
+  | "field_payment_kept_zero"
+  | "bill_total_zero"
+  | "seller_master_missing"
+  | "balance_changed";
+
+export type CheckoutRefusal = Refusal<CheckoutRefusalReason>;
+
+const checkoutRefusalCodes: Record<CheckoutRefusalReason, TRPCError["code"]> = {
+  no_active_gatepass: "BAD_REQUEST",
+  customer_not_on_route: "FORBIDDEN",
+  customer_inactive: "BAD_REQUEST",
+  empty_basket: "BAD_REQUEST",
+  bad_lines: "BAD_REQUEST",
+  short_stock: "CONFLICT",
+  price_field_refused: "BAD_REQUEST",
+  scheduled_date_not_after_today: "BAD_REQUEST",
+  fulfil_too_early: "CONFLICT",
+  already_fulfilled: "CONFLICT",
+  pre_order_cancelled: "CONFLICT",
+  wrong_route: "FORBIDDEN",
+  not_a_pre_order: "BAD_REQUEST",
+  overpay_choice_required: "BAD_REQUEST",
+  return_change_cash_only: "BAD_REQUEST",
+  field_payment_kept_zero: "BAD_REQUEST",
+  bill_total_zero: "BAD_REQUEST",
+  seller_master_missing: "CONFLICT",
+  balance_changed: "CONFLICT",
+};
+
+export const checkoutRefusal = (
+  reason: CheckoutRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(checkoutRefusalCodes[reason], reason, message, details);
+
+// The checkout refusal carried by an error, or null for any other error.
+export const checkoutRefusalOf = (error: unknown): CheckoutRefusal | null =>
+  refusalOf(error) as CheckoutRefusal | null;
