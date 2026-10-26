@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 
 import { asc, db, eq, sql } from "@repo/database";
+import { lockNotificationWithTemplate } from "@repo/database/queries/notifications";
 import { notificationAttemptsTable, notificationsTable } from "@repo/database/schema";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -8,6 +9,7 @@ import { wipeApplicationTables } from "../test/database";
 import { buildNotificationTemplate } from "../test/builders";
 import {
   buildNotificationHarness,
+  currentRunKey,
   testWebhookSecrets,
   type NotificationHarness,
 } from "../test/notification-fakes";
@@ -304,7 +306,7 @@ describe("resend", () => {
       expect(result).toEqual({ notificationId, status: "pending" });
       expect(harness.dispatcher.dispatched.at(-1)).toEqual({
         notificationId,
-        runKey: `notification/${notificationId}/run/2`,
+        runKey: await currentRunKey(notificationId),
       });
     }
   });
@@ -320,7 +322,7 @@ describe("resend", () => {
       skipReason: null,
     });
     expect(harness.dispatcher.dispatched).toEqual([
-      { notificationId, runKey: `notification/${notificationId}/run/1` },
+      { notificationId, runKey: await currentRunKey(notificationId) },
     ]);
   });
 
@@ -455,6 +457,90 @@ describe("suppress", () => {
   });
 });
 
+describe("row lock wait", () => {
+  // Holds the notification row lock the way a send does across R2 and Meta, until released.
+  async function holdRowLock(notificationId: string) {
+    let release!: () => void;
+    let lockTaken!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const taken = new Promise<void>((resolve) => (lockTaken = resolve));
+    const holder = db.transaction(async (transaction) => {
+      await lockNotificationWithTemplate(notificationId, transaction);
+      lockTaken();
+      await released;
+    });
+    await taken;
+    return async () => {
+      release();
+      await holder;
+    };
+  }
+
+  it("answers suppress and resend with CONFLICT within seconds while a send holds the row", async () => {
+    const pending = await harness.service.enqueue(instruction());
+    const deliveredId = await sentNotification("wamid.LOCK");
+    await harness.service.applyProviderStatus(status("wamid.LOCK", "delivered"));
+    const releasePending = await holdRowLock(pending.notificationId);
+    const releaseDelivered = await holdRowLock(deliveredId);
+    const busy = { code: "CONFLICT", message: expect.stringContaining("being sent right now") };
+
+    const startedAt = Date.now();
+    await expect(
+      harness.service.suppress({ notificationId: pending.notificationId, reason: "newer Bill" }),
+    ).rejects.toMatchObject(busy);
+    await expect(harness.service.resend({ notificationId: deliveredId })).rejects.toMatchObject(
+      busy,
+    );
+    const waitedMs = Date.now() - startedAt;
+    await releasePending();
+    await releaseDelivered();
+
+    expect(waitedMs).toBeLessThan(10_000);
+    expect((await notificationRow(pending.notificationId)).status).toBe("pending");
+    expect((await notificationRow(deliveredId)).status).toBe("delivered");
+    // Once the send lets go, both go through.
+    expect(
+      await harness.service.suppress({ notificationId: pending.notificationId, reason: "x" }),
+    ).toEqual({ suppressed: true });
+    expect(await harness.service.resend({ notificationId: deliveredId })).toEqual({
+      notificationId: deliveredId,
+      status: "pending",
+    });
+  });
+});
+
+describe("run keys", () => {
+  function dispatchedKeys(notificationId: string) {
+    return harness.dispatcher.dispatched
+      .filter((call) => call.notificationId === notificationId)
+      .map((call) => call.runKey);
+  }
+
+  it("gives each run its own key across send, resend, suppress and resend", async () => {
+    const notificationId = await sentNotification("wamid.K1");
+    await harness.service.applyProviderStatus(status("wamid.K1", "delivered"));
+    await harness.service.resend({ notificationId });
+    await harness.service.suppress({ notificationId, reason: "newer Bill" });
+    await harness.service.resend({ notificationId });
+
+    const keys = dispatchedKeys(notificationId);
+    expect(keys).toHaveLength(3);
+    expect(new Set(keys).size).toBe(3);
+    expect(keys.at(-1)).toBe(await currentRunKey(notificationId));
+  });
+
+  it("gives the resend after a suppress of a never-sent row a new key", async () => {
+    const { notificationId } = await harness.service.enqueue(instruction());
+    await harness.service.suppress({ notificationId, reason: "newer Bill" });
+    await harness.service.resend({ notificationId });
+
+    const keys = dispatchedKeys(notificationId);
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).not.toBe(keys[1]);
+    expect(keys[1]).toBe(await currentRunKey(notificationId));
+  });
+});
+
 describe("status reads", () => {
   it("lists rows for several refs in one call, newest first, and nothing for unknown refs", async () => {
     const first = await harness.service.enqueue(instruction({ businessRef: "bill:A" }));
@@ -547,7 +633,7 @@ describe("recovery sweep", () => {
 
     expect(recovered).toEqual([lost.notificationId]);
     expect(harness.dispatcher.dispatched).toEqual([
-      { notificationId: lost.notificationId, runKey: `notification/${lost.notificationId}/run/1` },
+      { notificationId: lost.notificationId, runKey: await currentRunKey(lost.notificationId) },
     ]);
     expect(fresh.status).toBe("pending");
   });
@@ -572,7 +658,7 @@ describe("recovery sweep", () => {
 
     expect(recovered).toEqual([notificationId]);
     expect(harness.dispatcher.dispatched).toEqual([
-      { notificationId, runKey: `notification/${notificationId}/run/2` },
+      { notificationId, runKey: await currentRunKey(notificationId) },
     ]);
   });
 });

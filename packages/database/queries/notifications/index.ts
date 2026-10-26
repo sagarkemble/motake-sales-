@@ -151,6 +151,15 @@ export async function lockNotificationWithTemplate(
   return row;
 }
 
+// Caps how long the rest of the open transaction waits for a row lock; Postgres then raises
+// 55P03 (`isLockTimeout`). `SET` takes no bind parameters, so the value is a checked integer.
+export async function setLockTimeout(milliseconds: number, executor: DbExecutor): Promise<void> {
+  if (!Number.isInteger(milliseconds) || milliseconds <= 0) {
+    throw new Error(`Lock timeout must be a positive whole number of ms, got ${milliseconds}`);
+  }
+  await executor.execute(sql.raw(`SET LOCAL lock_timeout = '${milliseconds}ms'`));
+}
+
 // Every change takes the database clock for updated_at; on resend it starts the new run.
 export async function updateNotification(
   notificationId: string,

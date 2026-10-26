@@ -19,17 +19,20 @@ import {
   listUnqueuedPendingNotifications,
   lockNotificationWithTemplate,
   markAttemptFailed,
+  setLockTimeout,
   updateNotification,
   upsertCachedMedia,
   type NotificationStatusRow,
 } from "@repo/database/queries/notifications";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+import { isLockTimeout } from "@repo/database/queries/shared/pg-errors";
 import type { SelectNotification, SelectNotificationTemplate } from "@repo/database/schema";
 import { logger } from "@repo/logger";
 
 import { badRequest, conflict, notFound, notificationRefused } from "../errors";
 import {
   enqueueInputSchema,
+  failRunInputSchema,
   failureCategories,
   listByBusinessRefsInputSchema,
   listTemplatesInputSchema,
@@ -43,6 +46,8 @@ import {
   type ApplyStatusResult,
   type EnqueueInput,
   type EnqueueResult,
+  type FailRunInput,
+  type FailRunResult,
   type FailureCategory,
   type HealthReport,
   type ListByBusinessRefsInput,
@@ -89,6 +94,9 @@ const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 // A pending run with no attempt after this long lost its dispatch.
 const RECOVERY_AGE_SECONDS = 2 * 60;
 
+// Resend and suppress wait at most this long for a send holding the row lock, then answer CONFLICT.
+const INSTRUCTION_LOCK_TIMEOUT_MS = 3_000;
+
 const SIGNATURE_PREFIX = "sha256=";
 
 export interface NotificationWebhookSecrets {
@@ -110,10 +118,22 @@ function isValidPhone(phone: string | null | undefined): phone is string {
   return !!phone && phone.length <= MAX_PHONE_LENGTH && PHONE_PATTERN.test(phone);
 }
 
-// The Inngest event id of a run: the attempt count at queue time plus one.
-function runKeyFor(notificationId: string, attemptCount: number): string {
-  return `notification/${notificationId}/run/${attemptCount + 1}`;
+// The Inngest event id of a run: the run's start, which is updated_at while the row is pending
+// (enqueue and resend set it; sending never moves it). The same for every replay and sweep of one
+// run, and new for every resend, even after a suppress that wrote no attempt.
+function runKeyFor(notification: Pick<SelectNotification, "id" | "updatedAt">): string {
+  return `notification/${notification.id}/run/${notification.updatedAt.getTime()}`;
 }
+
+// Same keys and values, whatever the order jsonb hands them back in.
+function sameValues(saved: Record<string, string>, given: Record<string, string>): boolean {
+  const sorted = (values: Record<string, string>) =>
+    JSON.stringify(Object.entries(values).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  return sorted(saved) === sorted(given);
+}
+
+const lockBusy = () =>
+  conflict("This WhatsApp is being sent right now; try again in a few seconds");
 
 // Constant time, whatever the lengths.
 function secretsMatch(given: string, expected: string): boolean {
@@ -291,7 +311,7 @@ class NotificationService {
     }
 
     if (inserted.status === "pending") {
-      await this.dispatchSafely(inserted.id, runKeyFor(inserted.id, 0));
+      await this.dispatchSafely(inserted.id, runKeyFor(inserted));
     }
     return {
       notificationId: inserted.id,
@@ -320,7 +340,7 @@ class NotificationService {
   // financial action. Who may resend is the main API's rule.
   public async resend(input: ResendInput): Promise<ResendResult> {
     const parsedInput = resendInputSchema.parse(input);
-    const { notification, runKey } = await runInTransaction(async (transaction) => {
+    const { notification, runKey } = await this.withInstructionLock(async (transaction) => {
       const row = await lockNotificationWithTemplate(parsedInput.notificationId, transaction);
       if (!row) throw notFound(`Notification ${parsedInput.notificationId} not found`);
       if (row.notification.status === "pending") {
@@ -343,8 +363,7 @@ class NotificationService {
         { status: "pending", recipientPhone: phone, skipReason: null },
         transaction,
       );
-      const attemptCount = await countNotificationAttempts(row.notification.id, transaction);
-      return { notification: updated, runKey: runKeyFor(row.notification.id, attemptCount) };
+      return { notification: updated, runKey: runKeyFor(updated) };
     });
 
     await this.dispatchSafely(notification.id, runKey);
@@ -354,7 +373,7 @@ class NotificationService {
   // Only a still-pending run that has not reached the provider can be suppressed.
   public async suppress(input: SuppressInput): Promise<SuppressResult> {
     const parsedInput = suppressInputSchema.parse(input);
-    return runInTransaction(async (transaction) => {
+    return this.withInstructionLock(async (transaction) => {
       const row = await lockNotificationWithTemplate(parsedInput.notificationId, transaction);
       if (!row) throw notFound(`Notification ${parsedInput.notificationId} not found`);
       const { notification } = row;
@@ -409,6 +428,12 @@ class NotificationService {
         return { outcome: "noop", failureCategory: null };
       }
       const { notification, template } = row;
+      // The provider already accepted this run (the row stays pending until a webhook): a step
+      // retry after a lost step result must not send a second WhatsApp.
+      const currentRunAttempts = await listCurrentRunAttempts(notification, transaction);
+      if (currentRunAttempts.some((attempt) => attempt.status === "sent")) {
+        return { outcome: "noop", failureCategory: null };
+      }
       const result = await this.deliver(notification, template, transaction);
 
       if (result.ok) {
@@ -441,6 +466,32 @@ class NotificationService {
         outcome: result.retriable ? "failed" : "terminal",
         failureCategory: result.category,
       };
+    });
+  }
+
+  // The send function gave up on a run by throwing (database or pool error on the last try), so
+  // no try marked the row. Fails it unless the run moved on: another run started (run key
+  // differs), it is no longer pending, or the provider already accepted it.
+  public async failRun(input: FailRunInput): Promise<FailRunResult> {
+    const parsedInput = failRunInputSchema.parse(input);
+    return runInTransaction(async (transaction) => {
+      const row = await lockNotificationWithTemplate(parsedInput.notificationId, transaction);
+      if (!row) return { failed: false, status: null };
+      const { notification } = row;
+      if (notification.status !== "pending" || runKeyFor(notification) !== parsedInput.runKey) {
+        return { failed: false, status: notification.status };
+      }
+      const currentRunAttempts = await listCurrentRunAttempts(notification, transaction);
+      if (currentRunAttempts.some((attempt) => attempt.status === "sent")) {
+        return { failed: false, status: notification.status };
+      }
+      logger.error("Notification send gave up; marking the row failed", {
+        notificationId: notification.id,
+        runKey: parsedInput.runKey,
+        error: parsedInput.error,
+      });
+      await updateNotification(notification.id, { status: "failed" }, transaction);
+      return { failed: true, status: "failed" };
     });
   }
 
@@ -662,8 +713,7 @@ class NotificationService {
     const notifications = await listUnqueuedPendingNotifications(RECOVERY_AGE_SECONDS);
     const dispatched: string[] = [];
     for (const notification of notifications) {
-      const attemptCount = await countNotificationAttempts(notification.id);
-      if (await this.dispatchSafely(notification.id, runKeyFor(notification.id, attemptCount))) {
+      if (await this.dispatchSafely(notification.id, runKeyFor(notification))) {
         dispatched.push(notification.id);
       }
     }
@@ -691,7 +741,7 @@ class NotificationService {
     const differs =
       existing.kind !== input.kind ||
       existing.businessRef !== input.businessRef ||
-      JSON.stringify(existing.templateValues) !== JSON.stringify(input.values) ||
+      !sameValues(existing.templateValues, input.values) ||
       existing.attachmentKey !== (input.attachment?.key ?? null);
     if (differs) {
       logger.error("Enqueue replay differs from the saved notification; first write wins", {
@@ -700,7 +750,7 @@ class NotificationService {
       });
     }
     if (existing.status === "pending" && (await countNotificationAttempts(existing.id)) === 0) {
-      await this.dispatchSafely(existing.id, runKeyFor(existing.id, 0));
+      await this.dispatchSafely(existing.id, runKeyFor(existing));
     }
     return {
       notificationId: existing.id,
@@ -708,6 +758,20 @@ class NotificationService {
       skipReason: existing.skipReason,
       created: false,
     };
+  }
+
+  // Resend and suppress: a send holds the row lock across R2 and Meta, so wait only a few seconds
+  // and answer a typed CONFLICT instead of hanging the main API.
+  private async withInstructionLock<T>(work: (transaction: DbExecutor) => Promise<T>): Promise<T> {
+    try {
+      return await runInTransaction(async (transaction) => {
+        await setLockTimeout(INSTRUCTION_LOCK_TIMEOUT_MS, transaction);
+        return work(transaction);
+      });
+    } catch (error) {
+      if (isLockTimeout(error)) throw lockBusy();
+      throw error;
+    }
   }
 
   // A failed dispatch never fails the caller: the row is saved and the recovery sweep queues it.
@@ -748,6 +812,8 @@ export type {
   ApplyStatusResult,
   EnqueueInput,
   EnqueueResult,
+  FailRunInput,
+  FailRunResult,
   FailureCategory,
   HealthReport,
   ListByBusinessRefsInput,

@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
 
+import { db, eq } from "@repo/database";
+import { notificationsTable } from "@repo/database/schema";
+
 import NotificationService, { MetaWhatsAppProvider } from "../notification";
 import type {
   DocumentReader,
@@ -122,4 +125,13 @@ export function buildNotificationHarness(): NotificationHarness {
     webhook: testWebhookSecrets,
   });
   return { service, provider, documentReader, dispatcher };
+}
+
+// The run key a dispatch of the notification's current run carries: its run start (updated_at).
+export async function currentRunKey(notificationId: string): Promise<string> {
+  const [row] = await db
+    .select({ updatedAt: notificationsTable.updatedAt })
+    .from(notificationsTable)
+    .where(eq(notificationsTable.id, notificationId));
+  return `notification/${notificationId}/run/${row!.updatedAt.getTime()}`;
 }

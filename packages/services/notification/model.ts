@@ -80,6 +80,14 @@ export const sendAttemptOptionsSchema = z.object({
 });
 export type SendAttemptOptions = z.input<typeof sendAttemptOptionsSchema>;
 
+// The send function's failure handler: the run it gave up on (its Inngest event id).
+export const failRunInputSchema = z.object({
+  notificationId: notificationIdSchema,
+  runKey: z.string().min(1).max(200),
+  error: z.string().max(2000),
+});
+export type FailRunInput = z.input<typeof failRunInputSchema>;
+
 export const providerStatusUpdateSchema = z.object({
   providerMessageId: z.string().min(1).max(128),
   status: z.enum(["sent", "delivered", "read", "failed", "other"]),
@@ -93,13 +101,7 @@ export type NotificationKind = z.infer<typeof notificationKindSchema>;
 export type NotificationStatus = "pending" | "delivered" | "read" | "failed" | "skipped";
 
 // Codes in the error data of a refused enqueue or resend.
-export type NotificationRefusalReason =
-  | "provider_not_supported"
-  | "template_not_found"
-  | "template_not_verified"
-  | "template_values_mismatch"
-  | "attachment_mismatch"
-  | "template_superseded";
+export type { NotificationRefusalReason } from "../errors";
 
 export const failureCategories = [
   "invalid_recipient",
@@ -163,6 +165,11 @@ export type SendAttemptOutcome = "noop" | "sent" | "retry" | "terminal" | "faile
 export interface SendAttemptResult {
   outcome: SendAttemptOutcome;
   failureCategory: FailureCategory | null;
+}
+
+export interface FailRunResult {
+  failed: boolean;
+  status: NotificationStatus | null;
 }
 
 export interface ApplyStatusResult {

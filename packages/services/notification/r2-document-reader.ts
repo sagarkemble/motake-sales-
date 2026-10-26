@@ -3,12 +3,17 @@ import { GetObjectCommand, NoSuchKey, S3Client, S3ServiceException } from "@aws-
 import type { DocumentReader, ReadDocumentResult } from "./provider";
 
 export interface R2DocumentReaderConfig {
-  // e.g. https://<account>.r2.cloudflarestorage.com
-  endpoint: string;
+  // Cloudflare account id; the endpoint is built from it like the other R2 clients.
+  accountId: string;
   accessKeyId: string;
   secretAccessKey: string;
   bucketName: string;
 }
+
+// The read runs while the send holds the notification row lock, so it never waits forever: a
+// stuck connection or a stalled body socket fails the try as `unavailable` (retried).
+const CONNECTION_TIMEOUT_MS = 5_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 // S3 GetObject on the private Documents bucket (Spec L) with the notification app's own read-only
 // R2 key. It never makes a signed or public link.
@@ -19,8 +24,12 @@ export class R2DocumentReader implements DocumentReader {
   public constructor(config: R2DocumentReaderConfig) {
     this.client = new S3Client({
       region: "auto",
-      endpoint: config.endpoint,
+      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+      requestHandler: {
+        connectionTimeout: CONNECTION_TIMEOUT_MS,
+        requestTimeout: REQUEST_TIMEOUT_MS,
+      },
     });
     this.bucketName = config.bucketName;
   }

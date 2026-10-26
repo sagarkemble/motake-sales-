@@ -32,8 +32,17 @@ export const tooManyRequests = (
       retryAfterMs !== undefined ? Object.assign(new Error(message), { retryAfterMs }) : undefined,
   });
 
+// Why a notification instruction was refused, for callers that branch on it (Spec J).
+export type NotificationRefusalReason =
+  | "provider_not_supported"
+  | "template_not_found"
+  | "template_not_verified"
+  | "template_values_mismatch"
+  | "attachment_mismatch"
+  | "template_superseded";
+
 // A refused notification instruction; `reason` is the machine code callers branch on (Spec K).
-export const notificationRefused = (reason: string, message: string) =>
+export const notificationRefused = (reason: NotificationRefusalReason, message: string) =>
   new TRPCError({
     code: "BAD_REQUEST",
     message,

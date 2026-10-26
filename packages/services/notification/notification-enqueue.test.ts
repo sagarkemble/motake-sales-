@@ -4,11 +4,16 @@ import {
   notificationsTable,
   notificationTemplatesTable,
 } from "@repo/database/schema";
-import { beforeEach, describe, expect, it } from "vitest";
+import { logger } from "@repo/logger";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { wipeApplicationTables } from "../test/database";
 import { buildNotificationTemplate } from "../test/builders";
-import { buildNotificationHarness, type NotificationHarness } from "../test/notification-fakes";
+import {
+  buildNotificationHarness,
+  currentRunKey,
+  type NotificationHarness,
+} from "../test/notification-fakes";
 import type { EnqueueInput } from "./index";
 
 let harness: NotificationHarness;
@@ -56,7 +61,7 @@ describe("enqueue", () => {
     expect(harness.dispatcher.dispatched).toEqual([
       {
         notificationId: result.notificationId,
-        runKey: `notification/${result.notificationId}/run/1`,
+        runKey: await currentRunKey(result.notificationId),
       },
     ]);
   });
@@ -88,8 +93,28 @@ describe("enqueue", () => {
 
     expect(replay.created).toBe(false);
     expect(replay.notificationId).toBe(first.notificationId);
-    const runKey = `notification/${first.notificationId}/run/1`;
+    const runKey = await currentRunKey(first.notificationId);
     expect(harness.dispatcher.dispatched.map((call) => call.runKey)).toEqual([runKey, runKey]);
+  });
+
+  it("treats a replay with the same values in another key order as the same instruction", async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    // jsonb hands keys back shortest first, so this order differs from the saved one.
+    const input = instruction({
+      values: { bill_number: "MB-26-27-000123", shop_name: "Shree Dairy" },
+    });
+    await harness.service.enqueue(input);
+    const errorLog = vi.spyOn(logger, "error");
+
+    try {
+      await harness.service.enqueue(input);
+      await harness.service.enqueue({ ...input, values: { ...input.values, shop_name: "Other" } });
+
+      expect(errorLog).toHaveBeenCalledTimes(1);
+      expect(errorLog.mock.calls[0]![0]).toContain("differs");
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 
   it("still returns the id when dispatch fails, leaving the row for the sweep", async () => {

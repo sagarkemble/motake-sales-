@@ -8,7 +8,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { wipeApplicationTables } from "../test/database";
 import { buildNotificationTemplate } from "../test/builders";
-import { buildNotificationHarness, type NotificationHarness } from "../test/notification-fakes";
+import {
+  buildNotificationHarness,
+  currentRunKey,
+  type NotificationHarness,
+} from "../test/notification-fakes";
 import type { EnqueueInput, ProviderFailure } from "./index";
 
 let harness: NotificationHarness;
@@ -221,6 +225,118 @@ describe("sendAttempt", () => {
       { outcome: "noop", failureCategory: null },
     ]);
     expect(harness.provider.sends).toEqual([]);
+  });
+});
+
+describe("sendAttempt after the provider accepted the run", () => {
+  it("does not send a second WhatsApp when a step retry repeats the try", async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    const { notificationId } = await harness.service.enqueue(instruction());
+    harness.provider.scriptSends({ ok: true, providerMessageId: "wamid.ONCE" });
+    await harness.service.sendAttempt(notificationId, firstTry);
+
+    const repeat = await harness.service.sendAttempt(notificationId, { ...firstTry, tryIndex: 1 });
+
+    expect(repeat).toEqual({ outcome: "noop", failureCategory: null });
+    expect(harness.provider.sends).toHaveLength(1);
+    expect(await attemptRows(notificationId)).toMatchObject([
+      { status: "sent", providerMessageId: "wamid.ONCE" },
+    ]);
+    expect((await notificationRow(notificationId)).status).toBe("pending");
+  });
+
+  it("sends again in a new run after a resend", async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    const { notificationId } = await harness.service.enqueue(instruction());
+    harness.provider.scriptSends({ ok: true, providerMessageId: "wamid.RUN1" });
+    await harness.service.sendAttempt(notificationId, firstTry);
+    await harness.service.applyProviderStatus({
+      providerMessageId: "wamid.RUN1",
+      status: "delivered",
+      timestamp: "1767225600",
+      error: null,
+    });
+    await harness.service.resend({ notificationId });
+
+    const result = await harness.service.sendAttempt(notificationId, firstTry);
+
+    expect(result).toEqual({ outcome: "sent", failureCategory: null });
+    expect(harness.provider.sends).toHaveLength(2);
+  });
+});
+
+describe("failRun", () => {
+  async function pendingAfterTransientTry() {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    const { notificationId } = await harness.service.enqueue(instruction());
+    harness.provider.scriptSends(
+      metaFailure({ retriable: true, category: "provider_unavailable", code: 131016 }),
+    );
+    await harness.service.sendAttempt(notificationId, firstTry);
+    return notificationId;
+  }
+
+  it("fails a pending run whose last try threw, so it can be resent", async () => {
+    const notificationId = await pendingAfterTransientTry();
+    const runKey = await currentRunKey(notificationId);
+
+    const result = await harness.service.failRun({
+      notificationId,
+      runKey,
+      error: "timeout exceeded when trying to connect",
+    });
+
+    expect(result).toEqual({ failed: true, status: "failed" });
+    expect((await notificationRow(notificationId)).status).toBe("failed");
+    expect(await attemptRows(notificationId)).toHaveLength(1);
+    expect(await harness.service.resend({ notificationId })).toEqual({
+      notificationId,
+      status: "pending",
+    });
+  });
+
+  it("leaves a run the provider already accepted pending for its webhook", async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    const { notificationId } = await harness.service.enqueue(instruction());
+    await harness.service.sendAttempt(notificationId, firstTry);
+
+    const result = await harness.service.failRun({
+      notificationId,
+      runKey: await currentRunKey(notificationId),
+      error: "lost step result",
+    });
+
+    expect(result).toEqual({ failed: false, status: "pending" });
+    expect((await notificationRow(notificationId)).status).toBe("pending");
+  });
+
+  it("leaves a newer run alone when an older run's failure arrives late", async () => {
+    const notificationId = await pendingAfterTransientTry();
+    const oldRunKey = await currentRunKey(notificationId);
+    await harness.service.suppress({ notificationId, reason: "newer Bill" });
+    await harness.service.resend({ notificationId });
+
+    const result = await harness.service.failRun({
+      notificationId,
+      runKey: oldRunKey,
+      error: "pool error",
+    });
+
+    expect(result).toEqual({ failed: false, status: "pending" });
+    expect((await notificationRow(notificationId)).status).toBe("pending");
+  });
+
+  it("does nothing to a row that already has an outcome", async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+    const skipped = await harness.service.enqueue(instruction({ to: null }));
+
+    const result = await harness.service.failRun({
+      notificationId: skipped.notificationId,
+      runKey: await currentRunKey(skipped.notificationId),
+      error: "pool error",
+    });
+
+    expect(result).toEqual({ failed: false, status: "skipped" });
   });
 });
 
