@@ -109,6 +109,13 @@ export function CustomerForm({
               path: ["shopPhotoUrl"],
             });
           }
+          if (values.einvoicingRequired && !normalizeGstin(values.gstin)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: tx("admin.customers.validation.gstinForEinvoicing"),
+              path: ["gstin"],
+            });
+          }
           if (isCreate && !values.routeId) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
@@ -146,6 +153,8 @@ export function CustomerForm({
 
   function handleGstinChange(gstin: string) {
     form.setValue("gstin", gstin, { shouldValidate: form.formState.isSubmitted });
+    // Drops the "enter the GSTIN first" message from the e-invoicing switch once typing starts.
+    if (!form.formState.isSubmitted) form.clearErrors("gstin");
     if (!isEinvoicingSetByAdmin) form.setValue("einvoicingRequired", gstin.trim().length > 0);
   }
 
@@ -415,6 +424,14 @@ export function CustomerForm({
                     checked={field.value}
                     className="data-[state=checked]:bg-brand"
                     onCheckedChange={(checked) => {
+                      // E-invoicing needs a GSTIN: point at the empty field instead of switching on.
+                      if (checked && !normalizeGstin(form.getValues("gstin"))) {
+                        form.setError("gstin", {
+                          message: tx("admin.customers.validation.gstinForEinvoicing"),
+                        });
+                        form.setFocus("gstin");
+                        return;
+                      }
                       setIsEinvoicingSetByAdmin(true);
                       field.onChange(checked);
                     }}

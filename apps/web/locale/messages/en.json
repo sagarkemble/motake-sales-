@@ -292,6 +292,7 @@
         "address": "Enter an address",
         "shopPhoto": "Add a shop photo",
         "gstin": "GSTIN must be 15 letters or digits",
+        "gstinForEinvoicing": "Enter the GSTIN to turn on e-invoicing.",
         "route": "Pick a Route"
       },
       "createSuccess": "Customer created",
