@@ -119,60 +119,48 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          {isHidden ? (
-            <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
-              {tx("admin.routes.hidden")}
-            </Badge>
-          ) : (
-            <span />
-          )}
-          <div className="flex max-w-64 flex-col items-end gap-1 text-right">
-            {isHidden ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-full"
-                disabled={isShowingRoute}
-                onClick={() => void handleShow()}
-              >
-                {tx("admin.routes.showAgain", { name: route.name })}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full"
-                  disabled={isHidingRoute}
-                  onClick={() => void handleHide()}
-                >
-                  {tx("admin.routes.hide", { name: route.name })}
-                </Button>
-                {hideRefusal ? (
-                  <p role="alert" className="text-xs text-destructive">
-                    {hideRefusal}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">{tx("admin.routes.hideHint")}</p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+        {isHidden && (
+          <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
+            {tx("admin.routes.hidden")}
+          </Badge>
+        )}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
-          <Input
-            id={`route-name-${route.id}`}
-            value={nameText}
-            maxLength={120}
-            onChange={(event) => setNameText(event.target.value)}
-            onBlur={() => void commitName()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-            }}
-            className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
-          />
+          <div className="grid grid-cols-[4fr_1fr] items-end gap-3">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
+              <Input
+                id={`route-name-${route.id}`}
+                value={nameText}
+                maxLength={120}
+                onChange={(event) => setNameText(event.target.value)}
+                onBlur={() => void commitName()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-11 w-full whitespace-normal rounded-full px-3 leading-tight"
+              disabled={isHidden ? isShowingRoute : isHidingRoute}
+              onClick={() => void (isHidden ? handleShow() : handleHide())}
+            >
+              {isHidden
+                ? tx("admin.routes.showAgain", { name: route.name })
+                : tx("admin.routes.hide", { name: route.name })}
+            </Button>
+          </div>
+          {isHidden ? null : hideRefusal ? (
+            <p role="alert" className="text-right text-xs text-destructive">
+              {hideRefusal}
+            </p>
+          ) : (
+            <p className="text-right text-xs text-muted-foreground">
+              {tx("admin.routes.hideHint")}
+            </p>
+          )}
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
