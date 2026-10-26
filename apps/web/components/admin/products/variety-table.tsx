@@ -6,7 +6,6 @@ import {
   AlertTriangleIcon,
   BoxIcon,
   PencilIcon,
-  PercentIcon,
   PlusIcon,
   RotateCcwIcon,
   XIcon,
@@ -37,7 +36,6 @@ import {
   VarietyFormDialog,
   type VarietyFormValues,
 } from "~/components/admin/products/variety-form-dialog";
-import { VarietyTaxPanel } from "~/components/admin/products/variety-tax-panel";
 
 type ProductVariety = RouterOutputs["products"]["listVarieties"]["data"][number];
 
@@ -66,17 +64,21 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
   const [addedVarietyId, setAddedVarietyId] = useState<string | null>(null);
   const [deactivatingVariety, setDeactivatingVariety] = useState<ProductVariety | null>(null);
   const [reactivatingVariety, setReactivatingVariety] = useState<ProductVariety | null>(null);
-  const [taxVarietyId, setTaxVarietyId] = useState<string | null>(null);
 
   const varietyIds = useMemo(
     () => productVarieties.map((variety) => variety.id),
     [productVarieties],
   );
-  const { currentTaxes, isCurrentTaxesLoading, isCurrentTaxesError } = useVarietyTaxPeriods({
-    varietyIds,
-  });
-  // Kept by id so the panel shows the Variety's latest name and status after a refetch.
-  const taxVariety = productVarieties.find((variety) => variety.id === taxVarietyId) ?? null;
+  const {
+    currentTaxes,
+    isCurrentTaxesLoading,
+    isCurrentTaxesError,
+    upsertTaxPeriodAsync,
+    isUpsertingTaxPeriod,
+  } = useVarietyTaxPeriods({ varietyIds });
+  function currentTaxOf(varietyId: string) {
+    return currentTaxes.find((tax) => tax.varietyId === varietyId)?.period ?? null;
+  }
 
   function openAddDialog() {
     setEditingVariety(null);
@@ -90,11 +92,33 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
 
   async function handleSubmit(values: VarietyFormValues) {
     if (editingVariety) {
-      await updateProductVarietyAsync({ id: editingVariety.id, ...values });
+      await updateProductVarietyAsync({
+        id: editingVariety.id,
+        name: values.name,
+        unit: values.unit,
+      });
+      // A GST change starts today; earlier Bills keep the GST they were issued with.
+      if (values.tax) await upsertTaxPeriodAsync({ varietyId: editingVariety.id, ...values.tax });
       toast.success(tx("admin.varieties.updateSuccess"));
     } else {
-      const response = await createProductVarietyAsync({ productId, ...values });
-      setAddedVarietyId(response.data.id);
+      const { tax, ...variety } = values;
+      const response = await createProductVarietyAsync({ productId, ...variety });
+      const varietyId = response.data.id;
+      setAddedVarietyId(varietyId);
+      if (tax) {
+        try {
+          await upsertTaxPeriodAsync({ varietyId, ...tax });
+        } catch (error) {
+          // The Variety is saved; its GST can be added with Edit.
+          toast.error(
+            tx("admin.varieties.gstSaveFailed", {
+              reason: getErrorMessage(error, tx("admin.varietyTax.saveFailed")),
+            }),
+          );
+          setIsDialogOpen(false);
+          return;
+        }
+      }
       toast.success(tx("admin.varieties.addSuccess"));
     }
     setIsDialogOpen(false);
@@ -175,17 +199,9 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                   </p>
                   <SkuChip sku={variety.sku} muted={isInactive} className="mt-1" />
                   {!isCurrentTaxesLoading && !isCurrentTaxesError && (
-                    <button
-                      type="button"
-                      className="mt-1.5 block text-left"
-                      onClick={() => setTaxVarietyId(variety.id)}
-                    >
-                      <TodayTaxLine
-                        period={
-                          currentTaxes.find((tax) => tax.varietyId === variety.id)?.period ?? null
-                        }
-                      />
-                    </button>
+                    <div className="mt-1.5">
+                      <TodayTaxLine period={currentTaxOf(variety.id)} />
+                    </div>
                   )}
                   {variety.id === addedVarietyId && (
                     <p className="mt-1 text-[11px] font-medium text-brand">
@@ -207,19 +223,6 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
 
                 {/* On a phone the actions drop to their own line so the name keeps its width. */}
                 <div className="flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 rounded-full px-2.5 text-xs"
-                    onClick={() => setTaxVarietyId(variety.id)}
-                    aria-label={tx("admin.varietyTax.gstButtonAria", {
-                      name: `${variety.name} · ${variety.unit}`,
-                    })}
-                  >
-                    <PercentIcon className="size-3" />
-                    {tx("admin.varietyTax.gstButton")}
-                  </Button>
                   <Button
                     type="button"
                     size="icon-sm"
@@ -327,17 +330,14 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <VarietyTaxPanel
-        variety={taxVariety}
-        onOpenChange={(open) => !open && setTaxVarietyId(null)}
-      />
-
       <VarietyFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         productName={productName}
-        editing={editingVariety ?? undefined}
-        isSubmitting={isCreatingProductVariety || isUpdatingProductVariety}
+        editing={
+          editingVariety ? { ...editingVariety, tax: currentTaxOf(editingVariety.id) } : undefined
+        }
+        isSubmitting={isCreatingProductVariety || isUpdatingProductVariety || isUpsertingTaxPeriod}
         onSubmit={handleSubmit}
       />
     </div>
