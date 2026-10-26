@@ -73,7 +73,7 @@ describe("Number prefixes", () => {
         action: "updated",
         actorName: "Asha Admin",
         reason: "New token",
-        payload: { financialYear: "26-27", kind: "bill", prefix: { from: "MB", to: "XB" } },
+        payload: { financialYear: "26-27", kind: "bill", prefix: { old: "MB", new: "XB" } },
       }),
       expect.objectContaining({
         action: "created",
@@ -97,7 +97,7 @@ describe("Number prefixes", () => {
     const [latest] = await settings.listNumberSeriesHistory(refund!.id);
     expect(latest).toMatchObject({
       action: "updated",
-      payload: { financialYear: "26-27", kind: "refund", prefix: { from: "RF", to: "RG" } },
+      payload: { financialYear: "26-27", kind: "refund", prefix: { old: "RF", new: "RG" } },
     });
   });
 

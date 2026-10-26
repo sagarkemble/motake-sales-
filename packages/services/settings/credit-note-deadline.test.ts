@@ -70,7 +70,7 @@ describe("GST Credit Note deadline settings", () => {
       expect.objectContaining({
         action: "updated",
         reason: null,
-        payload: { deadlineDate: { from: "2027-10-31", to: "2027-11-15" } },
+        payload: { deadlineDate: { old: "2027-10-31", new: "2027-11-15" } },
       }),
       expect.objectContaining({
         action: "created",
@@ -78,7 +78,7 @@ describe("GST Credit Note deadline settings", () => {
         reason: "CA instruction 12 Oct",
         payload: {
           financialYear: "26-27",
-          deadlineDate: { from: null, to: "2027-10-31" },
+          deadlineDate: { old: null, new: "2027-10-31" },
           defaultDate: "2027-11-30",
         },
       }),

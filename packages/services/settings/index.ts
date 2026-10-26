@@ -24,7 +24,7 @@ import type { SelectGstCreditNoteDeadline, SelectSellerSettings } from "@repo/da
 import DocumentNumberService, { formatDocumentNumber } from "../document-numbers";
 import { badRequest, conflict, internalError, notFound } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
-import { changedFields, createdFields, recordAudit } from "../shared/audit";
+import { changedFields, createdFields, recordAudit, type FieldChange } from "../shared/audit";
 import {
   financialYearBounds,
   financialYearOf,
@@ -75,6 +75,13 @@ function assertGstinMatchesState(gstin: string, state: string): void {
   if (gstin.slice(0, 2) !== code) {
     throw badRequest(`GSTIN ${gstin} does not belong to ${state} (state code ${code})`);
   }
+}
+
+// Settings audit payloads record each changed field as { old, new } (Spec E).
+function oldNewPayload(changes: Record<string, FieldChange>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(changes).map(([field, change]) => [field, { old: change.from, new: change.to }]),
+  );
 }
 
 function onlySellerRow(rows: SelectSellerSettings[]): SelectSellerSettings | null {
@@ -188,7 +195,7 @@ class SettingsService {
           entityType: "seller_settings",
           entityId: before.id,
           reason,
-          payload: changes,
+          payload: oldNewPayload(changes),
         },
         transaction,
       );
@@ -264,7 +271,7 @@ class SettingsService {
           entityType: "document_number_series",
           entityId: series.id,
           reason,
-          payload: { financialYear, kind, prefix: { from: series.prefix, to: prefix } },
+          payload: { financialYear, kind, prefix: { old: series.prefix, new: prefix } },
         },
         transaction,
       );
@@ -351,7 +358,7 @@ class SettingsService {
           entityType: "gst_credit_note_deadline",
           entityId: created.id,
           reason,
-          payload: { financialYear, deadlineDate: { from: null, to: date }, defaultDate },
+          payload: { financialYear, deadlineDate: { old: null, new: date }, defaultDate },
         },
         transaction,
       );
@@ -388,7 +395,7 @@ class SettingsService {
         entityType: "gst_credit_note_deadline",
         entityId: existing.id,
         reason,
-        payload: { deadlineDate: { from: existing.deadlineDate, to: date } },
+        payload: { deadlineDate: { old: existing.deadlineDate, new: date } },
       },
       transaction,
     );

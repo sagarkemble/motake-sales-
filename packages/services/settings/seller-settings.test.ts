@@ -98,6 +98,27 @@ describe("Seller master setup", () => {
     });
   });
 
+  it("trims and upper-cases the GSTIN before checking it, on setup and on update", async () => {
+    const admin = await buildProfile();
+
+    const created = await settings.setUpSellerSettings(
+      { ...sellerInput, gstin: "  27ehcpp4509q1zp " },
+      admin.id,
+    );
+    expect(created.gstin).toBe("27EHCPP4509Q1ZP");
+
+    const updated = await settings.updateSellerSettings(
+      { state: "Karnataka", gstin: "29ehcpp4509q1zp" },
+      admin.id,
+    );
+    expect(updated.gstin).toBe("29EHCPP4509Q1ZP");
+
+    // The same GSTIN in lowercase is no change.
+    const auditsBefore = (await db.select().from(auditLogsTable)).length;
+    await settings.updateSellerSettings({ gstin: "29ehcpp4509q1zp" }, admin.id);
+    expect(await db.select().from(auditLogsTable)).toHaveLength(auditsBefore);
+  });
+
   it("refuses a GSTIN with the wrong length, shape or state code, and keeps email optional", async () => {
     const admin = await buildProfile();
 
@@ -106,9 +127,6 @@ describe("Seller master setup", () => {
     ).rejects.toThrow();
     await expect(
       settings.setUpSellerSettings({ ...sellerInput, gstin: "27EHCPP45091QZP" }, admin.id),
-    ).rejects.toThrow();
-    await expect(
-      settings.setUpSellerSettings({ ...sellerInput, gstin: "27ehcpp4509q1zp" }, admin.id),
     ).rejects.toThrow();
     await expect(
       settings.setUpSellerSettings({ ...sellerInput, state: "Karnataka" }, admin.id),
@@ -142,7 +160,7 @@ describe("Seller master edits", () => {
       actorId: editor.id,
       actorName: "Ravi Admin",
       reason: "CA instruction 12 Oct",
-      payload: { phone: { from: "9822418224", to: "9000000001" } },
+      payload: { phone: { old: "9822418224", new: "9000000001" } },
     });
   });
 
@@ -185,9 +203,9 @@ describe("Seller master edits", () => {
     });
     const [latest] = await settings.listSellerSettingsHistory();
     expect(latest?.payload).toEqual({
-      state: { from: "Maharashtra", to: "Karnataka" },
-      gstin: { from: "27EHCPP4509Q1ZP", to: "29EHCPP4509Q1ZP" },
-      email: { from: "akashpatil8090@gmail.com", to: null },
+      state: { old: "Maharashtra", new: "Karnataka" },
+      gstin: { old: "27EHCPP4509Q1ZP", new: "29EHCPP4509Q1ZP" },
+      email: { old: "akashpatil8090@gmail.com", new: null },
     });
   });
 

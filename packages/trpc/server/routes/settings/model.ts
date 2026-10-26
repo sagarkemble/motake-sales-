@@ -31,7 +31,7 @@ const sellerFieldsSchema = z.object({
   legalName: z.string().min(1).max(200),
   address: z.string().min(1),
   state: z.string().min(1).max(120),
-  gstin: z.string().length(15),
+  gstin: z.string().max(20),
   phone: z.string().min(1).max(20),
   email: z.string().max(255).nullable().optional(),
 });

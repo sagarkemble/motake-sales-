@@ -21,7 +21,8 @@ const sellerFieldsSchema = z.object({
       (name) => INDIAN_STATES.some((state) => state.name === name),
       "Not an Indian state or union territory",
     ),
-  gstin: z.string().length(15).regex(GSTIN_PATTERN, "Not a valid GSTIN"),
+  // Trimmed and upper-cased like Customer GSTIN, then checked.
+  gstin: z.string().trim().toUpperCase().length(15).regex(GSTIN_PATTERN, "Not a valid GSTIN"),
   // Same rule as Customer phone.
   phone: z.string().min(1).max(20),
   email: z.string().trim().email().max(255).nullable().optional(),
