@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, getTableColumns, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "../../index";
@@ -86,6 +86,60 @@ export async function getActiveGatepassWithRoute(
     )
     .limit(1);
   return row;
+}
+
+// Same as getActiveGatepassWithRoute, locking only the GatePass row: `update` for Book Now (stock
+// moves), `share` for writes that must not race a handover (Pre-order place, field Payment).
+export async function lockActiveGatepassWithRoute(
+  salesmanId: string,
+  businessDate: string,
+  strength: "update" | "share",
+  executor: DbExecutor = db,
+): Promise<ActiveGatepassWithRoute | undefined> {
+  const [row] = await executor
+    .select({
+      gatepass: gatepassesTable,
+      route: {
+        id: routesTable.id,
+        name: routesTable.name,
+        code: routesTable.code,
+        deliveryState: routesTable.deliveryState,
+        hidden: sql<boolean>`${routesTable.deletedAt} IS NOT NULL`,
+      },
+    })
+    .from(gatepassesTable)
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
+    .where(
+      and(
+        eq(gatepassesTable.salesmanId, salesmanId),
+        eq(gatepassesTable.businessDate, businessDate),
+        eq(gatepassesTable.status, "active"),
+      ),
+    )
+    .limit(1)
+    .for(strength, { of: gatepassesTable });
+  return row;
+}
+
+// The GatePass lines for these varieties, locked in variety id order (the checkout lock order).
+// A variety not on the GatePass has no row.
+export async function lockGatepassItemsForVarieties(
+  gatepassId: string,
+  varietyIds: string[],
+  executor: DbExecutor = db,
+): Promise<SelectGatepassItem[]> {
+  if (varietyIds.length === 0) return [];
+  return executor
+    .select()
+    .from(gatepassItemsTable)
+    .where(
+      and(
+        eq(gatepassItemsTable.gatepassId, gatepassId),
+        inArray(gatepassItemsTable.varietyId, varietyIds),
+      ),
+    )
+    .orderBy(asc(gatepassItemsTable.varietyId))
+    .for("update");
 }
 
 export async function createGatepassWithItems(
@@ -230,8 +284,9 @@ export async function getGatepassWithItemsForSalesmanAndDate(
 export async function incrementSoldQtyIfAvailable(
   gatepassItemId: string,
   quantity: number,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepassItem | undefined> {
-  const [updatedItem] = await db
+  const [updatedItem] = await executor
     .update(gatepassItemsTable)
     .set({ soldQty: sql`${gatepassItemsTable.soldQty} + ${quantity}` })
     .where(

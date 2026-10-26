@@ -6,6 +6,8 @@ export const CART_LOCAL_STORAGE_KEY = "motake_salesman_cart";
 
 export interface CartLine {
   varietyId: string;
+  // Book Now and Pre-order send the Variety SKU and qty only.
+  sku: string;
   productId: string;
   productName: string;
   varietyName: string;
@@ -36,7 +38,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const parsedCart = JSON.parse(savedCart) as Record<string, CartLine>;
         const normalizedCart: Record<string, CartLine> = {};
         for (const [varietyId, line] of Object.entries(parsedCart)) {
-          if (!line?.varietyId) continue;
+          if (!line?.varietyId || !line.sku) continue;
           normalizedCart[varietyId] = line;
         }
         setCartLinesByVarietyId(normalizedCart);

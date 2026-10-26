@@ -206,31 +206,31 @@ export function useCheckoutWizard() {
 
     if (!customerForOrder) return;
 
-    const items = cartLines.map((line) => ({ varietyId: line.varietyId, quantity: line.quantity }));
+    const lines = cartLines.map((line) => ({ sku: line.sku, qty: line.quantity }));
+    const placedQuantity = totalCartQuantity;
 
     try {
-      const placedOrderResponse =
-        orderType === "book_now"
-          ? await placeBookNowOrderAsync({
-              customerId: customerForOrder.id,
-              businessDate: businessDateKey,
-              idempotencyKey,
-              items,
-            })
-          : await placePreOrderAsync({
-              customerId: customerForOrder.id,
-              scheduledDate: format(nextDayDate, "yyyy-MM-dd"),
-              idempotencyKey,
-              items,
-            });
+      // No Payment step yet (Spec F UI): Book Now takes ₹0, so the whole Bill stays Pending.
+      if (orderType === "book_now") {
+        await placeBookNowOrderAsync({
+          customerId: customerForOrder.id,
+          idempotencyKey,
+          lines,
+          payment: { mode: "cash", receivedPaise: 0 },
+        });
+      } else {
+        await placePreOrderAsync({
+          customerId: customerForOrder.id,
+          scheduledDate: format(nextDayDate, "yyyy-MM-dd"),
+          idempotencyKey,
+          lines,
+        });
+      }
       clearCart();
       setPlacedOrder({
         type: orderType,
-        totalQuantity: placedOrderResponse.data.items.reduce(
-          (runningTotal, item) => runningTotal + item.quantity,
-          0,
-        ),
-        placedAt: new Date(placedOrderResponse.data.order.placedAt),
+        totalQuantity: placedQuantity,
+        placedAt: new Date(),
       });
     } catch (placeOrderError) {
       const errorMessage =

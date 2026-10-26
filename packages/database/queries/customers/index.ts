@@ -66,15 +66,18 @@ export async function getCustomerWithRouteById(
   return customer;
 }
 
+// `update` for writes that change the row or post to its Balance (move, Book Now, fulfil, Payment);
+// `share` for writes that only need it to stay put (Pre-order place).
 export async function lockCustomerRow(
   customerId: string,
+  strength: "update" | "share",
   executor: DbExecutor = db,
 ): Promise<SelectCustomer | undefined> {
   const [customer] = await executor
     .select()
     .from(customersTable)
     .where(eq(customersTable.id, customerId))
-    .for("update");
+    .for(strength);
   return customer;
 }
 

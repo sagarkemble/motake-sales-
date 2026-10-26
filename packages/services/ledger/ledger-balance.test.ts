@@ -4,6 +4,7 @@ import { runInTransaction } from "@repo/database/queries/shared/executor";
 import { customersTable } from "@repo/database/schema";
 import { describe, expect, it } from "vitest";
 
+import { checkoutRefusalOf } from "../errors";
 import { buildCustomer, buildPayment, buildProfile } from "../test/builders";
 import LedgerService from "./index";
 
@@ -130,14 +131,18 @@ describe("Balance read", () => {
     expect(locked.state).toBe("advance");
   });
 
-  it("treats a soft-deleted Customer as not found", async () => {
+  it("still reads a soft-deleted Customer's Balance, but refuses to lock it for a post", async () => {
     const { admin } = await setup();
     const removed = await buildCustomer(admin.id);
     await db
       .update(customersTable)
-      .set({ deletedAt: new Date() })
+      .set({ status: "inactive", deletedAt: new Date() })
       .where(eq(customersTable.id, removed.id));
 
-    await expect(ledger.getBalance(removed.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(await ledger.getBalance(removed.id)).toMatchObject({ state: "settled" });
+    const refused = await runInTransaction((tx) => ledger.lockBalance(removed.id, tx)).catch(
+      (caught: unknown) => caught,
+    );
+    expect(checkoutRefusalOf(refused)).toMatchObject({ reason: "customer_inactive" });
   });
 });

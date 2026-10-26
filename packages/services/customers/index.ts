@@ -237,7 +237,7 @@ class CustomerService {
   ): Promise<SelectCustomer> {
     const parsedInput = moveCustomerToRouteInputSchema.parse({ customerId, toRouteId });
     return runInTransaction(async (transaction) => {
-      const customer = await lockCustomerRow(parsedInput.customerId, transaction);
+      const customer = await lockCustomerRow(parsedInput.customerId, "update", transaction);
       if (!customer) throw notFound(`Customer ${parsedInput.customerId} not found`);
       const targetRoute = await getRouteById(parsedInput.toRouteId, transaction);
       if (!targetRoute) throw notFound(`Route ${parsedInput.toRouteId} not found`);
@@ -354,7 +354,7 @@ class CustomerService {
     const openOrderCount = await countOpenOrdersByCustomerId(customerId);
     if (openOrderCount > 0) {
       throw conflict(
-        `Customer has ${openOrderCount} open order${openOrderCount === 1 ? "" : "s"} that must be closed or cancelled first`,
+        `Customer has ${openOrderCount} open Pre-order${openOrderCount === 1 ? "" : "s"} and cannot be deactivated`,
       );
     }
 

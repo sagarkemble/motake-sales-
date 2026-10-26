@@ -724,3 +724,50 @@ export async function buildPaymentEvent(input: {
     .returning();
   return event!;
 }
+
+export interface CheckoutWorld {
+  admin: SelectProfile;
+  salesman: SelectProfile;
+  route: SelectRoute;
+  // Taxable at 5%, Route price ₹24.99.
+  milk: SelectProductVariety;
+  // Exempt, Route price ₹40.00.
+  curd: SelectProductVariety;
+  customer: SelectCustomer;
+  gatepass: SelectGatepass;
+}
+
+// A sellable checkout setup (Spec F): seller master in Maharashtra, a Route (Maharashtra unless
+// given), two priced Varieties with covering tax periods, a Customer on the Route, and a salesman
+// with an Active GatePass on it for `businessDate` (pass today as the tests' clock sees it).
+export async function buildCheckoutWorld(input: {
+  businessDate: string;
+  deliveryState?: string;
+  milkIssuedQty?: number;
+  curdIssuedQty?: number;
+  withSeller?: boolean;
+}): Promise<CheckoutWorld> {
+  const admin = await buildProfile();
+  if (input.withSeller !== false) await buildSellerSettings(admin.id);
+  const { profile: salesman } = await buildSalesman();
+  const route = await buildRoute({ deliveryState: input.deliveryState ?? "Maharashtra" });
+  const product = await buildProduct({ name: `Gokul ${nextUnique()}` });
+  const milk = await buildVariety({ productId: product.id, name: "Milk 1 L", unit: "pack" });
+  const curd = await buildVariety({ productId: product.id, name: "Curd 400 g", unit: "cup" });
+  await buildRoutePrice(route.id, milk.id, 2_499);
+  await buildRoutePrice(route.id, curd.id, 4_000);
+  await buildVarietyTaxPeriod(milk.id, { hsn: "0401", exempt: false, gstRateBps: 500 });
+  await buildVarietyTaxPeriod(curd.id, { hsn: "0403", exempt: true, gstRateBps: 0 });
+  const customer = await buildCustomer(admin.id, { routeId: route.id });
+  const gatepass = await buildGatepass({
+    salesmanId: salesman.id,
+    issuedBy: admin.id,
+    routeId: route.id,
+    businessDate: input.businessDate,
+    lines: [
+      { varietyId: milk.id, issuedQty: input.milkIssuedQty ?? 20 },
+      { varietyId: curd.id, issuedQty: input.curdIssuedQty ?? 10 },
+    ],
+  });
+  return { admin, salesman, route, milk, curd, customer, gatepass };
+}

@@ -27,6 +27,7 @@ import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderBillLines } from "~/components/salesman/order-bill-lines";
 import { useOrderBill } from "~/hooks/salesman/use-order-bill";
+import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
@@ -56,6 +57,8 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   } = useOrders({
     detailOrderId: orderId ?? undefined,
   });
+  // A retried fulfil keeps its key, so a lost response cannot bill twice.
+  const { keyFor, clearKey } = useIdempotencyKeys();
   // The full Bill loads only once the salesman asks for its lines.
   const { orderBill, isOrderBillLoading, isOrderBillError, refetchOrderBill } = useOrderBill({
     orderId: orderId ?? undefined,
@@ -77,7 +80,13 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   async function handleConfirmFulfil() {
     if (!orderId) return;
     try {
-      await fulfillOrderAsync({ id: orderId });
+      // No Payment step yet (Spec F UI): fulfil takes ₹0, so the whole Bill stays Pending.
+      await fulfillOrderAsync({
+        id: orderId,
+        idempotencyKey: keyFor(orderId),
+        payment: { mode: "cash", receivedPaise: 0 },
+      });
+      clearKey(orderId);
       toast.success(tx("salesman.orders.fulfilSuccess"));
     } catch (fulfilOrderError) {
       const errorMessage =

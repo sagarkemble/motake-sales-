@@ -25,6 +25,7 @@ import DocumentNumberService, { formatDocumentNumber } from "../document-numbers
 import { badRequest, conflict, internalError, notFound } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
 import { changedFields, createdFields, recordAudit, type FieldChange } from "../shared/audit";
+import { sellerMasterMissingRefusal } from "../shared/checkout";
 import {
   financialYearBounds,
   financialYearOf,
@@ -122,10 +123,10 @@ class SettingsService {
     return onlySellerRow(await listSellerSettingsRows(executor));
   }
 
-  // Bill and Note issue call this before snapshotting the seller.
+  // Checkout, Bill and Note issue call this before snapshotting the seller.
   public async requireSellerSettings(executor: DbExecutor = db): Promise<SelectSellerSettings> {
     const settings = await this.getSellerSettings(executor);
-    if (!settings) throw notFound("Seller master not set up");
+    if (!settings) throw sellerMasterMissingRefusal();
     return settings;
   }
 

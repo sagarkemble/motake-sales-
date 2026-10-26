@@ -8,17 +8,22 @@ import {
   gatepassesTable,
   orderItemsTable,
   ordersTable,
+  orderVersionsTable,
   productVarietiesTable,
   productsTable,
   profilesTable,
   routesTable,
   salesmenTable,
   type InsertOrder,
+  type InsertOrderItem,
+  type InsertOrderVersion,
   type SelectOrder,
   type SelectOrderItem,
+  type SelectOrderVersion,
 } from "../../schema";
 import { firstOrThrow } from "../shared/assertions";
 import { businessDateOf } from "../shared/business-date";
+import type { DbExecutor } from "../shared/executor";
 import {
   buildPaginationOffsets,
   toPaginatedResult,
@@ -39,89 +44,6 @@ export interface OrderWithItems {
   items: OrderItem[];
 }
 
-export interface OrderLineQuantityInput {
-  varietyId: string;
-  quantity: number;
-}
-
-interface PricedOrderLine {
-  varietyId: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-function roundMoney(amount: number): number {
-  return Math.round(amount * 100) / 100;
-}
-
-async function resolvePricedOrderLines(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  lineItems: OrderLineQuantityInput[],
-): Promise<{ pricedLines: PricedOrderLine[]; totalQuantity: number; totalAmount: number }> {
-  const varietyIds = [...new Set(lineItems.map((lineItem) => lineItem.varietyId))];
-  const varietyRows = await tx
-    .select({
-      id: productVarietiesTable.id,
-      unitPrice: productVarietiesTable.unitPrice,
-      status: productVarietiesTable.status,
-      deletedAt: productVarietiesTable.deletedAt,
-    })
-    .from(productVarietiesTable)
-    .where(inArray(productVarietiesTable.id, varietyIds));
-
-  const varietyById = new Map(varietyRows.map((variety) => [variety.id, variety]));
-  const pricedLines: PricedOrderLine[] = [];
-  let totalQuantity = 0;
-  let totalAmount = 0;
-
-  for (const lineItem of lineItems) {
-    const variety = varietyById.get(lineItem.varietyId);
-    if (!variety || variety.deletedAt || variety.status !== "active") {
-      throw new Error(`Variety ${lineItem.varietyId} is missing or inactive`);
-    }
-    const unitPrice = Number(variety.unitPrice);
-    const lineTotal = roundMoney(unitPrice * lineItem.quantity);
-    pricedLines.push({
-      varietyId: lineItem.varietyId,
-      quantity: lineItem.quantity,
-      unitPrice,
-    });
-    totalQuantity += lineItem.quantity;
-    totalAmount = roundMoney(totalAmount + lineTotal);
-  }
-
-  return { pricedLines, totalQuantity, totalAmount };
-}
-
-export async function createOrderWithItems(
-  newOrder: Omit<InsertOrder, "totalQuantity" | "totalAmount">,
-  lineItems: OrderLineQuantityInput[],
-): Promise<OrderWithItems> {
-  return db.transaction(async (tx) => {
-    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(
-      tx,
-      lineItems,
-    );
-    const insertedOrderRows = await tx
-      .insert(ordersTable)
-      .values({ ...newOrder, totalQuantity, totalAmount })
-      .returning();
-    const createdOrder = firstOrThrow(insertedOrderRows, "createOrderWithItems");
-    const createdItems = await tx
-      .insert(orderItemsTable)
-      .values(
-        pricedLines.map((lineItem) => ({
-          orderId: createdOrder.id,
-          varietyId: lineItem.varietyId,
-          quantity: lineItem.quantity,
-          unitPrice: lineItem.unitPrice,
-        })),
-      )
-      .returning();
-    return { order: createdOrder, items: createdItems };
-  });
-}
-
 export async function getOrderById(orderId: string): Promise<SelectOrder | undefined> {
   const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
   return order;
@@ -129,16 +51,20 @@ export async function getOrderById(orderId: string): Promise<SelectOrder | undef
 
 export async function getOrderByIdempotencyKey(
   idempotencyKey: string,
+  executor: DbExecutor = db,
 ): Promise<SelectOrder | undefined> {
-  const [order] = await db
+  const [order] = await executor
     .select()
     .from(ordersTable)
     .where(eq(ordersTable.idempotencyKey, idempotencyKey));
   return order;
 }
 
-export async function listOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
-  const items = await db
+export async function listOrderItemsByOrderId(
+  orderId: string,
+  executor: DbExecutor = db,
+): Promise<OrderItem[]> {
+  const items = await executor
     .select()
     .from(orderItemsTable)
     .where(eq(orderItemsTable.orderId, orderId))
@@ -278,7 +204,9 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
   };
 }
 
-const OPEN_ORDER_STATUSES = ["scheduled", "due", "confirmed"] as const;
+// Open means a Pre-order still waiting to be fulfilled or cancelled. A Book Now is billed on the
+// spot (status confirmed) and never stays open.
+const OPEN_PREORDER_STATUSES = ["scheduled", "due"] as const;
 
 export interface OpenOrderSummary {
   id: string;
@@ -303,7 +231,8 @@ export async function listOpenOrdersByCustomerId(customerId: string): Promise<Op
     .where(
       and(
         eq(ordersTable.customerId, customerId),
-        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, [...OPEN_PREORDER_STATUSES]),
       ),
     )
     .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt));
@@ -316,7 +245,8 @@ export async function countOpenOrdersByCustomerId(customerId: string): Promise<n
     .where(
       and(
         eq(ordersTable.customerId, customerId),
-        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, [...OPEN_PREORDER_STATUSES]),
       ),
     );
   return countRow?.totalCount ?? 0;
@@ -455,54 +385,6 @@ export async function listOrders(
   return toPaginatedResult(rowsWithItemPreviews, totalCount, pagination);
 }
 
-export async function listDuePreordersForDate(businessDate: string): Promise<SelectOrder[]> {
-  return db
-    .select()
-    .from(ordersTable)
-    .where(
-      and(
-        eq(ordersTable.type, "pre_order"),
-        eq(ordersTable.scheduledDate, businessDate),
-        inArray(ordersTable.status, ["scheduled", "due"]),
-      ),
-    )
-    .orderBy(asc(ordersTable.placedAt));
-}
-
-export async function transitionScheduledPreordersToDue(
-  businessDate: string,
-): Promise<SelectOrder[]> {
-  return db
-    .update(ordersTable)
-    .set({ status: "due" })
-    .where(
-      and(
-        eq(ordersTable.type, "pre_order"),
-        eq(ordersTable.status, "scheduled"),
-        lte(ordersTable.scheduledDate, businessDate),
-      ),
-    )
-    .returning();
-}
-
-export async function markOrderFulfilled(
-  orderId: string,
-  fulfilledBy: string,
-  fulfilledAt: Date,
-): Promise<SelectOrder | undefined> {
-  const [fulfilledOrder] = await db
-    .update(ordersTable)
-    .set({ status: "fulfilled", fulfilledAt, fulfilledBy })
-    .where(
-      and(
-        eq(ordersTable.id, orderId),
-        sql`${ordersTable.status} NOT IN ('fulfilled', 'cancelled')`,
-      ),
-    )
-    .returning();
-  return fulfilledOrder;
-}
-
 export async function cancelOrder(
   orderId: string,
   cancelledBy: string,
@@ -564,105 +446,6 @@ export async function getOrderCountsPerSalesmanInRange(range: {
     .orderBy(desc(count()));
 }
 
-export interface BookNowOrderLineItem {
-  varietyId: string;
-  quantity: number;
-}
-
-export interface CreateBookNowOrderParams {
-  orderCode: string;
-  salesmanId: string;
-  customerId: string;
-  businessDate: string;
-  idempotencyKey?: string;
-  notes?: string;
-  items: BookNowOrderLineItem[];
-}
-
-export async function createBookNowOrderWithGatepassDeduction(
-  params: CreateBookNowOrderParams,
-): Promise<OrderWithItems> {
-  return db.transaction(async (tx) => {
-    const { pricedLines, totalQuantity, totalAmount } = await resolvePricedOrderLines(
-      tx,
-      params.items,
-    );
-
-    // A salesman may hold several gatepasses on the same day, but only one is ever `active`.
-    // Deduct from that active gatepass explicitly (there is at most one, enforced by a partial
-    // unique index) rather than an arbitrary row for the salesman/date.
-    const [salesmanGatepass] = await tx
-      .select()
-      .from(gatepassesTable)
-      .where(
-        and(
-          eq(gatepassesTable.salesmanId, params.salesmanId),
-          eq(gatepassesTable.businessDate, params.businessDate),
-          eq(gatepassesTable.status, "active"),
-        ),
-      )
-      .for("update");
-
-    if (!salesmanGatepass) {
-      throw new Error("No active gatepass for this salesman today");
-    }
-
-    for (const lineItem of pricedLines) {
-      const [deductedGatepassItem] = await tx
-        .update(gatepassItemsTable)
-        .set({ soldQty: sql`${gatepassItemsTable.soldQty} + ${lineItem.quantity}` })
-        .where(
-          and(
-            eq(gatepassItemsTable.gatepassId, salesmanGatepass.id),
-            eq(gatepassItemsTable.varietyId, lineItem.varietyId),
-            sql`${gatepassItemsTable.issuedQty} - ${gatepassItemsTable.soldQty} >= ${lineItem.quantity}`,
-          ),
-        )
-        .returning();
-
-      if (!deductedGatepassItem) {
-        throw new Error(
-          `Variety ${lineItem.varietyId} not allotted or insufficient gatepass quantity`,
-        );
-      }
-    }
-
-    const insertedOrderRows = await tx
-      .insert(ordersTable)
-      .values({
-        orderCode: params.orderCode,
-        type: "book_now",
-        status: "confirmed",
-        salesmanId: params.salesmanId,
-        customerId: params.customerId,
-        totalQuantity,
-        totalAmount,
-        placedAt: new Date(),
-        idempotencyKey: params.idempotencyKey,
-        notes: params.notes,
-      })
-      .returning();
-    const createdOrder = firstOrThrow(
-      insertedOrderRows,
-      "createBookNowOrderWithGatepassDeduction order",
-    );
-
-    const createdItems = await tx
-      .insert(orderItemsTable)
-      .values(
-        pricedLines.map((lineItem) => ({
-          orderId: createdOrder.id,
-          varietyId: lineItem.varietyId,
-          quantity: lineItem.quantity,
-          unitPrice: lineItem.unitPrice,
-        })),
-      )
-      .returning();
-
-    return { order: createdOrder, items: createdItems };
-  });
-}
-
 export async function cancelBookNowOrderWithGatepassRestoration(
   orderId: string,
   cancelledBy: string,
@@ -683,12 +466,16 @@ export async function cancelBookNowOrderWithGatepassRestoration(
 
     if (existingOrder.type === "book_now") {
       const businessDate = businessDateOf(existingOrder.placedAt);
+      const salesmanId = existingOrder.salesmanId;
+      if (!salesmanId) {
+        throw new Error(`Cannot restore book_now order ${orderId}, no gatepass found for it`);
+      }
       const [salesmanGatepass] = await tx
         .select()
         .from(gatepassesTable)
         .where(
           and(
-            eq(gatepassesTable.salesmanId, existingOrder.salesmanId),
+            eq(gatepassesTable.salesmanId, salesmanId),
             eq(gatepassesTable.businessDate, businessDate),
           ),
         )
@@ -734,4 +521,159 @@ export async function cancelBookNowOrderWithGatepassRestoration(
 
     return firstOrThrow(cancelledOrderRows, "cancelBookNowOrderWithGatepassRestoration");
   });
+}
+
+// --- Checkout write path (Spec F): place, fulfil and their order_versions.
+
+export async function lockOrderRow(
+  orderId: string,
+  executor: DbExecutor = db,
+): Promise<SelectOrder | undefined> {
+  const [order] = await executor
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, orderId))
+    .for("update");
+  return order;
+}
+
+export async function insertOrder(
+  newOrder: InsertOrder,
+  executor: DbExecutor = db,
+): Promise<SelectOrder> {
+  const insertedRows = await executor.insert(ordersTable).values(newOrder).returning();
+  return firstOrThrow(insertedRows, "insertOrder");
+}
+
+export async function insertOrderItems(
+  newItems: InsertOrderItem[],
+  executor: DbExecutor = db,
+): Promise<OrderItem[]> {
+  const items = await executor.insert(orderItemsTable).values(newItems).returning();
+  return items.map((item) => ({ ...item, stamp: item.stamp as OrderLineStamp }));
+}
+
+export async function updateOrder(
+  orderId: string,
+  changes: Partial<Pick<InsertOrder, "status" | "fulfilledAt" | "fulfilledBy" | "gatepassId">>,
+  executor: DbExecutor = db,
+): Promise<SelectOrder> {
+  const updatedRows = await executor
+    .update(ordersTable)
+    .set(changes)
+    .where(eq(ordersTable.id, orderId))
+    .returning();
+  return firstOrThrow(updatedRows, "updateOrder");
+}
+
+export async function insertOrderVersion(
+  newVersion: InsertOrderVersion,
+  executor: DbExecutor = db,
+): Promise<SelectOrderVersion> {
+  const insertedRows = await executor.insert(orderVersionsTable).values(newVersion).returning();
+  return firstOrThrow(insertedRows, "insertOrderVersion");
+}
+
+export async function getLatestOrderVersion(
+  orderId: string,
+  executor: DbExecutor = db,
+): Promise<SelectOrderVersion | undefined> {
+  const [version] = await executor
+    .select()
+    .from(orderVersionsTable)
+    .where(eq(orderVersionsTable.orderId, orderId))
+    .orderBy(desc(orderVersionsTable.versionNumber))
+    .limit(1);
+  return version;
+}
+
+export interface RoutePreorderLine {
+  varietyId: string;
+  name: string;
+  unit: string;
+  quantity: number;
+}
+
+export interface RoutePreorderRow {
+  id: string;
+  status: SelectOrder["status"];
+  scheduledDate: string;
+  placedAt: Date;
+  customerId: string;
+  customerShopName: string;
+  customerPhone: string;
+  customerShopPhotoUrl: string | null;
+  placedBySalesmanId: string | null;
+  placedByName: string | null;
+  totalQuantity: number;
+  lines: RoutePreorderLine[];
+}
+
+// Open Pre-orders on one Route, any salesman, earliest scheduled date first. Legacy `due` rows
+// count as open; due / overdue are derived on read.
+export async function listOpenPreordersOnRoute(
+  routeId: string,
+  executor: DbExecutor = db,
+): Promise<RoutePreorderRow[]> {
+  const rows = await executor
+    .select({
+      id: ordersTable.id,
+      status: ordersTable.status,
+      scheduledDate: ordersTable.scheduledDate,
+      placedAt: ordersTable.placedAt,
+      customerId: ordersTable.customerId,
+      customerShopName: customersTable.shopName,
+      customerPhone: customersTable.phone,
+      customerShopPhotoUrl: customersTable.shopPhotoUrl,
+      placedBySalesmanId: ordersTable.salesmanId,
+      placedByName: profilesTable.name,
+      totalQuantity: orderQuantity,
+    })
+    .from(ordersTable)
+    .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+    .leftJoin(profilesTable, eq(ordersTable.salesmanId, profilesTable.id))
+    .where(
+      and(
+        eq(ordersTable.routeId, routeId),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, ["scheduled", "due"]),
+      ),
+    )
+    .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt), asc(ordersTable.id));
+  if (rows.length === 0) return [];
+
+  const itemRows = await executor
+    .select({
+      orderId: orderItemsTable.orderId,
+      varietyId: orderItemsTable.varietyId,
+      stamp: orderItemsTable.stamp,
+      quantity: orderItemsTable.quantity,
+    })
+    .from(orderItemsTable)
+    .where(
+      inArray(
+        orderItemsTable.orderId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(orderItemsTable.createdAt), asc(orderItemsTable.id));
+  const linesByOrderId = new Map<string, RoutePreorderLine[]>();
+  for (const itemRow of itemRows) {
+    const stamp = itemRow.stamp as OrderLineStamp;
+    const lines = linesByOrderId.get(itemRow.orderId) ?? [];
+    lines.push({
+      varietyId: itemRow.varietyId,
+      name: stamp.name,
+      unit: stamp.unit,
+      quantity: itemRow.quantity,
+    });
+    linesByOrderId.set(itemRow.orderId, lines);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    // Every Pre-order has a scheduled date.
+    scheduledDate: row.scheduledDate ?? "",
+    lines: linesByOrderId.get(row.id) ?? [],
+  }));
 }

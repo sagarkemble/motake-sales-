@@ -17,6 +17,7 @@ export default function SalesmanCartPage() {
     setQuantityForVariety(
       {
         varietyId: cartLine.varietyId,
+        sku: cartLine.sku,
         productId: cartLine.productId,
         productName: cartLine.productName,
         varietyName: cartLine.varietyName,

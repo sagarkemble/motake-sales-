@@ -22,7 +22,7 @@ const PREORDERS_PAGE_SIZE = 20;
 type PreorderStatusFilter = "pending" | "fulfilled";
 
 type ListedOrder = RouterOutputs["orders"]["list"]["data"]["items"][number];
-type DuePreorder = RouterOutputs["orders"]["listDuePreorders"]["data"][number];
+type DuePreorder = RouterOutputs["orders"]["listRoutePreorders"]["data"][number];
 
 /** A row from this salesman's list, or a bare due Pre-order from the due list. */
 type PreorderRow = { kind: "listed"; row: ListedOrder } | { kind: "bare"; order: DuePreorder };
@@ -50,7 +50,7 @@ export default function SalesmanOrdersPage() {
   });
 
   const { duePreorders, isDuePreordersLoading } = useOrders({
-    duePreordersDate: canonicalBusinessDate,
+    routePreorders: Boolean(canonicalBusinessDate),
   });
 
   const isPreordersLoading = isMyPreordersLoading || isDuePreordersLoading;

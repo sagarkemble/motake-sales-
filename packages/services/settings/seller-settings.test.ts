@@ -2,6 +2,7 @@ import { db } from "@repo/database";
 import { auditLogsTable, sellerSettingsTable } from "@repo/database/schema";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { checkoutRefusalOf } from "../errors";
 import { wipeApplicationTables } from "../test/database";
 import { buildProfile } from "../test/builders";
 import SettingsService from "./index";
@@ -32,10 +33,9 @@ describe("Seller master setup", () => {
   it("refuses to hand out the seller before setup and returns it after", async () => {
     const admin = await buildProfile({ name: "Asha Admin" });
 
-    await expect(settings.requireSellerSettings()).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: "Seller master not set up",
-    });
+    const refused = await settings.requireSellerSettings().catch((caught: unknown) => caught);
+    expect(refused).toMatchObject({ code: "CONFLICT" });
+    expect(checkoutRefusalOf(refused)).toEqual({ reason: "seller_master_missing", details: null });
     await settings.setUpSellerSettings(sellerInput, admin.id);
 
     expect(await settings.requireSellerSettings()).toMatchObject(sellerInput);

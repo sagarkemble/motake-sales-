@@ -8,7 +8,8 @@ interface UseOrdersParams {
   listFilters?: RouterInputs["orders"]["list"];
   orderId?: string;
   detailOrderId?: string;
-  duePreordersDate?: string;
+  // Open Pre-orders on the salesman's Active GatePass Route.
+  routePreorders?: boolean;
   enabled?: boolean;
 }
 
@@ -16,7 +17,7 @@ export function useOrders({
   listFilters,
   orderId,
   detailOrderId,
-  duePreordersDate,
+  routePreorders = false,
   enabled = true,
 }: UseOrdersParams = {}) {
   const utils = trpc.useUtils();
@@ -32,12 +33,11 @@ export function useOrders({
     { id: detailOrderId ?? "" },
     { enabled: enabled && Boolean(detailOrderId) },
   );
-  const duePreordersQuery = trpc.orders.listDuePreorders.useQuery(
-    { businessDate: duePreordersDate ?? "" },
-    { enabled: enabled && Boolean(duePreordersDate) },
-  );
+  const routePreordersQuery = trpc.orders.listRoutePreorders.useQuery(undefined, {
+    enabled: enabled && routePreorders,
+  });
 
-  const placeBookNowOrderMutation = trpc.orders.placeBookNowOrder.useMutation({
+  const placeBookNowOrderMutation = trpc.orders.placeBookNow.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
       utils.gatepasses.invalidate();
@@ -46,7 +46,7 @@ export function useOrders({
   const placePreOrderMutation = trpc.orders.placePreOrder.useMutation({
     onSuccess: () => utils.orders.invalidate(),
   });
-  const fulfillOrderMutation = trpc.orders.fulfill.useMutation({
+  const fulfillOrderMutation = trpc.orders.fulfilPreOrder.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
       utils.customers.invalidate();
@@ -78,10 +78,10 @@ export function useOrders({
     isOrderDetailError: orderDetailQuery.isError,
     refetchOrderDetail: orderDetailQuery.refetch,
 
-    duePreorders: duePreordersQuery.data?.data ?? [],
-    isDuePreordersLoading: duePreordersQuery.isLoading,
-    isDuePreordersError: duePreordersQuery.isError,
-    refetchDuePreorders: duePreordersQuery.refetch,
+    duePreorders: routePreordersQuery.data?.data ?? [],
+    isDuePreordersLoading: routePreordersQuery.isLoading,
+    isDuePreordersError: routePreordersQuery.isError,
+    refetchDuePreorders: routePreordersQuery.refetch,
 
     placeBookNowOrder: placeBookNowOrderMutation.mutate,
     placeBookNowOrderAsync: placeBookNowOrderMutation.mutateAsync,
