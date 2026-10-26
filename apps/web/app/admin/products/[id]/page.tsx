@@ -1,12 +1,23 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BackHeader } from "~/components/admin/products/back-header";
 import { ProductForm, type ProductFormValues } from "~/components/admin/products/product-form";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { VarietyTable } from "~/components/admin/products/variety-table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
@@ -30,6 +41,7 @@ export default function EditProductPage() {
     deleteProductAsync,
     isDeletingProduct,
   } = useProducts({ productId });
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   async function handleSubmit(values: ProductFormValues) {
     try {
@@ -59,12 +71,13 @@ export default function EditProductPage() {
   }
 
   async function handleDelete() {
-    if (!window.confirm("Are you sure you want to soft-delete this product?")) return;
     try {
       await deleteProductAsync({ id: productId });
       toast.success(tx("admin.products.deleteSuccess"));
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.products.deleteFailed")));
+    } finally {
+      setIsDeleteConfirmOpen(false);
     }
   }
 
@@ -118,7 +131,7 @@ export default function EditProductPage() {
             variant="outline"
             className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
             disabled={isDeletingProduct || Boolean(product.deletedAt)}
-            onClick={handleDelete}
+            onClick={() => setIsDeleteConfirmOpen(true)}
           >
             Delete
           </Button>
@@ -139,6 +152,32 @@ export default function EditProductPage() {
       />
 
       <VarietyTable productId={productId} productName={product.name} />
+
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tx("admin.products.deleteTitle", { name: product.name })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{tx("admin.products.deleteBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingProduct}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeletingProduct}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {tx("admin.products.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
