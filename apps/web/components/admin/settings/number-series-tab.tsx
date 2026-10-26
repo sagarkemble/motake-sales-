@@ -9,6 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useSettings } from "~/hooks/use-settings";
@@ -60,36 +61,39 @@ export function NumberSeriesTab({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1">
-        {financialYears.map((year) => (
-          <button
-            key={year}
-            type="button"
-            onClick={() => {
-              setFinancialYear(year);
-              setEditingKind(null);
-            }}
-            className={cn(
-              "shrink-0 rounded-full border px-3 py-1 text-sm transition-colors",
-              financialYear === year
-                ? "border-transparent bg-brand text-brand-foreground"
-                : "bg-card hover:bg-accent",
-            )}
-          >
-            {tx("admin.settings.prefixes.financialYear", { year })}
-            {year === currentFinancialYear && (
-              <span className="ml-1 text-[10px] opacity-70">
-                {tx("admin.settings.prefixes.now")}
-              </span>
-            )}
-            {year === nextFinancialYear && (
-              <span className="ml-1 text-[10px] opacity-70">
-                {tx("admin.settings.prefixes.next")}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <ScrollArea className="-mx-4">
+        <div className="flex gap-1.5 px-4 pb-1">
+          {financialYears.map((year) => (
+            <button
+              key={year}
+              type="button"
+              onClick={() => {
+                setFinancialYear(year);
+                setEditingKind(null);
+              }}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1 text-sm transition-colors",
+                financialYear === year
+                  ? "border-transparent bg-brand text-brand-foreground"
+                  : "bg-card hover:bg-accent",
+              )}
+            >
+              {tx("admin.settings.prefixes.financialYear", { year })}
+              {year === currentFinancialYear && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  {tx("admin.settings.prefixes.now")}
+                </span>
+              )}
+              {year === nextFinancialYear && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  {tx("admin.settings.prefixes.next")}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       {isNextYear && !isNumberSeriesLoading && !isNumberSeriesError && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-3 text-sm">
@@ -276,7 +280,12 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
         onChange={(event) => setReason(event.target.value)}
       />
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={isUpdatingPrefix}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isUpdatingPrefix}
+          className="bg-brand text-brand-foreground hover:bg-brand/90"
+        >
           {isUpdatingPrefix ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {tx("admin.settings.prefixes.save")}
         </Button>

@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
+import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { getErrorMessage } from "~/lib/get-error-message";
 import type { IndianStateName } from "@repo/trpc/client";
 
@@ -21,7 +33,7 @@ interface RouteDetailProps {
   routeId: string;
 }
 
-/** The selected Route: name and delivery state saved on leave, status, prices, Hide / Show again. */
+/** The selected Route: name and delivery state saved on leave, status, prices, Delete. */
 export function RouteDetail({ routeId }: RouteDetailProps) {
   const tx = useTranslate();
   const {
@@ -33,11 +45,15 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     isSettingRouteStatus,
     hideRouteAsync,
     isHidingRoute,
-    showRouteAsync,
-    isShowingRoute,
   } = useRoutes({ routeId });
   const [nameText, setNameText] = useState("");
   const [hideRefusal, setHideRefusal] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const varietyIds = useMemo(
+    () => routePriceForm.map((variety) => variety.varietyId),
+    [routePriceForm],
+  );
+  const { currentTaxes, isCurrentTaxesLoading } = useVarietyTaxPeriods({ varietyIds });
 
   useEffect(() => {
     setNameText(route?.name ?? "");
@@ -103,125 +119,152 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await hideRouteAsync({ id: route.id });
     } catch (error) {
-      setHideRefusal(getErrorMessage(error, tx("admin.routes.hideFailed")));
-    }
-  }
-
-  async function handleShow() {
-    if (!route) return;
-    try {
-      await showRouteAsync({ id: route.id });
-    } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.showFailed")));
+      setHideRefusal(getErrorMessage(error, tx("admin.routes.deleteFailed")));
+    } finally {
+      setIsConfirmOpen(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <header className="flex shrink-0 flex-col gap-4">
         {isHidden && (
           <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
-            {tx("admin.routes.hidden")}
+            {tx("admin.routes.deleted")}
           </Badge>
         )}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
-          <Input
-            id={`route-name-${route.id}`}
-            value={nameText}
-            maxLength={120}
-            onChange={(event) => setNameText(event.target.value)}
-            onBlur={() => void commitName()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-            }}
-            className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
-          />
+          {/* Phone: name + Delete at its own width, Delivery state below. Wider: name 40, state 40, Delete 20. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[2fr_2fr_1fr]">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
+              <Input
+                id={`route-name-${route.id}`}
+                value={nameText}
+                maxLength={120}
+                onChange={(event) => setNameText(event.target.value)}
+                onBlur={() => void commitName()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
+              />
+            </div>
+            <div className="col-span-2 row-start-2 flex min-w-0 flex-col gap-1.5 sm:col-span-1 sm:row-start-1">
+              <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
+              <DeliveryStateSelect
+                id={`route-state-${route.id}`}
+                value={route.deliveryState as IndianStateName}
+                onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
+                className="data-[size=default]:h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                {tx("admin.routes.deliveryStateHint")}
+              </p>
+            </div>
+            {/* A deleted Route cannot be brought back, so it has no button. */}
+            {!isHidden && (
+              // mt-5 lines the button up with the fields below their labels.
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-5 h-auto min-h-11 max-w-36 rounded-full border-destructive px-4 leading-tight text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-full sm:max-w-none sm:px-3"
+                disabled={isHidingRoute}
+                onClick={() => setIsConfirmOpen(true)}
+              >
+                <span className="truncate sm:whitespace-normal">
+                  {tx("admin.routes.delete", { name: route.name })}
+                </span>
+              </Button>
+            )}
+          </div>
+          {!isHidden && hideRefusal && (
+            <p role="alert" className="text-right text-xs text-destructive">
+              {hideRefusal}
+            </p>
+          )}
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
-          <DeliveryStateSelect
-            id={`route-state-${route.id}`}
-            value={route.deliveryState as IndianStateName}
-            onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
-          />
-          <p className="text-xs text-muted-foreground">{tx("admin.routes.deliveryStateHint")}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
-          <p className="mt-1 font-mono text-sm text-muted-foreground">{route.code}</p>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2">
-          <div>
+        <div className="grid grid-cols-2 items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
+            <p className="mt-1 truncate font-mono text-sm text-muted-foreground">{route.code}</p>
+          </div>
+          <div className="flex w-fit items-center gap-2 justify-self-end rounded-full bg-muted/40 px-3 py-2">
             <Label htmlFor={`route-status-${route.id}`}>
               {route.status === "active"
                 ? tx("common.status.active")
                 : tx("common.status.inactive")}
             </Label>
-            <p className="text-xs text-muted-foreground">{tx("admin.routes.statusHint")}</p>
+            <Switch
+              id={`route-status-${route.id}`}
+              checked={route.status === "active"}
+              disabled={isSettingRouteStatus}
+              className="data-[state=checked]:bg-brand"
+              onCheckedChange={(checked) => void handleStatusChange(checked)}
+            />
           </div>
-          <Switch
-            id={`route-status-${route.id}`}
-            checked={route.status === "active"}
-            disabled={isSettingRouteStatus}
-            onCheckedChange={(checked) => void handleStatusChange(checked)}
-          />
         </div>
       </header>
 
-      <section>
+      <section className="flex min-h-0 flex-1 flex-col">
         <h2 className="text-sm font-medium">{tx("admin.routes.prices.title")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">{tx("admin.routes.prices.hint")}</p>
-        {productGroups.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {tx("admin.routes.prices.empty")}
-          </p>
-        ) : (
-          productGroups.map((group) => (
-            <div key={group.productName}>
-              <h3 className="pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {group.productName}
-              </h3>
-              {group.varieties.map((variety) => (
-                <RoutePriceRow key={variety.varietyId} routeId={route.id} variety={variety} />
-              ))}
-            </div>
-          ))
-        )}
+        {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
+        <ScrollArea className="mt-1 min-h-0 flex-1 pr-3 [&_[data-slot=scroll-area-viewport]>div]:block!">
+          {productGroups.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {tx("admin.routes.prices.empty")}
+            </p>
+          ) : (
+            productGroups.map((group) => (
+              <div key={group.productName}>
+                <h3 className="pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {group.productName}
+                </h3>
+                {group.varieties.map((variety) => (
+                  <RoutePriceRow
+                    key={variety.varietyId}
+                    routeId={route.id}
+                    variety={variety}
+                    currentTax={
+                      isCurrentTaxesLoading
+                        ? undefined
+                        : (currentTaxes.find((tax) => tax.varietyId === variety.varietyId)
+                            ?.period ?? null)
+                    }
+                  />
+                ))}
+              </div>
+            ))
+          )}
+        </ScrollArea>
       </section>
 
-      <footer className="flex flex-col items-start gap-2 border-t pt-4">
-        {isHidden ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            disabled={isShowingRoute}
-            onClick={() => void handleShow()}
-          >
-            {tx("admin.routes.showAgain", { name: route.name })}
-          </Button>
-        ) : (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full"
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tx("admin.routes.deleteTitle", { name: route.name })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{tx("admin.routes.deleteBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isHidingRoute}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
               disabled={isHidingRoute}
-              onClick={() => void handleHide()}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleHide();
+              }}
             >
-              {tx("admin.routes.hide", { name: route.name })}
-            </Button>
-            {hideRefusal ? (
-              <p role="alert" className="text-xs text-destructive">
-                {hideRefusal}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">{tx("admin.routes.hideHint")}</p>
-            )}
-          </>
-        )}
-      </footer>
+              {tx("admin.routes.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

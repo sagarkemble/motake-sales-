@@ -399,7 +399,11 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
         <p className="text-xs text-muted-foreground">{tx("admin.settings.seller.appliesNote")}</p>
 
         <div className="flex flex-col gap-2 sm:flex-row-reverse">
-          <Button type="submit" disabled={isSubmitting} className="sm:flex-1">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="sm:flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
+          >
             {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
             {mode === "setup"
               ? tx("admin.settings.seller.confirm")

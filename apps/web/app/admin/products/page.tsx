@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PackageIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
@@ -57,11 +58,10 @@ function ProductsPageContent() {
 
       <div className="flex items-center justify-end">
         <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={includeDeleted}
-            onChange={(event) => setIncludeDeleted(event.target.checked)}
-            className="rounded border-gray-300"
+            onCheckedChange={(checked) => setIncludeDeleted(checked === true)}
+            className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
           Show deleted products
         </label>

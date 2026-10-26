@@ -85,7 +85,7 @@ export function AllotSalesmanStep({
                 onClick={() => onSelectSalesman(salesman.id)}
                 className={cn(
                   "flex flex-col gap-2 rounded-2xl border p-3 text-left transition-colors",
-                  isSelected ? "border-brand bg-brand/5 ring-1 ring-brand" : "hover:bg-muted/40",
+                  isSelected ? "border-brand bg-accent/50 ring-1 ring-brand" : "hover:bg-muted/40",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">

@@ -8,7 +8,9 @@ import {
   CheckCircle2Icon,
   IndianRupeeIcon,
   LockIcon,
+  MapPinIcon,
   PackageIcon,
+  PhoneIcon,
   ShoppingCartIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -87,7 +89,8 @@ export default function CustomerDetailPage() {
       <BackHeader href="/admin/customers" title={customer.shopName} />
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
-        <div className="flex items-start gap-3">
+        {/* Phone: photo + contact, details panel below. Wider: photo | contact | details panel. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]">
           <ShopPhotoThumbnail
             shopPhotoUrl={customer.shopPhotoUrl}
             shopName={customer.shopName}
@@ -95,61 +98,64 @@ export default function CustomerDetailPage() {
             shape="rounded"
             className="rounded-2xl"
           />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">
-                {customer.contactName ?? tx("admin.customers.noContactName")}
-              </p>
-              <StatusBadge status={customer.status} />
-            </div>
-            <p className="text-sm text-muted-foreground">{customer.phone}</p>
-            <p className="text-sm text-muted-foreground">{customer.address}</p>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="truncate text-base font-semibold">
+              {customer.contactName ?? tx("admin.customers.noContactName")}
+            </p>
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <PhoneIcon className="size-3.5 shrink-0" />
+              {customer.phone}
+            </p>
+            <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+              <MapPinIcon className="mt-0.5 size-3.5 shrink-0" />
+              {customer.address}
+            </p>
             {customer.notes && <p className="text-xs text-muted-foreground">{customer.notes}</p>}
           </div>
-        </div>
 
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 border-t pt-3 text-sm sm:grid-cols-2">
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
-            <dd className="min-w-0">
-              <RouteTag
-                name={customer.routeName}
-                code={customer.routeCode}
-                hidden={customer.routeHidden}
-              />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("common.preferredLanguage.label")}
-            </dt>
-            <dd className="inline-flex items-center gap-1">
-              {tx(preferredLanguageLabelKey(customer.preferredLanguage))}
-              <LockIcon
-                className="size-3 text-muted-foreground"
-                aria-label={tx("common.preferredLanguage.fixedHint")}
-              />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("admin.customers.form.gstinLabel")}
-            </dt>
-            <dd>
-              {customer.gstin ? (
-                <span className="font-mono">{customer.gstin}</span>
-              ) : (
-                <span className="text-muted-foreground">{tx("admin.customers.noGstin")}</span>
-              )}
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("admin.customers.form.einvoicing")}
-            </dt>
-            <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
-          </div>
-        </dl>
+          <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted/40 p-3 text-sm md:col-span-1">
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
+              <dd className="min-w-0">
+                <RouteTag
+                  name={customer.routeName}
+                  code={customer.routeCode}
+                  hidden={customer.routeHidden}
+                />
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("common.preferredLanguage.label")}
+              </dt>
+              <dd className="inline-flex items-center gap-1">
+                {tx(preferredLanguageLabelKey(customer.preferredLanguage))}
+                <LockIcon
+                  className="size-3 text-muted-foreground"
+                  aria-label={tx("common.preferredLanguage.fixedHint")}
+                />
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("admin.customers.form.gstinLabel")}
+              </dt>
+              <dd>
+                {customer.gstin ? (
+                  <span className="font-mono">{customer.gstin}</span>
+                ) : (
+                  <span className="text-muted-foreground">{tx("admin.customers.noGstin")}</span>
+                )}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("admin.customers.form.einvoicing")}
+              </dt>
+              <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
+            </div>
+          </dl>
+        </div>
 
         {movedToRouteMessage && (
           <p
@@ -172,7 +178,7 @@ export default function CustomerDetailPage() {
             }}
           />
         ) : (
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button
               size="sm"
               variant="outline"
@@ -215,6 +221,10 @@ export default function CustomerDetailPage() {
                 {tx("admin.customers.deactivate")}
               </Button>
             )}
+            {/* Phone: on its own line above the buttons, left. Wider: at the end of the row, right. */}
+            <span className="order-first basis-full sm:order-none sm:ml-auto sm:basis-auto">
+              <StatusBadge status={customer.status} />
+            </span>
           </div>
         )}
       </div>

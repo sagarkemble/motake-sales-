@@ -107,7 +107,7 @@ class CustomerService {
     return runInTransaction(async (transaction) => {
       const route = await getRouteById(parsedInput.routeId, transaction);
       if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
-      if (route.deletedAt) throw badRequest(`Route ${route.name} is hidden. Pick another Route.`);
+      if (route.deletedAt) throw badRequest(`Route ${route.name} is deleted. Pick another Route.`);
       return this.insertCustomer(
         {
           ...details,
@@ -242,7 +242,7 @@ class CustomerService {
       const targetRoute = await getRouteById(parsedInput.toRouteId, transaction);
       if (!targetRoute) throw notFound(`Route ${parsedInput.toRouteId} not found`);
       if (targetRoute.deletedAt) {
-        throw badRequest(`Route ${targetRoute.name} is hidden. Pick another Route.`);
+        throw badRequest(`Route ${targetRoute.name} is deleted. Pick another Route.`);
       }
       if (targetRoute.id === customer.routeId) {
         throw badRequest(`${customer.shopName} is already on Route ${targetRoute.name}`);

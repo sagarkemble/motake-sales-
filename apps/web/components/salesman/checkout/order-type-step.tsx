@@ -44,7 +44,7 @@ export function OrderTypeStep({
         onClick={() => onOrderTypeChange("book_now")}
         className={cn(
           "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
-          orderType === "book_now" ? "border-brand bg-brand/5" : "border-border bg-card",
+          orderType === "book_now" ? "border-brand bg-accent/50" : "border-border bg-card",
           !isBookNowAllowed && "opacity-50",
         )}
       >
@@ -76,7 +76,7 @@ export function OrderTypeStep({
         onClick={() => onOrderTypeChange("pre_order")}
         className={cn(
           "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
-          orderType === "pre_order" ? "border-brand bg-brand/5" : "border-border bg-card",
+          orderType === "pre_order" ? "border-brand bg-accent/50" : "border-border bg-card",
         )}
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">

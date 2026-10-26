@@ -95,7 +95,7 @@ class GatepassService {
         const route = await lockRouteRow(parsedInput.routeId, "share", transaction);
         if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
         if (route.deletedAt) {
-          throw conflict(`Route ${route.name} is hidden. Pick another Route.`);
+          throw conflict(`Route ${route.name} is deleted. Pick another Route.`);
         }
 
         // Only varieties with a quantity above zero are allotted, so only they need a Route price.

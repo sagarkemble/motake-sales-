@@ -5,6 +5,7 @@ import { ReceiptTextIcon } from "lucide-react";
 
 import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
@@ -26,8 +27,6 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
   const { letterhead } = bill;
-  const interState = bill.igstPaise > 0;
-  const taxed = bill.legalType === "tax_invoice";
 
   const totalRows: [string, number][] = [
     [tx("admin.bills.taxable"), bill.taxablePaise],
@@ -125,7 +124,7 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
         </section>
       )}
 
-      <div className="overflow-x-auto">
+      <ScrollArea>
         <table className="w-full min-w-[44rem] border-collapse border border-border text-sm">
           <thead>
             <tr>
@@ -144,11 +143,6 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
               <th className={cn(cellClassName, "text-right font-medium")}>
                 {tx("admin.bills.taxable")}
               </th>
-              {taxed && (
-                <th className={cn(cellClassName, "text-right font-medium")}>
-                  {interState ? tx("admin.bills.igst") : tx("admin.bills.cgstSgst")}
-                </th>
-              )}
               <th className={cn(cellClassName, "text-right font-medium")}>
                 {tx("admin.bills.amount")}
               </th>
@@ -175,22 +169,6 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
                 <td className={cn(cellClassName, "text-right tabular-nums")}>
                   {formatPaise(line.taxablePaise)}
                 </td>
-                {taxed && (
-                  <td className={cn(cellClassName, "text-right tabular-nums")}>
-                    {line.exempt ? (
-                      "—"
-                    ) : interState ? (
-                      formatPaise(line.igstPaise)
-                    ) : (
-                      <>
-                        {formatPaise(line.cgstPaise)}
-                        <span className="block text-xs text-muted-foreground">
-                          + {formatPaise(line.sgstPaise)}
-                        </span>
-                      </>
-                    )}
-                  </td>
-                )}
                 <td className={cn(cellClassName, "text-right tabular-nums")}>
                   {formatPaise(
                     line.taxablePaise + line.cgstPaise + line.sgstPaise + line.igstPaise,
@@ -207,11 +185,12 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
               <td className={cn(cellClassName, "text-right font-medium tabular-nums")}>
                 {bill.totalQuantity}
               </td>
-              <td className={cellClassName} colSpan={taxed ? 5 : 4} />
+              <td className={cellClassName} colSpan={4} />
             </tr>
           </tfoot>
         </table>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       <dl className="w-full self-end text-sm sm:w-72">
         {totalRows.map(([label, paise]) => (

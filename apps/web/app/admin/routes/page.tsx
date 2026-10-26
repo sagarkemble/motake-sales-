@@ -9,6 +9,7 @@ import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useRoutes } from "~/hooks/use-routes";
@@ -72,13 +73,12 @@ function RoutesPageContent() {
         </div>
 
         <label className="flex cursor-pointer items-center justify-end gap-2 text-xs font-medium text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={includeHidden}
-            onChange={(event) => setIncludeHidden(event.target.checked)}
-            className="rounded border-gray-300"
+            onCheckedChange={(checked) => setIncludeHidden(checked === true)}
+            className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
-          {tx("admin.routes.showHidden")}
+          {tx("admin.routes.showDeleted")}
         </label>
 
         {isCreating && (
@@ -108,7 +108,7 @@ function RoutesPageContent() {
                 onClick={() => selectRoute(route.id)}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50",
-                  activeRouteId === route.id && "border-brand bg-brand/5",
+                  activeRouteId === route.id && "border-brand bg-accent/50",
                   route.hidden && "border-dashed",
                 )}
               >
@@ -126,7 +126,7 @@ function RoutesPageContent() {
                   <StatusBadge status={route.status} />
                   {route.hidden && (
                     <Badge variant="outline" className="border-dashed text-muted-foreground">
-                      {tx("admin.routes.hidden")}
+                      {tx("admin.routes.deleted")}
                     </Badge>
                   )}
                 </div>
@@ -138,7 +138,8 @@ function RoutesPageContent() {
 
       <section
         ref={detailRef}
-        className="min-w-0 scroll-mt-20 overflow-hidden rounded-2xl border bg-card p-4"
+        // Fits the screen under the navbar (and above the phone tab bar); the prices scroll inside.
+        className="flex h-[calc(100dvh-9.5rem)] min-w-0 scroll-mt-20 flex-col overflow-hidden rounded-2xl border bg-card p-4 md:h-[calc(100dvh-7rem)] lg:sticky lg:top-[4.5rem]"
       >
         {activeRouteId ? (
           <RouteDetail routeId={activeRouteId} />

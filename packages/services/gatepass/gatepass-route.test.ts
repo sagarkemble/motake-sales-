@@ -97,7 +97,7 @@ describe("GatepassService allot on a Route", () => {
       }),
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "Route Hidden Allot is hidden. Pick another Route.",
+      message: "Route Hidden Allot is deleted. Pick another Route.",
     });
 
     const allotted = await gatepassService.allotGatepass({

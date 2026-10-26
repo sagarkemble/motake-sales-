@@ -54,7 +54,7 @@ export function AllotRouteStep({
                 onClick={() => onSelectRoute(route.id)}
                 className={cn(
                   "flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors",
-                  isSelected ? "border-brand bg-brand/5 ring-1 ring-brand" : "hover:bg-muted/40",
+                  isSelected ? "border-brand bg-accent/50 ring-1 ring-brand" : "hover:bg-muted/40",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -78,7 +78,7 @@ export function AllotRouteStep({
                 </div>
                 <Progress
                   value={catalogVarietyCount ? (pricedCount / catalogVarietyCount) * 100 : 0}
-                  className="h-1.5"
+                  className="h-1.5 [&>[data-slot=progress-indicator]]:bg-brand"
                 />
                 <p className="text-xs font-medium">
                   {tx("admin.gatepass.allot.pricedOf", {

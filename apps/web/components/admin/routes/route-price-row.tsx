@@ -1,34 +1,41 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
+import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
-import { paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
+import { bpsToPercent } from "~/lib/gst-rate";
+import { keepRupeeInputCharacters, paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
+
+type VarietyTaxToday = { exempt: boolean; gstRateBps: number };
 
 interface RoutePriceRowProps {
   routeId: string;
   variety: RoutePriceFormRow;
+  /** The Variety's GST for today; null when it has none, undefined while loading. */
+  currentTax?: VarietyTaxToday | null;
 }
 
 /**
- * One variety on the Route price form. A valid price saved on leave makes it Sellable; the switch
- * turning off removes the price straight away. Switching on with no price saves nothing until a
- * price is entered.
+ * One variety on the Route price form. An edited price shows tick (save) and cross (back to the
+ * saved price) beside the field; a saved price makes it Sellable. The switch turning off removes
+ * the price straight away. Switching on with no price saves nothing until a price is saved.
  */
-export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
+export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowProps) {
   const tx = useTranslate();
   const { setRoutePriceAsync, clearRoutePriceAsync } = useRoutes();
   const savedPaise = variety.pricePaise;
-  const [priceText, setPriceText] = useState(
-    savedPaise == null ? "" : paiseToRupeeInput(savedPaise),
-  );
+  const savedPriceText = savedPaise == null ? "" : paiseToRupeeInput(savedPaise);
+  const [priceText, setPriceText] = useState(savedPriceText);
   const [isWaitingForPrice, setIsWaitingForPrice] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +45,7 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
   const isPressingSwitchRef = useRef(false);
 
   const isSellable = savedPaise != null || isWaitingForPrice;
+  const isEdited = priceText.trim() !== savedPriceText;
   const switchId = `sellable-${routeId}-${variety.varietyId}`;
   const priceInputId = `price-${routeId}-${variety.varietyId}`;
 
@@ -74,21 +82,33 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
   function handlePriceBlur() {
     const isPressingSwitch = isPressingSwitchRef.current;
     isPressingSwitchRef.current = false;
+    // An edited price waits for tick or cross; only an empty unpriced row goes back to Unsellable.
     if (savedPaise == null && priceText.trim() === "") {
       // The switch's own change handler decides the row's state.
       if (isPressingSwitch) return;
       setIsWaitingForPrice(false);
       setErrorMessage(null);
-      return;
     }
+  }
+
+  function handleSaveClick() {
     const pricePaise = parseRupeesToPaise(priceText);
     if (pricePaise == null) {
       setErrorMessage(tx("admin.routes.prices.invalid"));
-      if (savedPaise != null) setPriceText(paiseToRupeeInput(savedPaise));
       return;
     }
     setErrorMessage(null);
-    if (pricePaise !== savedPaise) void savePrice(pricePaise);
+    if (pricePaise === savedPaise) {
+      setPriceText(savedPriceText);
+      return;
+    }
+    void savePrice(pricePaise);
+  }
+
+  function handleCancelClick() {
+    setPriceText(savedPriceText);
+    setErrorMessage(null);
+    if (savedPaise == null) setIsWaitingForPrice(false);
   }
 
   function handleSellableChange(nextSellable: boolean) {
@@ -133,6 +153,7 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
             id={switchId}
             checked={isSellable}
             disabled={isSaving}
+            className="data-[state=checked]:bg-brand"
             onCheckedChange={handleSellableChange}
           />
           <Label htmlFor={switchId} className="text-xs font-medium">
@@ -140,7 +161,35 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
           </Label>
         </div>
       </div>
-      <div className="w-32 shrink-0 sm:w-40">
+      <div className="relative w-32 shrink-0 sm:w-40">
+        {isEdited && (
+          // Sits outside the price column so the field does not move while editing.
+          <div className="absolute top-0 right-full mr-2 flex h-9 items-center gap-1.5">
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+              aria-label={tx("admin.routes.prices.saveAria")}
+              title={tx("admin.routes.prices.saveAria")}
+              disabled={isSaving}
+              onClick={handleSaveClick}
+            >
+              <Check className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-8 rounded-full bg-background"
+              aria-label={tx("admin.routes.prices.cancelAria")}
+              title={tx("admin.routes.prices.cancelAria")}
+              disabled={isSaving}
+              onClick={handleCancelClick}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">₹</span>
           <Input
@@ -157,19 +206,58 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
             value={priceText}
             disabled={isSaving}
             onChange={(event) => {
-              setPriceText(event.target.value);
+              const nextPriceText = keepRupeeInputCharacters(event.target.value);
+              setPriceText(nextPriceText);
               setErrorMessage(null);
-              if (event.target.value.trim() !== "") setIsWaitingForPrice(true);
+              if (nextPriceText !== "") setIsWaitingForPrice(true);
             }}
             onBlur={handlePriceBlur}
             onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
+              if (event.key === "Enter" && isEdited) handleSaveClick();
+              if (event.key === "Escape" && isEdited) handleCancelClick();
             }}
             className="text-right"
           />
         </div>
-        {errorMessage && <p className="mt-1 text-[11px] text-destructive">{errorMessage}</p>}
+        {errorMessage ? (
+          <p className="mt-1 text-[11px] text-destructive">{errorMessage}</p>
+        ) : (
+          <PriceWithGst
+            pricePaise={parseRupeesToPaise(priceText) ?? null}
+            currentTax={currentTax}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+/** One unit's price after today's GST, under the price box: it follows the price as it is typed. */
+function PriceWithGst({
+  pricePaise,
+  currentTax,
+}: {
+  pricePaise: number | null;
+  currentTax: VarietyTaxToday | null | undefined;
+}) {
+  const tx = useTranslate();
+  const { formatPaise } = useFormatMoney();
+  if (pricePaise == null || currentTax === undefined) return null;
+  if (currentTax === null) {
+    return (
+      <p className="mt-1 text-right text-[11px] text-destructive">
+        {tx("admin.varietyTax.noGstToday")}
+      </p>
+    );
+  }
+  const gstRateBps = currentTax.exempt ? 0 : currentTax.gstRateBps;
+  const withGstPaise = Math.round((pricePaise * (10_000 + gstRateBps)) / 10_000);
+  const amount = formatPaise(withGstPaise);
+  return (
+    <p className="mt-1 text-right text-[11px] text-muted-foreground tabular-nums">
+      {currentTax.exempt
+        ? tx("admin.routes.prices.withGstExempt", { amount })
+        : tx("admin.routes.prices.withGst", { amount, rate: `${bpsToPercent(gstRateBps)}%` })}
+    </p>
   );
 }

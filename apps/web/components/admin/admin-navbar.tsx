@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
@@ -52,55 +53,65 @@ export function AdminNavbar() {
       <div className="flex items-center gap-6">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={tx("common.a11y.openMenu")} className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={tx("common.a11y.openMenu")}
+              className="md:hidden"
+            >
               <MenuIcon className="size-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 overflow-y-auto">
+          <SheetContent side="left" className="w-72">
             <SheetHeader>
               <SheetTitle>Motake Admin</SheetTitle>
             </SheetHeader>
-            <nav className="flex flex-col gap-1 px-4">
-              {adminNavItems.map((navItem) => {
-                const NavIcon = navItem.icon;
-                const isActiveTab = isNavItemActive(navItem.href, currentPathname);
-                return (
-                  <Link
-                    key={navItem.href}
-                    href={navItem.href}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <NavIcon className="size-4" />
-                    {tx(navItem.label)}
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Radix lays the viewport content out as a table; block keeps the content at the sheet width. */}
+            <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+              <div className="flex flex-col gap-4">
+                <nav className="flex flex-col gap-1 px-4">
+                  {adminNavItems.map((navItem) => {
+                    const NavIcon = navItem.icon;
+                    const isActiveTab = isNavItemActive(navItem.href, currentPathname);
+                    return (
+                      <Link
+                        key={navItem.href}
+                        href={navItem.href}
+                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                          isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        <NavIcon className="size-4" />
+                        {tx(navItem.label)}
+                      </Link>
+                    );
+                  })}
+                </nav>
 
-            <div className="mt-4 border-t border-border px-4 pt-4">
-              <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {tx("common.nav.quickActions")}
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {adminQuickActions.map((quickAction) => {
-                  const QuickActionIcon = quickAction.icon;
-                  return (
-                    <Link
-                      key={quickAction.href}
-                      href={quickAction.href}
-                      className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
-                    >
-                      <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
-                        <QuickActionIcon className="size-4" />
-                      </span>
-                      {tx(quickAction.label)}
-                    </Link>
-                  );
-                })}
+                <div className="mt-4 border-t border-border px-4 pt-4">
+                  <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {tx("common.nav.quickActions")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {adminQuickActions.map((quickAction) => {
+                      const QuickActionIcon = quickAction.icon;
+                      return (
+                        <Link
+                          key={quickAction.href}
+                          href={quickAction.href}
+                          className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
+                        >
+                          <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
+                            <QuickActionIcon className="size-4" />
+                          </span>
+                          {tx(quickAction.label)}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           </SheetContent>
         </Sheet>
 
