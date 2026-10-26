@@ -5,6 +5,7 @@ import { ReceiptTextIcon } from "lucide-react";
 
 import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
@@ -125,7 +126,7 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
         </section>
       )}
 
-      <div className="overflow-x-auto">
+      <ScrollArea>
         <table className="w-full min-w-[44rem] border-collapse border border-border text-sm">
           <thead>
             <tr>
@@ -211,7 +212,8 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
             </tr>
           </tfoot>
         </table>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       <dl className="w-full self-end text-sm sm:w-72">
         {totalRows.map(([label, paise]) => (

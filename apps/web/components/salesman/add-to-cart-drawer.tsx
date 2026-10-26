@@ -11,6 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "~/components/ui/drawer";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductVarietyOption {
@@ -75,29 +76,32 @@ export function AddToCartDrawer({
           <DrawerTitle className="text-base">{productName}</DrawerTitle>
         </DrawerHeader>
 
-        <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-2">
-          {varieties.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              No sizes are set up for this product yet.
-            </p>
-          ) : (
-            varieties.map((variety) => (
-              <div
-                key={variety.varietyId}
-                className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{variety.varietyName}</p>
-                  <p className="text-xs text-muted-foreground">{variety.unit}</p>
+        {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
+        <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          <div className="flex flex-col gap-3 px-4 pb-2">
+            {varieties.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No sizes are set up for this product yet.
+              </p>
+            ) : (
+              varieties.map((variety) => (
+                <div
+                  key={variety.varietyId}
+                  className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{variety.varietyName}</p>
+                    <p className="text-xs text-muted-foreground">{variety.unit}</p>
+                  </div>
+                  <QuantityStepper
+                    quantity={getQuantityForVariety(variety.varietyId)}
+                    onQuantityChange={(quantity) => handleQuantityChange(variety, quantity)}
+                  />
                 </div>
-                <QuantityStepper
-                  quantity={getQuantityForVariety(variety.varietyId)}
-                  onQuantityChange={(quantity) => handleQuantityChange(variety, quantity)}
-                />
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
 
         <DrawerFooter>
           {selectedQuantity > 0 && (

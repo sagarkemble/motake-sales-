@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -133,81 +134,81 @@ export function VarietyTaxPanel({ variety, onOpenChange }: VarietyTaxPanelProps)
       <Sheet open={Boolean(variety)} onOpenChange={handleOpenChange}>
         <SheetContent
           side={isMobile ? "bottom" : "right"}
-          className={cn(
-            "gap-0 overflow-y-auto",
-            isMobile ? "max-h-[90dvh] rounded-t-2xl" : "w-full sm:max-w-md",
-          )}
+          className={cn("gap-0", isMobile ? "max-h-[90dvh] rounded-t-2xl" : "w-full sm:max-w-md")}
         >
           <SheetHeader className="pr-10">
             <SheetTitle>{variety ? `${variety.name} · ${variety.unit}` : ""}</SheetTitle>
             <SheetDescription className="font-mono text-xs">{variety?.sku}</SheetDescription>
           </SheetHeader>
 
-          <div className="flex flex-col gap-3 px-4 pb-6">
-            {isReadOnly && (
-              <p className="rounded-xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-                {tx("admin.varietyTax.inactiveReadOnly")}
-              </p>
-            )}
+          {/* Radix lays the viewport content out as a table; block keeps the content at the sheet width. */}
+          <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+            <div className="flex flex-col gap-3 px-4 pb-6">
+              {isReadOnly && (
+                <p className="rounded-xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+                  {tx("admin.varietyTax.inactiveReadOnly")}
+                </p>
+              )}
 
-            {taxPeriodList && !isReadOnly && form && (
-              <VarietyTaxPeriodForm
-                key={form.period?.id ?? "new"}
-                mode={form.mode}
-                initial={
-                  form.period ?? {
-                    effectiveFrom: taxPeriodList.today,
-                    hsn: "",
-                    exempt: false,
-                    gstRateBps: 0,
-                  }
-                }
-                financialYear={taxPeriodList.currentFinancialYear}
-                existingStarts={periods.map((period) => period.effectiveFrom)}
-                isSubmitting={isUpsertingTaxPeriod}
-                onSubmit={handleSubmit}
-                onCancel={() => setForm(null)}
-              />
-            )}
-            {taxPeriodList && !isReadOnly && !form && (
-              <Button
-                type="button"
-                size="sm"
-                className="self-start rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
-                onClick={() => setForm({ mode: "add" })}
-              >
-                <PlusIcon />
-                {tx("admin.varietyTax.addPeriod")}
-              </Button>
-            )}
-
-            {isTaxPeriodListLoading ? (
-              <ListItemSkeleton count={3} />
-            ) : isTaxPeriodListError ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                {tx("admin.varietyTax.loadFailed")}
-              </p>
-            ) : periods.length === 0 ? (
-              <p className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                {tx("admin.varietyTax.empty")}
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {periods.map((period) => (
-                  <TaxPeriodCard
-                    key={period.id}
-                    period={period}
-                    isPastYear={
-                      firstDayOfYear !== undefined && period.effectiveFrom < firstDayOfYear
+              {taxPeriodList && !isReadOnly && form && (
+                <VarietyTaxPeriodForm
+                  key={form.period?.id ?? "new"}
+                  mode={form.mode}
+                  initial={
+                    form.period ?? {
+                      effectiveFrom: taxPeriodList.today,
+                      hsn: "",
+                      exempt: false,
+                      gstRateBps: 0,
                     }
-                    displayDay={displayDay}
-                    onEdit={() => setForm({ mode: "edit", period })}
-                    onDelete={() => setDeletingPeriod(period)}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
+                  }
+                  financialYear={taxPeriodList.currentFinancialYear}
+                  existingStarts={periods.map((period) => period.effectiveFrom)}
+                  isSubmitting={isUpsertingTaxPeriod}
+                  onSubmit={handleSubmit}
+                  onCancel={() => setForm(null)}
+                />
+              )}
+              {taxPeriodList && !isReadOnly && !form && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="self-start rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                  onClick={() => setForm({ mode: "add" })}
+                >
+                  <PlusIcon />
+                  {tx("admin.varietyTax.addPeriod")}
+                </Button>
+              )}
+
+              {isTaxPeriodListLoading ? (
+                <ListItemSkeleton count={3} />
+              ) : isTaxPeriodListError ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {tx("admin.varietyTax.loadFailed")}
+                </p>
+              ) : periods.length === 0 ? (
+                <p className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+                  {tx("admin.varietyTax.empty")}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {periods.map((period) => (
+                    <TaxPeriodCard
+                      key={period.id}
+                      period={period}
+                      isPastYear={
+                        firstDayOfYear !== undefined && period.effectiveFrom < firstDayOfYear
+                      }
+                      displayDay={displayDay}
+                      onEdit={() => setForm({ mode: "edit", period })}
+                      onDelete={() => setDeletingPeriod(period)}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
 

@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useFormatDate } from "~/hooks/use-format-date";
 import type { AllotmentMatrixRow, DayGatepass } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
@@ -111,40 +112,45 @@ export function GatepassDayList({
         open={Boolean(openGatepass)}
         onOpenChange={(isOpen) => !isOpen && setOpenGatepassId(null)}
       >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-          {openGatepass && (
-            <div className="flex flex-col gap-4">
-              <DialogHeader className="text-left">
-                <DialogTitle className="flex flex-wrap items-center gap-2">
-                  {salesmanNameOf(openGatepass.salesmanId)}
-                  <GatepassStatusBadge
-                    status={openGatepass.status}
-                    hasDiscrepancy={openGatepass.hasDiscrepancy}
+        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-2xl">
+          {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+          <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+            <div className="flex flex-col gap-4 p-6">
+              {openGatepass && (
+                <div className="flex flex-col gap-4">
+                  <DialogHeader className="text-left">
+                    <DialogTitle className="flex flex-wrap items-center gap-2">
+                      {salesmanNameOf(openGatepass.salesmanId)}
+                      <GatepassStatusBadge
+                        status={openGatepass.status}
+                        hasDiscrepancy={openGatepass.hasDiscrepancy}
+                      />
+                    </DialogTitle>
+                    <DialogDescription>
+                      {tx("admin.gatepass.list.allottedAt", {
+                        date: formattedDate,
+                        time: formatDate(new Date(openGatepass.createdAt), "p"),
+                      })}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <RouteFixedCard
+                    routeName={openGatepass.routeName}
+                    routeCode={openGatepass.routeCode}
                   />
-                </DialogTitle>
-                <DialogDescription>
-                  {tx("admin.gatepass.list.allottedAt", {
-                    date: formattedDate,
-                    time: formatDate(new Date(openGatepass.createdAt), "p"),
-                  })}
-                </DialogDescription>
-              </DialogHeader>
-              <RouteFixedCard
-                routeName={openGatepass.routeName}
-                routeCode={openGatepass.routeCode}
-              />
-              <GatepassQuantityKpis
-                totals={sumGatepassQuantities(linesOf(openGatepass.id))}
-                handedOver={isHandedOver(openGatepass.status)}
-              />
-              <div className="rounded-2xl border bg-card p-2">
-                <GatepassLinesTable
-                  rows={linesOf(openGatepass.id)}
-                  handedOver={isHandedOver(openGatepass.status)}
-                />
-              </div>
+                  <GatepassQuantityKpis
+                    totals={sumGatepassQuantities(linesOf(openGatepass.id))}
+                    handedOver={isHandedOver(openGatepass.status)}
+                  />
+                  <div className="rounded-2xl border bg-card p-2">
+                    <GatepassLinesTable
+                      rows={linesOf(openGatepass.id)}
+                      handedOver={isHandedOver(openGatepass.status)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </section>

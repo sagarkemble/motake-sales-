@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Textarea } from "~/components/ui/textarea";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { useGatepasses, type GatepassShortReason } from "~/hooks/use-gatepasses";
@@ -108,99 +109,102 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, lines }: Handov
             <DialogDescription>{tx("salesman.handover.intro")}</DialogDescription>
           </DialogHeader>
 
-          <div className="-mx-1 flex flex-1 flex-col gap-3 overflow-y-auto px-1">
-            {returnableLines.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                {tx("salesman.handover.nothingToReturn")}
-              </p>
-            ) : (
-              returnableLines.map((line) => {
-                const short = shortFor(line);
-                return (
-                  <div
-                    key={line.id}
-                    className={cn(
-                      "rounded-2xl border bg-card p-3",
-                      short > 0 && "border-amber-500/40",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{line.productName}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {line.varietyName} ({line.unit})
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                          {tx("salesman.handover.lineQuantities", {
-                            issued: line.issuedQty,
-                            sold: line.soldQty,
-                            left: line.sellableQty,
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {tx("salesman.gatepass.col.returned")}
-                        </span>
-                        <QuantityStepper
-                          quantity={returnedFor(line)}
-                          minQuantity={0}
-                          onQuantityChange={(next) =>
-                            setReturnedByLine((prev) => ({
-                              ...prev,
-                              [line.id]: Math.min(next, line.sellableQty),
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {short > 0 && (
-                      <div className="mt-2 flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-2.5">
-                        <p className="text-xs font-medium text-amber-700">
-                          {tx("salesman.handover.shortWhy", { short, left: line.sellableQty })}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {SHORT_REASONS.map((reason) => (
-                            <button
-                              key={reason}
-                              type="button"
-                              onClick={() =>
-                                setReasonByLine((prev) => ({ ...prev, [line.id]: reason }))
-                              }
-                              className={cn(
-                                "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                                reasonByLine[line.id] === reason
-                                  ? "border-brand bg-brand text-brand-foreground"
-                                  : "border-input bg-background text-foreground hover:bg-muted",
-                              )}
-                            >
-                              {tx(SHORT_REASON_LABEL_KEYS[reason])}
-                            </button>
-                          ))}
+          {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
+          <ScrollArea className="-mx-1 flex min-h-0 flex-1 flex-col pr-3 [&>[data-slot=scroll-area-viewport]>div]:block!">
+            <div className="flex flex-col gap-3 px-1">
+              {returnableLines.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  {tx("salesman.handover.nothingToReturn")}
+                </p>
+              ) : (
+                returnableLines.map((line) => {
+                  const short = shortFor(line);
+                  return (
+                    <div
+                      key={line.id}
+                      className={cn(
+                        "rounded-2xl border bg-card p-3",
+                        short > 0 && "border-amber-500/40",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{line.productName}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {line.varietyName} ({line.unit})
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                            {tx("salesman.handover.lineQuantities", {
+                              issued: line.issuedQty,
+                              sold: line.soldQty,
+                              left: line.sellableQty,
+                            })}
+                          </p>
                         </div>
-                        <Textarea
-                          rows={1}
-                          value={noteByLine[line.id] ?? ""}
-                          onChange={(event) =>
-                            setNoteByLine((prev) => ({ ...prev, [line.id]: event.target.value }))
-                          }
-                          placeholder={tx("salesman.handover.notePlaceholder")}
-                          className="min-h-8 resize-none rounded-lg text-xs"
-                        />
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            {tx("salesman.gatepass.col.returned")}
+                          </span>
+                          <QuantityStepper
+                            quantity={returnedFor(line)}
+                            minQuantity={0}
+                            onQuantityChange={(next) =>
+                              setReturnedByLine((prev) => ({
+                                ...prev,
+                                [line.id]: Math.min(next, line.sellableQty),
+                              }))
+                            }
+                          />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
 
-            {soldOutLineCount > 0 && (
-              <p className="text-center text-xs text-muted-foreground">
-                {tx("salesman.handover.soldOutLines", { count: soldOutLineCount })}
-              </p>
-            )}
-          </div>
+                      {short > 0 && (
+                        <div className="mt-2 flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-2.5">
+                          <p className="text-xs font-medium text-amber-700">
+                            {tx("salesman.handover.shortWhy", { short, left: line.sellableQty })}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {SHORT_REASONS.map((reason) => (
+                              <button
+                                key={reason}
+                                type="button"
+                                onClick={() =>
+                                  setReasonByLine((prev) => ({ ...prev, [line.id]: reason }))
+                                }
+                                className={cn(
+                                  "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                                  reasonByLine[line.id] === reason
+                                    ? "border-brand bg-brand text-brand-foreground"
+                                    : "border-input bg-background text-foreground hover:bg-muted",
+                                )}
+                              >
+                                {tx(SHORT_REASON_LABEL_KEYS[reason])}
+                              </button>
+                            ))}
+                          </div>
+                          <Textarea
+                            rows={1}
+                            value={noteByLine[line.id] ?? ""}
+                            onChange={(event) =>
+                              setNoteByLine((prev) => ({ ...prev, [line.id]: event.target.value }))
+                            }
+                            placeholder={tx("salesman.handover.notePlaceholder")}
+                            className="min-h-8 resize-none rounded-lg text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              {soldOutLineCount > 0 && (
+                <p className="text-center text-xs text-muted-foreground">
+                  {tx("salesman.handover.soldOutLines", { count: soldOutLineCount })}
+                </p>
+              )}
+            </div>
+          </ScrollArea>
 
           <div className="flex flex-col gap-2">
             <p className="text-center text-xs text-muted-foreground">
