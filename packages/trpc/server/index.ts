@@ -11,6 +11,7 @@ import { productsRouter } from "./routes/products/route";
 import { reportsRouter } from "./routes/reports/route";
 import { routesRouter } from "./routes/routes/route";
 import { salesmanRouter } from "./routes/salesman/route";
+import { settingsRouter } from "./routes/settings/route";
 
 export const serverRouter = router({
   health: healthRouter,
@@ -24,6 +25,7 @@ export const serverRouter = router({
   reports: reportsRouter,
   routes: routesRouter,
   salesmen: salesmanRouter,
+  settings: settingsRouter,
 });
 
 export { createContext } from "./context";

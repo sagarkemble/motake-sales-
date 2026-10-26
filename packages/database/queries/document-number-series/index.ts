@@ -47,6 +47,20 @@ export async function lockSeriesRow(
   return row;
 }
 
+// Locks every series row of the year in kind order (the enum order, which is also the allocator's
+// lock order), so changes that compare the year's prefixes run one at a time.
+export async function lockSeriesForYear(
+  financialYear: string,
+  executor: DbExecutor = db,
+): Promise<SelectDocumentNumberSeries[]> {
+  return executor
+    .select()
+    .from(documentNumberSeriesTable)
+    .where(eq(documentNumberSeriesTable.financialYear, financialYear))
+    .orderBy(asc(documentNumberSeriesTable.kind))
+    .for("update");
+}
+
 // Moves the series on by one number and freezes its prefix on first use.
 export async function markSeriesUsed(
   input: { seriesId: string; actorId: string },

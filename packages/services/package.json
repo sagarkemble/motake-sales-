@@ -19,6 +19,7 @@
     "./reports": "./reports/index.ts",
     "./routes": "./routes/index.ts",
     "./salesman": "./salesman/index.ts",
+    "./settings": "./settings/index.ts",
     "./uploads": "./uploads/r2-client.ts",
     "./variety-tax-periods": "./variety-tax-periods/index.ts"
   },
