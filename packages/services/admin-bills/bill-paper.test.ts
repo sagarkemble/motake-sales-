@@ -162,7 +162,7 @@ describe("AdminBillService.getBillPaper", () => {
     expect(paper.actions).toEqual({ canCorrect: false, canCancel: true, canRaiseNote: true });
   });
 
-  it("an office Bill has no order and no Bill note; a deactivated Customer's paper still reads", async () => {
+  it("an office Bill has no order and no Bill note; a deactivated Customer's paper still reads, every action off", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const raised = await adminBillService.raiseBill(world.admin.id, {
       customerId: world.customer.id,
@@ -180,6 +180,8 @@ describe("AdminBillService.getBillPaper", () => {
     expect(paper.version.legalType).toBe("bill_of_supply");
     expect(paper.customer!.status).toBe("inactive");
     expect(paper.balance!.balancePaise).toBe(raised.totalPaise);
+    // A deactivated Customer allows reads only, so the paper offers no write.
+    expect(paper.actions).toEqual({ canCorrect: false, canCancel: false, canRaiseNote: false });
   });
 });
 

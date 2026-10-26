@@ -386,3 +386,106 @@ describe("AdminBillService.raiseNote", () => {
     });
   });
 });
+
+describe("AdminBillService.raiseNote (review fixes)", () => {
+  it("previews refuse a cancelled Bill and a deactivated Customer's Bill, as the write does", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+    const other = await placeBookNowBill(world);
+    const otherMilk = (await billItemsOf(other.billId)).find(
+      (item) => item.varietyId === world.milk.id,
+    )!;
+    await adminBillService.cancelBill(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      reason: "Wrong shop",
+    });
+
+    expect(
+      await refusalOf(
+        adminBillService.previewRaiseNote({
+          billId: placed.billId,
+          expectedVersionNumber: 1,
+          kind: "debit_note",
+          lines: [{ lineId: milkLine.id, quantity: 1 }],
+        }),
+      ),
+    ).toMatchObject({ reason: "bill_cancelled" });
+
+    await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
+    expect(
+      await refusalOf(
+        adminBillService.previewRaiseNote({
+          billId: other.billId,
+          expectedVersionNumber: 1,
+          kind: "debit_note",
+          lines: [{ lineId: otherMilk.id, quantity: 1 }],
+        }),
+      ),
+    ).toMatchObject({ reason: "customer_inactive" });
+  });
+
+  it("refuses a Debit Note qty past int4 as bad_qty, writing nothing", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+
+    expect(
+      await refusalOf(
+        adminBillService.raiseNote(world.admin.id, {
+          billId: placed.billId,
+          expectedVersionNumber: 1,
+          kind: "debit_note",
+          lines: [{ lineId: milkLine.id, quantity: 2_147_483_647 }],
+          reason: "Huge",
+        }),
+      ),
+    ).toEqual({
+      reason: "bad_lines",
+      details: { lines: [{ lineId: milkLine.id, reason: "bad_qty" }] },
+    });
+    expect(await notesOf(placed.billId)).toEqual([]);
+    expect(outcomes).toEqual([]);
+  });
+
+  it("a Credit Note crediting everything left is capped at the Bill's net, so the Bill nets to zero", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine, curdLine } = await billWithLines(world);
+
+    const note = await adminBillService.raiseNote(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "gst_credit_note",
+      lines: [
+        { lineId: milkLine.id, quantity: 3 },
+        { lineId: curdLine.id, quantity: 1 },
+      ],
+      reason: "Everything returned",
+    });
+
+    // Lines sum to ₹118.71; the Bill's ₹119.00 includes the round-off, which the header credits.
+    expect(note.amountPaise).toBe(BOOK_NOW_TOTAL_PAISE);
+    expect(await billNetLedgerPaise(placed.billId)).toBe(0);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(0);
+  });
+
+  it("two Notes raised at once on one Bill get unique, consecutive numbers", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine, curdLine } = await billWithLines(world);
+    const raise = (lineId: string) =>
+      adminBillService.raiseNote(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        kind: "gst_credit_note",
+        lines: [{ lineId, quantity: 1 }],
+        reason: "Returned",
+      });
+
+    const notes = await Promise.all([raise(milkLine.id), raise(curdLine.id)]);
+
+    expect(notes.map((note) => note.number).sort()).toEqual(["MC/26-27/000001", "MC/26-27/000002"]);
+    expect(await notesOf(placed.billId)).toHaveLength(2);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(
+      BOOK_NOW_TOTAL_PAISE - notes[0]!.amountPaise - notes[1]!.amountPaise,
+    );
+  });
+});

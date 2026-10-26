@@ -542,3 +542,83 @@ describe("AdminBillService.correctBill", () => {
     expect(await notesOf(placed.billId)).toHaveLength(1);
   });
 });
+
+describe("AdminBillService.correctBill (review fixes)", () => {
+  it("the preview refuses a cancelled Bill, a locked Bill and a deactivated Customer, as the write does", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const cancelled = await billWithLines(world);
+    await adminBillService.cancelBill(world.admin.id, {
+      billId: cancelled.placed.billId,
+      expectedVersionNumber: 1,
+      reason: "Wrong shop",
+    });
+    const open = await billWithLines(world);
+    const preview = (service: AdminBillService, billId: string, lineId: string) =>
+      service.previewCorrect({
+        billId,
+        expectedVersionNumber: 1,
+        lines: [{ lineId, quantity: 4 }],
+      });
+
+    expect(
+      await refusalOf(preview(adminBillService, cancelled.placed.billId, cancelled.milkLine.id)),
+    ).toMatchObject({ reason: "bill_cancelled" });
+    const lockedService = new AdminBillService(undefined, async () => ({
+      allowed: false,
+      reason: "month_filed",
+      message: "October 2026 is filed.",
+    }));
+    expect(await refusalOf(preview(lockedService, open.placed.billId, open.milkLine.id))).toEqual({
+      reason: "bill_locked",
+      details: { lockReason: "month_filed" },
+    });
+
+    await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
+    expect(
+      await refusalOf(preview(adminBillService, open.placed.billId, open.milkLine.id)),
+    ).toMatchObject({ reason: "customer_inactive" });
+  });
+
+  it("a text-only Correct for a deactivated Customer is refused customer_inactive", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed } = await billWithLines(world);
+    await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
+    outcomes.length = 0;
+
+    expect(
+      await refusalOf(
+        adminBillService.correctBill(world.admin.id, {
+          billId: placed.billId,
+          expectedVersionNumber: 1,
+          buyer: { shopName: "New Name", phone: "9822000000", address: "New address" },
+          reason: "Fix the name",
+        }),
+      ),
+    ).toMatchObject({ reason: "customer_inactive" });
+    expect(await versionsOf(placed.billId)).toHaveLength(1);
+    expect(outcomes).toEqual([]);
+  });
+
+  it("refuses a qty past int4 as bad_qty, writing nothing", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+    outcomes.length = 0;
+
+    expect(
+      await refusalOf(
+        adminBillService.correctBill(world.admin.id, {
+          billId: placed.billId,
+          expectedVersionNumber: 1,
+          lines: [{ lineId: milkLine.id, quantity: 2_147_483_648 }],
+          reason: "Huge",
+        }),
+      ),
+    ).toEqual({
+      reason: "bad_lines",
+      details: { lines: [{ lineId: milkLine.id, reason: "bad_qty" }] },
+    });
+    expect(await versionsOf(placed.billId)).toHaveLength(1);
+    expect(await notesOf(placed.billId)).toEqual([]);
+    expect(outcomes).toEqual([]);
+  });
+});

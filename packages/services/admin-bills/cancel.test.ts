@@ -11,6 +11,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CustomerService from "../customers";
+import DocumentService from "../documents";
 import OrderService from "../orders";
 import type { AdminBillOutcome, BillLockHook } from "../shared/bill-events";
 import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
@@ -29,6 +30,7 @@ import {
   versionsOf,
 } from "../test/admin-bill-world";
 import { wipeApplicationTables } from "../test/database";
+import { MemoryDocumentStore } from "../test/memory-document-store";
 import AdminBillService from "./index";
 
 const today = "2026-10-25";
@@ -505,5 +507,194 @@ describe("AdminBillService.cancelOrder (the orders cancel entry)", () => {
       "pre_order_cancelled",
       "bill_cancelled",
     ]);
+  });
+});
+
+describe("AdminBillService.cancelBill (review fixes)", () => {
+  it("a line Correct removed but a Debit Note kept open points its Cancel Note line at the version that still has it", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await placeBookNowBill(world);
+    const items = await billItemsOf(placed.billId);
+    const milkLine = items.find((item) => item.varietyId === world.milk.id)!;
+    const curdLine = items.find((item) => item.varietyId === world.curd.id)!;
+    // Milk: 3 billed + 2 by Debit Note = 5; Correct removes the live 3, leaving 2 on v1 only.
+    await adminBillService.raiseNote(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "debit_note",
+      lines: [{ lineId: milkLine.id, quantity: 2 }],
+      reason: "Short-billed",
+    });
+    await adminBillService.correctBill(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      lines: [{ lineId: milkLine.id, quantity: 0 }],
+      reason: "Milk was not delivered",
+    });
+    const [v1, v2] = await versionsOf(placed.billId);
+
+    const result = await adminBillService.cancelBill(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 2,
+      reason: "Wrong shop",
+    });
+
+    const lines = await noteLinesOf(result.creditNote.noteId);
+    const versionByLine = Object.fromEntries(
+      lines.map((line) => [line.snapshotLineId, line.billVersionId]),
+    );
+    expect(versionByLine).toEqual({ [milkLine.id]: v1!.id, [curdLine.id]: v2!.id });
+    expect(lines.find((line) => line.snapshotLineId === milkLine.id)!.quantity).toBe(2);
+    expect(await billNetLedgerPaise(placed.billId)).toBe(0);
+    // Spec L draws the Note: every line resolves in its own snapshot.
+    const drawn = await new DocumentService(new MemoryDocumentStore()).ensureNoteDocument(
+      result.creditNote.noteId,
+      { bytes: true },
+    );
+    expect(drawn.bytes!.length).toBeGreaterThan(0);
+  });
+
+  it("refuses nothing_to_cancel once Notes credited the whole Bill, writing nothing", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await placeBookNowBill(world);
+    const items = await billItemsOf(placed.billId);
+    await adminBillService.raiseNote(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "gst_credit_note",
+      lines: items.map((item) => ({ lineId: item.id, quantity: item.quantity })),
+      reason: "Everything returned",
+    });
+    outcomes.length = 0;
+
+    expect(
+      await refusalOf(
+        adminBillService.cancelBill(world.admin.id, {
+          billId: placed.billId,
+          expectedVersionNumber: 1,
+          reason: "Wrong shop",
+        }),
+      ),
+    ).toMatchObject({ reason: "nothing_to_cancel" });
+    expect(await notesOf(placed.billId)).toHaveLength(1);
+    expect(await billAuditRows(placed.billId)).toEqual([]);
+    expect(outcomes).toEqual([]);
+  });
+
+  it("a salesman-fulfilled Pre-order's Bill restores no stock", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const preOrder = await placePreOrder(world);
+    vi.setSystemTime(new Date(`${tomorrow}T06:00:00Z`));
+    await db
+      .update(gatepassesTable)
+      .set({ businessDate: tomorrow })
+      .where(eq(gatepassesTable.id, world.gatepass.id));
+    const fulfilled = await orderService.fulfilPreOrder(
+      { profileId: world.salesman.id, role: "salesman" },
+      {
+        orderId: preOrder.orderId,
+        idempotencyKey: randomUUID(),
+        payment: { mode: "cash", receivedPaise: 0 },
+      },
+    );
+    const soldBefore = await soldQtyByVariety(world.gatepass.id);
+
+    const result = await adminBillService.cancelBill(world.admin.id, {
+      billId: fulfilled.billId,
+      expectedVersionNumber: 1,
+      reason: "Wrong shop",
+    });
+
+    expect(result.stockRestored).toBe(false);
+    expect(await soldQtyByVariety(world.gatepass.id)).toEqual(soldBefore);
+    expect(await billNetLedgerPaise(fulfilled.billId)).toBe(0);
+  });
+
+  it("waits for a handover holding the GatePass and restores nothing once it is no longer active", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await placeBookNowBill(world);
+    let releaseHandover!: () => void;
+    const handoverMayFinish = new Promise<void>((resolve) => {
+      releaseHandover = resolve;
+    });
+    let handoverHolds!: () => void;
+    const handoverHoldsLock = new Promise<void>((resolve) => {
+      handoverHolds = resolve;
+    });
+    const handover = db.transaction(async (transaction) => {
+      await transaction
+        .select()
+        .from(gatepassesTable)
+        .where(eq(gatepassesTable.id, world.gatepass.id))
+        .for("update");
+      handoverHolds();
+      await handoverMayFinish;
+      await transaction
+        .update(gatepassesTable)
+        .set({ status: "pending_verification" })
+        .where(eq(gatepassesTable.id, world.gatepass.id));
+    });
+    await handoverHoldsLock;
+
+    let cancelSettled = false;
+    const cancel = adminBillService
+      .cancelBill(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        reason: "Wrong shop",
+      })
+      .finally(() => {
+        cancelSettled = true;
+      });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(cancelSettled).toBe(false);
+    releaseHandover();
+    await handover;
+    const result = await cancel;
+
+    expect(result.stockRestored).toBe(false);
+    expect(await soldQtyByVariety(world.gatepass.id)).toEqual({
+      [world.milk.id]: 3,
+      [world.curd.id]: 1,
+    });
+    expect(await billNetLedgerPaise(placed.billId)).toBe(0);
+  });
+
+  it("Cancel racing Correct from the same version: exactly one wins and the Ledger stays whole", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await placeBookNowBill(world);
+    const milkLine = (await billItemsOf(placed.billId)).find(
+      (item) => item.varietyId === world.milk.id,
+    )!;
+
+    const [cancelled, corrected] = await Promise.allSettled([
+      adminBillService.cancelBill(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        reason: "Wrong shop",
+      }),
+      adminBillService.correctBill(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        lines: [{ lineId: milkLine.id, quantity: 5 }],
+        reason: "Two more Milk",
+      }),
+    ]);
+
+    expect([cancelled.status, corrected.status].sort()).toEqual(["fulfilled", "rejected"]);
+    if (cancelled.status === "fulfilled") {
+      expect(
+        await refusalOf(Promise.reject((corrected as PromiseRejectedResult).reason)),
+      ).toMatchObject({ reason: "bill_cancelled" });
+      expect(await billNetLedgerPaise(placed.billId)).toBe(0);
+      expect(await versionsOf(placed.billId)).toHaveLength(1);
+    } else {
+      expect(
+        await refusalOf(Promise.reject((cancelled as PromiseRejectedResult).reason)),
+      ).toMatchObject({ reason: "stale_version" });
+      expect(await notesOf(placed.billId)).toHaveLength(1);
+      expect(await versionsOf(placed.billId)).toHaveLength(2);
+    }
+    await expectBalanceMatchesLedger(world.customer.id);
   });
 });
