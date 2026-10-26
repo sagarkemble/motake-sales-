@@ -12,7 +12,7 @@ import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
-import { paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
+import { keepRupeeInputCharacters, paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
 
 interface RoutePriceRowProps {
   routeId: string;
@@ -200,9 +200,10 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
             value={priceText}
             disabled={isSaving}
             onChange={(event) => {
-              setPriceText(event.target.value);
+              const nextPriceText = keepRupeeInputCharacters(event.target.value);
+              setPriceText(nextPriceText);
               setErrorMessage(null);
-              if (event.target.value.trim() !== "") setIsWaitingForPrice(true);
+              if (nextPriceText !== "") setIsWaitingForPrice(true);
             }}
             onBlur={handlePriceBlur}
             onKeyDown={(event) => {

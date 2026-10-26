@@ -18,3 +18,9 @@ export function paiseToRupeeInput(paise: number): string {
   const remainingPaise = String(paise % 100).padStart(2, "0");
   return `${wholeRupees}.${remainingPaise}`;
 }
+
+/** Keeps what a rupee field may hold while typing: digits and one "." with up to two decimals. */
+export function keepRupeeInputCharacters(rawInput: string): string {
+  const [wholeRupees = "", ...rest] = rawInput.replace(/[^\d.]/g, "").split(".");
+  return rest.length === 0 ? wholeRupees : `${wholeRupees}.${rest.join("").slice(0, 2)}`;
+}
