@@ -237,7 +237,7 @@ class CustomerService {
   ): Promise<SelectCustomer> {
     const parsedInput = moveCustomerToRouteInputSchema.parse({ customerId, toRouteId });
     return runInTransaction(async (transaction) => {
-      const customer = await lockCustomerRow(parsedInput.customerId, transaction);
+      const customer = await lockCustomerRow(parsedInput.customerId, "update", transaction);
       if (!customer) throw notFound(`Customer ${parsedInput.customerId} not found`);
       const targetRoute = await getRouteById(parsedInput.toRouteId, transaction);
       if (!targetRoute) throw notFound(`Route ${parsedInput.toRouteId} not found`);
