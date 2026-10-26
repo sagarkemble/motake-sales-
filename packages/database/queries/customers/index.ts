@@ -118,7 +118,7 @@ export async function listActiveCustomersByIds(customerIds: string[]): Promise<S
 export async function searchCustomers(
   searchTerm: string | undefined,
   pagination: PaginationParams,
-  options: { includeInactive?: boolean; routeId?: string; matchAddress?: boolean } = {},
+  options: { includeInactive?: boolean; routeId?: string } = {},
 ): Promise<PaginatedResult<CustomerWithRoute>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
   const searchClause = searchTerm
@@ -126,7 +126,7 @@ export async function searchCustomers(
         ilike(customersTable.shopName, `%${searchTerm}%`),
         ilike(customersTable.contactName, `%${searchTerm}%`),
         ilike(customersTable.phone, `%${searchTerm}%`),
-        options.matchAddress ? ilike(customersTable.address, `%${searchTerm}%`) : undefined,
+        ilike(customersTable.address, `%${searchTerm}%`),
       )
     : undefined;
   const whereClause = and(

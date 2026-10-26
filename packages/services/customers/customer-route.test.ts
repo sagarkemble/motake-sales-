@@ -246,6 +246,22 @@ describe("CustomerService Admin list", () => {
       routeHidden: true,
     });
   });
+
+  it("searches by name, contact, phone or address", async () => {
+    const admin = await buildProfile();
+    await buildCustomer(admin.id, {
+      shopName: "Laxmi Kirana",
+      contactName: "Suresh Patil",
+      phone: "9111111111",
+      address: "Station Road, Kagal",
+    });
+    await buildCustomer(admin.id, { shopName: "Other Shop" });
+
+    for (const searchTerm of ["laxmi", "suresh", "91111", "station road"]) {
+      const page = await customerService.searchCustomers({ searchTerm });
+      expect(page.items.map((customer) => customer.shopName)).toEqual(["Laxmi Kirana"]);
+    }
+  });
 });
 
 describe("CustomerService salesman", () => {

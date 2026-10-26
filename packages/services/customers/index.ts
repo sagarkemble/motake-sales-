@@ -203,7 +203,7 @@ class CustomerService {
     return getCustomerStats(customerId);
   }
 
-  // Admin: every Route, optionally one.
+  // Admin: every Route, optionally one. Search by name, contact, phone or address.
   public async searchCustomers(
     input: ListCustomersInput,
   ): Promise<PaginatedResult<CustomerWithRoute>> {
@@ -225,7 +225,6 @@ class CustomerService {
     return searchCustomers(parsedInput.searchTerm, parsedInput, {
       includeInactive: false,
       routeId: activeGatepass.route.id,
-      matchAddress: true,
     });
   }
 

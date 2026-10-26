@@ -31,7 +31,7 @@ export const customersRouter = router({
         protect: true,
         summary: "List customers",
         description:
-          "Return a page of customers with their Route. Admin sees every Route and may filter by one; a salesman sees only active Customers on their Active GatePass Route (searchable by address too) and is refused with no Active GatePass.",
+          "Return a page of customers with their Route. Admin sees every Route and may filter by one; both search by name, contact, phone or address. A salesman sees only active Customers on their Active GatePass Route and is refused with no Active GatePass.",
       },
     })
     .input(listCustomersInputSchema)

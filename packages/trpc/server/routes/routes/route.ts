@@ -163,7 +163,7 @@ export const routesRouter = router({
   setPrice: adminProcedure
     .meta({
       openapi: {
-        method: "PUT",
+        method: "PATCH",
         path: path("/{routeId}/prices/{varietyId}"),
         tags: ["Routes"],
         protect: true,
