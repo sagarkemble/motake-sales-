@@ -1,44 +1,46 @@
 import { orderService } from "../../services";
-import { router, salesmanProcedure, protectedProcedure } from "../../trpc";
+import { z, zodUndefinedModel } from "../../schema";
+import { adminProcedure, router, salesmanProcedure, protectedProcedure } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { forbidden, notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
-  dueDateInputSchema,
+  billedCheckoutResultSchema,
+  fulfilPreOrderInputSchema,
   listOrdersInputSchema,
   orderDetailSchema,
   orderIdInputSchema,
   orderSchema,
   orderWithItemsSchema,
   paginatedOrdersSchema,
-  placeBookNowOrderInputSchema,
+  placeBookNowInputSchema,
   placePreOrderInputSchema,
+  preOrderResultSchema,
+  quoteInputSchema,
+  quoteSchema,
+  routePreorderSchema,
 } from "./model";
 
 const path = generatePath("/orders");
 
 export const ordersRouter = router({
-  placeBookNowOrder: salesmanProcedure
+  placeBookNow: salesmanProcedure
     .meta({
       openapi: {
         method: "POST",
         path: path("/book-now"),
         tags: ["Orders"],
         protect: true,
-        summary: "Place a Book Now order",
+        summary: "Place a Book Now",
         description:
-          "Create a same-day order for a customer. The quantity is taken from the salesman gatepass.",
+          "Sell from the Active GatePass to a Customer on its Route: the server locks Route price and tax, deducts stock, issues the Bill (MB), debits the Ledger and records the optional checkout Payment (MP). Lines are Variety SKU and qty only. A retry with the same idempotency key returns the first result. Refusals carry a reason in error.data.refusal.",
       },
     })
-    .input(placeBookNowOrderInputSchema)
-    .output(apiResponseSchema(orderWithItemsSchema))
-    .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.placeBookNowOrder({
-        ...input,
-        salesmanId: ctx.user.id,
-      });
-      return apiResponse(orderWithItems);
-    }),
+    .input(placeBookNowInputSchema)
+    .output(apiResponseSchema(billedCheckoutResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await orderService.placeBookNow(ctx.user.id, input)),
+    ),
 
   placePreOrder: salesmanProcedure
     .meta({
@@ -47,20 +49,70 @@ export const ordersRouter = router({
         path: path("/pre-order"),
         tags: ["Orders"],
         protect: true,
-        summary: "Place a pre-order",
+        summary: "Place a Pre-order",
         description:
-          "Create an order for next-day delivery. The gatepass quantity does not change.",
+          "Book a Customer on the Active GatePass Route for a date after today at today's Route price and tax classification. No Bill, number, Ledger row, stock change or Payment. A retry with the same idempotency key returns the first result.",
       },
     })
     .input(placePreOrderInputSchema)
-    .output(apiResponseSchema(orderWithItemsSchema))
-    .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.placePreOrder({
-        ...input,
-        salesmanId: ctx.user.id,
-      });
-      return apiResponse(orderWithItems);
-    }),
+    .output(apiResponseSchema(preOrderResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await orderService.placePreOrder(ctx.user.id, input)),
+    ),
+
+  fulfilPreOrder: protectedProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/{orderId}/fulfil"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "Fulfil a Pre-order",
+        description:
+          "Bill a Pre-order on or after its scheduled date from the terms locked at place, with the optional checkout Payment. A salesman needs an Active GatePass on the Pre-order's Route; Admin needs none. First writer wins; the same actor retrying gets the first result.",
+      },
+    })
+    .input(fulfilPreOrderInputSchema)
+    .output(apiResponseSchema(billedCheckoutResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(
+        await orderService.fulfilPreOrder({ profileId: ctx.user.id, role: ctx.user.role }, input),
+      ),
+    ),
+
+  quote: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/quote"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "Quote a basket",
+        description:
+          "Price and tax a basket on the server: per line Route price and GST, totals with round-off and legal type, unsellable lines and (Book Now) short lines, and the Customer's Balance with what clears Pending after this Bill. With orderId, quotes that Pre-order's fulfil from its locked terms. No writes.",
+      },
+    })
+    .input(quoteInputSchema)
+    .output(apiResponseSchema(quoteSchema))
+    .query(async ({ ctx, input }) =>
+      apiResponse(await orderService.quote({ profileId: ctx.user.id, role: ctx.user.role }, input)),
+    ),
+
+  listRoutePreorders: salesmanProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/route-preorders"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "List open Pre-orders on my Route",
+        description:
+          "Return open Pre-orders on the Active GatePass Route from any salesman, earliest first, each upcoming, due or overdue (Asia/Kolkata).",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(z.array(routePreorderSchema)))
+    .query(async ({ ctx }) => apiResponse(await orderService.listRoutePreorders(ctx.user.id))),
 
   list: protectedProcedure
     .meta({
@@ -80,24 +132,6 @@ export const ordersRouter = router({
         ctx.user.role === "salesman" ? { ...input, salesmanId: ctx.user.id } : input;
       const result = await orderService.listOrders(scopedInput);
       return apiResponse(result);
-    }),
-
-  listDuePreorders: salesmanProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: path("/due-preorders"),
-        tags: ["Orders"],
-        protect: true,
-        summary: "List pre-orders due for delivery",
-        description: "Return every pre-order due on the given business date.",
-      },
-    })
-    .input(dueDateInputSchema)
-    .output(apiResponseSchema(orderSchema.array()))
-    .query(async ({ input }) => {
-      const dueOrders = await orderService.listDuePreorders(input.businessDate);
-      return apiResponse(dueOrders);
     }),
 
   getById: protectedProcedure
@@ -145,33 +179,7 @@ export const ordersRouter = router({
       return apiResponse(orderDetail);
     }),
 
-  fulfill: protectedProcedure
-    .meta({
-      openapi: {
-        method: "PATCH",
-        path: path("/{id}/fulfill"),
-        tags: ["Orders"],
-        protect: true,
-        summary: "Fulfill an order",
-        description:
-          "Mark an order as delivered to the customer. Salesmen can fulfil their own orders; admins can fulfil any order.",
-      },
-    })
-    .input(orderIdInputSchema)
-    .output(apiResponseSchema(orderSchema))
-    .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.getOrderWithItems(input.id);
-      if (!orderWithItems) throw notFound(`Order ${input.id} not found`);
-      if (ctx.user.role === "salesman" && orderWithItems.order.salesmanId !== ctx.user.id) {
-        throw forbidden("You can only fulfil your own order");
-      }
-      const fulfilledOrder = await orderService.fulfillOrder(input.id, ctx.user.id, {
-        allowBeforeScheduledDate: ctx.user.role === "admin",
-      });
-      return apiResponse(fulfilledOrder);
-    }),
-
-  cancel: protectedProcedure
+  cancel: adminProcedure
     .meta({
       openapi: {
         method: "PATCH",
@@ -180,17 +188,12 @@ export const ordersRouter = router({
         protect: true,
         summary: "Cancel an order",
         description:
-          "Cancel an order before it is fulfilled. Salesmen can cancel their own orders; admins can cancel any open order.",
+          "Admin cancels an unfulfilled Pre-order. A salesman cannot cancel. A Book Now is cancelled from its Bill (Spec G) and is refused here.",
       },
     })
     .input(orderIdInputSchema)
     .output(apiResponseSchema(orderSchema))
     .mutation(async ({ ctx, input }) => {
-      const orderWithItems = await orderService.getOrderWithItems(input.id);
-      if (!orderWithItems) throw notFound(`Order ${input.id} not found`);
-      if (ctx.user.role === "salesman" && orderWithItems.order.salesmanId !== ctx.user.id) {
-        throw forbidden("You can only cancel your own order");
-      }
       const cancelledOrder = await orderService.cancelOrder(input.id, ctx.user.id);
       return apiResponse(cancelledOrder);
     }),
