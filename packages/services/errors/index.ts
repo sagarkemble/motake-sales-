@@ -80,6 +80,7 @@ export type DocumentRefusalReason =
   | "irn_missing"
   | "irn_not_recorded"
   | "irn_not_pending"
+  | "superseded_version"
   | "not_found"
   | "not_posted_event"
   | "nothing_kept"
@@ -90,6 +91,7 @@ const documentRefusalCodes: Record<DocumentRefusalReason, TRPCError["code"]> = {
   irn_missing: "BAD_REQUEST",
   irn_not_recorded: "BAD_REQUEST",
   irn_not_pending: "BAD_REQUEST",
+  superseded_version: "BAD_REQUEST",
   not_found: "NOT_FOUND",
   not_posted_event: "BAD_REQUEST",
   nothing_kept: "BAD_REQUEST",

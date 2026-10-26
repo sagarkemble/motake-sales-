@@ -725,6 +725,73 @@ describe("DocumentService.getDownloadLink", () => {
     expect(link.url).not.toContain("r2.dev");
   });
 
+  it("refuses an older version of a corrected e-invoiced Tax Invoice and opens the latest", async () => {
+    const { admin, customer, paneer, milk } = await setup({ einvoicingRequired: true });
+    const { bill, version: v1 } = await taxInvoiceOf(customer, admin.id, [
+      { variety: paneer, quantity: 3, routePricePaise: 9_000 },
+    ]);
+    const v2 = await buildBillVersion({
+      bill,
+      actorId: admin.id,
+      versionNumber: 2,
+      lines: [{ variety: milk, quantity: 3, routePricePaise: 2_800, gstRateBps: 500 }],
+    });
+    const recordedAt = new Date("2026-10-26T06:30:00.000Z");
+    await recordIrn(bill, "irn-0002-abcdef", recordedAt);
+    const store = new MemoryDocumentStore();
+    const documents = documentsWith(store);
+
+    const linkRefusal = await refusalFrom(
+      documents.getDownloadLink(admin.id, { billVersionId: v1.id }),
+    );
+    const drawRefusal = await refusalFrom(documents.ensureBillVersionDocument(v1.id));
+    const latestLink = await documents.getDownloadLink(admin.id, { billVersionId: v2.id });
+
+    expect(linkRefusal).toEqual({ code: "BAD_REQUEST", reason: "superseded_version" });
+    expect(drawRefusal).toEqual({ code: "BAD_REQUEST", reason: "superseded_version" });
+    expect(await pdfKeyOf(v1.id)).toBeNull();
+    const latestKey = `documents/bills/${bill.id}/v2-irn-${recordedAt.getTime()}.pdf`;
+    expect(signedObjectOf(latestLink.url)).toEqual({
+      bucket: TEST_DOCUMENTS_BUCKET,
+      key: latestKey,
+    });
+    expect(store.puts).toEqual([latestKey]);
+  });
+
+  it("keeps every version of a Bill that is not e-invoiced downloadable", async () => {
+    const { admin, customer, paneer, milk } = await setup();
+    const { bill, version: v1 } = await taxInvoiceOf(customer, admin.id, [
+      { variety: paneer, quantity: 3, routePricePaise: 9_000 },
+    ]);
+    const v2 = await buildBillVersion({
+      bill,
+      actorId: admin.id,
+      versionNumber: 2,
+      lines: [{ variety: milk, quantity: 3, routePricePaise: 2_800, gstRateBps: 500 }],
+    });
+    const supplyCustomer = (await setup({ einvoicingRequired: true })).customer;
+    const supply = await taxInvoiceOf(supplyCustomer, admin.id, [
+      { variety: milk, quantity: 12, routePricePaise: 2_700, exempt: true },
+    ]);
+    await buildBillVersion({
+      bill: supply.bill,
+      actorId: admin.id,
+      versionNumber: 2,
+      lines: [{ variety: milk, quantity: 10, routePricePaise: 2_700, exempt: true }],
+    });
+    const documents = documentsWith(new MemoryDocumentStore());
+
+    const v1Link = await documents.getDownloadLink(admin.id, { billVersionId: v1.id });
+    const v2Link = await documents.getDownloadLink(admin.id, { billVersionId: v2.id });
+    const supplyV1Link = await documents.getDownloadLink(admin.id, {
+      billVersionId: supply.version.id,
+    });
+
+    expect(signedObjectOf(v1Link.url).key).toBe(`documents/bills/${bill.id}/v1.pdf`);
+    expect(signedObjectOf(v2Link.url).key).toBe(`documents/bills/${bill.id}/v2.pdf`);
+    expect(signedObjectOf(supplyV1Link.url).key).toBe(`documents/bills/${supply.bill.id}/v1.pdf`);
+  });
+
   it("opens an old Bill version and a Note, and refuses a salesman", async () => {
     const { admin, customer, paneer, milk } = await setup();
     const salesman = await buildSalesman();

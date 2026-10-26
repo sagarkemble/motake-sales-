@@ -75,6 +75,9 @@ export const documentKeys = {
     `documents/bills/${billId}/signed-qr-${irnRecordedAt.getTime()}.${extension}`,
 };
 
+const SUPERSEDED_VERSION_MESSAGE =
+  "This e-invoiced Tax Invoice has been corrected. Only its latest version can be downloaded.";
+
 const IRN_MISSING_MESSAGE =
   "This Tax Invoice is waiting for its IRN. Use the Draft PDF to check it until the IRN is recorded.";
 
@@ -339,15 +342,20 @@ class DocumentService {
     const version = await getBillVersionSnapshot(billVersionIdSchema.parse(billVersionId));
     if (!version) throw documentRefused("not_found", `Bill version ${billVersionId} not found`);
     const filename = documentFileName(billLayoutOf(version), version.header.number);
+    const bill = await this.requireBill(version.billId);
+    const isLatest = version.versionNumber === (await getLatestBillVersionNumber(version.billId));
+    // An e-invoiced Tax Invoice is only ever served as its latest version, even when an older
+    // version was drawn before; every other Bill keeps its whole version history.
+    if (!isLatest && (await this.einvoicingRequired(bill))) {
+      throw documentRefused("superseded_version", SUPERSEDED_VERSION_MESSAGE);
+    }
     if (version.pdfKey) return this.toResult(version.pdfKey, filename, options);
 
-    const bill = await this.requireBill(version.billId);
     if (version.header.legalType === "tax_invoice" && !bill.irn) {
       if (await this.einvoicingRequired(bill))
         throw documentRefused("irn_missing", IRN_MISSING_MESSAGE);
     }
     // An IRN belongs to the latest version only: line Correct is refused after IRN.
-    const isLatest = version.versionNumber === (await getLatestBillVersionNumber(version.billId));
     const irn = isLatest ? irnValuesOf(bill) : null;
     const key =
       irn && bill.irnRecordedAt
@@ -518,8 +526,9 @@ class DocumentService {
     return { url, expiresAt };
   }
 
-  // Admin only: draws a missing PDF first, then a 5-minute attachment link. Old versions and a
-  // cancelled Bill's versions print as issued. The browser never sees the key.
+  // Admin only: draws a missing PDF first, then a 5-minute attachment link. Old versions (except
+  // of an e-invoiced Tax Invoice) and a cancelled Bill's versions print as issued. The browser
+  // never sees the key.
   public async getDownloadLink(
     actorProfileId: string,
     target: DownloadLinkTarget,
@@ -568,8 +577,10 @@ class DocumentService {
     return latest;
   }
 
-  // Spec I's rule: a Tax Invoice needs an IRN when the seller and its Customer both have
-  // E-invoicing required. The seller flag defaults to on while the Seller master is not set up.
+  // Stand-in for Spec I's "is e-invoiced" rule: a Tax Invoice needs an IRN when the seller and
+  // its Customer both have E-invoicing required. The seller flag defaults to on while the Seller
+  // master is not set up. It decides irn_missing, the Draft PDF's IRN-pending check and the
+  // superseded_version refusal; Spec I replaces all three together.
   private async einvoicingRequired(bill: BillDocumentState): Promise<boolean> {
     if (bill.legalType !== "tax_invoice" || !bill.customerId) return false;
     const [customer, settings] = await Promise.all([
