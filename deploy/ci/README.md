@@ -47,12 +47,21 @@ Minimum:
 - `DATABASE_URL`, `JWT_SECRET`, Supabase, R2 keys
 - `NEXT_PUBLIC_*`, `BASE_URL`, `CORS_ALLOWED_ORIGIN`
 
+Notification service (Spec K, optional — all or none; none skips the container):
+
+- `NOTIFICATION_INTERNAL_API_KEY`, `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`
+- `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` (hex: `openssl rand -hex 32`)
+- `NOTIFICATION_R2_ENDPOINT`, `NOTIFICATION_R2_ACCESS_KEY_ID`, `NOTIFICATION_R2_SECRET_ACCESS_KEY`, `R2_DOCUMENTS_BUCKET_NAME`
+
+They go to `deploy/generated/notification.env` for the Docker container, not to the API's `.env`. Docker is installed by `ensure-production.sh`; an existing sudoers file needs `/usr/sbin/usermod` added. Meta setup: [`deployment.md`](../../deployment.md) §9.1a.
+
 ## Required GitHub Variables
 
 - `MOTAKE_FRONTEND_DOMAIN` — e.g. `motake-front.lunarstudio.dev`
 - `MOTAKE_API_DOMAIN` — e.g. `motake-back.lunarstudio.dev`
 - `MOTAKE_ROUTING_MODE` — `separate`
 - `MOTAKE_WEB_PORT` — `3000`
+- `MOTAKE_NOTIFICATION_PORT` — `8100` (optional)
 - `MOTAKE_API_PORT` — `8000`
 
 ## Manual CI deploy on VPS

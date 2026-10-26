@@ -128,6 +128,20 @@ export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:?NEXT_PUBLIC_SUPABAS
 export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:?NEXT_PUBLIC_SUPABASE_ANON_KEY required}"
 export CORS_ALLOWED_ORIGIN="${CORS_ALLOWED_ORIGIN:-}"
 
+# Notification service: all or none (none skips the container). Separate secrets (Spec K).
+export NOTIFICATION_INTERNAL_API_KEY="${NOTIFICATION_INTERNAL_API_KEY:-}"
+export META_ACCESS_TOKEN="${META_ACCESS_TOKEN:-}"
+export META_PHONE_NUMBER_ID="${META_PHONE_NUMBER_ID:-}"
+export META_APP_SECRET="${META_APP_SECRET:-}"
+export META_WEBHOOK_VERIFY_TOKEN="${META_WEBHOOK_VERIFY_TOKEN:-}"
+export INNGEST_EVENT_KEY="${INNGEST_EVENT_KEY:-}"
+export INNGEST_SIGNING_KEY="${INNGEST_SIGNING_KEY:-}"
+export NOTIFICATION_R2_ENDPOINT="${NOTIFICATION_R2_ENDPOINT:-}"
+export NOTIFICATION_R2_ACCESS_KEY_ID="${NOTIFICATION_R2_ACCESS_KEY_ID:-}"
+export NOTIFICATION_R2_SECRET_ACCESS_KEY="${NOTIFICATION_R2_SECRET_ACCESS_KEY:-}"
+export R2_DOCUMENTS_BUCKET_NAME="${R2_DOCUMENTS_BUCKET_NAME:-}"
+export MOTAKE_NOTIFICATION_PORT="${MOTAKE_NOTIFICATION_PORT:-8100}"
+
 export MOTAKE_ROUTING_MODE="${MOTAKE_ROUTING_MODE:-separate}"
 export MOTAKE_FRONTEND_DOMAIN="${MOTAKE_FRONTEND_DOMAIN:?MOTAKE_FRONTEND_DOMAIN required}"
 export MOTAKE_API_DOMAIN="${MOTAKE_API_DOMAIN:?MOTAKE_API_DOMAIN required}"
@@ -138,6 +152,7 @@ export MOTAKE_INSTALL_TARGET="${MOTAKE_INSTALL_TARGET:-system}"
 chmod +x deploy/local/env-setup.sh deploy/vps/deploy.sh deploy/vps/caddy-setup.sh
 chmod +x deploy/ci/write-env.sh deploy/ci/deploy.sh deploy/ci/sync-to-vps.sh deploy/ci/ensure-production.sh
 chmod +x deploy/pm2/start-api.sh deploy/pm2/start-web.sh
+chmod +x apps/notification/docker/start.sh
 
 export VPS_APP_PATH="${VPS_APP_PATH:-/var/www/motake}"
 export DEPLOY_USER="${VPS_USER:-deploy}"

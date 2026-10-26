@@ -15,18 +15,22 @@ Usage: $(basename "$0") [--force] [--skip-build] [--skip-caddy]
 Interactive VPS deployment with PM2 + Caddy.
 
 Steps:
-  1/3  Check ports (3000 web, 8000 api) and assign free ports if busy
-  2/3  Configure domains, build production apps, start/restart PM2 processes
+  1/3  Check ports (3000 web, 8000 api, 8100 notification) and assign free ports if busy
+  2/3  Configure domains, build production apps, start/restart PM2 processes, replace the
+       notification container
   3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh
 
 Processes managed by PM2:
   motake-api   Express API + tRPC + OpenAPI (bundled in one server)
   motake-web   Next.js frontend
 
+Docker:
+  motake-notification   apps/notification + self-hosted Inngest (127.0.0.1 only)
+
 Prerequisites:
-  deploy/local/env-setup.sh   — root .env configured
+  deploy/local/env-setup.sh   — root .env configured (notification secrets optional)
   pnpm install                — dependencies installed
-  pm2, caddy                  — installed on the server
+  pm2, caddy, docker          — installed on the server
 
 Examples:
   ./deploy/vps/deploy.sh
@@ -71,10 +75,12 @@ step_ports() {
   if [[ -f "$ENV_FILE" ]]; then
     update_env_key "PORT" "$DEPLOY_API_PORT"
     update_env_key "BASE_URL" "http://localhost:${DEPLOY_API_PORT}"
+    update_env_key "NOTIFICATION_URL" "http://127.0.0.1:${DEPLOY_NOTIFICATION_PORT}"
   fi
 
   echo "  web port: ${DEPLOY_WEB_PORT}"
   echo "  api port: ${DEPLOY_API_PORT}"
+  echo "  notification port: ${DEPLOY_NOTIFICATION_PORT} (127.0.0.1 only)"
   echo "  note: tRPC runs inside motake-api (no separate process)"
 }
 
@@ -160,6 +166,12 @@ step_domains_and_build() {
 
   verify_build_artifacts
   start_pm2_apps
+
+  echo
+  echo "Notification container"
+  echo "──────────────────────"
+  write_notification_env || true
+  deploy_notification_container
 }
 
 step_caddy() {

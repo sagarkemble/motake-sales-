@@ -226,6 +226,24 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 > **Important:** `NEXT_PUBLIC_*` must be available in the **build job** so Next.js bakes them into the production bundle. They are also written to `.env` on the VPS for consistency.
 
+#### Notification service (Spec K — `apps/notification` Docker container)
+
+Separate secrets, so leaking one does not open the others. Set all of them or none: with none, deploy skips the notification container with a warning; with only some, deploy fails. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
+
+| Secret | Purpose |
+|--------|---------|
+| `NOTIFICATION_INTERNAL_API_KEY` | Shared main API ↔ notification key (`openssl rand -hex 32`); not the JWT secret or Supabase key |
+| `META_ACCESS_TOKEN` | Meta system-user token with `whatsapp_business_messaging` |
+| `META_PHONE_NUMBER_ID` | WhatsApp Business phone number id |
+| `META_APP_SECRET` | Meta app secret (webhook `X-Hub-Signature-256`) |
+| `META_WEBHOOK_VERIFY_TOKEN` | Any long random string; the same value goes into the Meta webhook settings |
+| `INNGEST_EVENT_KEY` | Self-hosted Inngest event key (`openssl rand -hex 16`) |
+| `INNGEST_SIGNING_KEY` | Self-hosted Inngest signing key, hex with an even length (`openssl rand -hex 32`) |
+| `NOTIFICATION_R2_ENDPOINT` | `https://<account>.r2.cloudflarestorage.com` |
+| `NOTIFICATION_R2_ACCESS_KEY_ID` | Read-only R2 token for the private Documents bucket only |
+| `NOTIFICATION_R2_SECRET_ACCESS_KEY` | Its secret |
+| `R2_DOCUMENTS_BUCKET_NAME` | Private Documents bucket (Spec L, #49) |
+
 ### 5.2 Variables (non-sensitive — repository variables)
 
 | Variable | Value |
@@ -235,6 +253,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 | `MOTAKE_ROUTING_MODE` | `separate` |
 | `MOTAKE_WEB_PORT` | `3000` |
 | `MOTAKE_API_PORT` | `8000` |
+| `MOTAKE_NOTIFICATION_PORT` | `8100` (optional; published on `127.0.0.1` only) |
 | `MOTAKE_INSTALL_TARGET` | `system` |
 | `NODE_ENV` | `production` |
 | `LOGGER_LEVEL` | `error` |
@@ -571,9 +590,34 @@ motake-front.lunarstudio.dev {
 
 motake-back.lunarstudio.dev {
 	encode gzip zstd
-	reverse_proxy localhost:8000
+
+	# Meta WhatsApp webhook -> notification container (Spec K). Its /trpc and
+	# /api/inngest are never proxied; the main API reaches it on 127.0.0.1.
+	handle /webhooks/whatsapp* {
+		reverse_proxy localhost:8100
+	}
+
+	handle {
+		reverse_proxy localhost:8000
+	}
 }
 ```
+
+### 9.1a Notification service (Spec K)
+
+`apps/notification` runs as one Docker container (`motake-notification`): the Express app plus a self-hosted Inngest server, with Inngest state on the named volume `motake-inngest-data`. It publishes only `127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-8100}`. The deploy builds the image on the VPS (`docker build -f apps/notification/Dockerfile .`) and replaces the container on every deploy; it is skipped when none of the notification secrets (§5.1) are set.
+
+- `ensure-production.sh` installs Docker and adds the deploy user to the `docker` group (takes effect on the next SSH login). An **existing** VPS sudoers file must gain `/usr/sbin/usermod` (see `deploy/vps/sudoers-deploy-bootstrap.example`).
+- The main API gets `NOTIFICATION_URL=http://127.0.0.1:<port>` and `NOTIFICATION_INTERNAL_API_KEY` in its `.env`.
+
+**Meta one-time setup** (WhatsApp Business account):
+
+1. Create a system user with `whatsapp_business_messaging` and generate a permanent token → `META_ACCESS_TOKEN`; note the phone number id → `META_PHONE_NUMBER_ID`; app secret → `META_APP_SECRET`.
+2. Subscribe the app to the WABA: `POST https://graph.facebook.com/v26.0/<WABA-ID>/subscribed_apps` with the token.
+3. In the app's WhatsApp → Configuration, set the callback URL `https://<api-domain>/webhooks/whatsapp` and the verify token `META_WEBHOOK_VERIFY_TOKEN`; subscribe the `messages` field.
+4. Create the message templates in WhatsApp Manager and wait for approval; then insert a matching `notification_templates` row per name/language/version with `verified = true` (nothing is sent for a template that is not in the table and verified).
+
+Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when DB, Inngest and config are ok; 503 when degraded).
 
 ### 9.2 Non-interactive invocation (from CI)
 

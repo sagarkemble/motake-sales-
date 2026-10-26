@@ -16,7 +16,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--skip-build] [--skip-caddy] [--skip-migrate] [--skip-health]
 
-Non-interactive VPS deployment (PM2 + Caddy).
+Non-interactive VPS deployment (PM2 + notification container + Caddy).
 
 Required environment variables:
   MOTAKE_ROUTING_MODE          separate|single
@@ -24,11 +24,14 @@ Required environment variables:
   MOTAKE_API_DOMAIN            e.g. motake-back.lunarstudio.dev
   MOTAKE_FRONTEND_PORT         default: 3000
   MOTAKE_API_PORT              default: 8000
+  MOTAKE_NOTIFICATION_PORT     default: 8100 (published on 127.0.0.1 only)
   MOTAKE_INSTALL_TARGET        default: system
 
 Prerequisites:
   - Root .env exists (run deploy/ci/write-env.sh first)
-  - pnpm, pm2, caddy installed on VPS
+  - deploy/generated/notification.env for the notification container (write-env.sh writes it;
+    without it the container is skipped)
+  - pnpm, pm2, caddy, docker installed on VPS
   - For --skip-build: apps/api/dist and apps/web/.next must exist
 EOF
 }
@@ -113,6 +116,9 @@ main() {
   assign_ports
   echo "  web port: ${DEPLOY_WEB_PORT}"
   echo "  api port: ${DEPLOY_API_PORT}"
+  echo "  notification port: ${DEPLOY_NOTIFICATION_PORT} (127.0.0.1 only)"
+  # The main API delegates to the notification service on localhost (Spec J).
+  update_env_key "NOTIFICATION_URL" "http://127.0.0.1:${DEPLOY_NOTIFICATION_PORT}"
 
   DEPLOY_ROUTING_MODE="${MOTAKE_ROUTING_MODE}"
   DEPLOY_FRONTEND_DOMAIN="${MOTAKE_FRONTEND_DOMAIN}"
@@ -148,6 +154,11 @@ main() {
     verify_build_artifacts
   fi
   start_pm2_apps
+
+  echo
+  echo "Notification container"
+  echo "──────────────────────"
+  deploy_notification_container
 
   if [[ "$SKIP_CADDY" != true ]]; then
     echo

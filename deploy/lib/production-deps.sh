@@ -110,6 +110,15 @@ check_ufw() {
   command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"
 }
 
+# The notification container (Spec K). The deploy user runs docker without sudo.
+check_docker() {
+  command -v docker >/dev/null 2>&1 && systemctl is-enabled docker >/dev/null 2>&1
+}
+
+check_docker_access() {
+  docker info >/dev/null 2>&1
+}
+
 run_dep_check() {
   local name="$1"
   local fn="$2"
@@ -141,6 +150,8 @@ collect_missing_deps() {
   run_dep_check "caddy service" check_caddy_service || true
   run_dep_check "app directory (${VPS_APP_PATH})" check_app_directory || true
   run_dep_check "pm2 startup (systemd)" check_pm2_startup || true
+  run_dep_check "docker" check_docker || true
+  run_dep_check "docker access (no sudo)" check_docker_access || true
 
   if [[ ${#MISSING_DEPS[@]} -gt 0 ]]; then
     log_info ""
@@ -288,7 +299,7 @@ ensure_deploy_sudoers() {
   sudo tee "$sudoers_file" >/dev/null <<EOF
 # Motake deploy user — Caddy + deploy bootstrap (managed by ensure-production.sh)
 Defaults:deploy env_keep += "DEBIAN_FRONTEND"
-deploy ALL=(ALL) NOPASSWD: SETENV: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/systemctl, /bin/systemctl, ${caddy_bin}, /bin/cp, /usr/bin/cp, /bin/mkdir, /usr/bin/mkdir, /bin/chown, /usr/bin/chown, /bin/chmod, /usr/bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee, /usr/sbin/ufw, /usr/bin/env, /usr/bin/bash, /bin/bash, /usr/bin/true, /bin/true
+deploy ALL=(ALL) NOPASSWD: SETENV: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/systemctl, /bin/systemctl, ${caddy_bin}, /bin/cp, /usr/bin/cp, /bin/mkdir, /usr/bin/mkdir, /bin/chown, /usr/bin/chown, /bin/chmod, /usr/bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee, /usr/sbin/ufw, /usr/bin/env, /usr/bin/bash, /bin/bash, /usr/bin/true, /bin/true, /usr/sbin/usermod
 EOF
   sudo chmod 440 "$sudoers_file"
 }
@@ -313,12 +324,33 @@ ensure_ufw() {
   sudo ufw --force enable
 }
 
+# Docker for the notification container. Its ports are published on 127.0.0.1 only, so Docker's
+# own iptables rules never open them past ufw.
+install_docker() {
+  if check_docker; then
+    log_info "skip  docker (already satisfied)"
+  else
+    log_step "Installing Docker (docker.io)..."
+    require_sudo
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+    sudo systemctl enable docker
+    sudo systemctl start docker
+  fi
+
+  if ! check_docker_access; then
+    log_step "Adding ${DEPLOY_USER} to the docker group (takes effect on the next login)..."
+    require_sudo
+    sudo usermod -aG docker "$DEPLOY_USER"
+  fi
+}
+
 install_missing_deps() {
   install_apt_base_packages
   install_node
   install_pnpm
   install_pm2
   install_caddy
+  install_docker
   ensure_app_directory
   ensure_pm2_startup
   ensure_deploy_sudoers
@@ -343,6 +375,7 @@ verify_all_deps() {
   run_dep_check "caddy service" check_caddy_service || failed=1
   run_dep_check "app directory (${VPS_APP_PATH})" check_app_directory || failed=1
   run_dep_check "pm2 startup (systemd)" check_pm2_startup || failed=1
+  run_dep_check "docker" check_docker || failed=1
 
   return "$failed"
 }
@@ -355,4 +388,5 @@ print_versions() {
   command -v pnpm >/dev/null && log_info "  pnpm  $(pnpm -v)"
   command -v pm2 >/dev/null && log_info "  pm2   $(pm2 -v | head -1)"
   command -v caddy >/dev/null && log_info "  caddy $(caddy version 2>/dev/null | head -1)"
+  command -v docker >/dev/null && log_info "  docker $(docker --version 2>/dev/null | head -1)"
 }

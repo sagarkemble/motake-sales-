@@ -46,7 +46,14 @@ Required environment variables:
   BASE_URL
 
 Optional (defaults applied if unset):
-  PORT, NODE_ENV, LOGGER_LEVEL, CORS_ALLOWED_ORIGIN
+  PORT, NODE_ENV, LOGGER_LEVEL, CORS_ALLOWED_ORIGIN, MOTAKE_NOTIFICATION_PORT
+
+Notification service (all or none; none skips the notification container):
+  NOTIFICATION_INTERNAL_API_KEY, META_ACCESS_TOKEN, META_PHONE_NUMBER_ID, META_APP_SECRET,
+  META_WEBHOOK_VERIFY_TOKEN, INNGEST_EVENT_KEY, INNGEST_SIGNING_KEY, NOTIFICATION_R2_ENDPOINT,
+  NOTIFICATION_R2_ACCESS_KEY_ID, NOTIFICATION_R2_SECRET_ACCESS_KEY, R2_DOCUMENTS_BUCKET_NAME
+  These go to deploy/generated/notification.env (mode 600), not the root .env; the root .env
+  only gets NOTIFICATION_URL and NOTIFICATION_INTERNAL_API_KEY for the main API.
 EOF
 }
 
@@ -107,7 +114,18 @@ if [[ -n "$CORS_ALLOWED_ORIGIN" ]]; then
   echo "CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN}" >>"$ENV_FILE"
 fi
 
+# The main API's side of the notification boundary (Spec J); the port is confirmed by deploy.sh.
+if [[ -n "${NOTIFICATION_INTERNAL_API_KEY:-}" ]]; then
+  {
+    echo
+    echo "NOTIFICATION_URL=http://127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-$DEFAULT_NOTIFICATION_PORT}"
+    echo "NOTIFICATION_INTERNAL_API_KEY=${NOTIFICATION_INTERNAL_API_KEY}"
+  } >>"$ENV_FILE"
+fi
+
 echo "write .env"
+
+write_notification_env || true
 
 create_symlink() {
   local target_rel="$1"
