@@ -187,7 +187,9 @@ describe("tax_invoice", () => {
     for (const [index, page] of pages.entries()) {
       expect(page).toContain("Draft — IRN pending");
       expect(page).toContain(`Page ${index + 1} of ${pages.length}`);
-      expect(page).toContain("Taxable");
+      // Column headings only the repeated table header prints; the totals block has neither.
+      expect(page).toContain("HSN");
+      expect(page).toContain("GST %");
     }
     expect(pages.join("\n")).not.toContain("Ack No.");
     expect(Buffer.from(bytes).toString("latin1")).not.toContain(pdfImageMarker);
