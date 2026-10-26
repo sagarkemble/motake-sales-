@@ -1,0 +1,30 @@
+{
+  "name": "@repo/pdf",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./render": "./render.tsx",
+    "./store": "./store/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.925.0",
+    "@aws-sdk/s3-request-presigner": "^3.925.0",
+    "@react-pdf/renderer": "^4.9.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.2",
+    "typescript": "^5.9.3",
+    "unpdf": "^1.9.1",
+    "vitest": "^3"
+  }
+}

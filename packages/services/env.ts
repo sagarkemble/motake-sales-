@@ -28,6 +28,12 @@ const envSchema = z
     R2_PUBLIC_BASE_URL: z
       .url()
       .describe("Public base URL for reading uploaded files back, no trailing slash"),
+    R2_DOCUMENTS_BUCKET_NAME: z
+      .string()
+      .min(1)
+      .describe(
+        "Private Cloudflare R2 bucket for Bill, Note and Payment receipt PDFs. No public access; the R2 token must be allowed on it too.",
+      ),
   })
   .superRefine((val, ctx) => {
     if (val.NODE_ENV === "production" && val.JWT_SECRET.length < 32) {

@@ -1,6 +1,7 @@
 import AuthService from "@repo/services/auth";
 import BillService from "@repo/services/bills";
 import CustomerService from "@repo/services/customers";
+import DocumentService from "@repo/services/documents";
 import GatepassService from "@repo/services/gatepass";
 import OrderService from "@repo/services/orders";
 import ProductService from "@repo/services/products";
@@ -13,6 +14,7 @@ import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 export const authService = new AuthService();
 export const billService = new BillService();
 export const customerService = new CustomerService();
+export const documentService = new DocumentService();
 export const gatepassService = new GatepassService();
 export const orderService = new OrderService();
 export const productService = new ProductService();

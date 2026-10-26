@@ -22,6 +22,7 @@ export default defineConfig({
       R2_SECRET_ACCESS_KEY: "test-placeholder",
       R2_BUCKET_NAME: "test-placeholder",
       R2_PUBLIC_BASE_URL: "https://test-placeholder.example.com",
+      R2_DOCUMENTS_BUCKET_NAME: "test-placeholder",
     },
   },
 });

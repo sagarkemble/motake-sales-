@@ -49,3 +49,59 @@ export const noCoveringTaxPeriod = (uncoveredVarieties: UncoveredVariety[], day:
     cause: Object.assign(new Error(message), { uncoveredVarieties, day }),
   });
 };
+
+// A refused call: nothing is written and the app branches on a machine reason. `reason` and
+// `details` travel in the cause so the router error formatter hands them to the app as
+// `data.refusal`. Each spec keeps its own reason list and HTTP codes on top of `refused`.
+export interface Refusal<Reason extends string = string> {
+  reason: Reason;
+  details: Record<string, unknown> | null;
+}
+
+export const refused = <Reason extends string>(
+  code: TRPCError["code"],
+  reason: Reason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => {
+  const refusal: Refusal<Reason> = { reason, details };
+  return new TRPCError({ code, message, cause: Object.assign(new Error(message), { refusal }) });
+};
+
+// The refusal carried by an error, or null for any other error.
+export function refusalOf(error: unknown): Refusal | null {
+  const cause = error instanceof TRPCError ? error.cause : undefined;
+  const refusal = (cause as { refusal?: Refusal } | undefined)?.refusal;
+  return refusal ?? null;
+}
+
+// Why a Document call was refused, for callers that branch on it (Specs G, I, J).
+export type DocumentRefusalReason =
+  | "irn_missing"
+  | "irn_not_recorded"
+  | "irn_not_pending"
+  | "superseded_version"
+  | "not_found"
+  | "not_posted_event"
+  | "nothing_kept"
+  | "bad_image"
+  | "forbidden";
+
+const documentRefusalCodes: Record<DocumentRefusalReason, TRPCError["code"]> = {
+  irn_missing: "BAD_REQUEST",
+  irn_not_recorded: "BAD_REQUEST",
+  irn_not_pending: "BAD_REQUEST",
+  superseded_version: "BAD_REQUEST",
+  not_found: "NOT_FOUND",
+  not_posted_event: "BAD_REQUEST",
+  nothing_kept: "BAD_REQUEST",
+  bad_image: "BAD_REQUEST",
+  forbidden: "FORBIDDEN",
+};
+
+// The message is for the Admin; the reason reaches the app as `data.refusal.reason`.
+export const documentRefused = (
+  reason: DocumentRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(documentRefusalCodes[reason], reason, message, details);

@@ -5,3 +5,9 @@ export function businessDateOf(instant: Date): string {
   const istInstant = new Date(instant.getTime() + IST_OFFSET_MILLISECONDS);
   return istInstant.toISOString().slice(0, 10);
 }
+
+// The Asia/Kolkata wall-clock time (HH:mm) of an instant.
+export function businessTimeOf(instant: Date): string {
+  const istInstant = new Date(instant.getTime() + IST_OFFSET_MILLISECONDS);
+  return istInstant.toISOString().slice(11, 16);
+}

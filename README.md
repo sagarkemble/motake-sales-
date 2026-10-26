@@ -61,6 +61,7 @@ Fill in at minimum:
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client                                         |
 | `JWT_SECRET`                                                 | Session signing secret                                          |
 | `R2_*`                                                       | Cloudflare R2 credentials (image uploads)                       |
+| `R2_DOCUMENTS_BUCKET_NAME`                                   | Private R2 bucket for Bill, Note and receipt PDFs               |
 
 
 
