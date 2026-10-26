@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,11 +88,10 @@ function SalesmanPageContent() {
 
       <div className="flex items-center justify-end">
         <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={includeDeleted}
-            onChange={(event) => setIncludeDeleted(event.target.checked)}
-            className="rounded border-gray-300"
+            onCheckedChange={(checked) => setIncludeDeleted(checked === true)}
+            className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
           Show deleted salesmen
         </label>
@@ -124,7 +124,10 @@ function SalesmanPageContent() {
                 }`}
               >
                 <Avatar className="size-11 shrink-0 border">
-                  <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.name ?? "Salesman"} />
+                  <AvatarImage
+                    src={profile.avatarUrl ?? undefined}
+                    alt={profile.name ?? "Salesman"}
+                  />
                   <AvatarFallback className="bg-brand/10 text-sm font-semibold text-brand">
                     {getNameInitials(profile.name, "S")}
                   </AvatarFallback>

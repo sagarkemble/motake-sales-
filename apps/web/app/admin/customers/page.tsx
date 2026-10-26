@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -103,14 +104,13 @@ function CustomersPageContent() {
           </SelectContent>
         </Select>
         <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={includeInactive}
-            onChange={(event) => {
-              setIncludeInactive(event.target.checked);
+            onCheckedChange={(checked) => {
+              setIncludeInactive(checked === true);
               setPage(1);
             }}
-            className="rounded border-gray-300"
+            className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
           {tx("admin.customers.showInactive")}
         </label>
