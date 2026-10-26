@@ -226,6 +226,23 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 > **Important:** `NEXT_PUBLIC_*` must be available in the **build job** so Next.js bakes them into the production bundle. They are also written to `.env` on the VPS for consistency.
 
+#### Notification service (Spec K — `apps/notification` Docker container)
+
+Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNAL_API_KEY` switches the service on: unset, deploy skips the notification container (and Docker) with a warning; set, every secret below is required and deploy fails on a missing one. The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (above), which never switches the service on. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
+
+| Secret | Purpose |
+|--------|---------|
+| `NOTIFICATION_INTERNAL_API_KEY` | Shared main API ↔ notification key (`openssl rand -hex 32`); not the JWT secret or Supabase key |
+| `META_ACCESS_TOKEN` | Meta system-user token with `whatsapp_business_messaging` |
+| `META_PHONE_NUMBER_ID` | WhatsApp Business phone number id |
+| `META_APP_SECRET` | Meta app secret (webhook `X-Hub-Signature-256`) |
+| `META_WEBHOOK_VERIFY_TOKEN` | Any long random string; the same value goes into the Meta webhook settings |
+| `INNGEST_EVENT_KEY` | Self-hosted Inngest event key (`openssl rand -hex 16`) |
+| `INNGEST_SIGNING_KEY` | Self-hosted Inngest signing key, hex with an even length (`openssl rand -hex 32`) |
+| `NOTIFICATION_R2_ACCOUNT_ID` | Cloudflare account id (same value as `R2_ACCOUNT_ID`); the endpoint is built from it |
+| `NOTIFICATION_R2_ACCESS_KEY_ID` | Read-only R2 token for the private Documents bucket only |
+| `NOTIFICATION_R2_SECRET_ACCESS_KEY` | Its secret |
+
 ### 5.2 Variables (non-sensitive — repository variables)
 
 | Variable | Value |
@@ -235,6 +252,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 | `MOTAKE_ROUTING_MODE` | `separate` |
 | `MOTAKE_WEB_PORT` | `3000` |
 | `MOTAKE_API_PORT` | `8000` |
+| `MOTAKE_NOTIFICATION_PORT` | `8100` (optional; published on `127.0.0.1` only) |
 | `MOTAKE_INSTALL_TARGET` | `system` |
 | `NODE_ENV` | `production` |
 | `LOGGER_LEVEL` | `error` |
@@ -571,9 +589,34 @@ motake-front.lunarstudio.dev {
 
 motake-back.lunarstudio.dev {
 	encode gzip zstd
-	reverse_proxy localhost:8000
+
+	# Meta WhatsApp webhook -> notification container (Spec K). Its /trpc and
+	# /api/inngest are never proxied; the main API reaches it on 127.0.0.1.
+	handle /webhooks/whatsapp* {
+		reverse_proxy localhost:8100
+	}
+
+	handle {
+		reverse_proxy localhost:8000
+	}
 }
 ```
+
+### 9.1a Notification service (Spec K)
+
+`apps/notification` runs as one Docker container (`motake-notification`): the Express app plus a self-hosted Inngest server, with Inngest state on the named volume `motake-inngest-data`. It publishes only `127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-8100}`. The deploy builds the image on the VPS (`docker build -f apps/notification/Dockerfile .`) and replaces the container on every deploy (`docker stop -t 30` first, so an in-flight send can finish; dangling images are pruned after a healthy start); it is skipped while `NOTIFICATION_INTERNAL_API_KEY` (§5.1) is unset. It runs after PM2, Caddy and the api/web health checks: a notification failure leaves the API and web live and fails the deploy job loudly at the end.
+
+- `ensure-production.sh` installs Docker only when `NOTIFICATION_INTERNAL_API_KEY` is set. It first rewrites the managed `/etc/sudoers.d/deploy-motake` (validated with `visudo -c`), so an existing VPS gains `/usr/sbin/usermod`, then adds the deploy user to the `docker` group. Until the next SSH login the deploy runs docker through `sg docker`.
+- The main API gets `NOTIFICATION_URL=http://127.0.0.1:<port>` and `NOTIFICATION_INTERNAL_API_KEY` in its `.env`.
+
+**Meta one-time setup** (WhatsApp Business account):
+
+1. Create a system user with `whatsapp_business_messaging` and generate a permanent token → `META_ACCESS_TOKEN`; note the phone number id → `META_PHONE_NUMBER_ID`; app secret → `META_APP_SECRET`.
+2. Subscribe the app to the WABA: `POST https://graph.facebook.com/v26.0/<WABA-ID>/subscribed_apps` with the token.
+3. In the app's WhatsApp → Configuration, set the callback URL `https://<api-domain>/webhooks/whatsapp` and the verify token `META_WEBHOOK_VERIFY_TOKEN`; subscribe the `messages` field.
+4. Create the message templates in WhatsApp Manager and wait for approval; then insert a matching `notification_templates` row per name/language/version with `verified = true` (nothing is sent for a template that is not in the table and verified).
+
+Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when the database and the in-container Inngest server answer; 503 when either is down). It does not check Meta or R2 credentials; a missing setting stops the app at start-up, so `/health` does not answer at all.
 
 ### 9.2 Non-interactive invocation (from CI)
 

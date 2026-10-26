@@ -75,6 +75,32 @@ export function refusalOf(error: unknown): Refusal | null {
   return refusal ?? null;
 }
 
+// Why a notification instruction was refused, for callers that branch on it (Spec J).
+export type NotificationRefusalReason =
+  | "provider_not_supported"
+  | "template_not_found"
+  | "template_not_verified"
+  | "template_values_mismatch"
+  | "attachment_mismatch"
+  | "template_superseded";
+
+const notificationRefusalCodes: Record<NotificationRefusalReason, TRPCError["code"]> = {
+  provider_not_supported: "BAD_REQUEST",
+  template_not_found: "BAD_REQUEST",
+  template_not_verified: "BAD_REQUEST",
+  template_values_mismatch: "BAD_REQUEST",
+  attachment_mismatch: "BAD_REQUEST",
+  template_superseded: "BAD_REQUEST",
+};
+
+// A refused notification instruction (Spec K); the reason reaches the main API as
+// `data.refusal.reason`.
+export const notificationRefused = (
+  reason: NotificationRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(notificationRefusalCodes[reason], reason, message, details);
+
 // Why a Document call was refused, for callers that branch on it (Specs G, I, J).
 export type DocumentRefusalReason =
   | "irn_missing"

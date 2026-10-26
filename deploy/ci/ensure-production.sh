@@ -15,7 +15,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--check-only] [--force] [--quiet]
 
-Ensure Node.js, pnpm, PM2, Caddy, and related tools are installed on the VPS.
+Ensure Node.js, pnpm, PM2, Caddy, Docker, and related tools are installed on the VPS.
 
 Environment:
   VPS_APP_PATH              App directory (default: /var/www/motake)

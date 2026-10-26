@@ -14,5 +14,14 @@ app.example.com {
 
 api.example.com {
 	encode gzip zstd
-	reverse_proxy localhost:8000
+
+	# Meta WhatsApp webhook -> notification container (127.0.0.1:8100). Its tRPC and Inngest
+	# paths are never proxied.
+	handle /webhooks/whatsapp* {
+		reverse_proxy localhost:8100
+	}
+
+	handle {
+		reverse_proxy localhost:8000
+	}
 }

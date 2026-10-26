@@ -8,6 +8,8 @@ SYSTEM_CADDYFILE="/etc/caddy/Caddyfile"
 SYSTEM_SITES_DIR="/etc/caddy/sites"
 SYSTEM_FRAGMENT="$SYSTEM_SITES_DIR/motake.caddy"
 MOTAKE_MARKER="# motake — managed by caddy-setup.sh"
+# apps/notification WHATSAPP_WEBHOOK_PATH; the only notification path that is public.
+WHATSAPP_WEBHOOK_PATH="/webhooks/whatsapp"
 FORCE=false
 NON_INTERACTIVE=false
 
@@ -38,6 +40,7 @@ Non-interactive mode (used by deploy/vps/deploy.sh and deploy/ci/deploy.sh):
   MOTAKE_API_DOMAIN=api.example.com   # required for separate mode
   MOTAKE_FRONTEND_PORT=3000
   MOTAKE_API_PORT=8000
+  MOTAKE_NOTIFICATION_PORT=8100       # WhatsApp webhook path only
   MOTAKE_INSTALL_TARGET=system|local|skip
   MOTAKE_UPDATE_ENV=yes|no
 EOF
@@ -158,6 +161,7 @@ write_separate_domains_fragment() {
   local api_domain="$2"
   local frontend_port="$3"
   local api_port="$4"
+  local notification_port="$5"
 
   mkdir -p "$GENERATED_DIR"
 
@@ -167,6 +171,7 @@ ${MOTAKE_MARKER}
 # motake-generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Frontend: https://${frontend_domain} -> localhost:${frontend_port}
 # API:      https://${api_domain} -> localhost:${api_port}
+# WhatsApp: https://${api_domain}${WHATSAPP_WEBHOOK_PATH} -> localhost:${notification_port}
 
 ${frontend_domain} {
 	encode gzip zstd
@@ -177,7 +182,14 @@ ${frontend_domain} {
 ${api_domain} {
 	encode gzip zstd
 
-	reverse_proxy localhost:${api_port}
+	# Only the Meta webhook reaches the notification container; its tRPC and Inngest stay local.
+	handle ${WHATSAPP_WEBHOOK_PATH}* {
+		reverse_proxy localhost:${notification_port}
+	}
+
+	handle {
+		reverse_proxy localhost:${api_port}
+	}
 }
 EOF
 }
@@ -186,6 +198,7 @@ write_single_domain_fragment() {
   local domain="$1"
   local frontend_port="$2"
   local api_port="$3"
+  local notification_port="$4"
 
   mkdir -p "$GENERATED_DIR"
 
@@ -195,9 +208,14 @@ ${MOTAKE_MARKER}
 # motake-generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Frontend: https://${domain} -> localhost:${frontend_port}
 # API:      https://${domain}/trpc|/api|/docs -> localhost:${api_port}
+# WhatsApp: https://${domain}${WHATSAPP_WEBHOOK_PATH} -> localhost:${notification_port}
 
 ${domain} {
 	encode gzip zstd
+
+	handle ${WHATSAPP_WEBHOOK_PATH}* {
+		reverse_proxy localhost:${notification_port}
+	}
 
 	handle /trpc* {
 		reverse_proxy localhost:${api_port}
@@ -320,6 +338,7 @@ main() {
   local api_domain=""
   local frontend_port=""
   local api_port=""
+  local notification_port="${MOTAKE_NOTIFICATION_PORT:-$DEFAULT_NOTIFICATION_PORT}"
   local base_url=""
   local api_url=""
   local existing_domains=""
@@ -376,6 +395,7 @@ main() {
     validate_domain "$api_domain"
     validate_port "$frontend_port"
     validate_port "$api_port"
+    validate_port "$notification_port"
   else
     echo "Caddy reverse-proxy setup (extends existing config, does not replace it)"
     echo "  Paste one value at a time with Ctrl+Shift+V, then press Enter."
@@ -433,11 +453,11 @@ main() {
   if [[ "$routing_mode" == "separate" ]]; then
     base_url="https://${api_domain}"
     api_url="https://${api_domain}/trpc"
-    write_separate_domains_fragment "$frontend_domain" "$api_domain" "$frontend_port" "$api_port"
+    write_separate_domains_fragment "$frontend_domain" "$api_domain" "$frontend_port" "$api_port" "$notification_port"
   else
     base_url="https://${frontend_domain}"
     api_url="https://${frontend_domain}/trpc"
-    write_single_domain_fragment "$frontend_domain" "$frontend_port" "$api_port"
+    write_single_domain_fragment "$frontend_domain" "$frontend_port" "$api_port" "$notification_port"
   fi
 
   echo "write ${MOTAKE_FRAGMENT}"

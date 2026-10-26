@@ -52,4 +52,4 @@ Full production plan: [`deployment.md`](../deployment.md) at repo root.
 
 ## Generated files
 
-`deploy/generated/` is created at deploy time and gitignored. Do not commit runtime.env, ecosystem.config.cjs, or motake.caddy.
+`deploy/generated/` is created at deploy time and gitignored. Do not commit runtime.env, ecosystem.config.cjs, motake.caddy, or notification.env (notification container secrets, Spec K).

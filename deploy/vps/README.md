@@ -33,11 +33,20 @@ Manual full-stack deployment to a VPS with PM2 and Caddy.
 
 Wrappers: `deploy/pm2/start-api.sh`, `deploy/pm2/start-web.sh`
 
+## Notification container (Spec K)
+
+| Name | App | Default port |
+|------|-----|--------------|
+| `motake-notification` (Docker) | `apps/notification` + self-hosted Inngest | 8100 (127.0.0.1 only) |
+
+Needs Docker and the notification secrets (see [`deployment.md`](../../deployment.md) §5.1). `deploy.sh` reads them from the environment or the root `.env` and writes `deploy/generated/notification.env`; while `NOTIFICATION_INTERNAL_API_KEY` is unset the container is skipped. It is replaced after Caddy, so a failure leaves the API and web live. Inngest state lives on the volume `motake-inngest-data`. Caddy proxies only `/webhooks/whatsapp*` on the API domain to it.
+
 ## Generated config
 
 Written to `deploy/generated/` (gitignored):
 
 - `runtime.env` — assigned ports
+- `notification.env` — notification container secrets (mode 600)
 - `ecosystem.config.cjs` — PM2 config
 - `motake.caddy` — Caddy site blocks
 

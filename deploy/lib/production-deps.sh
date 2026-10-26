@@ -110,6 +110,27 @@ check_ufw() {
   command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"
 }
 
+# Docker is only needed for the notification container (Spec K), which
+# NOTIFICATION_INTERNAL_API_KEY switches on (from the environment, else the root .env).
+notification_configured() {
+  local key="${NOTIFICATION_INTERNAL_API_KEY:-}"
+
+  if [[ -z "$key" && -n "${ROOT_DIR:-}" && -f "${ROOT_DIR}/.env" ]]; then
+    key="$(grep '^NOTIFICATION_INTERNAL_API_KEY=' "${ROOT_DIR}/.env" | head -1 | cut -d= -f2- || true)"
+  fi
+  [[ -n "$key" ]]
+}
+
+check_docker() {
+  command -v docker >/dev/null 2>&1 && systemctl is-enabled docker >/dev/null 2>&1
+}
+
+# The deploy user runs docker without sudo: directly, or through `sg docker` until the docker
+# group it was just added to applies on the next login.
+check_docker_access() {
+  docker info >/dev/null 2>&1 || sg docker -c "docker info" >/dev/null 2>&1
+}
+
 run_dep_check() {
   local name="$1"
   local fn="$2"
@@ -141,6 +162,10 @@ collect_missing_deps() {
   run_dep_check "caddy service" check_caddy_service || true
   run_dep_check "app directory (${VPS_APP_PATH})" check_app_directory || true
   run_dep_check "pm2 startup (systemd)" check_pm2_startup || true
+  if notification_configured; then
+    run_dep_check "docker" check_docker || true
+    run_dep_check "docker access (no sudo)" check_docker_access || true
+  fi
 
   if [[ ${#MISSING_DEPS[@]} -gt 0 ]]; then
     log_info ""
@@ -272,25 +297,38 @@ ensure_pm2_startup() {
   return 1
 }
 
+# Always rewritten (the file is managed here), so an existing VPS gains new entries such as
+# /usr/sbin/usermod for the docker group. Validated with visudo before it replaces the old file.
 ensure_deploy_sudoers() {
-  local caddy_bin sudoers_file="/etc/sudoers.d/deploy-motake"
+  local caddy_bin visudo_bin staged sudoers_file="/etc/sudoers.d/deploy-motake"
 
-  if [[ -f "$sudoers_file" ]]; then
-    log_info "skip  deploy sudoers (already present)"
-    return 0
-  fi
-
-  log_step "Installing deploy sudoers for Caddy management..."
+  log_step "Writing deploy sudoers for Caddy management and bootstrap..."
   require_sudo
 
   caddy_bin="$(command -v caddy || echo /usr/bin/caddy)"
+  visudo_bin="$(command -v visudo || echo /usr/sbin/visudo)"
+  if [[ ! -x "$visudo_bin" ]]; then
+    echo "error: visudo not found; cannot validate ${sudoers_file}" >&2
+    return 1
+  fi
 
-  sudo tee "$sudoers_file" >/dev/null <<EOF
+  staged="$(mktemp)"
+  cat >"$staged" <<EOF
 # Motake deploy user — Caddy + deploy bootstrap (managed by ensure-production.sh)
 Defaults:deploy env_keep += "DEBIAN_FRONTEND"
-deploy ALL=(ALL) NOPASSWD: SETENV: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/systemctl, /bin/systemctl, ${caddy_bin}, /bin/cp, /usr/bin/cp, /bin/mkdir, /usr/bin/mkdir, /bin/chown, /usr/bin/chown, /bin/chmod, /usr/bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee, /usr/sbin/ufw, /usr/bin/env, /usr/bin/bash, /bin/bash, /usr/bin/true, /bin/true
+deploy ALL=(ALL) NOPASSWD: SETENV: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/systemctl, /bin/systemctl, ${caddy_bin}, /bin/cp, /usr/bin/cp, /bin/mkdir, /usr/bin/mkdir, /bin/chown, /usr/bin/chown, /bin/chmod, /usr/bin/chmod, /usr/bin/corepack, /usr/bin/gpg, /usr/bin/tee, /usr/sbin/ufw, /usr/bin/env, /usr/bin/bash, /bin/bash, /usr/bin/true, /bin/true, /usr/sbin/usermod
 EOF
+
+  if ! "$visudo_bin" -c -q -f "$staged"; then
+    rm -f "$staged"
+    echo "error: generated sudoers did not validate; ${sudoers_file} left unchanged" >&2
+    return 1
+  fi
+
+  # tee and chmod are allowed by the old file too, so this works on an existing VPS.
+  sudo tee "$sudoers_file" <"$staged" >/dev/null
   sudo chmod 440 "$sudoers_file"
+  rm -f "$staged"
 }
 
 ensure_ufw() {
@@ -313,15 +351,42 @@ ensure_ufw() {
   sudo ufw --force enable
 }
 
+# Docker for the notification container. Its ports are published on 127.0.0.1 only, so Docker's
+# own iptables rules never open them past ufw.
+install_docker() {
+  if ! notification_configured; then
+    log_info "skip  docker (NOTIFICATION_INTERNAL_API_KEY not set)"
+    return 0
+  fi
+
+  if check_docker; then
+    log_info "skip  docker (already satisfied)"
+  else
+    log_step "Installing Docker (docker.io)..."
+    require_sudo
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+    sudo systemctl enable docker
+    sudo systemctl start docker
+  fi
+
+  if ! check_docker_access; then
+    log_step "Adding ${DEPLOY_USER} to the docker group (takes effect on the next login)..."
+    require_sudo
+    sudo usermod -aG docker "$DEPLOY_USER"
+  fi
+}
+
 install_missing_deps() {
   install_apt_base_packages
   install_node
   install_pnpm
   install_pm2
   install_caddy
+  # Before Docker: an existing sudoers file may lack /usr/sbin/usermod.
+  ensure_deploy_sudoers
+  install_docker
   ensure_app_directory
   ensure_pm2_startup
-  ensure_deploy_sudoers
   ensure_ufw
 }
 
@@ -343,6 +408,10 @@ verify_all_deps() {
   run_dep_check "caddy service" check_caddy_service || failed=1
   run_dep_check "app directory (${VPS_APP_PATH})" check_app_directory || failed=1
   run_dep_check "pm2 startup (systemd)" check_pm2_startup || failed=1
+  if notification_configured; then
+    run_dep_check "docker" check_docker || failed=1
+    run_dep_check "docker access (no sudo)" check_docker_access || failed=1
+  fi
 
   return "$failed"
 }
@@ -355,4 +424,5 @@ print_versions() {
   command -v pnpm >/dev/null && log_info "  pnpm  $(pnpm -v)"
   command -v pm2 >/dev/null && log_info "  pm2   $(pm2 -v | head -1)"
   command -v caddy >/dev/null && log_info "  caddy $(caddy version 2>/dev/null | head -1)"
+  command -v docker >/dev/null && log_info "  docker $(docker --version 2>/dev/null | head -1)"
 }

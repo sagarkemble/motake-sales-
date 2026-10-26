@@ -1,4 +1,6 @@
 const UNIQUE_VIOLATION = "23505";
+// `lock_timeout` ran out while waiting for a row lock.
+const LOCK_NOT_AVAILABLE = "55P03";
 
 interface PostgresErrorShape {
   code?: string;
@@ -21,4 +23,9 @@ function findPostgresError(error: unknown): PostgresErrorShape | undefined {
 export function violatedUniqueConstraint(error: unknown): string | undefined {
   const postgresError = findPostgresError(error);
   return postgresError?.code === UNIQUE_VIOLATION ? postgresError.constraint : undefined;
+}
+
+// Whether the error is a `lock_timeout` running out (SET LOCAL lock_timeout).
+export function isLockTimeout(error: unknown): boolean {
+  return findPostgresError(error)?.code === LOCK_NOT_AVAILABLE;
 }

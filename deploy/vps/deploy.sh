@@ -15,18 +15,22 @@ Usage: $(basename "$0") [--force] [--skip-build] [--skip-caddy]
 Interactive VPS deployment with PM2 + Caddy.
 
 Steps:
-  1/3  Check ports (3000 web, 8000 api) and assign free ports if busy
+  1/3  Check ports (3000 web, 8000 api, 8100 notification) and assign free ports if busy
   2/3  Configure domains, build production apps, start/restart PM2 processes
-  3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh
+  3/3  Install Caddy reverse-proxy via deploy/vps/caddy-setup.sh, then replace the notification
+       container
 
 Processes managed by PM2:
   motake-api   Express API + tRPC + OpenAPI (bundled in one server)
   motake-web   Next.js frontend
 
+Docker:
+  motake-notification   apps/notification + self-hosted Inngest (127.0.0.1 only)
+
 Prerequisites:
-  deploy/local/env-setup.sh   — root .env configured
+  deploy/local/env-setup.sh   — root .env configured (notification secrets optional)
   pnpm install                — dependencies installed
-  pm2, caddy                  — installed on the server
+  pm2, caddy, docker          — installed on the server
 
 Examples:
   ./deploy/vps/deploy.sh
@@ -71,10 +75,12 @@ step_ports() {
   if [[ -f "$ENV_FILE" ]]; then
     update_env_key "PORT" "$DEPLOY_API_PORT"
     update_env_key "BASE_URL" "http://localhost:${DEPLOY_API_PORT}"
+    update_env_key "NOTIFICATION_URL" "http://127.0.0.1:${DEPLOY_NOTIFICATION_PORT}"
   fi
 
   echo "  web port: ${DEPLOY_WEB_PORT}"
   echo "  api port: ${DEPLOY_API_PORT}"
+  echo "  notification port: ${DEPLOY_NOTIFICATION_PORT} (127.0.0.1 only)"
   echo "  note: tRPC runs inside motake-api (no separate process)"
 }
 
@@ -162,6 +168,19 @@ step_domains_and_build() {
   start_pm2_apps
 }
 
+# After api/web and Caddy, so a notification failure never holds them back.
+step_notification() {
+  echo
+  echo "Notification container"
+  echo "──────────────────────"
+  write_notification_env || true
+  if ! deploy_notification_container; then
+    echo "  warn: notification container failed to deploy — API and web are live;" \
+      "check docker logs ${NOTIFICATION_CONTAINER_NAME}" >&2
+    return 1
+  fi
+}
+
 step_caddy() {
   echo
   echo "Step 3/3 — Caddy reverse proxy"
@@ -200,6 +219,8 @@ main() {
   step_domains_and_build
   exec 3<&-
   step_caddy
+  local notification_failed=false
+  step_notification || notification_failed=true
 
   echo
   echo "Deployment complete."
@@ -215,6 +236,12 @@ main() {
   echo "  pm2 status"
   echo "  pm2 logs"
   echo "  pm2 restart ${PM2_API_NAME} ${PM2_WEB_NAME}"
+
+  if [[ "$notification_failed" == true ]]; then
+    echo >&2
+    echo "error: the notification container did not come up (see above)." >&2
+    exit 1
+  fi
 }
 
 main "$@"
