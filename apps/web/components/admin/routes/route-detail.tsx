@@ -140,8 +140,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
           </Badge>
         )}
         <div className="flex flex-col gap-1.5">
-          {/* Phone: name + Hide (80:20), Delivery state below. Wider: name 40, state 40, Hide 20. */}
-          <div className="grid grid-cols-[4fr_1fr] items-start gap-3 sm:grid-cols-[2fr_2fr_1fr]">
+          {/* Phone: name + Hide at its own width, Delivery state below. Wider: name 40, state 40, Hide 20. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[2fr_2fr_1fr]">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
               <Input
@@ -172,13 +172,15 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
             <Button
               type="button"
               variant="outline"
-              className="mt-5 h-auto min-h-11 w-full whitespace-normal rounded-full px-3 leading-tight"
+              className="mt-5 h-auto min-h-11 max-w-36 rounded-full px-4 leading-tight sm:w-full sm:max-w-none sm:px-3"
               disabled={isHidden ? isShowingRoute : isHidingRoute}
               onClick={() => setIsConfirmOpen(true)}
             >
-              {isHidden
-                ? tx("admin.routes.showAgain", { name: route.name })
-                : tx("admin.routes.hide", { name: route.name })}
+              <span className="truncate sm:whitespace-normal">
+                {isHidden
+                  ? tx("admin.routes.showAgain", { name: route.name })
+                  : tx("admin.routes.hide", { name: route.name })}
+              </span>
             </Button>
           </div>
           {!isHidden && hideRefusal && (
@@ -187,26 +189,25 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
             </p>
           )}
         </div>
-        <div>
-          <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
-          <p className="mt-1 font-mono text-sm text-muted-foreground">{route.code}</p>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2">
-          <div>
+        <div className="grid grid-cols-2 items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
+            <p className="mt-1 truncate font-mono text-sm text-muted-foreground">{route.code}</p>
+          </div>
+          <div className="flex w-fit items-center gap-2 justify-self-end rounded-full bg-muted/40 px-3 py-2">
             <Label htmlFor={`route-status-${route.id}`}>
               {route.status === "active"
                 ? tx("common.status.active")
                 : tx("common.status.inactive")}
             </Label>
-            <p className="text-xs text-muted-foreground">{tx("admin.routes.statusHint")}</p>
+            <Switch
+              id={`route-status-${route.id}`}
+              checked={route.status === "active"}
+              disabled={isSettingRouteStatus}
+              className="data-[state=checked]:bg-brand"
+              onCheckedChange={(checked) => void handleStatusChange(checked)}
+            />
           </div>
-          <Switch
-            id={`route-status-${route.id}`}
-            checked={route.status === "active"}
-            disabled={isSettingRouteStatus}
-            className="data-[state=checked]:bg-brand"
-            onCheckedChange={(checked) => void handleStatusChange(checked)}
-          />
         </div>
       </header>
 

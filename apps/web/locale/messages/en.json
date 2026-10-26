@@ -680,7 +680,6 @@
       "pricedCount": "{count} priced",
       "selectHint": "Select a Route.",
       "notFound": "Route not found",
-      "statusHint": "Inactive stays on this list. Hide is separate.",
       "hide": "Hide {name}",
       "hideFailed": "Could not hide the Route. Try again.",
       "showAgain": "Show {name} again",

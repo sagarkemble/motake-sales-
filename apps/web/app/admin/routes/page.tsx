@@ -9,6 +9,7 @@ import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useRoutes } from "~/hooks/use-routes";
@@ -72,11 +73,10 @@ function RoutesPageContent() {
         </div>
 
         <label className="flex cursor-pointer items-center justify-end gap-2 text-xs font-medium text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={includeHidden}
-            onChange={(event) => setIncludeHidden(event.target.checked)}
-            className="rounded border-gray-300"
+            onCheckedChange={(checked) => setIncludeHidden(checked === true)}
+            className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
           {tx("admin.routes.showHidden")}
         </label>
