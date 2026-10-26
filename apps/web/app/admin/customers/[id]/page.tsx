@@ -87,7 +87,8 @@ export default function CustomerDetailPage() {
       <BackHeader href="/admin/customers" title={customer.shopName} />
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
-        <div className="flex items-start gap-3">
+        {/* Phone: photo + contact, details below. Wider: photo | contact | details. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.2fr)]">
           <ShopPhotoThumbnail
             shopPhotoUrl={customer.shopPhotoUrl}
             shopName={customer.shopName}
@@ -95,9 +96,9 @@ export default function CustomerDetailPage() {
             shape="rounded"
             className="rounded-2xl"
           />
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">
+              <p className="truncate text-sm font-medium">
                 {customer.contactName ?? tx("admin.customers.noContactName")}
               </p>
               <StatusBadge status={customer.status} />
@@ -106,50 +107,50 @@ export default function CustomerDetailPage() {
             <p className="text-sm text-muted-foreground">{customer.address}</p>
             {customer.notes && <p className="text-xs text-muted-foreground">{customer.notes}</p>}
           </div>
-        </div>
 
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 border-t pt-3 text-sm sm:grid-cols-2">
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
-            <dd className="min-w-0">
-              <RouteTag
-                name={customer.routeName}
-                code={customer.routeCode}
-                hidden={customer.routeHidden}
-              />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("common.preferredLanguage.label")}
-            </dt>
-            <dd className="inline-flex items-center gap-1">
-              {tx(preferredLanguageLabelKey(customer.preferredLanguage))}
-              <LockIcon
-                className="size-3 text-muted-foreground"
-                aria-label={tx("common.preferredLanguage.fixedHint")}
-              />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("admin.customers.form.gstinLabel")}
-            </dt>
-            <dd>
-              {customer.gstin ? (
-                <span className="font-mono">{customer.gstin}</span>
-              ) : (
-                <span className="text-muted-foreground">{tx("admin.customers.noGstin")}</span>
-              )}
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">
-              {tx("admin.customers.form.einvoicing")}
-            </dt>
-            <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
-          </div>
-        </dl>
+          <dl className="col-span-2 grid grid-cols-2 content-start gap-x-4 gap-y-3 border-t pt-4 text-sm md:col-span-1 md:border-t-0 md:border-l md:pt-0 md:pl-4">
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
+              <dd className="min-w-0">
+                <RouteTag
+                  name={customer.routeName}
+                  code={customer.routeCode}
+                  hidden={customer.routeHidden}
+                />
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("common.preferredLanguage.label")}
+              </dt>
+              <dd className="inline-flex items-center gap-1">
+                {tx(preferredLanguageLabelKey(customer.preferredLanguage))}
+                <LockIcon
+                  className="size-3 text-muted-foreground"
+                  aria-label={tx("common.preferredLanguage.fixedHint")}
+                />
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("admin.customers.form.gstinLabel")}
+              </dt>
+              <dd>
+                {customer.gstin ? (
+                  <span className="font-mono">{customer.gstin}</span>
+                ) : (
+                  <span className="text-muted-foreground">{tx("admin.customers.noGstin")}</span>
+                )}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">
+                {tx("admin.customers.form.einvoicing")}
+              </dt>
+              <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
+            </div>
+          </dl>
+        </div>
 
         {movedToRouteMessage && (
           <p
