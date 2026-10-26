@@ -1,6 +1,6 @@
 "use client";
 
-import { LockIcon } from "lucide-react";
+import Link from "next/link";
 
 import {
   SHORT_REASON_LABEL_KEYS,
@@ -10,6 +10,7 @@ import {
   type GatepassQuantityTotals,
 } from "~/lib/gatepass-quantities";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { RouteTag } from "~/components/shared/route-tag";
 import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
 import { TableRowsSkeleton } from "~/components/shared/table-rows-skeleton";
 import { Badge } from "~/components/ui/badge";
@@ -22,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { useGatepasses, type AllotmentMatrixRow } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
@@ -52,9 +52,9 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
   // A salesman may hold several gatepasses on the same day (one at a time). Surface the active
   // one if present, otherwise the most recent (list is newest-first).
   const salesmanGatepasses = gatepasses.filter((gatepass) => gatepass.salesmanId === salesmanId);
-  const todaysGatepass =
-    salesmanGatepasses.find((gatepass) => gatepass.status === "active") ?? salesmanGatepasses[0];
-  const allocatedItems = allotmentMatrix.filter((row) => row.salesmanId === salesmanId);
+  const activeGatepass = salesmanGatepasses.find((gatepass) => gatepass.status === "active");
+  const todaysGatepass = activeGatepass ?? salesmanGatepasses[0];
+  const allocatedItems = allotmentMatrix.filter((row) => row.gatepassId === todaysGatepass?.id);
 
   const handedOver = isHandedOver(todaysGatepass?.status);
   const totals = sumGatepassQuantities(allocatedItems);
@@ -65,6 +65,13 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
         <div>
           <p className="text-sm font-medium">{tx("admin.salesmen.gatepass.todayTitle")}</p>
           <p className="text-xs text-muted-foreground">{businessDate}</p>
+          {todaysGatepass && (
+            <RouteTag
+              name={todaysGatepass.routeName}
+              code={todaysGatepass.routeCode}
+              className="mt-1"
+            />
+          )}
           {todaysGatepass && (
             <p className="mt-1 text-xs text-muted-foreground">
               {handedOver
@@ -79,20 +86,25 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
         />
       </div>
 
-      {/* Allot needs a Route; it comes back when Routes are added. */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span tabIndex={0} className="w-full">
-            <Button type="button" variant="outline" disabled className="w-full gap-2 rounded-full">
-              <LockIcon className="size-3.5" />
-              {isSalesmanDeleted
-                ? tx("admin.salesmen.gatepass.salesmanDeleted")
-                : tx("admin.gatepass.allot.waitingForRoutes")}
-            </Button>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{tx("admin.gatepass.allot.waitingForRoutesHint")}</TooltipContent>
-      </Tooltip>
+      {/* A new GatePass waits only while the salesman holds an Active one. */}
+      <Button
+        asChild={!activeGatepass && !isSalesmanDeleted}
+        disabled={Boolean(activeGatepass) || isSalesmanDeleted}
+        variant="outline"
+        className="w-full rounded-full"
+      >
+        {isSalesmanDeleted ? (
+          tx("admin.salesmen.gatepass.salesmanDeleted")
+        ) : activeGatepass ? (
+          tx("admin.salesmen.gatepass.alreadyActive")
+        ) : (
+          <Link href={`/gatepass?salesmanId=${salesmanId}`}>
+            {todaysGatepass
+              ? tx("admin.salesmen.gatepass.allotAgain")
+              : tx("admin.salesmen.gatepass.allot")}
+          </Link>
+        )}
+      </Button>
 
       <GatepassQuantityKpis totals={totals} handedOver={handedOver} />
 

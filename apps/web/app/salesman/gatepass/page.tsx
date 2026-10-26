@@ -94,6 +94,8 @@ export default function SalesmanGatepassPage() {
             <>
               <div className="md:hidden">
                 <GatepassTodayViewMobile
+                  routeName={myGatepass.gatepass.routeName}
+                  routeCode={myGatepass.gatepass.routeCode}
                   businessDate={myGatepass.gatepass.businessDate}
                   status={myGatepass.gatepass.status}
                   hasDiscrepancy={myGatepass.gatepass.hasDiscrepancy}
@@ -103,6 +105,8 @@ export default function SalesmanGatepassPage() {
               </div>
               <div className="hidden md:block">
                 <GatepassTodayViewDesktop
+                  routeName={myGatepass.gatepass.routeName}
+                  routeCode={myGatepass.gatepass.routeCode}
                   businessDate={myGatepass.gatepass.businessDate}
                   status={myGatepass.gatepass.status}
                   hasDiscrepancy={myGatepass.gatepass.hasDiscrepancy}

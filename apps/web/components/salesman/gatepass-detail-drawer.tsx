@@ -13,6 +13,7 @@ import { GatepassStatGrid } from "~/components/salesman/gatepass/gatepass-stat-g
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
+import { RouteTag } from "~/components/shared/route-tag";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
@@ -68,15 +69,21 @@ export function GatepassDetailDrawer({
                   />
                 </div>
 
+                <RouteTag
+                  name={myGatepass.gatepass.routeName}
+                  code={myGatepass.gatepass.routeCode}
+                  className="text-sm"
+                />
+
                 <div className="flex flex-col gap-3 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Issued At</p>
+                    <p className="text-muted-foreground">{tx("salesman.gatepass.issuedAt")}</p>
                     <p className="font-medium">
                       {formatDate(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, hh:mm a")}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Issued By</p>
+                    <p className="text-muted-foreground">{tx("salesman.gatepass.issuedBy")}</p>
                     <p className="font-medium">
                       {myGatepass.issuedByName ?? tx("salesman.gatepass.admin")}
                     </p>

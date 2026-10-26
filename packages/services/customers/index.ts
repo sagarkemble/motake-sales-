@@ -1,25 +1,31 @@
 import {
+  countOpenPreordersForCustomer,
   createCustomer,
   getCustomerById,
   getCustomerStats,
+  getCustomerWithRouteById,
+  lockCustomerRow,
   listActiveCustomersByIds,
   reactivateCustomer,
   searchCustomers,
   softDeleteCustomer,
   updateCustomer,
   type CustomerStats,
+  type CustomerWithRoute,
 } from "@repo/database/queries/customers";
 import {
   countOpenOrdersByCustomerId,
   listOpenOrdersByCustomerId,
   type OpenOrderSummary,
 } from "@repo/database/queries/orders";
-import { runInTransaction } from "@repo/database/queries/shared/executor";
+import { getRouteById } from "@repo/database/queries/routes";
+import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
-import type { SelectCustomer } from "@repo/database/schema";
+import type { InsertCustomer, SelectCustomer } from "@repo/database/schema";
 
-import { conflict, forbidden, notFound } from "../errors";
-import { changedFields, recordAudit } from "../shared/audit";
+import { badRequest, conflict, forbidden, notFound } from "../errors";
+import GatepassService from "../gatepass";
+import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   buildObjectKey,
   buildPublicUrl,
@@ -27,12 +33,17 @@ import {
   deleteObject,
 } from "../uploads/r2-client";
 import {
-  createCustomerInputSchema,
+  createCustomerAsAdminInputSchema,
+  createCustomerAsSalesmanInputSchema,
   createShopPhotoUploadUrlInputSchema,
+  listCustomersForSalesmanInputSchema,
   listCustomersInputSchema,
+  moveCustomerToRouteInputSchema,
   updateCustomerInputSchema,
-  type CreateCustomerInput,
+  type CreateCustomerAsAdminInput,
+  type CreateCustomerAsSalesmanInput,
   type CreateShopPhotoUploadUrlInput,
+  type ListCustomersForSalesmanInput,
   type ListCustomersInput,
   type UpdateCustomerInput,
 } from "./model";
@@ -45,7 +56,11 @@ const customerAuditedFields = [
   "address",
   "notes",
   "shopPhotoKey",
+  "gstin",
+  "einvoicingRequired",
 ] as const;
+
+const noActiveGatepass = () => badRequest("No Active GatePass");
 
 export interface ShopPhotoUploadUrlResult {
   uploadUrl: string;
@@ -66,6 +81,8 @@ function assertShopPhotoKeyInCustomersFolder(shopPhotoKey: string): void {
 }
 
 class CustomerService {
+  private readonly gatepassService = new GatepassService();
+
   public async createShopPhotoUploadUrl(
     uploaderId: string,
     input: CreateShopPhotoUploadUrlInput,
@@ -80,20 +97,102 @@ class CustomerService {
     return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
   }
 
-  public async createCustomer(input: CreateCustomerInput): Promise<SelectCustomer> {
-    const parsedInput = createCustomerInputSchema.parse(input);
-    assertShopPhotoKeyBelongsToCreator(parsedInput.shopPhotoKey, parsedInput.createdBy);
-
-    const { shopPhotoKey, ...customerFields } = parsedInput;
-    return createCustomer({
-      ...customerFields,
-      shopPhotoKey,
-      shopPhotoUrl: buildPublicUrl(shopPhotoKey),
+  // Admin picks any listed Route. Same phone on two Customers is allowed.
+  public async createCustomerAsAdmin(
+    input: CreateCustomerAsAdminInput,
+    actorProfileId: string,
+  ): Promise<SelectCustomer> {
+    const parsedInput = createCustomerAsAdminInputSchema.parse(input);
+    const { einvoicingRequired, gstin, ...details } = parsedInput;
+    return runInTransaction(async (transaction) => {
+      const route = await getRouteById(parsedInput.routeId, transaction);
+      if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
+      if (route.deletedAt) throw badRequest(`Route ${route.name} is hidden. Pick another Route.`);
+      return this.insertCustomer(
+        {
+          ...details,
+          gstin: gstin ?? null,
+          einvoicingRequired: einvoicingRequired ?? Boolean(gstin),
+        },
+        actorProfileId,
+        transaction,
+      );
     });
   }
 
-  public async getCustomerById(customerId: string): Promise<SelectCustomer | undefined> {
-    return getCustomerById(customerId);
+  // Saved on the Route of the salesman's Active GatePass; no GSTIN at the shop.
+  public async createCustomerAsSalesman(
+    input: CreateCustomerAsSalesmanInput,
+    salesmanId: string,
+  ): Promise<SelectCustomer> {
+    const parsedInput = createCustomerAsSalesmanInputSchema.parse(input);
+    return runInTransaction(async (transaction) => {
+      const activeGatepass = await this.gatepassService.getActiveGatepassForSalesman(
+        salesmanId,
+        transaction,
+      );
+      if (!activeGatepass) throw noActiveGatepass();
+      return this.insertCustomer(
+        {
+          ...parsedInput,
+          routeId: activeGatepass.route.id,
+          gstin: null,
+          einvoicingRequired: false,
+        },
+        salesmanId,
+        transaction,
+      );
+    });
+  }
+
+  private async insertCustomer(
+    newCustomer: Omit<InsertCustomer, "createdBy" | "shopPhotoUrl"> & { shopPhotoKey: string },
+    actorProfileId: string,
+    transaction: DbExecutor,
+  ): Promise<SelectCustomer> {
+    assertShopPhotoKeyBelongsToCreator(newCustomer.shopPhotoKey, actorProfileId);
+    const values = {
+      ...newCustomer,
+      shopPhotoUrl: buildPublicUrl(newCustomer.shopPhotoKey),
+      createdBy: actorProfileId,
+    };
+    const customer = await createCustomer(values, transaction);
+    await recordAudit(
+      {
+        actorId: actorProfileId,
+        action: "created",
+        entityType: "customer",
+        entityId: customer.id,
+        customerId: customer.id,
+        payload: createdFields(values),
+      },
+      transaction,
+    );
+    return customer;
+  }
+
+  public async getCustomerById(customerId: string): Promise<CustomerWithRoute | undefined> {
+    return getCustomerWithRouteById(customerId);
+  }
+
+  // Not found when the Customer is inactive, off the salesman's Active GatePass Route, or the
+  // salesman has no Active GatePass.
+  public async getCustomerForSalesman(
+    customerId: string,
+    salesmanId: string,
+  ): Promise<CustomerWithRoute> {
+    const activeGatepass = await this.gatepassService.getActiveGatepassForSalesman(salesmanId);
+    const customer = activeGatepass ? await getCustomerWithRouteById(customerId) : undefined;
+    if (
+      !activeGatepass ||
+      !customer ||
+      customer.routeId !== activeGatepass.route.id ||
+      customer.deletedAt ||
+      customer.status !== "active"
+    ) {
+      throw notFound(`Customer ${customerId} not found`);
+    }
+    return customer;
   }
 
   public async getCustomersByIds(customerIds: string[]): Promise<SelectCustomer[]> {
@@ -104,12 +203,69 @@ class CustomerService {
     return getCustomerStats(customerId);
   }
 
+  // Admin: every Route, optionally one. Search by name, contact, phone or address.
   public async searchCustomers(
     input: ListCustomersInput,
-  ): Promise<PaginatedResult<SelectCustomer>> {
+  ): Promise<PaginatedResult<CustomerWithRoute>> {
     const parsedInput = listCustomersInputSchema.parse(input);
     return searchCustomers(parsedInput.searchTerm, parsedInput, {
       includeInactive: parsedInput.includeInactive,
+      routeId: parsedInput.routeId,
+    });
+  }
+
+  // Salesman: active Customers on the Active GatePass Route only, by name, phone or address.
+  public async searchCustomersForSalesman(
+    input: ListCustomersForSalesmanInput,
+    salesmanId: string,
+  ): Promise<PaginatedResult<CustomerWithRoute>> {
+    const parsedInput = listCustomersForSalesmanInputSchema.parse(input);
+    const activeGatepass = await this.gatepassService.getActiveGatepassForSalesman(salesmanId);
+    if (!activeGatepass) throw noActiveGatepass();
+    return searchCustomers(parsedInput.searchTerm, parsedInput, {
+      includeInactive: false,
+      routeId: activeGatepass.route.id,
+    });
+  }
+
+  // Refused while the Customer has an open Pre-order. Balance, Ledger, Bills, orders and
+  // GatePasses stay as they are.
+  public async moveCustomerToRoute(
+    customerId: string,
+    toRouteId: string,
+    actorProfileId: string,
+  ): Promise<SelectCustomer> {
+    const parsedInput = moveCustomerToRouteInputSchema.parse({ customerId, toRouteId });
+    return runInTransaction(async (transaction) => {
+      const customer = await lockCustomerRow(parsedInput.customerId, transaction);
+      if (!customer) throw notFound(`Customer ${parsedInput.customerId} not found`);
+      const targetRoute = await getRouteById(parsedInput.toRouteId, transaction);
+      if (!targetRoute) throw notFound(`Route ${parsedInput.toRouteId} not found`);
+      if (targetRoute.deletedAt) {
+        throw badRequest(`Route ${targetRoute.name} is hidden. Pick another Route.`);
+      }
+      if (targetRoute.id === customer.routeId) {
+        throw badRequest(`${customer.shopName} is already on Route ${targetRoute.name}`);
+      }
+      const openPreorderCount = await countOpenPreordersForCustomer(customer.id, transaction);
+      if (openPreorderCount > 0) {
+        throw conflict(
+          `${customer.shopName} has ${openPreorderCount} open Pre-order${openPreorderCount === 1 ? "" : "s"}. Fulfil or cancel ${openPreorderCount === 1 ? "it" : "them"} before moving the Customer.`,
+        );
+      }
+      const moved = await updateCustomer(customer.id, { routeId: targetRoute.id }, transaction);
+      await recordAudit(
+        {
+          actorId: actorProfileId,
+          action: "moved_route",
+          entityType: "customer",
+          entityId: customer.id,
+          customerId: customer.id,
+          payload: { fromRouteId: customer.routeId, toRouteId: targetRoute.id },
+        },
+        transaction,
+      );
+      return moved!;
     });
   }
 

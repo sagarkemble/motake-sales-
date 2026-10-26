@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "../../index";
@@ -8,6 +8,7 @@ import {
   productVarietiesTable,
   productsTable,
   profilesTable,
+  routesTable,
   salesmenTable,
   type InsertGatepass,
   type InsertGatepassItem,
@@ -30,11 +31,69 @@ export interface GatepassWithItems {
   items: GatepassItemWithSellable[];
 }
 
+// The GatePass Route is fixed at allotment, so reads join it live for its name and code.
+export type GatepassWithRoute = SelectGatepass & { routeName: string; routeCode: string };
+
+export interface GatepassWithRouteAndItems {
+  gatepass: GatepassWithRoute;
+  items: GatepassItemWithSellable[];
+}
+
+const gatepassWithRouteColumns = {
+  ...getTableColumns(gatepassesTable),
+  routeName: routesTable.name,
+  routeCode: routesTable.code,
+};
+
+export interface ActiveGatepassRoute {
+  id: string;
+  name: string;
+  code: string;
+  deliveryState: string;
+  hidden: boolean;
+}
+
+export interface ActiveGatepassWithRoute {
+  gatepass: SelectGatepass;
+  route: ActiveGatepassRoute;
+}
+
+// The salesman's `active` GatePass on one business date, with its Route.
+export async function getActiveGatepassWithRoute(
+  salesmanId: string,
+  businessDate: string,
+  executor: DbExecutor = db,
+): Promise<ActiveGatepassWithRoute | undefined> {
+  const [row] = await executor
+    .select({
+      gatepass: gatepassesTable,
+      route: {
+        id: routesTable.id,
+        name: routesTable.name,
+        code: routesTable.code,
+        deliveryState: routesTable.deliveryState,
+        hidden: sql<boolean>`${routesTable.deletedAt} IS NOT NULL`,
+      },
+    })
+    .from(gatepassesTable)
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
+    .where(
+      and(
+        eq(gatepassesTable.salesmanId, salesmanId),
+        eq(gatepassesTable.businessDate, businessDate),
+        eq(gatepassesTable.status, "active"),
+      ),
+    )
+    .limit(1);
+  return row;
+}
+
 export async function createGatepassWithItems(
   newGatepass: InsertGatepass,
   itemAllotments: Array<Pick<InsertGatepassItem, "varietyId" | "issuedQty">>,
+  executor: DbExecutor = db,
 ): Promise<GatepassWithItems> {
-  return db.transaction(async (tx) => {
+  return executor.transaction(async (tx) => {
     const insertedGatepassRows = await tx.insert(gatepassesTable).values(newGatepass).returning();
     const createdGatepass = firstOrThrow(insertedGatepassRows, "createGatepassWithItems");
     const createdItems = itemAllotments.length
@@ -73,10 +132,11 @@ export async function getGatepassById(
 export async function getGatepassBySalesmanAndDate(
   salesmanId: string,
   businessDate: string,
-): Promise<SelectGatepass | undefined> {
+): Promise<GatepassWithRoute | undefined> {
   const [gatepass] = await db
-    .select()
+    .select(gatepassWithRouteColumns)
     .from(gatepassesTable)
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
     .where(
       and(
         eq(gatepassesTable.salesmanId, salesmanId),
@@ -95,8 +155,9 @@ export async function getGatepassBySalesmanAndDate(
 export async function getActiveGatepassBySalesmanAndDate(
   salesmanId: string,
   businessDate: string,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepass | undefined> {
-  const [gatepass] = await db
+  const [gatepass] = await executor
     .select()
     .from(gatepassesTable)
     .where(
@@ -110,10 +171,11 @@ export async function getActiveGatepassBySalesmanAndDate(
   return gatepass;
 }
 
-export async function listGatepassesForDate(businessDate: string): Promise<SelectGatepass[]> {
+export async function listGatepassesForDate(businessDate: string): Promise<GatepassWithRoute[]> {
   return db
-    .select()
+    .select(gatepassWithRouteColumns)
     .from(gatepassesTable)
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
     .where(eq(gatepassesTable.businessDate, businessDate))
     .orderBy(desc(gatepassesTable.createdAt));
 }
@@ -158,7 +220,7 @@ export async function getGatepassItemByGatepassAndVariety(
 export async function getGatepassWithItemsForSalesmanAndDate(
   salesmanId: string,
   businessDate: string,
-): Promise<GatepassWithItems | undefined> {
+): Promise<GatepassWithRouteAndItems | undefined> {
   const gatepass = await getGatepassBySalesmanAndDate(salesmanId, businessDate);
   if (!gatepass) return undefined;
   const items = await listGatepassItemsByGatepassId(gatepass.id);
@@ -357,6 +419,8 @@ export async function updateGatepassStatus(
 
 export interface GatepassHistoryRow {
   gatepass: SelectGatepass;
+  routeName: string;
+  routeCode: string;
   totalIssuedQty: number;
   totalSoldQty: number;
   totalReturnedQty: number;
@@ -368,20 +432,26 @@ export async function getGatepassHistoryForSalesman(
   return db
     .select({
       gatepass: gatepassesTable,
+      routeName: routesTable.name,
+      routeCode: routesTable.code,
       totalIssuedQty: sql<number>`coalesce(sum(${gatepassItemsTable.issuedQty}), 0)::int`,
       totalSoldQty: sql<number>`coalesce(sum(${gatepassItemsTable.soldQty}), 0)::int`,
       totalReturnedQty: sql<number>`coalesce(sum(${gatepassItemsTable.returnedQty}), 0)::int`,
     })
     .from(gatepassesTable)
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
     .leftJoin(gatepassItemsTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
     .where(eq(gatepassesTable.salesmanId, salesmanId))
-    .groupBy(gatepassesTable.id)
+    .groupBy(gatepassesTable.id, routesTable.id)
     .orderBy(desc(gatepassesTable.businessDate));
 }
 
 export interface AllotmentMatrixRow {
   salesmanId: string;
   salesmanCode: string;
+  gatepassId: string;
+  routeName: string;
+  routeCode: string;
   varietyId: string;
   productName: string;
   varietyName: string;
@@ -400,6 +470,9 @@ export async function getAllotmentMatrixForDate(
     .select({
       salesmanId: gatepassesTable.salesmanId,
       salesmanCode: salesmenTable.salesmanCode,
+      gatepassId: gatepassesTable.id,
+      routeName: routesTable.name,
+      routeCode: routesTable.code,
       varietyId: gatepassItemsTable.varietyId,
       productName: productsTable.name,
       varietyName: productVarietiesTable.name,
@@ -413,6 +486,7 @@ export async function getAllotmentMatrixForDate(
     .from(gatepassItemsTable)
     .innerJoin(gatepassesTable, eq(gatepassItemsTable.gatepassId, gatepassesTable.id))
     .innerJoin(salesmenTable, eq(gatepassesTable.salesmanId, salesmenTable.id))
+    .innerJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
     .innerJoin(productVarietiesTable, eq(gatepassItemsTable.varietyId, productVarietiesTable.id))
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
     .where(eq(gatepassesTable.businessDate, businessDate))

@@ -12,6 +12,8 @@ export const gatepassShortReasonSchema = z.enum(["damaged", "expired", "lost", "
 export const gatepassSchema = z.object({
   id: z.string(),
   salesmanId: z.string(),
+  // Set at allotment, never changed.
+  routeId: z.string(),
   businessDate: z.string(),
   status: gatepassStatusSchema,
   issuedBy: z.string(),
@@ -23,6 +25,11 @@ export const gatepassSchema = z.object({
   notes: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+});
+
+export const gatepassWithRouteSchema = gatepassSchema.extend({
+  routeName: z.string(),
+  routeCode: z.string(),
 });
 
 export const gatepassItemSchema = z.object({
@@ -45,13 +52,20 @@ export const gatepassWithItemsSchema = z.object({
   items: z.array(gatepassItemSchema),
 });
 
-export const gatepassWithItemsAndNamesSchema = gatepassWithItemsSchema.extend({
+export const gatepassWithRouteAndItemsSchema = z.object({
+  gatepass: gatepassWithRouteSchema,
+  items: z.array(gatepassItemSchema),
+});
+
+export const gatepassWithItemsAndNamesSchema = gatepassWithRouteAndItemsSchema.extend({
   issuedByName: z.string().nullable(),
   closedByName: z.string().nullable(),
 });
 
 export const gatepassHistoryRowSchema = z.object({
   gatepass: gatepassSchema,
+  routeName: z.string(),
+  routeCode: z.string(),
   totalIssuedQty: z.number(),
   totalSoldQty: z.number(),
   totalReturnedQty: z.number(),
@@ -59,6 +73,8 @@ export const gatepassHistoryRowSchema = z.object({
 
 export const allotGatepassInputSchema = z.object({
   salesmanId: z.string().uuid(),
+  // Required; hidden Routes are refused. Every variety needs a Route price on it.
+  routeId: z.string().uuid(),
   businessDate: z.string(),
   items: z
     .array(z.object({ varietyId: z.string().uuid(), issuedQty: z.number().int().min(0) }))
@@ -70,6 +86,9 @@ export const gatepassDateInputSchema = z.object({ businessDate: z.string() });
 export const allotmentMatrixRowSchema = z.object({
   salesmanId: z.string(),
   salesmanCode: z.string(),
+  gatepassId: z.string(),
+  routeName: z.string(),
+  routeCode: z.string(),
   varietyId: z.string(),
   productName: z.string(),
   varietyName: z.string(),

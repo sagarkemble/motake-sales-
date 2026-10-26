@@ -47,9 +47,17 @@ export default function SalesmanCheckoutPage() {
       />
     ) : (
       <CustomerDetailsStep
+        activeGatepassRoute={wizard.activeGatepassRoute}
+        isActiveGatepassLoading={wizard.isMyGatepassLoading}
+        handedOverRouteName={
+          wizard.myGatepass && !wizard.activeGatepassRoute
+            ? wizard.myGatepass.gatepass.routeName
+            : null
+        }
         customerSearchTerm={wizard.customerSearchTerm}
         onCustomerSearchTermChange={wizard.setCustomerSearchTerm}
         customerOptions={wizard.customersPage.items}
+        customerTotalCount={wizard.customersPage.totalCount}
         isCustomerListLoading={wizard.isCustomersListLoading}
         selectedCustomer={wizard.selectedCustomer}
         onSelectCustomer={wizard.selectExistingCustomer}

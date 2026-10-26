@@ -57,6 +57,9 @@ export function useCustomers({
   const reactivateCustomerMutation = trpc.customers.reactivate.useMutation({
     onSuccess: () => utils.customers.invalidate(),
   });
+  const moveCustomerRouteMutation = trpc.customers.moveRoute.useMutation({
+    onSuccess: () => utils.customers.invalidate(),
+  });
 
   return {
     customersPage:
@@ -108,5 +111,8 @@ export function useCustomers({
     reactivateCustomerAsync: reactivateCustomerMutation.mutateAsync,
     isReactivatingCustomer: reactivateCustomerMutation.isPending,
     reactivateCustomerError: reactivateCustomerMutation.error ?? null,
+
+    moveCustomerRouteAsync: moveCustomerRouteMutation.mutateAsync,
+    isMovingCustomerRoute: moveCustomerRouteMutation.isPending,
   };
 }

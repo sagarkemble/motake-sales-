@@ -1,6 +1,7 @@
+import type { RouterOutputs } from "@repo/trpc/client";
 import { addDays, format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
@@ -8,23 +9,30 @@ import { useCustomers } from "~/hooks/use-customers";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
+import type { PreferredLanguage } from "~/lib/preferred-language";
 import { useCart } from "~/providers/cart-provider";
+import { trpc } from "~/trpc/client";
 
 export type OrderTypeChoice = "book_now" | "pre_order";
 
-interface SelectedCustomer {
-  id: string;
-  shopName: string;
-  phone: string;
-  shopPhotoUrl?: string | null;
-}
+export type CheckoutCustomer = Pick<
+  RouterOutputs["customers"]["list"]["data"]["items"][number],
+  "id" | "shopName" | "phone" | "address" | "shopPhotoUrl" | "routeName" | "routeCode"
+>;
 
-interface NewCustomerFormValues {
+export interface NewCustomerFormValues {
   shopName: string;
   phone: string;
   address: string;
   shopPhotoKey: string;
   shopPhotoUrl: string;
+  preferredLanguage: PreferredLanguage;
+}
+
+/** The Route a salesman works today: their Active GatePass Route, or none. */
+export interface ActiveGatepassRoute {
+  name: string;
+  code: string;
 }
 
 export interface PlacedOrder {
@@ -39,6 +47,7 @@ const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
   address: "",
   shopPhotoKey: "",
   shopPhotoUrl: "",
+  preferredLanguage: "mr",
 };
 const CUSTOMER_SEARCH_PAGE_SIZE = 20;
 
@@ -74,7 +83,7 @@ export function useCheckoutWizard() {
 
   const [currentStepNumber, setCurrentStepNumber] = useState(1);
   const [orderType, setOrderType] = useState<OrderTypeChoice>("book_now");
-  const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CheckoutCustomer | null>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [newCustomerForm, setNewCustomerForm] =
     useState<NewCustomerFormValues>(EMPTY_NEW_CUSTOMER_FORM);
@@ -83,7 +92,23 @@ export function useCheckoutWizard() {
 
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm, 350);
 
-  const { myGatepass } = useGatepasses({ businessDate: businessDateKey, includeMyGatepass: true });
+  const { myGatepass, isMyGatepassLoading } = useGatepasses({
+    businessDate: businessDateKey,
+    includeMyGatepass: true,
+  });
+  // Customers come only from the Active GatePass Route; a handed-over or closed one is not Active.
+  const activeGatepassRoute: ActiveGatepassRoute | null =
+    myGatepass?.gatepass.status === "active"
+      ? { name: myGatepass.gatepass.routeName, code: myGatepass.gatepass.routeCode }
+      : null;
+
+  // The salesman Customer list is keyed only by search, so it is refreshed whenever the Active
+  // GatePass (and with it the Route) changes; otherwise the last Route's Customers would show.
+  const utils = trpc.useUtils();
+  const activeGatepassId = myGatepass?.gatepass.status === "active" ? myGatepass.gatepass.id : null;
+  useEffect(() => {
+    if (activeGatepassId) void utils.customers.invalidate();
+  }, [activeGatepassId, utils]);
 
   const { customersPage, isCustomersListLoading, createCustomerAsync, isCreatingCustomer } =
     useCustomers({
@@ -92,7 +117,7 @@ export function useCheckoutWizard() {
         page: 1,
         pageSize: CUSTOMER_SEARCH_PAGE_SIZE,
       },
-      enabled: currentStepNumber === 3,
+      enabled: currentStepNumber === 3 && Boolean(activeGatepassRoute),
     });
 
   const { placeBookNowOrderAsync, isPlacingBookNowOrder, placePreOrderAsync, isPlacingPreOrder } =
@@ -110,9 +135,10 @@ export function useCheckoutWizard() {
     newCustomerForm.phone.trim().length > 0 &&
     newCustomerForm.address.trim().length > 0 &&
     newCustomerForm.shopPhotoKey.trim().length > 0;
-  const isCustomerStepValid = Boolean(selectedCustomer) || isNewCustomerFormFilled;
+  const isCustomerStepValid =
+    Boolean(activeGatepassRoute) && (Boolean(selectedCustomer) || isNewCustomerFormFilled);
 
-  function selectExistingCustomer(customer: SelectedCustomer) {
+  function selectExistingCustomer(customer: CheckoutCustomer) {
     setSelectedCustomer(customer);
     setNewCustomerForm(EMPTY_NEW_CUSTOMER_FORM);
   }
@@ -156,12 +182,16 @@ export function useCheckoutWizard() {
           phone: newCustomerForm.phone.trim(),
           address: newCustomerForm.address.trim(),
           shopPhotoKey: newCustomerForm.shopPhotoKey,
+          preferredLanguage: newCustomerForm.preferredLanguage,
         });
         customerForOrder = {
           id: createdCustomerResponse.data.id,
           shopName: createdCustomerResponse.data.shopName,
           phone: createdCustomerResponse.data.phone,
+          address: createdCustomerResponse.data.address,
           shopPhotoUrl: createdCustomerResponse.data.shopPhotoUrl,
+          routeName: activeGatepassRoute?.name ?? "",
+          routeCode: activeGatepassRoute?.code ?? "",
         };
         setSelectedCustomer(customerForOrder);
       } catch (createCustomerError) {
@@ -229,6 +259,9 @@ export function useCheckoutWizard() {
     bookNowBlockReasons,
     nextDayDate,
 
+    myGatepass,
+    isMyGatepassLoading,
+    activeGatepassRoute,
     customerSearchTerm,
     setCustomerSearchTerm,
     customersPage,
