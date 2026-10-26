@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -38,6 +48,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
   } = useRoutes({ routeId });
   const [nameText, setNameText] = useState("");
   const [hideRefusal, setHideRefusal] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
     setNameText(route?.name ?? "");
@@ -104,6 +115,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
       await hideRouteAsync({ id: route.id });
     } catch (error) {
       setHideRefusal(getErrorMessage(error, tx("admin.routes.hideFailed")));
+    } finally {
+      setIsConfirmOpen(false);
     }
   }
 
@@ -113,6 +126,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
       await showRouteAsync({ id: route.id });
     } catch (error) {
       toast.error(getErrorMessage(error, tx("admin.routes.showFailed")));
+    } finally {
+      setIsConfirmOpen(false);
     }
   }
 
@@ -145,7 +160,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
               variant="outline"
               className="h-auto min-h-11 w-full whitespace-normal rounded-full px-3 leading-tight"
               disabled={isHidden ? isShowingRoute : isHidingRoute}
-              onClick={() => void (isHidden ? handleShow() : handleHide())}
+              onClick={() => setIsConfirmOpen(true)}
             >
               {isHidden
                 ? tx("admin.routes.showAgain", { name: route.name })
@@ -209,6 +224,35 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
           ))
         )}
       </section>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isHidden
+                ? tx("admin.routes.showTitle", { name: route.name })
+                : tx("admin.routes.hideTitle", { name: route.name })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isHidden ? tx("admin.routes.showBody") : tx("admin.routes.hideBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isHidingRoute || isShowingRoute}>
+              {tx("common.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isHidingRoute || isShowingRoute}
+              onClick={(event) => {
+                event.preventDefault();
+                void (isHidden ? handleShow() : handleHide());
+              }}
+            >
+              {isHidden ? tx("admin.routes.showConfirm") : tx("admin.routes.hideConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

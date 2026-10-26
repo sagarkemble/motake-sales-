@@ -685,6 +685,12 @@
       "hideFailed": "Could not hide the Route. Try again.",
       "showAgain": "Show {name} again",
       "showFailed": "Could not show the Route again. Try again.",
+      "hideTitle": "Hide {name}?",
+      "hideBody": "It leaves the lists and GatePass allotment. Its Customers, prices and history stay.",
+      "hideConfirm": "Hide",
+      "showTitle": "Show {name} again?",
+      "showBody": "It comes back to the lists and GatePass allotment.",
+      "showConfirm": "Show again",
       "pickRoute": "Pick a Route",
       "noChoices": "No Routes to pick. Add one under Routes.",
       "prices": {
