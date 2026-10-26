@@ -23,7 +23,7 @@ import {
   type PaginatedResult,
   type PaginationParams,
 } from "../shared/pagination";
-import { billIsNotCancelled } from "./cancelled";
+import { billIsCancelled, billIsNotCancelled } from "./cancelled";
 
 export interface BillLineStamp {
   name: string;
@@ -69,7 +69,7 @@ export const billCustomerId = sql<string | null>`coalesce(
   (SELECT "orders"."customer_id" FROM "orders" WHERE "orders"."id" = "bills"."order_id")
 )`;
 
-const billCancelled = sql<boolean>`NOT ${billIsNotCancelled()}`;
+const billCancelled = sql<boolean>`${billIsCancelled()}`;
 
 async function getBillDetailWhere(
   condition: ReturnType<typeof eq>,
@@ -248,7 +248,7 @@ export async function getBillById(
 
 // The Customer on the Bill's Ledger Bill debit (the order's Customer for an order-backed Bill; an
 // office Bill has no other link).
-export async function findBillCustomerId(
+export async function getBillCustomerId(
   billId: string,
   executor: DbExecutor = db,
 ): Promise<string | null> {
@@ -359,6 +359,30 @@ export interface BillVersionListRow {
 }
 
 // Bill history, newest first, with who made each version.
+// For each line id, the newest version of this Bill whose items snapshot still has that line. A
+// Note line must point at a version that contains it (db-decisions/0006); a line Correct removed
+// lives on only in older versions.
+export async function findNewestVersionIdsForLines(
+  billId: string,
+  lineIds: string[],
+  executor: DbExecutor = db,
+): Promise<Map<string, string>> {
+  if (lineIds.length === 0) return new Map();
+  const versions = await executor
+    .select({ id: billVersionsTable.id, items: billVersionsTable.items })
+    .from(billVersionsTable)
+    .where(eq(billVersionsTable.billId, billId))
+    .orderBy(desc(billVersionsTable.versionNumber));
+  const newest = new Map<string, string>();
+  for (const lineId of lineIds) {
+    const version = versions.find((candidate) =>
+      (candidate.items as Array<{ id: string }>).some((item) => item.id === lineId),
+    );
+    if (version) newest.set(lineId, version.id);
+  }
+  return newest;
+}
+
 export async function listBillVersions(
   billId: string,
   executor: DbExecutor = db,

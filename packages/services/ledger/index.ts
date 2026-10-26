@@ -43,7 +43,7 @@ interface Entry {
   links: Pick<InsertLedgerEntry, "billId" | "paymentId" | "noteId" | "refundId">;
 }
 
-function toBalance(balancePaise: number): Balance {
+export function toBalance(balancePaise: number): Balance {
   const state: BalanceState =
     balancePaise > 0 ? "pending" : balancePaise < 0 ? "advance" : "settled";
   return { balancePaise, state, amountPaise: Math.abs(balancePaise) };

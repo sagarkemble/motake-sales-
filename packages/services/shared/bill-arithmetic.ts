@@ -1,5 +1,6 @@
 import type { SelectNote } from "@repo/database/schema";
 
+import type { LedgerRefusalReason } from "../errors";
 import {
   computeBillTax,
   type BillTax,
@@ -82,15 +83,18 @@ export interface NoteDraft {
   lines: NoteLineDraft[];
 }
 
-export type ArithmeticRefusalReason =
-  | "unknown_line"
-  | "nothing_changed"
-  | "all_lines_zero"
-  | "below_credited_qty"
-  | "note_amount_zero"
-  | "no_lines"
-  | "credit_qty_above_remaining"
-  | "nothing_to_cancel";
+// Every arithmetic refusal is a Ledger refusal reason, checked here at the type level.
+export const ARITHMETIC_REFUSAL_REASONS = [
+  "unknown_line",
+  "nothing_changed",
+  "all_lines_zero",
+  "below_credited_qty",
+  "note_amount_zero",
+  "no_lines",
+  "credit_qty_above_remaining",
+  "nothing_to_cancel",
+] as const satisfies readonly LedgerRefusalReason[];
+export type ArithmeticRefusalReason = (typeof ARITHMETIC_REFUSAL_REASONS)[number];
 
 export interface ArithmeticRefusal {
   ok: false;
@@ -450,7 +454,23 @@ export function planRaisedNote(input: {
       : lineTaxOf(item, pick.quantity, input.placeOfSupply);
     return noteLineOf(input.kind, pick.lineId, pick.quantity, components);
   });
-  return { ok: true, note: draftOf(input.kind, lines) };
+  if (input.kind === "debit_note") return { ok: true, note: draftOf(input.kind, lines) };
+
+  // ADR-0002 #23: Credit Notes never credit more than the Bill's remaining value. Crediting all
+  // that is left takes the remaining net (round-off included), as Cancel does; otherwise the
+  // header is the line sum capped at the remaining net.
+  const pickedQty = new Map(input.picks.map((pick) => [pick.lineId, pick.quantity]));
+  const creditsEverything = input.standing.lines
+    .filter((line) => line.remainingQty > 0)
+    .every((line) => pickedQty.get(line.lineId) === line.remainingQty);
+  const lineSum = draftOf(input.kind, lines).amountPaise;
+  const amountPaise = creditsEverything
+    ? input.standing.netLedgerPaise
+    : Math.min(lineSum, input.standing.netLedgerPaise);
+  if (amountPaise <= 0) {
+    return refusal("note_amount_zero", { netLedgerPaise: input.standing.netLedgerPaise });
+  }
+  return { ok: true, note: draftOf(input.kind, lines, amountPaise) };
 }
 
 // Cancel: one Credit Note with each line's remaining uncredited qty at its exact remaining paise,
@@ -465,6 +485,11 @@ export function planCancelNote(input: {
   const lines = input.standing.lines
     .filter((line) => line.remainingQty > 0)
     .map((line) => noteLineOf(input.kind, line.lineId, line.remainingQty, line.remaining));
+  // Every line credited but a residual left in the net (only possible on Notes written before
+  // Credit Notes were capped): refused rather than writing a statutory Note with no lines.
+  if (lines.length === 0) {
+    return refusal("nothing_to_cancel", { netLedgerPaise: input.standing.netLedgerPaise });
+  }
   return { ok: true, note: draftOf(input.kind, lines, input.standing.netLedgerPaise) };
 }
 

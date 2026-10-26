@@ -57,7 +57,9 @@ import {
 import {
   noCheckoutListener,
   notifyAfterCommit,
+  dueStateOf,
   routeStampFromHeader,
+  routeStampOf,
   type CheckoutListener,
   type CheckoutOutcome,
   type RouteStamp,
@@ -139,15 +141,6 @@ function keyReusedOr(caughtError: unknown): unknown {
     "idempotency_key_reused",
     "This checkout key was already used for another sale. Try again.",
   );
-}
-
-function routeStampOf(route: { name: string; code: string; deliveryState: string }): RouteStamp {
-  return { name: route.name, code: route.code, delivery_state: route.deliveryState };
-}
-
-function dueStateOf(scheduledDate: string, today: string): PreorderDueState {
-  if (scheduledDate > today) return "upcoming";
-  return scheduledDate === today ? "due" : "overdue";
 }
 
 // A phone-supplied price, tax or amount on a line is refused by name.

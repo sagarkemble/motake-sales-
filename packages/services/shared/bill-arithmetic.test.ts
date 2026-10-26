@@ -477,3 +477,80 @@ describe("billPlaceOfSupply and gstSummaryOf", () => {
     ]);
   });
 });
+
+describe("Credit Notes never credit more than the Bill (ADR-0002 #23)", () => {
+  // ₹21.02 + ₹21.02 + ₹0.01, all exempt: gross ₹42.05 rounds down to ₹42.00.
+  const a = line("a", { quantity: 1, routePricePaise: 2_102, exempt: true, gstRateBps: 0 });
+  const b = line("b", { quantity: 1, routePricePaise: 2_102, exempt: true, gstRateBps: 0 });
+  const c = line("c", { quantity: 1, routePricePaise: 1, exempt: true, gstRateBps: 0 });
+  const items = [a, b, c];
+  const raise = (picks: string[], notes: ArithmeticNote[] = []) =>
+    planRaisedNote({
+      kind: "gst_credit_note",
+      picks: picks.map((lineId) => ({ lineId, quantity: 1 })),
+      currentItems: items,
+      standing: standingOf(items, notes),
+      placeOfSupply: intra,
+    });
+
+  it("crediting everything left takes the remaining net, round-off included", () => {
+    expect(standingOf(items).netLedgerPaise).toBe(4_200);
+    expect(raise(["a", "b", "c"])).toMatchObject({ ok: true, note: { amountPaise: 4_200 } });
+  });
+
+  it("caps a partial Credit Note at the remaining net, then refuses a ₹0.00 one", () => {
+    const first = raise(["a"]);
+    if (!first.ok) throw new Error("expected a Note");
+    expect(first.note.amountPaise).toBe(2_102);
+    const second = raise(["b"], [asNote(first.note)]);
+    if (!second.ok) throw new Error("expected a Note");
+    // Lines sum to ₹21.02 but only ₹20.98 is left.
+    expect(second.note.amountPaise).toBe(2_098);
+    expect(second.note.lines[0]!.amountPaise).toBe(2_102);
+    const notes = [asNote(first.note), asNote(second.note)];
+    expect(standingOf(items, notes).netLedgerPaise).toBe(0);
+    expect(raise(["c"], notes)).toMatchObject({ ok: false, reason: "note_amount_zero" });
+    expect(
+      planCancelNote({ kind: "gst_credit_note", standing: standingOf(items, notes) }),
+    ).toMatchObject({
+      ok: false,
+      reason: "nothing_to_cancel",
+    });
+  });
+});
+
+describe("planCancelNote never writes a Credit Note with no lines", () => {
+  it("refuses when every line is credited but a round-off residual is left (Notes from before the cap)", () => {
+    const items = [milk(), curd()];
+    // An uncapped credit of every line at its line sum (₹118.71) on a ₹119.00 Bill leaves ₹0.29.
+    const legacy: ArithmeticNote = {
+      kind: "gst_credit_note",
+      amountPaise: 11_871,
+      lines: [
+        {
+          snapshotLineId: "milk",
+          quantity: 3,
+          amountPaise: 7_497,
+          cgstPaise: 187,
+          sgstPaise: 187,
+          igstPaise: 0,
+        },
+        {
+          snapshotLineId: "curd",
+          quantity: 1,
+          amountPaise: 4_000,
+          cgstPaise: 0,
+          sgstPaise: 0,
+          igstPaise: 0,
+        },
+      ],
+    };
+    const standing = standingOf(items, [legacy]);
+    expect(standing.netLedgerPaise).toBe(29);
+    expect(planCancelNote({ kind: "gst_credit_note", standing })).toEqual({
+      ok: false,
+      reason: "nothing_to_cancel",
+      details: { netLedgerPaise: 29 },
+    });
+  });
+});

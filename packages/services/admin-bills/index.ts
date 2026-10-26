@@ -2,7 +2,8 @@ import { db } from "@repo/database";
 import { getProfileById } from "@repo/database/queries/auth";
 import {
   deleteBillItems,
-  findBillCustomerId,
+  findNewestVersionIdsForLines,
+  getBillCustomerId,
   getBillById,
   getBillByOrderId,
   getBillVersionByNumber,
@@ -16,10 +17,10 @@ import {
   type BillLetterhead,
 } from "@repo/database/queries/bills";
 import { isBillCancelled } from "@repo/database/queries/bills/cancelled";
-import { getCustomerById } from "@repo/database/queries/customers";
+import { getCustomerById, lockCustomerRow } from "@repo/database/queries/customers";
 import {
-  getGatepassById,
   lockGatepassItemsForVarieties,
+  lockGatepassRow,
   restoreSoldQtyOnCancellation,
 } from "@repo/database/queries/gatepass";
 import { listNoteLinesForNotes, listNotesForBill } from "@repo/database/queries/ledger";
@@ -42,12 +43,11 @@ import type {
   SelectGatepassItem,
   SelectNote,
   SelectOrder,
-  SelectRoute,
 } from "@repo/database/schema";
 
 import BillService from "../bills";
 import DocumentNumberService from "../document-numbers";
-import { internalError, ledgerRefusal, notFound, type LedgerRefusalReason } from "../errors";
+import { internalError, ledgerRefusal, notFound } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
 import LedgerService from "../ledger";
 import RouteService from "../routes";
@@ -79,7 +79,7 @@ import {
   type NoteOutcome,
 } from "../shared/bill-events";
 import { assertCustomerActive } from "../shared/checkout";
-import { routeStampFromHeader, type RouteStamp } from "../shared/checkout-events";
+import { dueStateOf, routeStampFromHeader, routeStampOf } from "../shared/checkout-events";
 import { recordAudit } from "../shared/audit";
 import { financialYearOf } from "../shared/financial-year";
 import { computeBillTax, placeOfSupplyOf, type PlaceOfSupply } from "../shared/tax-engine";
@@ -165,14 +165,48 @@ const arithmeticMessages: Record<ArithmeticRefusal["reason"], string> = {
 
 function refuseArithmetic(refusalResult: ArithmeticRefusal): never {
   throw ledgerRefusal(
-    refusalResult.reason as LedgerRefusalReason,
+    refusalResult.reason,
     arithmeticMessages[refusalResult.reason],
     refusalResult.details,
   );
 }
 
-function routeStampOf(route: SelectRoute): RouteStamp {
-  return { name: route.name, code: route.code, delivery_state: route.deliveryState };
+// Correct and Debit Note quantities stay inside an int4 qty and a safe-integer amount, like
+// Raise Bill's basket: a line past either is refused as bad_qty instead of overflowing.
+function assertQuantitiesFit(
+  items: ArithmeticLine[],
+  standing: BillStanding,
+  lines: Array<{ lineId: string; quantity: number }>,
+  mode: "correct" | "debit_note",
+): void {
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const remainingById = new Map(standing.lines.map((line) => [line.lineId, line.remainingQty]));
+  const badLineIds = new Set<string>();
+  let totalQuantity = 0;
+  let totalAmount = 0n;
+  for (const line of lines) {
+    const item = itemById.get(line.lineId);
+    if (!item) continue;
+    const lineQuantity =
+      mode === "debit_note" ? (remainingById.get(line.lineId) ?? 0) + line.quantity : line.quantity;
+    const amountWithTax = BigInt(item.routePricePaise) * BigInt(lineQuantity) * 2n;
+    if (
+      line.quantity > MAX_INT4 ||
+      lineQuantity > MAX_INT4 ||
+      totalQuantity + lineQuantity > MAX_INT4 ||
+      totalAmount + amountWithTax > MAX_SAFE_AMOUNT
+    ) {
+      badLineIds.add(line.lineId);
+      continue;
+    }
+    totalQuantity += lineQuantity;
+    totalAmount += amountWithTax;
+  }
+  if (badLineIds.size > 0) {
+    throw ledgerRefusal("bad_lines", "Some quantities are too large. Lower them.", {
+      lines: [...badLineIds].map((lineId) => ({ lineId, reason: "bad_qty" })),
+    });
+  }
 }
 
 function asArithmeticLines(items: unknown): ArithmeticLine[] {
@@ -218,11 +252,6 @@ function notePreviewOf(draft: NoteDraft): NotePreview {
 
 function signedEffect(outcome: NoteOutcome): number {
   return outcome.kind === "debit_note" ? outcome.amountPaise : -outcome.amountPaise;
-}
-
-function dueStateOf(scheduledDate: string, today: string): "upcoming" | "due" | "overdue" {
-  if (scheduledDate > today) return "upcoming";
-  return scheduledDate === today ? "due" : "overdue";
 }
 
 // Admin money procedures on Bills (Spec G): Raise Bill, Correct, Cancel (Bill or unfulfilled
@@ -376,6 +405,8 @@ class AdminBillService {
     const parsedInput = previewCorrectInputSchema.parse(input);
     const bill = await getBillById(parsedInput.billId);
     if (!bill) throw notFound(`Bill ${parsedInput.billId} not found`);
+    await this.assertOpenBill(bill, "correct", db);
+    await this.activeCustomerOf(bill, db);
     const { state, plan } = await this.planCorrectFor(bill, parsedInput, db);
     return {
       classification: plan.classification,
@@ -488,6 +519,11 @@ class AdminBillService {
           ),
         );
       }
+      if (written.length === 0) {
+        // A text-only Correct posts nothing, so no Ledger post locks the Customer: hold the row
+        // and re-check it is still active (Spec F's pattern), last in the lock order.
+        assertCustomerActive(await lockCustomerRow(customerId, "share", transaction), customerId);
+      }
       const balanceAfterPaise =
         written.at(-1)?.posted.balanceAfterPaise ??
         (await this.ledgerService.getBalance(customerId, transaction)).balancePaise;
@@ -571,12 +607,20 @@ class AdminBillService {
       transaction,
     );
     const seller = await this.settingsService.requireSellerSettings(transaction);
+    // A line Correct removed can still have remaining qty (a Debit Note raised it above the live
+    // qty); its Note line points at the newest version that still holds it (db-decisions/0006).
+    const lineVersionIds = await findNewestVersionIdsForLines(
+      bill.id,
+      plan.note.lines.map((line) => line.lineId),
+      transaction,
+    );
     const written = await writeNote(
       {
         draft: plan.note,
         number,
         billId: bill.id,
         billVersionId: state.latest.id,
+        lineVersionIds,
         customerId,
         actorId: actorProfileId,
         issuedOn,
@@ -656,7 +700,8 @@ class AdminBillService {
           orderId: order.id,
         });
       }
-      const customer = await getCustomerById(order.customerId, transaction);
+      // No Ledger post takes the Customer row here, so hold it for the check (Spec F's pattern).
+      const customer = await lockCustomerRow(order.customerId, "share", transaction);
       assertCustomerActive(customer, order.customerId);
       await this.markOrderCancelled(order, actorProfileId, parsedInput.reason, transaction);
       const balance = await this.ledgerService.getBalance(order.customerId, transaction);
@@ -705,6 +750,8 @@ class AdminBillService {
     const parsedInput = previewRaiseNoteInputSchema.parse(input);
     const bill = await getBillById(parsedInput.billId);
     if (!bill) throw notFound(`Bill ${parsedInput.billId} not found`);
+    await this.assertNotCancelled(bill, db);
+    await this.activeCustomerOf(bill, db);
     const { state, draft } = await this.planNoteFor(bill, parsedInput, db);
     return { note: notePreviewOf(draft), billHasNotes: state.standing.hasNotes };
   }
@@ -723,9 +770,7 @@ class AdminBillService {
     const run = await runInTransaction(async (transaction): Promise<Run<RaiseNoteResult>> => {
       const bill = await lockBillRow(parsedInput.billId, transaction);
       if (!bill) throw notFound(`Bill ${parsedInput.billId} not found`);
-      if (await isBillCancelled(bill.id, transaction)) {
-        throw ledgerRefusal("bill_cancelled", `Bill ${bill.number} is cancelled.`);
-      }
+      await this.assertNotCancelled(bill, transaction);
       const customerId = await this.activeCustomerOf(bill, transaction);
       const { state, draft, issuedOn } = await this.planNoteFor(bill, parsedInput, transaction);
       const number = await this.allocateNoteNumber(
@@ -789,7 +834,7 @@ class AdminBillService {
     const [versions, cancelled, customerId] = await Promise.all([
       listBillVersions(bill.id),
       isBillCancelled(bill.id),
-      findBillCustomerId(bill.id),
+      getBillCustomerId(bill.id),
     ]);
     const customer = customerId ? await getCustomerById(customerId) : undefined;
     const orderWithItems = bill.orderId ? await getOrderWithItemsById(bill.orderId) : undefined;
@@ -800,6 +845,8 @@ class AdminBillService {
           cancel: await this.lockHook({ bill, action: "cancel" }, db),
         };
     const isLatest = shown.versionNumber === state.latest.versionNumber;
+    // A deactivated Customer allows reads only.
+    const open = isLatest && !cancelled && customer?.status === "active";
     const header = shown.header as SelectBill;
     const standingById = new Map(state.standing.lines.map((line) => [line.lineId, line]));
     const shownItems = shown.items as Array<
@@ -869,9 +916,9 @@ class AdminBillService {
       })),
       lock,
       actions: {
-        canCorrect: isLatest && !cancelled && Boolean(lock?.correct.allowed),
-        canCancel: isLatest && !cancelled && Boolean(lock?.cancel.allowed),
-        canRaiseNote: isLatest && !cancelled,
+        canCorrect: open && Boolean(lock?.correct.allowed),
+        canCancel: open && Boolean(lock?.cancel.allowed),
+        canRaiseNote: open,
       },
       balance: customerId ? await this.ledgerService.getBalance(customerId) : null,
     };
@@ -979,11 +1026,24 @@ class AdminBillService {
   ): Promise<SelectBill> {
     const bill = await lockBillRow(billId, transaction);
     if (!bill) throw notFound(`Bill ${billId} not found`);
-    if (await isBillCancelled(bill.id, transaction)) {
+    await this.assertOpenBill(bill, action, transaction);
+    return bill;
+  }
+
+  // Refuses a cancelled Bill and one the lock hook closes (writes and their previews alike).
+  private async assertOpenBill(
+    bill: SelectBill,
+    action: BillLockAction,
+    executor: DbExecutor,
+  ): Promise<void> {
+    await this.assertNotCancelled(bill, executor);
+    await this.assertLockAllows(bill, action, executor);
+  }
+
+  private async assertNotCancelled(bill: SelectBill, executor: DbExecutor): Promise<void> {
+    if (await isBillCancelled(bill.id, executor)) {
       throw ledgerRefusal("bill_cancelled", `Bill ${bill.number} is cancelled.`);
     }
-    await this.assertLockAllows(bill, action, transaction);
-    return bill;
   }
 
   private async assertLockAllows(
@@ -999,7 +1059,7 @@ class AdminBillService {
 
   // The Bill's Customer, refused customer_inactive when deactivated (reads only).
   private async activeCustomerOf(bill: SelectBill, executor: DbExecutor): Promise<string> {
-    const customerId = await findBillCustomerId(bill.id, executor);
+    const customerId = await getBillCustomerId(bill.id, executor);
     if (!customerId) throw internalError(`Bill ${bill.number} has no Customer`);
     assertCustomerActive(await getCustomerById(customerId, executor), customerId);
     return customerId;
@@ -1062,6 +1122,7 @@ class AdminBillService {
           address: input.buyer.address,
         }
       : current;
+    assertQuantitiesFit(state.items, state.standing, input.lines, "correct");
     const plan = planCorrect({
       currentItems: state.items,
       standing: state.standing,
@@ -1103,6 +1164,9 @@ class AdminBillService {
         );
       }
     }
+    if (input.kind === "debit_note") {
+      assertQuantitiesFit(state.items, state.standing, input.lines, "debit_note");
+    }
     const plan = planRaisedNote({
       kind: input.kind,
       picks: input.lines,
@@ -1122,7 +1186,9 @@ class AdminBillService {
     transaction: DbExecutor,
   ): Promise<SelectGatepassItem[]> {
     if (order?.type !== "book_now" || !order.gatepassId) return [];
-    const gatepass = await getGatepassById(order.gatepassId, transaction);
+    // Locked before its lines, the order a handover takes them in, so a handover cannot close it
+    // between this check and the restore.
+    const gatepass = await lockGatepassRow(order.gatepassId, "update", transaction);
     if (gatepass?.status !== "active") return [];
     const varietyIds = [...new Set(state.items.map((item) => item.varietyId))].sort();
     return lockGatepassItemsForVarieties(gatepass.id, varietyIds, transaction);

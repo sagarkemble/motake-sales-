@@ -15,8 +15,10 @@ export interface WriteNoteInput {
   // MC or MD, allocated by the caller (FY of `issuedOn`) before any Customer lock.
   number: string;
   billId: string;
-  // The version the Note lines point at (items[].id = each line's id).
+  // The version the Note lines point at (items[].id = each line's id), unless `lineVersionIds`
+  // names another version for a line (db-decisions/0006: the pair must exist in that snapshot).
   billVersionId: string;
+  lineVersionIds?: ReadonlyMap<string, string>;
   customerId: string;
   actorId: string;
   issuedOn: string;
@@ -58,7 +60,7 @@ export async function writeNote(input: WriteNoteInput, executor: DbExecutor): Pr
   await insertNoteLines(
     input.draft.lines.map((line) => ({
       noteId: note.id,
-      billVersionId: input.billVersionId,
+      billVersionId: input.lineVersionIds?.get(line.lineId) ?? input.billVersionId,
       snapshotLineId: line.lineId,
       quantity: line.quantity,
       amountPaise: line.amountPaise,

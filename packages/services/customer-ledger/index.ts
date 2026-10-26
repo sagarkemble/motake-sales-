@@ -1,17 +1,18 @@
-import { TRPCError } from "@trpc/server";
 import { getCustomerWithRouteById } from "@repo/database/queries/customers";
 import {
   getCustomerLedgerTotals,
+  hasOpeningBalance,
   listCustomerLedgerRows,
   type LedgerRowRecord,
   type LedgerRowType,
 } from "@repo/database/queries/ledger";
 import { listOpenPreordersForCustomer } from "@repo/database/queries/orders";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
+import { runInTransaction } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 
 import { ledgerRefusal, notFound } from "../errors";
-import LedgerService, { type Balance } from "../ledger";
+import LedgerService, { toBalance } from "../ledger";
 import {
   addOpeningBalanceInputSchema,
   listLedgerRowsInputSchema,
@@ -39,11 +40,6 @@ const ROW_LABELS: Record<LedgerRowType, { detailsTitle: string; typeLabel: strin
   },
   debit_note: { detailsTitle: "Debit Note", typeLabel: "Debit Note" },
 };
-
-function toBalance(balancePaise: number): Balance {
-  const state = balancePaise > 0 ? "pending" : balancePaise < 0 ? "advance" : "settled";
-  return { balancePaise, state, amountPaise: Math.abs(balancePaise) };
-}
 
 // Payment adjusted and Refund adjusted rows open the Payment or Refund they adjust.
 function openTargetOf(row: LedgerRowRecord): LedgerOpenTarget {
@@ -145,30 +141,36 @@ class CustomerLedgerService {
         today,
       });
     }
-    try {
-      const posted = await this.ledgerService.setOpeningBalance({
-        customerId: parsedInput.customerId,
-        direction: parsedInput.side,
-        amountPaise: parsedInput.amountPaise,
-        reason: parsedInput.reason,
-        actorId: actorProfileId,
-        occurredAt: parsedInput.openingDate ? openingInstantOf(parsedInput.openingDate) : undefined,
-      });
-      return {
-        entryId: posted.entryId,
-        occurredAt: posted.occurredAt,
-        balance: toBalance(posted.balanceAfterPaise),
-      };
-    } catch (openingError) {
-      if (openingError instanceof TRPCError && openingError.code === "CONFLICT") {
+    return runInTransaction(async (transaction) => {
+      // The Customer row is locked (and checked active) before the "already has one" check, so
+      // only that case is refused opening_balance_exists; any other conflict surfaces as is.
+      await this.ledgerService.lockBalance(parsedInput.customerId, transaction);
+      if (await hasOpeningBalance(parsedInput.customerId, transaction)) {
         throw ledgerRefusal(
           "opening_balance_exists",
           "This Customer already has an Opening balance. It cannot be added twice.",
           { customerId: parsedInput.customerId },
         );
       }
-      throw openingError;
-    }
+      const posted = await this.ledgerService.setOpeningBalance(
+        {
+          customerId: parsedInput.customerId,
+          direction: parsedInput.side,
+          amountPaise: parsedInput.amountPaise,
+          reason: parsedInput.reason,
+          actorId: actorProfileId,
+          occurredAt: parsedInput.openingDate
+            ? openingInstantOf(parsedInput.openingDate)
+            : undefined,
+        },
+        transaction,
+      );
+      return {
+        entryId: posted.entryId,
+        occurredAt: posted.occurredAt,
+        balance: toBalance(posted.balanceAfterPaise),
+      };
+    });
   }
 }
 

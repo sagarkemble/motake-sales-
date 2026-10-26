@@ -18,6 +18,21 @@ export function routeStampFromHeader(header: unknown): RouteStamp {
   return stamp;
 }
 
+// The Route stamp a Bill or order freezes at issue.
+export function routeStampOf(route: {
+  name: string;
+  code: string;
+  deliveryState: string;
+}): RouteStamp {
+  return { name: route.name, code: route.code, delivery_state: route.deliveryState };
+}
+
+// A Pre-order against today (Asia/Kolkata): after, on, or before its scheduled date.
+export function dueStateOf(scheduledDate: string, today: string): "upcoming" | "due" | "overdue" {
+  if (scheduledDate > today) return "upcoming";
+  return scheduledDate === today ? "due" : "overdue";
+}
+
 export interface BillIssuedEvent {
   billId: string;
   billVersionId: string;

@@ -1,6 +1,6 @@
 import { db } from "@repo/database";
 import {
-  findBillCustomerId,
+  getBillCustomerId,
   getBillDetailById,
   getBillDetailByNumber,
   getBillDetailByOrderId,
@@ -59,8 +59,11 @@ class BillService {
 
   // The Customer on the Bill's Ledger Bill debit; an office Bill has no other link (Spec I's IRN
   // pending and audit customer_id).
-  public async billCustomerId(billId: string, executor: DbExecutor = db): Promise<string | null> {
-    return findBillCustomerId(billId, executor);
+  public async getBillCustomerId(
+    billId: string,
+    executor: DbExecutor = db,
+  ): Promise<string | null> {
+    return getBillCustomerId(billId, executor);
   }
 
   public async listBills(input: ListBillsInput): Promise<PaginatedResult<BillListRow>> {
