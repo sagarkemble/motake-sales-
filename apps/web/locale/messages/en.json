@@ -704,7 +704,9 @@
         "invalid": "Enter a price above zero, or switch off Sellable.",
         "unsellableUntilPriced": "Unsellable until a price is set",
         "saveFailed": "Could not save the price. Try again.",
-        "clearFailed": "Could not remove the price. Try again."
+        "clearFailed": "Could not remove the price. Try again.",
+        "saveAria": "Save price",
+        "cancelAria": "Discard change"
       }
     }
   },
