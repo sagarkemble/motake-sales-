@@ -204,7 +204,9 @@ export async function getOrderDetailById(orderId: string): Promise<OrderDetail |
   };
 }
 
-const OPEN_ORDER_STATUSES = ["scheduled", "due", "confirmed"] as const;
+// Open means a Pre-order still waiting to be fulfilled or cancelled. A Book Now is billed on the
+// spot (status confirmed) and never stays open.
+const OPEN_PREORDER_STATUSES = ["scheduled", "due"] as const;
 
 export interface OpenOrderSummary {
   id: string;
@@ -229,7 +231,8 @@ export async function listOpenOrdersByCustomerId(customerId: string): Promise<Op
     .where(
       and(
         eq(ordersTable.customerId, customerId),
-        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, [...OPEN_PREORDER_STATUSES]),
       ),
     )
     .orderBy(asc(ordersTable.scheduledDate), asc(ordersTable.placedAt));
@@ -242,7 +245,8 @@ export async function countOpenOrdersByCustomerId(customerId: string): Promise<n
     .where(
       and(
         eq(ordersTable.customerId, customerId),
-        inArray(ordersTable.status, [...OPEN_ORDER_STATUSES]),
+        eq(ordersTable.type, "pre_order"),
+        inArray(ordersTable.status, [...OPEN_PREORDER_STATUSES]),
       ),
     );
   return countRow?.totalCount ?? 0;
