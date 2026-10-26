@@ -33,20 +33,30 @@ export function useRoutes({
     { enabled: enabled && Boolean(routeId) },
   );
 
+  // Customers and GatePasses show the Route name, code and hidden flag, so a Route change refreshes
+  // them too. Prices only feed the Route screens and the allot screen, which read from `routes`.
+  function invalidateRouteViews() {
+    return Promise.all([
+      utils.routes.invalidate(),
+      utils.customers.invalidate(),
+      utils.gatepasses.invalidate(),
+    ]);
+  }
+
   const createRouteMutation = trpc.routes.create.useMutation({
     onSuccess: () => utils.routes.invalidate(),
   });
   const updateRouteMutation = trpc.routes.update.useMutation({
-    onSuccess: () => utils.routes.invalidate(),
+    onSuccess: invalidateRouteViews,
   });
   const setRouteStatusMutation = trpc.routes.setStatus.useMutation({
-    onSuccess: () => utils.routes.invalidate(),
+    onSuccess: invalidateRouteViews,
   });
   const hideRouteMutation = trpc.routes.hide.useMutation({
-    onSuccess: () => utils.routes.invalidate(),
+    onSuccess: invalidateRouteViews,
   });
   const showRouteMutation = trpc.routes.show.useMutation({
-    onSuccess: () => utils.routes.invalidate(),
+    onSuccess: invalidateRouteViews,
   });
   const setRoutePriceMutation = trpc.routes.setPrice.useMutation({
     onSuccess: () => utils.routes.invalidate(),

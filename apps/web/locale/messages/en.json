@@ -296,7 +296,10 @@
         "cta": "Move customer",
         "failed": "Could not move the customer. Try again.",
         "success": "Customer moved. Balance, Ledger and Bills stay with the Customer."
-      }
+      },
+      "reactivate": "Reactivate",
+      "reactivating": "Reactivating…",
+      "deactivate": "Deactivate"
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -719,7 +722,9 @@
       "flaggedBy": "Flagged by {name}",
       "shortLine": "Short {count} · {reason}",
       "admin": "Admin",
-      "route": "Route"
+      "route": "Route",
+      "issuedAt": "Issued At",
+      "issuedBy": "Issued By"
     },
     "handover": {
       "reason": {

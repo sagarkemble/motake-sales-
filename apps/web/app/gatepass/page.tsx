@@ -97,7 +97,9 @@ function GatepassPageContent() {
     choicesFilters: {},
     listFilters: { includeHidden: false },
   });
-  const { routePriceForm } = useRoutes({ routeId: selectedRouteId || undefined });
+  const { routePriceForm, isRouteLoading: isRoutePricesLoading } = useRoutes({
+    routeId: selectedRouteId || undefined,
+  });
 
   const salesmen = useMemo(
     () =>
@@ -320,7 +322,8 @@ function GatepassPageContent() {
                 <AllotQuantitiesStep
                   routeName={selectedRoute.name}
                   catalogItems={catalogItems}
-                  isCatalogLoading={isProductsListLoading}
+                  // Until the Route's prices arrive every variety would look unpriced.
+                  isCatalogLoading={isProductsListLoading || isRoutePricesLoading}
                   pricedVarietyIds={pricedVarietyIds}
                   quantitiesByVarietyId={quantitiesByVarietyId}
                   onQuantityChange={(varietyId, quantity) =>

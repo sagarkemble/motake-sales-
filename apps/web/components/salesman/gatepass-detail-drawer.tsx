@@ -77,13 +77,13 @@ export function GatepassDetailDrawer({
 
                 <div className="flex flex-col gap-3 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Issued At</p>
+                    <p className="text-muted-foreground">{tx("salesman.gatepass.issuedAt")}</p>
                     <p className="font-medium">
                       {formatDate(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, hh:mm a")}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Issued By</p>
+                    <p className="text-muted-foreground">{tx("salesman.gatepass.issuedBy")}</p>
                     <p className="font-medium">
                       {myGatepass.issuedByName ?? tx("salesman.gatepass.admin")}
                     </p>

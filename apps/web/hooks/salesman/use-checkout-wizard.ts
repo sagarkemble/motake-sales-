@@ -1,7 +1,7 @@
 import type { RouterOutputs } from "@repo/trpc/client";
 import { addDays, format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
@@ -11,6 +11,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import type { PreferredLanguage } from "~/lib/preferred-language";
 import { useCart } from "~/providers/cart-provider";
+import { trpc } from "~/trpc/client";
 
 export type OrderTypeChoice = "book_now" | "pre_order";
 
@@ -100,6 +101,14 @@ export function useCheckoutWizard() {
     myGatepass?.gatepass.status === "active"
       ? { name: myGatepass.gatepass.routeName, code: myGatepass.gatepass.routeCode }
       : null;
+
+  // The salesman Customer list is keyed only by search, so it is refreshed whenever the Active
+  // GatePass (and with it the Route) changes; otherwise the last Route's Customers would show.
+  const utils = trpc.useUtils();
+  const activeGatepassId = myGatepass?.gatepass.status === "active" ? myGatepass.gatepass.id : null;
+  useEffect(() => {
+    if (activeGatepassId) void utils.customers.invalidate();
+  }, [activeGatepassId, utils]);
 
   const { customersPage, isCustomersListLoading, createCustomerAsync, isCreatingCustomer } =
     useCustomers({

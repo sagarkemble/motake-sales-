@@ -33,6 +33,9 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  // Pressing the switch blurs the focused price field before the click lands. Without this the blur
+  // would reset an empty row to Unsellable and the click would turn it straight back on.
+  const isPressingSwitchRef = useRef(false);
 
   const isSellable = savedPaise != null || isWaitingForPrice;
   const switchId = `sellable-${routeId}-${variety.varietyId}`;
@@ -69,7 +72,11 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
   }
 
   function handlePriceBlur() {
+    const isPressingSwitch = isPressingSwitchRef.current;
+    isPressingSwitchRef.current = false;
     if (savedPaise == null && priceText.trim() === "") {
+      // The switch's own change handler decides the row's state.
+      if (isPressingSwitch) return;
       setIsWaitingForPrice(false);
       setErrorMessage(null);
       return;
@@ -85,6 +92,7 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
   }
 
   function handleSellableChange(nextSellable: boolean) {
+    isPressingSwitchRef.current = false;
     setErrorMessage(null);
     if (nextSellable) {
       setIsWaitingForPrice(true);
@@ -115,7 +123,12 @@ export function RoutePriceRow({ routeId, variety }: RoutePriceRowProps) {
             {tx("admin.routes.prices.unsellableUntilPriced")}
           </p>
         )}
-        <div className="mt-2 flex items-center gap-2">
+        <div
+          className="mt-2 flex items-center gap-2"
+          onPointerDown={() => {
+            if (!isSaving) isPressingSwitchRef.current = true;
+          }}
+        >
           <Switch
             id={switchId}
             checked={isSellable}

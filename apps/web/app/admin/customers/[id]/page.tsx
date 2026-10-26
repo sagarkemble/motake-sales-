@@ -201,7 +201,9 @@ export default function CustomerDetailPage() {
                 disabled={isReactivatingCustomer}
                 onClick={handleReactivate}
               >
-                {isReactivatingCustomer ? "Reactivating…" : "Reactivate"}
+                {isReactivatingCustomer
+                  ? tx("admin.customers.reactivating")
+                  : tx("admin.customers.reactivate")}
               </Button>
             ) : (
               <Button
@@ -210,7 +212,7 @@ export default function CustomerDetailPage() {
                 className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
                 onClick={() => setIsDeactivateOpen(true)}
               >
-                Deactivate
+                {tx("admin.customers.deactivate")}
               </Button>
             )}
           </div>
