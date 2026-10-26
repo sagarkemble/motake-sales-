@@ -98,7 +98,7 @@ function CustomersPageContent() {
             {routes.map((route) => (
               <SelectItem key={route.id} value={route.id}>
                 {route.name} · {route.code}
-                {route.hidden && ` (${tx("admin.routes.hidden")})`}
+                {route.hidden && ` (${tx("admin.routes.deleted")})`}
               </SelectItem>
             ))}
           </SelectContent>

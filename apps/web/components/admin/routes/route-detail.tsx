@@ -33,7 +33,7 @@ interface RouteDetailProps {
   routeId: string;
 }
 
-/** The selected Route: name and delivery state saved on leave, status, prices, Hide / Show again. */
+/** The selected Route: name and delivery state saved on leave, status, prices, Delete. */
 export function RouteDetail({ routeId }: RouteDetailProps) {
   const tx = useTranslate();
   const {
@@ -45,8 +45,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     isSettingRouteStatus,
     hideRouteAsync,
     isHidingRoute,
-    showRouteAsync,
-    isShowingRoute,
   } = useRoutes({ routeId });
   const [nameText, setNameText] = useState("");
   const [hideRefusal, setHideRefusal] = useState<string | null>(null);
@@ -121,18 +119,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await hideRouteAsync({ id: route.id });
     } catch (error) {
-      setHideRefusal(getErrorMessage(error, tx("admin.routes.hideFailed")));
-    } finally {
-      setIsConfirmOpen(false);
-    }
-  }
-
-  async function handleShow() {
-    if (!route) return;
-    try {
-      await showRouteAsync({ id: route.id });
-    } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.showFailed")));
+      setHideRefusal(getErrorMessage(error, tx("admin.routes.deleteFailed")));
     } finally {
       setIsConfirmOpen(false);
     }
@@ -143,11 +130,11 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
       <header className="flex shrink-0 flex-col gap-4">
         {isHidden && (
           <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
-            {tx("admin.routes.hidden")}
+            {tx("admin.routes.deleted")}
           </Badge>
         )}
         <div className="flex flex-col gap-1.5">
-          {/* Phone: name + Hide at its own width, Delivery state below. Wider: name 40, state 40, Hide 20. */}
+          {/* Phone: name + Delete at its own width, Delivery state below. Wider: name 40, state 40, Delete 20. */}
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[2fr_2fr_1fr]">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
@@ -175,20 +162,21 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                 {tx("admin.routes.deliveryStateHint")}
               </p>
             </div>
-            {/* mt-5 lines the button up with the fields below their labels. */}
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-5 h-auto min-h-11 max-w-36 rounded-full px-4 leading-tight sm:w-full sm:max-w-none sm:px-3"
-              disabled={isHidden ? isShowingRoute : isHidingRoute}
-              onClick={() => setIsConfirmOpen(true)}
-            >
-              <span className="truncate sm:whitespace-normal">
-                {isHidden
-                  ? tx("admin.routes.showAgain", { name: route.name })
-                  : tx("admin.routes.hide", { name: route.name })}
-              </span>
-            </Button>
+            {/* A deleted Route cannot be brought back, so it has no button. */}
+            {!isHidden && (
+              // mt-5 lines the button up with the fields below their labels.
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-5 h-auto min-h-11 max-w-36 rounded-full border-destructive px-4 leading-tight text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-full sm:max-w-none sm:px-3"
+                disabled={isHidingRoute}
+                onClick={() => setIsConfirmOpen(true)}
+              >
+                <span className="truncate sm:whitespace-normal">
+                  {tx("admin.routes.delete", { name: route.name })}
+                </span>
+              </Button>
+            )}
           </div>
           {!isHidden && hideRefusal && (
             <p role="alert" className="text-right text-xs text-destructive">
@@ -256,27 +244,23 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isHidden
-                ? tx("admin.routes.showTitle", { name: route.name })
-                : tx("admin.routes.hideTitle", { name: route.name })}
+              {tx("admin.routes.deleteTitle", { name: route.name })}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {isHidden ? tx("admin.routes.showBody") : tx("admin.routes.hideBody")}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{tx("admin.routes.deleteBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isHidingRoute || isShowingRoute}>
+            <AlertDialogCancel disabled={isHidingRoute}>
               {tx("common.actions.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={isHidingRoute || isShowingRoute}
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              disabled={isHidingRoute}
+              className="bg-destructive text-white hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault();
-                void (isHidden ? handleShow() : handleHide());
+                void handleHide();
               }}
             >
-              {isHidden ? tx("admin.routes.showConfirm") : tx("admin.routes.hideConfirm")}
+              {tx("admin.routes.deleteConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

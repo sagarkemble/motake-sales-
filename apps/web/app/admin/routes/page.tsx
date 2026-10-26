@@ -78,7 +78,7 @@ function RoutesPageContent() {
             onCheckedChange={(checked) => setIncludeHidden(checked === true)}
             className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
-          {tx("admin.routes.showHidden")}
+          {tx("admin.routes.showDeleted")}
         </label>
 
         {isCreating && (
@@ -126,7 +126,7 @@ function RoutesPageContent() {
                   <StatusBadge status={route.status} />
                   {route.hidden && (
                     <Badge variant="outline" className="border-dashed text-muted-foreground">
-                      {tx("admin.routes.hidden")}
+                      {tx("admin.routes.deleted")}
                     </Badge>
                   )}
                 </div>

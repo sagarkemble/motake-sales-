@@ -209,7 +209,8 @@ class RouteService {
     });
   }
 
-  // Refused while the Route has an Active GatePass (any date) or an open Pre-order.
+  // A soft delete that cannot be undone. Refused while the Route has an Active GatePass (any date)
+  // or an open Pre-order.
   public async hideRoute(routeId: string, actorProfileId: string): Promise<SelectRoute> {
     const parsedRouteId = routeIdSchema.parse(routeId);
     return runInTransaction(async (transaction) => {
@@ -220,7 +221,7 @@ class RouteService {
       const openPreorderCount = await countOpenPreordersOnRoute(parsedRouteId, transaction);
       if (activeGatepassCount > 0 || openPreorderCount > 0) {
         throw conflict(
-          `${route.name} has ${plural(activeGatepassCount, "Active GatePass", "Active GatePasses")} and ${plural(openPreorderCount, "open Pre-order", "open Pre-orders")}. Close them before hiding the Route.`,
+          `${route.name} has ${plural(activeGatepassCount, "Active GatePass", "Active GatePasses")} and ${plural(openPreorderCount, "open Pre-order", "open Pre-orders")}. Close them before deleting the Route.`,
         );
       }
       const hidden = await updateRoute(parsedRouteId, { deletedAt: new Date() }, transaction);
@@ -234,27 +235,6 @@ class RouteService {
         transaction,
       );
       return hidden!;
-    });
-  }
-
-  public async showRoute(routeId: string, actorProfileId: string): Promise<SelectRoute> {
-    const parsedRouteId = routeIdSchema.parse(routeId);
-    return runInTransaction(async (transaction) => {
-      const route = await lockRouteRow(parsedRouteId, "update", transaction);
-      if (!route) throw notFound(`Route ${parsedRouteId} not found`);
-      if (!route.deletedAt) return route;
-      const shown = await updateRoute(parsedRouteId, { deletedAt: null }, transaction);
-      await recordAudit(
-        {
-          actorId: actorProfileId,
-          action: "updated",
-          entityType: "route",
-          entityId: parsedRouteId,
-          payload: { hidden: { from: true, to: false } },
-        },
-        transaction,
-      );
-      return shown!;
     });
   }
 

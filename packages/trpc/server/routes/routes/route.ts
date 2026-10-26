@@ -132,32 +132,15 @@ export const routesRouter = router({
         path: path("/{id}/hide"),
         tags: ["Routes"],
         protect: true,
-        summary: "Hide a Route",
+        summary: "Delete a Route",
         description:
-          "Take the Route out of lists and GatePass allotment. Refused while it has an Active GatePass or an open Pre-order.",
+          "Soft-delete the Route: it leaves lists and GatePass allotment for good and cannot be brought back. Refused while it has an Active GatePass or an open Pre-order.",
       },
     })
     .input(routeIdInputSchema)
     .output(apiResponseSchema(routeSchema))
     .mutation(async ({ ctx, input }) =>
       apiResponse(await routeService.hideRoute(input.id, ctx.user.id)),
-    ),
-
-  show: adminProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: path("/{id}/show"),
-        tags: ["Routes"],
-        protect: true,
-        summary: "Show a hidden Route again",
-        description: "Bring a hidden Route back to lists and GatePass allotment.",
-      },
-    })
-    .input(routeIdInputSchema)
-    .output(apiResponseSchema(routeSchema))
-    .mutation(async ({ ctx, input }) =>
-      apiResponse(await routeService.showRoute(input.id, ctx.user.id)),
     ),
 
   setPrice: adminProcedure

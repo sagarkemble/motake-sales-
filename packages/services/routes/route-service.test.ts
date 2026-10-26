@@ -228,7 +228,7 @@ describe("RouteService status and hide", () => {
     await expect(routeService.hideRoute(route.id, admin.id)).rejects.toMatchObject({
       code: "CONFLICT",
       message:
-        "Gadhinglaj has 1 Active GatePass and 1 open Pre-order. Close them before hiding the Route.",
+        "Gadhinglaj has 1 Active GatePass and 1 open Pre-order. Close them before deleting the Route.",
     });
   });
 
@@ -245,7 +245,7 @@ describe("RouteService status and hide", () => {
 
     await expect(routeService.hideRoute(route.id, admin.id)).rejects.toMatchObject({
       message:
-        "Koregaon has 1 Active GatePass and 0 open Pre-orders. Close them before hiding the Route.",
+        "Koregaon has 1 Active GatePass and 0 open Pre-orders. Close them before deleting the Route.",
     });
 
     await db
@@ -272,7 +272,7 @@ describe("RouteService status and hide", () => {
     expect(hidden.deletedAt).not.toBeNull();
   });
 
-  it("drops a hidden Route from lists and choices, keeps it with includeHidden, and shows it again", async () => {
+  it("drops a deleted Route from lists and choices for good, keeping it with includeHidden", async () => {
     const admin = await buildProfile();
     const north = await buildRoute({ name: "Jat North" });
     const south = await buildRoute({ name: "Jat South" });
@@ -293,12 +293,10 @@ describe("RouteService status and hide", () => {
       ["Jat South", false],
     ]);
 
-    await routeService.showRoute(north.id, admin.id);
-    expect((await routeService.listRoutes({ search: "Jat" })).map((row) => row.name)).toEqual([
-      "Jat North",
-      "Jat South",
-    ]);
-    expect(await choiceIds()).toEqual([north.id, south.id]);
+    // Deleting again changes nothing: there is no way back.
+    const deletedAgain = await routeService.hideRoute(north.id, admin.id);
+    expect(deletedAgain.deletedAt).not.toBeNull();
+    expect(await choiceIds()).toEqual([south.id]);
   });
 
   it("keeps Inactive Routes in choices and leaves out the excluded Route", async () => {
@@ -440,11 +438,10 @@ describe("RouteService audit", () => {
     await routeService.setRouteStatus(route.id, "inactive", admin.id);
     await routeService.setRouteStatus(route.id, "active", admin.id);
     await routeService.hideRoute(route.id, admin.id);
-    await routeService.showRoute(route.id, admin.id);
 
     const rows = await listAuditLogsForEntity("route", route.id);
     expect(rows.map((row) => row.action).sort()).toEqual(
-      ["activated", "created", "deactivated", "deleted", "updated", "updated"].sort(),
+      ["activated", "created", "deactivated", "deleted", "updated"].sort(),
     );
     expect(rows.every((row) => row.actorId === admin.id && row.customerId === null)).toBe(true);
     expect(rows.find((row) => row.action === "created")?.payload).toEqual({
@@ -457,7 +454,6 @@ describe("RouteService audit", () => {
       name: { from: "Hatkanangle", to: "Hatkanangle East" },
       deliveryState: { from: "Maharashtra", to: "Goa" },
     });
-    expect(updates).toContainEqual({ hidden: { from: true, to: false } });
   });
 
   it("records Route price create, update and delete with the paise", async () => {

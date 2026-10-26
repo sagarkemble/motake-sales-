@@ -55,9 +55,6 @@ export function useRoutes({
   const hideRouteMutation = trpc.routes.hide.useMutation({
     onSuccess: invalidateRouteViews,
   });
-  const showRouteMutation = trpc.routes.show.useMutation({
-    onSuccess: invalidateRouteViews,
-  });
   const setRoutePriceMutation = trpc.routes.setPrice.useMutation({
     onSuccess: () => utils.routes.invalidate(),
   });
@@ -92,9 +89,6 @@ export function useRoutes({
 
     hideRouteAsync: hideRouteMutation.mutateAsync,
     isHidingRoute: hideRouteMutation.isPending,
-
-    showRouteAsync: showRouteMutation.mutateAsync,
-    isShowingRoute: showRouteMutation.isPending,
 
     setRoutePriceAsync: setRoutePriceMutation.mutateAsync,
     clearRoutePriceAsync: clearRoutePriceMutation.mutateAsync,
