@@ -26,6 +26,7 @@ import {
   buildVariety,
   type LineInput,
 } from "../test/builders";
+import { refusalOf } from "../errors";
 import { MemoryDocumentStore, TEST_DOCUMENTS_BUCKET } from "../test/memory-document-store";
 import { printedPages, printedText } from "../test/pdf-text";
 import DocumentService from "./index";
@@ -34,13 +35,12 @@ function documentsWith(store: MemoryDocumentStore) {
   return new DocumentService(store);
 }
 
-// The machine reason a refused call carries on `cause.reason`.
-async function refusalOf(call: Promise<unknown>): Promise<{ code: string; reason: unknown }> {
+// The machine reason a refused call carries, read the way the router error formatter reads it.
+async function refusalFrom(call: Promise<unknown>): Promise<{ code: string; reason: unknown }> {
   try {
     await call;
   } catch (error) {
-    const refusal = error as { code: string; cause?: { reason?: unknown } };
-    return { code: refusal.code, reason: refusal.cause?.reason };
+    return { code: (error as { code: string }).code, reason: refusalOf(error)?.reason };
   }
   throw new Error("Expected the call to be refused");
 }
@@ -145,7 +145,7 @@ describe("DocumentService.ensureBillVersionDocument", () => {
     ]);
     const store = new MemoryDocumentStore();
 
-    const refusal = await refusalOf(documentsWith(store).ensureBillVersionDocument(version.id));
+    const refusal = await refusalFrom(documentsWith(store).ensureBillVersionDocument(version.id));
 
     expect(refusal).toEqual({ code: "BAD_REQUEST", reason: "irn_missing" });
     expect(await pdfKeyOf(version.id)).toBeNull();
@@ -249,7 +249,7 @@ describe("DocumentService.ensureBillVersionDocument", () => {
   });
 
   it("refuses an unknown Bill version", async () => {
-    const refusal = await refusalOf(
+    const refusal = await refusalFrom(
       documentsWith(new MemoryDocumentStore()).ensureBillVersionDocument(
         "00000000-0000-4000-8000-000000000000",
       ),
@@ -307,7 +307,7 @@ describe("DocumentService.replaceBillDocumentAfterIrnCorrect", () => {
       { variety: paneer, quantity: 1, routePricePaise: 9_000 },
     ]);
 
-    const refusal = await refusalOf(
+    const refusal = await refusalFrom(
       documentsWith(new MemoryDocumentStore()).replaceBillDocumentAfterIrnCorrect(bill.id),
     );
 
@@ -479,21 +479,21 @@ describe("DocumentService.drawPaymentReceipt", () => {
     const store = new MemoryDocumentStore();
     const documents = documentsWith(store);
 
-    const adjustedRefusal = await refusalOf(
+    const adjustedRefusal = await refusalFrom(
       documents.drawPaymentReceipt({
         paymentId: payment.id,
         postedPaymentEventId: adjusted.id,
         balanceAfterPaise: 0,
       }),
     );
-    const otherRefusal = await refusalOf(
+    const otherRefusal = await refusalFrom(
       documents.drawPaymentReceipt({
         paymentId: payment.id,
         postedPaymentEventId: otherPosted.id,
         balanceAfterPaise: 0,
       }),
     );
-    const zeroRefusal = await refusalOf(
+    const zeroRefusal = await refusalFrom(
       documents.drawPaymentReceipt({
         paymentId: zeroPayment.id,
         postedPaymentEventId: zeroPosted.id,
@@ -538,7 +538,7 @@ describe("DocumentService.drawDraftBill", () => {
       { variety: paneer, quantity: 1, routePricePaise: 9_000 },
     ]);
 
-    const refusal = await refusalOf(
+    const refusal = await refusalFrom(
       documentsWith(new MemoryDocumentStore()).drawDraftBill(bill.id),
     );
 
@@ -593,7 +593,7 @@ describe("DocumentService signed QR image", () => {
     const oversized = new Uint8Array(1024 * 1024 + 1);
     oversized.set(PNG_BYTES);
 
-    const gif = await refusalOf(
+    const gif = await refusalFrom(
       documents.putSignedQrImage({
         billId: bill.id,
         irnRecordedAt: new Date(),
@@ -601,7 +601,7 @@ describe("DocumentService signed QR image", () => {
         bytes: GIF_BYTES,
       }),
     );
-    const gifNamedPng = await refusalOf(
+    const gifNamedPng = await refusalFrom(
       documents.putSignedQrImage({
         billId: bill.id,
         irnRecordedAt: new Date(),
@@ -609,7 +609,7 @@ describe("DocumentService signed QR image", () => {
         bytes: GIF_BYTES,
       }),
     );
-    const large = await refusalOf(
+    const large = await refusalFrom(
       documents.putSignedQrImage({
         billId: bill.id,
         irnRecordedAt: new Date(),
@@ -644,10 +644,10 @@ describe("DocumentService signed QR image", () => {
     await db.update(billsTable).set({ signedQrImageKey: key }).where(eq(billsTable.id, bill.id));
 
     const link = await documents.getSignedQrImageLink(admin.id, bill.id);
-    const salesmanRefusal = await refusalOf(
+    const salesmanRefusal = await refusalFrom(
       documents.getSignedQrImageLink(salesman.profile.id, bill.id),
     );
-    const missingRefusal = await refusalOf(
+    const missingRefusal = await refusalFrom(
       documents.getSignedQrImageLink(admin.id, billWithoutImage.id),
     );
 
@@ -725,7 +725,7 @@ describe("DocumentService.getDownloadLink", () => {
 
     const oldVersionLink = await documents.getDownloadLink(admin.id, { billVersionId: v1.id });
     const noteLink = await documents.getDownloadLink(admin.id, { noteId: note.id });
-    const salesmanRefusal = await refusalOf(
+    const salesmanRefusal = await refusalFrom(
       documents.getDownloadLink(salesman.profile.id, { billVersionId: v1.id }),
     );
 
@@ -752,6 +752,6 @@ describe("DocumentService.getDownloadLink", () => {
     });
 
     await expect(call).rejects.toThrow(/Draft PDF/);
-    expect(await refusalOf(call)).toEqual({ code: "BAD_REQUEST", reason: "irn_missing" });
+    expect(await refusalFrom(call)).toEqual({ code: "BAD_REQUEST", reason: "irn_missing" });
   });
 });

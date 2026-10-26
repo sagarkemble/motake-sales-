@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import { createContext } from "./context";
 import { authService, salesmanService } from "./services";
 import { getAuthentication } from "./utils/cookie";
-import { forbidden, unauthorized } from "@repo/services/errors";
+import { forbidden, refusalOf, unauthorized } from "@repo/services/errors";
 
 export const tRPCContext = initTRPC
   .meta<OpenApiMeta>()
@@ -24,6 +24,8 @@ export const tRPCContext = initTRPC
               path: issue.path.join("."),
               message: issue.message,
             })) ?? null,
+          // Refused calls: machine-readable reason and details for the app to branch on.
+          refusal: refusalOf(error),
         },
       };
     },
