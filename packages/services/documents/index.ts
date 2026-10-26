@@ -91,7 +91,8 @@ function defaultDocumentStore(): DocumentStore {
   });
 }
 
-// react-pdf is ESM-only; loading the drawing half on first use keeps the CommonJS API booting.
+// react-pdf is ESM-only. @repo/pdf is "type": "module" so the drawing half loads as ESM, and this
+// lazy import keeps the CommonJS API booting: a static import makes tsx require react-pdf and fail.
 async function draw(paper: PaperFor): Promise<Uint8Array> {
   const { renderDocument } = await import("@repo/pdf/render");
   return renderDocument(paper.layout, paper.values as never);
