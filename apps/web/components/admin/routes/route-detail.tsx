@@ -119,11 +119,47 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-4">
-        {isHidden && (
-          <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
-            {tx("admin.routes.hidden")}
-          </Badge>
-        )}
+        <div className="flex items-start justify-between gap-3">
+          {isHidden ? (
+            <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
+              {tx("admin.routes.hidden")}
+            </Badge>
+          ) : (
+            <span />
+          )}
+          <div className="flex max-w-64 flex-col items-end gap-1 text-right">
+            {isHidden ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                disabled={isShowingRoute}
+                onClick={() => void handleShow()}
+              >
+                {tx("admin.routes.showAgain", { name: route.name })}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={isHidingRoute}
+                  onClick={() => void handleHide()}
+                >
+                  {tx("admin.routes.hide", { name: route.name })}
+                </Button>
+                {hideRefusal ? (
+                  <p role="alert" className="text-xs text-destructive">
+                    {hideRefusal}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{tx("admin.routes.hideHint")}</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`route-name-${route.id}`}>{tx("admin.routes.name")}</Label>
           <Input
@@ -189,39 +225,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
           ))
         )}
       </section>
-
-      <footer className="flex flex-col items-start gap-2 border-t pt-4">
-        {isHidden ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            disabled={isShowingRoute}
-            onClick={() => void handleShow()}
-          >
-            {tx("admin.routes.showAgain", { name: route.name })}
-          </Button>
-        ) : (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full"
-              disabled={isHidingRoute}
-              onClick={() => void handleHide()}
-            >
-              {tx("admin.routes.hide", { name: route.name })}
-            </Button>
-            {hideRefusal ? (
-              <p role="alert" className="text-xs text-destructive">
-                {hideRefusal}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">{tx("admin.routes.hideHint")}</p>
-            )}
-          </>
-        )}
-      </footer>
     </div>
   );
 }
