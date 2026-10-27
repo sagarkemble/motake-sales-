@@ -4,11 +4,7 @@ import { toast } from "sonner";
 import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
 import { useTranslate } from "~/hooks/use-translate";
 import type { PaymentContext } from "~/lib/checkout-payment";
-import {
-  checkoutRefusalOf,
-  isOutcomeUnknown,
-  type CheckoutRefusal,
-} from "~/lib/checkout-refusal";
+import { checkoutRefusalOf, isOutcomeUnknown, type CheckoutRefusal } from "~/lib/checkout-refusal";
 import { getErrorMessage } from "~/lib/get-error-message";
 
 export interface BalanceChange {

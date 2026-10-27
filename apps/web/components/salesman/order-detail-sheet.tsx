@@ -104,7 +104,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                 <CardDetailSkeleton />
               ) : !orderDetail ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">{tx("salesman.orders.sheet.loadFailed")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {tx("salesman.orders.sheet.loadFailed")}
+                  </p>
                   <Button type="button" variant="outline" onClick={() => refetchOrderDetail()}>
                     {tx("common.actions.tryAgain")}
                   </Button>
@@ -194,14 +196,18 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.placedAt")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tx("salesman.orders.sheet.placedAt")}
+                      </p>
                       <p className="font-medium">
                         {formatDate(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
                       </p>
                     </div>
                     {orderDetail.order.scheduledDate && (
                       <div>
-                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.scheduledFor")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.scheduledFor")}
+                        </p>
                         <p className="font-medium">
                           {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
                         </p>
@@ -209,7 +215,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.fulfilledAt")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.fulfilledAt")}
+                        </p>
                         <p className="font-medium">
                           {formatDate(
                             new Date(orderDetail.order.fulfilledAt),
@@ -220,7 +228,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.fulfilledBy")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.fulfilledBy")}
+                        </p>
                         <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
                       </div>
                     )}
@@ -241,7 +251,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
                   {orderDetail.order.notes && (
                     <div>
-                      <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.notes")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tx("salesman.orders.sheet.notes")}
+                      </p>
                       <p className="text-sm">{orderDetail.order.notes}</p>
                     </div>
                   )}
