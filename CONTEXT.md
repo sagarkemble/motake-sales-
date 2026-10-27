@@ -38,6 +38,10 @@ The single GatePass a salesman is currently selling against; its route decides w
 One outlet on exactly one route; the record a salesman bills. A real-world owner with outlets on two routes is two Customers.
 *Avoid*: Shop, outlet, client
 
+**Deactivated Customer**:
+A Customer an Admin has switched off. Its Balance, Ledger and papers stay readable and its profile can still be updated (including Move to Route); every other write (Book Now, Pre-order, fulfil, Payment, Bill, Note, Opening balance) is refused. Deactivation is refused while the Customer has an open Pre-order; the Pre-order must be fulfilled or cancelled first.
+*Avoid*: Deleted Customer, archived Customer
+
 **Owner**:
 The person behind one or more Customers. Not a record; carries no balance of its own.
 
