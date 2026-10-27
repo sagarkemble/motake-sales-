@@ -2,18 +2,7 @@
 
 import { PackageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Drawer,
@@ -26,14 +15,18 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderBillLines } from "~/components/salesman/order-bill-lines";
+import {
+  FulfilPreOrderDrawer,
+  type FulfilTarget,
+} from "~/components/salesman/orders/fulfil-pre-order-drawer";
 import { useOrderBill } from "~/hooks/salesman/use-order-bill";
-import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
+import { isFulfilDue, isPreorderPending } from "~/lib/is-preorder-pending";
 import { cn } from "~/lib/utils";
 
 interface OrderDetailSheetProps {
@@ -45,20 +38,12 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
-  const [isConfirmingFulfil, setIsConfirmingFulfil] = useState(false);
+  const [fulfilTarget, setFulfilTarget] = useState<FulfilTarget | null>(null);
   const [isShowingBillLines, setIsShowingBillLines] = useState(false);
 
-  const {
-    orderDetail,
-    isOrderDetailLoading,
-    refetchOrderDetail,
-    fulfillOrderAsync,
-    isFulfillingOrder,
-  } = useOrders({
+  const { orderDetail, isOrderDetailLoading, refetchOrderDetail } = useOrders({
     detailOrderId: orderId ?? undefined,
   });
-  // A retried fulfil keeps its key, so a lost response cannot bill twice.
-  const { keyFor, clearKey } = useIdempotencyKeys();
   // The full Bill loads only once the salesman asks for its lines.
   const { orderBill, isOrderBillLoading, isOrderBillError, refetchOrderBill } = useOrderBill({
     orderId: orderId ?? undefined,
@@ -72,31 +57,23 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
   const isCancelled = orderDetail?.order.status === "cancelled";
 
+  // Only a due Pre-order: an upcoming one stays read-only, as on Route Pre-orders.
   const isFulfillable =
     orderDetail?.order.type === "pre_order" &&
-    orderDetail.order.status !== "fulfilled" &&
-    orderDetail.order.status !== "cancelled";
+    isPreorderPending(orderDetail.order.status) &&
+    isFulfilDue(orderDetail.order.scheduledDate);
 
-  async function handleConfirmFulfil() {
-    if (!orderId) return;
-    try {
-      // No Payment step yet (Spec F UI): fulfil takes ₹0, so the whole Bill stays Pending.
-      await fulfillOrderAsync({
-        id: orderId,
-        idempotencyKey: keyFor(orderId),
-        payment: { mode: "cash", receivedPaise: 0 },
-      });
-      clearKey(orderId);
-      toast.success(tx("salesman.orders.fulfilSuccess"));
-    } catch (fulfilOrderError) {
-      const errorMessage =
-        fulfilOrderError instanceof Error
-          ? fulfilOrderError.message
-          : tx("salesman.orders.fulfilFailed");
-      toast.error(errorMessage);
-    } finally {
-      setIsConfirmingFulfil(false);
-    }
+  // Fulfil opens the same drawer as Route Pre-orders: locked lines, Payment, success.
+  function openFulfil() {
+    if (!orderDetail?.order.scheduledDate) return;
+    setFulfilTarget({
+      orderId: orderDetail.order.id,
+      shopName: orderDetail.customer.shopName,
+      scheduledDate: orderDetail.order.scheduledDate,
+      placedAt: new Date(orderDetail.order.placedAt),
+      description: tx("salesman.orders.qty", { count: orderDetail.totalQuantity }),
+    });
+    onOpenChange(false);
   }
 
   return (
@@ -115,7 +92,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   <OrderStatusBadge status={orderDetail.order.status} />
                 </>
               ) : (
-                "Order details"
+                tx("salesman.orders.sheet.title")
               )}
             </DrawerTitle>
           </DrawerHeader>
@@ -127,7 +104,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                 <CardDetailSkeleton />
               ) : !orderDetail ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">Could not load order details</p>
+                  <p className="text-sm text-muted-foreground">
+                    {tx("salesman.orders.sheet.loadFailed")}
+                  </p>
                   <Button type="button" variant="outline" onClick={() => refetchOrderDetail()}>
                     {tx("common.actions.tryAgain")}
                   </Button>
@@ -217,14 +196,18 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Placed at</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tx("salesman.orders.sheet.placedAt")}
+                      </p>
                       <p className="font-medium">
                         {formatDate(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
                       </p>
                     </div>
                     {orderDetail.order.scheduledDate && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Scheduled for</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.scheduledFor")}
+                        </p>
                         <p className="font-medium">
                           {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
                         </p>
@@ -232,7 +215,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Fulfilled at</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.fulfilledAt")}
+                        </p>
                         <p className="font-medium">
                           {formatDate(
                             new Date(orderDetail.order.fulfilledAt),
@@ -243,7 +228,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Fulfilled by</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx("salesman.orders.sheet.fulfilledBy")}
+                        </p>
                         <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
                       </div>
                     )}
@@ -264,7 +251,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
                   {orderDetail.order.notes && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Notes</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tx("salesman.orders.sheet.notes")}
+                      </p>
                       <p className="text-sm">{orderDetail.order.notes}</p>
                     </div>
                   )}
@@ -277,17 +266,19 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                           : tx("salesman.orders.sheet.items", { count: orderDetail.totalQuantity })}
                       </p>
                       {orderDetail.bill && (
-                        <button
+                        <Button
                           type="button"
+                          variant="link"
+                          size="sm"
                           onClick={() => setIsShowingBillLines((isShowing) => !isShowing)}
-                          className="text-xs font-medium text-brand underline-offset-2 hover:underline"
+                          className="h-auto p-0 text-xs font-medium text-brand"
                         >
                           {tx(
                             isShowingBillLines
                               ? "salesman.orders.sheet.showItems"
                               : "salesman.orders.sheet.showBillLines",
                           )}
-                        </button>
+                        </Button>
                       )}
                     </div>
 
@@ -356,33 +347,23 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
             <DrawerFooter>
               <Button
                 type="button"
-                disabled={isFulfillingOrder}
-                onClick={() => setIsConfirmingFulfil(true)}
+                onClick={openFulfil}
                 className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
               >
-                {isFulfillingOrder ? "Marking as fulfilled..." : "Mark as fulfilled"}
+                {tx("salesman.orders.route.fulfil")}
               </Button>
             </DrawerFooter>
           )}
         </DrawerContent>
       </Drawer>
 
-      <AlertDialog open={isConfirmingFulfil} onOpenChange={setIsConfirmingFulfil}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark this order as fulfilled?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This confirms the customer has received the order. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isFulfillingOrder}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={isFulfillingOrder} onClick={handleConfirmFulfil}>
-              {isFulfillingOrder ? "Confirming..." : "Confirm"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {fulfilTarget && (
+        <FulfilPreOrderDrawer
+          key={fulfilTarget.orderId}
+          target={fulfilTarget}
+          onClose={() => setFulfilTarget(null)}
+        />
+      )}
     </>
   );
 }

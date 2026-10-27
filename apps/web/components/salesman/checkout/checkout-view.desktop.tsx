@@ -9,6 +9,8 @@ interface CheckoutViewDesktopProps {
   isNextDisabled: boolean;
   isNextLoading: boolean;
   nextButtonLabel: string;
+  // What blocks the primary button, shown above it.
+  hint?: string | null;
   onBack: () => void;
   onNext: () => void;
 }
@@ -19,6 +21,7 @@ export function CheckoutViewDesktop({
   isNextDisabled,
   isNextLoading,
   nextButtonLabel,
+  hint,
   onBack,
   onNext,
 }: CheckoutViewDesktopProps) {
@@ -28,6 +31,7 @@ export function CheckoutViewDesktop({
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-8">
       <div className="rounded-2xl border bg-card p-6">{children}</div>
 
+      {hint && <p className="-mb-4 text-right text-xs text-muted-foreground">{hint}</p>}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {showBackButton && (
           <Button

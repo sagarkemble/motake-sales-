@@ -11,6 +11,12 @@ import {
   SalesmanFilterSelect,
   orUndefined,
 } from "~/components/admin/orders/filter-fields";
+import {
+  FulfilPreOrderSheet,
+  FulfilRowButton,
+  isOpenPreorder,
+} from "~/components/admin/orders/fulfil-pre-order-sheet";
+import { isFulfilDue } from "~/lib/is-preorder-pending";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { SalesmanLabel } from "~/components/admin/orders/salesman-label";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
@@ -96,6 +102,9 @@ export function OrderList({ customerId }: OrderListProps) {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  // A snapshot, not an id: after fulfil (or a refusal) the list refetches and a Status filter may
+  // drop the row, but the sheet must stay to show the success or the refusal.
+  const [fulfilRow, setFulfilRow] = useState<OrderListRow | null>(null);
   const debouncedPhone = useDebouncedValue(filters.customerPhone.trim(), 350);
   const pageSize = 20;
   const showFilters = !customerId;
@@ -120,6 +129,12 @@ export function OrderList({ customerId }: OrderListProps) {
   }
 
   const activeCount = countActive(filters);
+
+  // An open Pre-order opens the Fulfil sheet; any other order opens its detail.
+  function openRow(row: OrderListRow) {
+    if (isOpenPreorder(row)) setFulfilRow(row);
+    else setSelectedOrderId(row.id);
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -214,10 +229,10 @@ export function OrderList({ customerId }: OrderListProps) {
         </p>
       ) : (
         <>
-          <OrderTable rows={ordersPage.items} onSelect={setSelectedOrderId} />
+          <OrderTable rows={ordersPage.items} onSelect={openRow} />
           <div className="flex flex-col gap-2 md:hidden">
             {ordersPage.items.map((row) => (
-              <OrderCard key={row.id} row={row} onSelect={setSelectedOrderId} />
+              <OrderCard key={row.id} row={row} onSelect={openRow} />
             ))}
           </div>
         </>
@@ -229,6 +244,18 @@ export function OrderList({ customerId }: OrderListProps) {
         orderId={selectedOrderId}
         onOpenChange={(open) => !open && setSelectedOrderId(null)}
       />
+
+      {fulfilRow && (
+        <FulfilPreOrderSheet
+          key={fulfilRow.id}
+          row={fulfilRow}
+          onClose={() => setFulfilRow(null)}
+          onViewDetails={() => {
+            setSelectedOrderId(fulfilRow.id);
+            setFulfilRow(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -242,10 +269,24 @@ function OrderTypeBadge({ type }: { type: OrderType }) {
   );
 }
 
-function BillCell({ row }: { row: OrderListRow }) {
+function BillCell({ row, onFulfil }: { row: OrderListRow; onFulfil?: () => void }) {
   const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
 
+  if (isOpenPreorder(row)) {
+    if (onFulfil) return <FulfilRowButton row={row} onFulfil={onFulfil} />;
+    // Inside a tappable card: the card opens the Fulfil sheet.
+    return (
+      <span className="text-xs font-medium text-brand">
+        {isFulfilDue(row.scheduledDate)
+          ? tx("admin.orders.fulfil.button")
+          : tx("admin.orders.fulfil.fromDate", {
+              date: formatDate(row.scheduledDate ?? "", "d MMM"),
+            })}
+      </span>
+    );
+  }
   if (!row.bill) {
     return <span className="text-xs text-muted-foreground">{tx("admin.orders.noBillShort")}</span>;
   }
@@ -280,7 +321,13 @@ function PlacedCell({ row }: { row: OrderListRow }) {
   );
 }
 
-function OrderTable({ rows, onSelect }: { rows: OrderListRow[]; onSelect: (id: string) => void }) {
+function OrderTable({
+  rows,
+  onSelect,
+}: {
+  rows: OrderListRow[];
+  onSelect: (row: OrderListRow) => void;
+}) {
   const tx = useTranslate();
 
   return (
@@ -299,7 +346,7 @@ function OrderTable({ rows, onSelect }: { rows: OrderListRow[]; onSelect: (id: s
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id} onClick={() => onSelect(row.id)} className="cursor-pointer">
+            <TableRow key={row.id} onClick={() => onSelect(row)} className="cursor-pointer">
               <TableCell>
                 <div className="flex items-center gap-2">
                   <ShopPhotoThumbnail
@@ -336,7 +383,7 @@ function OrderTable({ rows, onSelect }: { rows: OrderListRow[]; onSelect: (id: s
                 <PlacedCell row={row} />
               </TableCell>
               <TableCell className="text-right">
-                <BillCell row={row} />
+                <BillCell row={row} onFulfil={() => onSelect(row)} />
               </TableCell>
             </TableRow>
           ))}
@@ -346,14 +393,20 @@ function OrderTable({ rows, onSelect }: { rows: OrderListRow[]; onSelect: (id: s
   );
 }
 
-function OrderCard({ row, onSelect }: { row: OrderListRow; onSelect: (id: string) => void }) {
+function OrderCard({
+  row,
+  onSelect,
+}: {
+  row: OrderListRow;
+  onSelect: (row: OrderListRow) => void;
+}) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(row.id)}
+      onClick={() => onSelect(row)}
       className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
     >
       <div className="flex items-center justify-between gap-2">

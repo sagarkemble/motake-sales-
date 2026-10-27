@@ -23,6 +23,10 @@ interface CartContextValue {
   setQuantityForVariety: (line: Omit<CartLine, "quantity">, quantity: number) => void;
   removeLine: (varietyId: string) => void;
   clearCart: () => void;
+  // The Customer chosen from Route Customers ("Start an order for this shop"); checkout preselects
+  // them. Kept for this session only.
+  orderForCustomerId: string | null;
+  setOrderForCustomerId: (customerId: string | null) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -30,6 +34,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartLinesByVarietyId, setCartLinesByVarietyId] = useState<Record<string, CartLine>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [orderForCustomerId, setOrderForCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -86,6 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   function clearCart() {
     setCartLinesByVarietyId({});
+    setOrderForCustomerId(null);
     try {
       window.localStorage.removeItem(CART_LOCAL_STORAGE_KEY);
     } catch {}
@@ -100,6 +106,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setQuantityForVariety,
         removeLine,
         clearCart,
+        orderForCustomerId,
+        setOrderForCustomerId,
       }}
     >
       {children}
