@@ -776,7 +776,6 @@
         "hint": "Select the type of order.",
         "orderLabel": "Order",
         "deliverNowHint": "Deliver now and collect payment from customer.",
-        "preOrderTomorrow": "Pre-order (tomorrow)",
         "preOrderHint": "Deliver on {date} at today's price. No Bill and no stock used now.",
         "preOrder": "Pre-order",
         "deliveryDate": "Delivery date",
@@ -787,7 +786,6 @@
       "customer": {
         "title": "Customer details",
         "hint": "Select an existing customer or enter new customer details.",
-        "openScanner": "Open payment scanner",
         "searchPlaceholder": "Search name, phone or address",
         "clearSelected": "Clear selected customer",
         "noMatch": "No customer matches \"{term}\"",
@@ -865,8 +863,6 @@
         "preOrdersPending": "No pre-orders are pending right now.",
         "preOrdersFulfilled": "No pre-orders have been fulfilled yet."
       },
-      "fulfilSuccess": "Order marked as fulfilled",
-      "fulfilFailed": "Could not fulfil order",
       "qty": "{count} qty",
       "row": {
         "noBill": "No Bill",
