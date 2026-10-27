@@ -140,6 +140,8 @@ class ProductService {
     actorProfileId: string,
   ): Promise<SelectProduct | undefined> {
     return this.changeProductState(productId, actorProfileId, "deleted", async (transaction) => {
+      const existingProduct = await getProductById(productId, transaction);
+      if (!existingProduct) return undefined;
       await updateProduct(productId, { status: "inactive" }, transaction);
       return hardArchiveProduct(productId, transaction);
     });
