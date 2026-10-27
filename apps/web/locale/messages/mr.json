@@ -883,7 +883,14 @@
         "billLoadFailed": "बिल लोड करता आले नाही",
         "noBillYet": "अद्याप बिल नाही.",
         "placedBy": "ऑर्डर देणारे",
-        "cancelledAt": "रद्द झाल्याची वेळ"
+        "cancelledAt": "रद्द झाल्याची वेळ",
+        "title": "ऑर्डरचे तपशील",
+        "loadFailed": "ऑर्डरचे तपशील लोड करता आले नाहीत",
+        "placedAt": "ऑर्डर दिल्याची वेळ",
+        "scheduledFor": "नियोजित दिवस",
+        "fulfilledAt": "पूर्ण झाल्याची वेळ",
+        "fulfilledBy": "पूर्ण करणारे",
+        "notes": "नोंदी"
       },
       "bill": {
         "taxInvoice": "टॅक्स इनव्हॉइस",

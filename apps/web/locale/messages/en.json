@@ -883,7 +883,14 @@
         "billLoadFailed": "Could not load the Bill",
         "noBillYet": "No Bill yet.",
         "placedBy": "Placed by",
-        "cancelledAt": "Cancelled at"
+        "cancelledAt": "Cancelled at",
+        "title": "Order details",
+        "loadFailed": "Could not load order details",
+        "placedAt": "Placed at",
+        "scheduledFor": "Scheduled for",
+        "fulfilledAt": "Fulfilled at",
+        "fulfilledBy": "Fulfilled by",
+        "notes": "Notes"
       },
       "bill": {
         "taxInvoice": "Tax Invoice",

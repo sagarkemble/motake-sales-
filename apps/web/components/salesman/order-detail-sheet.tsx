@@ -26,6 +26,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
+import { isFulfilDue, isPreorderPending } from "~/lib/is-preorder-pending";
 import { cn } from "~/lib/utils";
 
 interface OrderDetailSheetProps {
@@ -56,10 +57,11 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
   const isCancelled = orderDetail?.order.status === "cancelled";
 
+  // Only a due Pre-order: an upcoming one stays read-only, as on Route Pre-orders.
   const isFulfillable =
     orderDetail?.order.type === "pre_order" &&
-    orderDetail.order.status !== "fulfilled" &&
-    orderDetail.order.status !== "cancelled";
+    isPreorderPending(orderDetail.order.status) &&
+    isFulfilDue(orderDetail.order.scheduledDate);
 
   // Fulfil opens the same drawer as Route Pre-orders: locked lines, Payment, success.
   function openFulfil() {
@@ -90,7 +92,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   <OrderStatusBadge status={orderDetail.order.status} />
                 </>
               ) : (
-                "Order details"
+                tx("salesman.orders.sheet.title")
               )}
             </DrawerTitle>
           </DrawerHeader>
@@ -102,7 +104,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                 <CardDetailSkeleton />
               ) : !orderDetail ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">Could not load order details</p>
+                  <p className="text-sm text-muted-foreground">{tx("salesman.orders.sheet.loadFailed")}</p>
                   <Button type="button" variant="outline" onClick={() => refetchOrderDetail()}>
                     {tx("common.actions.tryAgain")}
                   </Button>
@@ -192,14 +194,14 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Placed at</p>
+                      <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.placedAt")}</p>
                       <p className="font-medium">
                         {formatDate(new Date(orderDetail.order.placedAt), "d MMM yyyy, h:mm a")}
                       </p>
                     </div>
                     {orderDetail.order.scheduledDate && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Scheduled for</p>
+                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.scheduledFor")}</p>
                         <p className="font-medium">
                           {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
                         </p>
@@ -207,7 +209,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Fulfilled at</p>
+                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.fulfilledAt")}</p>
                         <p className="font-medium">
                           {formatDate(
                             new Date(orderDetail.order.fulfilledAt),
@@ -218,7 +220,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     )}
                     {orderDetail.order.fulfilledAt && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Fulfilled by</p>
+                        <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.fulfilledBy")}</p>
                         <p className="font-medium">{orderDetail.fulfilledBySalesmanName ?? "—"}</p>
                       </div>
                     )}
@@ -239,7 +241,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
                   {orderDetail.order.notes && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Notes</p>
+                      <p className="text-xs text-muted-foreground">{tx("salesman.orders.sheet.notes")}</p>
                       <p className="text-sm">{orderDetail.order.notes}</p>
                     </div>
                   )}
@@ -252,17 +254,19 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                           : tx("salesman.orders.sheet.items", { count: orderDetail.totalQuantity })}
                       </p>
                       {orderDetail.bill && (
-                        <button
+                        <Button
                           type="button"
+                          variant="link"
+                          size="sm"
                           onClick={() => setIsShowingBillLines((isShowing) => !isShowing)}
-                          className="text-xs font-medium text-brand underline-offset-2 hover:underline"
+                          className="h-auto p-0 text-xs font-medium text-brand"
                         >
                           {tx(
                             isShowingBillLines
                               ? "salesman.orders.sheet.showItems"
                               : "salesman.orders.sheet.showBillLines",
                           )}
-                        </button>
+                        </Button>
                       )}
                     </div>
 

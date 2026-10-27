@@ -14,9 +14,9 @@ import {
 import {
   FulfilPreOrderSheet,
   FulfilRowButton,
-  isFulfilDue,
   isOpenPreorder,
 } from "~/components/admin/orders/fulfil-pre-order-sheet";
+import { isFulfilDue } from "~/lib/is-preorder-pending";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { SalesmanLabel } from "~/components/admin/orders/salesman-label";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";

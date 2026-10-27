@@ -1,6 +1,6 @@
 "use client";
 
-import { businessDateOf, type RouterOutputs } from "@repo/trpc/client";
+import type { RouterOutputs } from "@repo/trpc/client";
 import { BuildingIcon, FileTextIcon } from "lucide-react";
 
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
@@ -19,18 +19,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip
 import { useFulfilPreOrder } from "~/hooks/shared/use-fulfil-pre-order";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useTranslate } from "~/hooks/use-translate";
-import { isPreorderPending } from "~/lib/is-preorder-pending";
+import { isFulfilDue, isPreorderPending } from "~/lib/is-preorder-pending";
 
 type OrderListRow = RouterOutputs["orders"]["list"]["data"]["items"][number];
 
 // An open Pre-order: not fulfilled and not cancelled.
 export function isOpenPreorder(row: OrderListRow) {
   return row.type === "pre_order" && Boolean(row.scheduledDate) && isPreorderPending(row.status);
-}
-
-// Admin may fulfil on or after the scheduled date (Asia/Kolkata).
-export function isFulfilDue(scheduledDate: string | null) {
-  return Boolean(scheduledDate) && (scheduledDate ?? "") <= businessDateOf(new Date());
 }
 
 /** The row's Fulfil button; before the scheduled date it is disabled with the date. */
