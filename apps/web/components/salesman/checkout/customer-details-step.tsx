@@ -8,7 +8,6 @@ import {
   InfoIcon,
   MapPinIcon,
   PhoneIcon,
-  QrCodeIcon,
   RouteIcon,
   SearchIcon,
   SearchXIcon,
@@ -23,7 +22,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Skeleton } from "~/components/ui/skeleton";
 import { CustomerDetailDrawer } from "~/components/salesman/checkout/customer-detail-drawer";
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
-import { PaymentScannerDialog } from "~/components/salesman/checkout/payment-scanner-dialog";
+import { BalanceChip } from "~/components/shared/checkout/balance-text";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
@@ -69,7 +68,6 @@ export function CustomerDetailsStep({
   totalCartQuantity,
 }: CustomerDetailsStepProps) {
   const tx = useTranslate();
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [openedCustomerId, setOpenedCustomerId] = useState<string | null>(null);
 
@@ -89,19 +87,6 @@ export function CustomerDetailsStep({
             : tx("salesman.checkout.customer.hint")}
         </p>
       </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        className="group h-14 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:border-brand/50 hover:bg-accent/70"
-        onClick={() => setIsScannerOpen(true)}
-      >
-        <QrCodeIcon className="size-6 transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] group-hover:scale-110 group-hover:rotate-6" />
-        {tx("salesman.checkout.customer.openScanner")}
-      </Button>
-
-      <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
 
       {isActiveGatepassLoading ? (
         <Skeleton className="h-24 rounded-2xl" />
@@ -124,7 +109,10 @@ export function CustomerDetailsStep({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{selectedCustomer.shopName}</p>
             <p className="truncate text-xs text-muted-foreground">{selectedCustomer.address}</p>
-            <RouteChip routeName={selectedCustomer.routeName} />
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <RouteChip routeName={selectedCustomer.routeName} />
+              <BalanceChip balancePaise={selectedCustomer.balancePaise} />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <Button
@@ -230,6 +218,7 @@ export function CustomerDetailsStep({
                         </p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <RouteChip routeName={customer.routeName} />
+                          <BalanceChip balancePaise={customer.balancePaise} />
                           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                             <PhoneIcon className="size-3" />
                             {customer.phone}

@@ -4,10 +4,13 @@ import { CartEmptyState } from "~/components/salesman/cart/cart-empty-state";
 import { CheckoutViewDesktop } from "~/components/salesman/checkout/checkout-view.desktop";
 import { CheckoutViewMobile } from "~/components/salesman/checkout/checkout-view.mobile";
 import { CustomerDetailsStep } from "~/components/salesman/checkout/customer-details-step";
-import { OrderSuccessStep } from "~/components/salesman/checkout/order-success-step";
 import { OrderTypeStep } from "~/components/salesman/checkout/order-type-step";
+import { PaymentStep } from "~/components/salesman/checkout/payment-step";
 import { StepIndicator } from "~/components/salesman/checkout/step-indicator";
 import { VerifyProductsStep } from "~/components/salesman/checkout/verify-products-step";
+import { BalanceChangedDialog } from "~/components/shared/checkout/balance-changed-dialog";
+import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
+import { RefusalAlert } from "~/components/shared/checkout/refusal-alert";
 import { useCheckoutWizard } from "~/hooks/salesman/use-checkout-wizard";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -15,12 +18,18 @@ export default function SalesmanCheckoutPage() {
   const tx = useTranslate();
   const wizard = useCheckoutWizard();
 
-  if (wizard.placedOrder) {
+  if (wizard.result) {
     return (
-      <OrderSuccessStep
-        placedOrder={wizard.placedOrder}
-        onViewOrders={wizard.goToOrdersList}
-        onBackToHome={wizard.goToHome}
+      <CheckoutSuccess
+        input={wizard.result}
+        actions={[
+          {
+            label: tx("salesman.checkout.success.viewOrders"),
+            onClick: wizard.goToOrdersList,
+            primary: true,
+          },
+          { label: tx("salesman.checkout.success.backHome"), onClick: wizard.goToHome },
+        ]}
       />
     );
   }
@@ -29,23 +38,32 @@ export default function SalesmanCheckoutPage() {
     return <CartEmptyState />;
   }
 
+  const shopName = wizard.selectedCustomer?.shopName ?? "";
+
   const stepContent =
-    wizard.currentStepNumber === 1 ? (
+    wizard.currentStep === "cart" ? (
       <VerifyProductsStep
         cartLines={wizard.cartLines}
-        totalCartQuantity={wizard.totalCartQuantity}
+        routeName={wizard.activeGatepassRoute?.name ?? null}
+        quote={wizard.quote}
+        isQuoteLoading={wizard.isQuoteLoading}
+        quoteRefusal={wizard.quoteRefusal}
+        hasQuoteError={Boolean(wizard.quoteError)}
+        onRetryQuote={() => void wizard.refetchQuote()}
         onQuantityChange={wizard.onCartQuantityChange}
         onRemove={wizard.onCartLineRemove}
       />
-    ) : wizard.currentStepNumber === 2 ? (
+    ) : wizard.currentStep === "type" ? (
       <OrderTypeStep
         orderType={wizard.orderType}
         onOrderTypeChange={wizard.setOrderType}
         isBookNowAllowed={wizard.isBookNowAllowed}
         bookNowBlockReasons={wizard.bookNowBlockReasons}
-        nextDayDate={wizard.nextDayDate}
+        scheduledDate={wizard.scheduledDate}
+        onScheduledDateChange={wizard.setScheduledDate}
+        earliestDate={wizard.tomorrowDateKey}
       />
-    ) : (
+    ) : wizard.currentStep === "customer" ? (
       <CustomerDetailsStep
         activeGatepassRoute={wizard.activeGatepassRoute}
         isActiveGatepassLoading={wizard.isMyGatepassLoading}
@@ -66,55 +84,78 @@ export default function SalesmanCheckoutPage() {
         onNewCustomerFormChange={wizard.updateNewCustomerForm}
         totalCartQuantity={wizard.totalCartQuantity}
       />
+    ) : (
+      <PaymentStep
+        shopName={shopName}
+        paymentContext={wizard.paymentContext}
+        paymentDraft={wizard.paymentDraft}
+        onPaymentDraftChange={wizard.setPaymentDraft}
+        isPlacing={wizard.isPlacingOrder}
+      />
     );
 
-  const isLastStep = wizard.currentStepNumber === 3;
-  const nextButtonLabel = isLastStep
-    ? tx("salesman.checkout.cta.placeOrder")
-    : wizard.currentStepNumber === 1
-      ? tx("salesman.checkout.cta.nextOrderType")
-      : tx("salesman.checkout.cta.nextCustomer");
-  const isOrderTypeStepInvalid =
-    wizard.currentStepNumber === 2 && wizard.orderType === "book_now" && !wizard.isBookNowAllowed;
-  const isNextDisabled = isOrderTypeStepInvalid || (isLastStep && !wizard.isCustomerStepValid);
-  const isNextLoading = isLastStep ? wizard.isPlacingOrder || wizard.isCreatingCustomer : false;
+  const content = (
+    <>
+      {wizard.refusal && (
+        <RefusalAlert
+          refusal={wizard.refusal}
+          shopName={shopName}
+          onAction={wizard.handleRefusalAction}
+          onDismiss={wizard.clearRefusal}
+        />
+      )}
+      {stepContent}
+    </>
+  );
 
-  function handleNext() {
-    if (isLastStep) {
-      void wizard.placeOrder();
-    } else {
-      void wizard.goToNextStep();
-    }
-  }
+  const nextButtonLabel =
+    wizard.currentStep === "cart"
+      ? tx("salesman.checkout.cta.nextOrderType")
+      : wizard.currentStep === "type"
+        ? tx("salesman.checkout.cta.nextCustomer")
+        : wizard.currentStep === "customer"
+          ? wizard.orderType === "pre_order"
+            ? tx("salesman.checkout.cta.placePreOrder")
+            : tx("salesman.checkout.cta.nextPayment")
+          : tx("salesman.checkout.cta.placeBookNow");
+  const isNextLoading =
+    wizard.currentStep === "customer" || wizard.currentStep === "payment"
+      ? wizard.isPlacingOrder || wizard.isCreatingCustomer
+      : false;
+  const hint = wizard.stepProblemKey ? tx(wizard.stepProblemKey) : null;
+
+  const viewProps = {
+    showBackButton: wizard.currentStepIndex > 0,
+    isNextDisabled: wizard.isNextDisabled,
+    isNextLoading,
+    nextButtonLabel,
+    hint,
+    onBack: wizard.goToPreviousStep,
+    onNext: () => void wizard.goToNextStep(),
+  };
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <StepIndicator currentStepNumber={wizard.currentStepNumber} />
+      <StepIndicator steps={wizard.steps} currentStepNumber={wizard.currentStepIndex + 1} />
 
       <div className="md:hidden">
-        <CheckoutViewMobile
-          showBackButton={wizard.currentStepNumber > 1}
-          isNextDisabled={isNextDisabled}
-          isNextLoading={isNextLoading}
-          nextButtonLabel={nextButtonLabel}
-          onBack={wizard.goToPreviousStep}
-          onNext={handleNext}
-        >
-          {stepContent}
-        </CheckoutViewMobile>
+        <CheckoutViewMobile {...viewProps}>{content}</CheckoutViewMobile>
       </div>
       <div className="hidden md:block">
-        <CheckoutViewDesktop
-          showBackButton={wizard.currentStepNumber > 1}
-          isNextDisabled={isNextDisabled}
-          isNextLoading={isNextLoading}
-          nextButtonLabel={nextButtonLabel}
-          onBack={wizard.goToPreviousStep}
-          onNext={handleNext}
-        >
-          {stepContent}
+        <CheckoutViewDesktop {...viewProps}>
+          <div className="flex flex-col gap-4">{content}</div>
         </CheckoutViewDesktop>
       </div>
+
+      <BalanceChangedDialog
+        wasContext={wizard.balanceChange?.wasContext ?? null}
+        nowBalancePaise={wizard.balanceChange?.nowBalancePaise ?? null}
+        draft={wizard.paymentDraft}
+        shopName={shopName}
+        isPlacing={wizard.isPlacingOrder}
+        onChangePayment={wizard.changePaymentAfterBalanceChange}
+        onPlaceAgain={() => void wizard.placeAgainWithNewAmounts()}
+      />
     </div>
   );
 }
