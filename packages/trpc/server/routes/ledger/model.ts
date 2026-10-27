@@ -495,3 +495,178 @@ export const preOrderPaperSchema = z.object({
   bill: z.object({ id: z.string(), number: z.string() }).nullable(),
   actions: z.object({ canCancel: z.boolean(), canFulfil: z.boolean() }),
 });
+
+// --- Payment, Refund and Opening papers (Spec H).
+
+const paymentModeSchema = z.enum(["cash", "bank", "upi"]);
+// Empty means none.
+const referenceSchema = z.string().trim().max(128).optional();
+// Correct sends the reference it wants kept; empty or null clears it.
+const correctReferenceSchema = z.string().trim().max(128).nullish();
+const paperCustomerSchema = z.object({
+  id: z.string(),
+  shopName: z.string(),
+  status: customerStatusSchema,
+  routeName: z.string(),
+  routeCode: z.string(),
+});
+const eventKindSchema = z.enum(["posted", "adjusted"]);
+
+export const paymentIdInputSchema = z.object({ paymentId: z.string().uuid() });
+export const refundIdInputSchema = z.object({ refundId: z.string().uuid() });
+
+export const addPaymentInputSchema = z.object({
+  customerId: z.string().uuid(),
+  mode: paymentModeSchema,
+  keptPaise: z.number().int().positive(),
+  reference: referenceSchema,
+  reason: reasonSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
+
+export const addPaymentResultSchema = z.object({
+  paymentId: z.string(),
+  number: z.string(),
+  keptPaise: z.number().int(),
+  balancePaise: z.number().int(),
+});
+
+export const correctPaymentInputSchema = z.object({
+  paymentId: z.string().uuid(),
+  expectedLatestEventId: z.string().uuid(),
+  keptPaise: z.number().int().min(0),
+  mode: paymentModeSchema,
+  reference: correctReferenceSchema,
+  reason: reasonSchema,
+});
+
+export const correctPaymentResultSchema = z.object({
+  paymentId: z.string(),
+  number: z.string(),
+  eventId: z.string(),
+  ledgerEntryId: z.string().nullable(),
+  keptPaise: z.number().int(),
+  differencePaise: z.number().int(),
+  mode: paymentModeSchema,
+  reference: z.string().nullable(),
+  balancePaise: z.number().int(),
+});
+
+export const paymentPaperSchema = z.object({
+  payment: z.object({
+    id: z.string(),
+    number: z.string(),
+    postedAt: z.date(),
+    mode: paymentModeSchema,
+    receivedPaise: z.number().int(),
+    keptPaise: z.number().int(),
+    returnedPaise: z.number().int(),
+    reference: z.string().nullable(),
+    reason: z.string().nullable(),
+    actorName: z.string().nullable(),
+    source: z.enum(["gatepass", "office"]),
+    gatepass: z.object({ id: z.string(), businessDate: z.string() }).nullable(),
+  }),
+  customer: paperCustomerSchema,
+  events: z.array(
+    z.object({
+      id: z.string(),
+      kind: eventKindSchema,
+      occurredAt: z.date(),
+      keptPaise: z.number().int(),
+      previousKeptPaise: z.number().int(),
+      differencePaise: z.number().int(),
+      mode: paymentModeSchema,
+      reference: z.string().nullable(),
+      reason: z.string().nullable(),
+      correctionDate: z.string().nullable(),
+      actorName: z.string().nullable(),
+      ledgerEntryId: z.string().nullable(),
+    }),
+  ),
+  latestEventId: z.string(),
+  balance: balanceSchema,
+  actions: z.object({ canCorrect: z.boolean() }),
+});
+
+export const addRefundInputSchema = z.object({
+  customerId: z.string().uuid(),
+  mode: paymentModeSchema,
+  amountPaise: z.number().int().positive(),
+  reference: referenceSchema,
+  reason: reasonSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
+
+export const addRefundResultSchema = z.object({
+  refundId: z.string(),
+  number: z.string(),
+  amountPaise: z.number().int(),
+  balancePaise: z.number().int(),
+});
+
+export const correctRefundInputSchema = z.object({
+  refundId: z.string().uuid(),
+  expectedLatestEventId: z.string().uuid(),
+  amountPaise: z.number().int().min(0),
+  mode: paymentModeSchema,
+  reference: correctReferenceSchema,
+  reason: reasonSchema,
+});
+
+export const correctRefundResultSchema = z.object({
+  refundId: z.string(),
+  number: z.string(),
+  eventId: z.string(),
+  ledgerEntryId: z.string().nullable(),
+  amountPaise: z.number().int(),
+  differencePaise: z.number().int(),
+  mode: paymentModeSchema,
+  reference: z.string().nullable(),
+  balancePaise: z.number().int(),
+});
+
+export const refundPaperSchema = z.object({
+  refund: z.object({
+    id: z.string(),
+    number: z.string(),
+    postedAt: z.date(),
+    mode: paymentModeSchema,
+    amountPaise: z.number().int(),
+    reference: z.string().nullable(),
+    reason: z.string(),
+    actorName: z.string().nullable(),
+  }),
+  customer: paperCustomerSchema,
+  events: z.array(
+    z.object({
+      id: z.string(),
+      kind: eventKindSchema,
+      occurredAt: z.date(),
+      amountPaise: z.number().int(),
+      previousAmountPaise: z.number().int(),
+      differencePaise: z.number().int(),
+      mode: paymentModeSchema,
+      reference: z.string().nullable(),
+      reason: z.string().nullable(),
+      correctionDate: z.string().nullable(),
+      actorName: z.string().nullable(),
+      ledgerEntryId: z.string().nullable(),
+    }),
+  ),
+  latestEventId: z.string(),
+  balance: balanceSchema,
+  actions: z.object({ canCorrect: z.boolean() }),
+});
+
+export const openingPaperSchema = z
+  .object({
+    entryId: z.string(),
+    side: z.enum(["pending", "advance"]),
+    amountPaise: z.number().int(),
+    date: z.string(),
+    occurredAt: z.date(),
+    reason: z.string().nullable(),
+    actorName: z.string().nullable(),
+  })
+  .nullable();

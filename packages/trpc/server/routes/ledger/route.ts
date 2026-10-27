@@ -1,10 +1,19 @@
-import { adminBillService, customerLedgerService } from "../../services";
+import {
+  adminBillService,
+  customerLedgerService,
+  paymentService,
+  refundService,
+} from "../../services";
 import { z } from "../../schema";
 import { adminProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
 import { generatePath } from "../../utils/path-generator";
 import {
   addOpeningBalanceInputSchema,
+  addPaymentInputSchema,
+  addPaymentResultSchema,
+  addRefundInputSchema,
+  addRefundResultSchema,
   billPaperInputSchema,
   billPaperSchema,
   cancelBillInputSchema,
@@ -12,15 +21,22 @@ import {
   cancelPreOrderInputSchema,
   cancelPreOrderResultSchema,
   correctBillInputSchema,
+  correctPaymentInputSchema,
+  correctPaymentResultSchema,
   correctPreviewSchema,
+  correctRefundInputSchema,
+  correctRefundResultSchema,
   correctResultSchema,
   customerIdInputSchema,
   ledgerSummarySchema,
   listLedgerRowsInputSchema,
   openPreorderSchema,
   openingBalanceResultSchema,
+  openingPaperSchema,
   orderIdInputSchema,
   paginatedLedgerRowsSchema,
+  paymentIdInputSchema,
+  paymentPaperSchema,
   preOrderPaperSchema,
   previewCorrectInputSchema,
   previewRaiseBillInputSchema,
@@ -32,6 +48,8 @@ import {
   raiseNoteInputSchema,
   raiseNotePreviewSchema,
   raiseNoteResultSchema,
+  refundIdInputSchema,
+  refundPaperSchema,
 } from "./model";
 
 const path = generatePath("/ledger");
@@ -298,5 +316,127 @@ export const ledgerRouter = router({
     .output(apiResponseSchema(cancelPreOrderResultSchema))
     .mutation(async ({ ctx, input }) =>
       apiResponse(await adminBillService.cancelPreOrder(ctx.user.id, input)),
+    ),
+
+  openingPaper: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/customers/{customerId}/opening-balance"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Get the Opening paper",
+        description:
+          "Return the Customer's Opening balance row, view only: Pending or Advance, amount, date, reason and who set it. Null when there is none. It has no number and no Correct.",
+      },
+    })
+    .input(customerIdInputSchema)
+    .output(apiResponseSchema(openingPaperSchema))
+    .query(async ({ input }) =>
+      apiResponse(await customerLedgerService.getOpeningPaper(input.customerId)),
+    ),
+
+  addPayment: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/payments"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Add a Payment",
+        description:
+          "Record money the shop paid at the office, by bank or by UPI: one kept amount above ₹0 (received = kept, nothing returned), an optional reference and a required reason. Numbered MP and credited to the Ledger; anything beyond Pending becomes Advance. A retry with the same idempotency key returns the first Payment.",
+      },
+    })
+    .input(addPaymentInputSchema)
+    .output(apiResponseSchema(addPaymentResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await paymentService.addPayment(ctx.user.id, input)),
+    ),
+
+  paymentPaper: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/payments/{paymentId}"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Get the Payment paper",
+        description:
+          "Return a Payment's current state (mode, received, kept, returned, reference, reason), its Customer and current Route, who recorded it and from which GatePass, and every posted and adjusted event. latestEventId is the Correct concurrency token.",
+      },
+    })
+    .input(paymentIdInputSchema)
+    .output(apiResponseSchema(paymentPaperSchema))
+    .query(async ({ input }) => apiResponse(await paymentService.getPaymentPaper(input.paymentId))),
+
+  correctPayment: adminProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/payments/{paymentId}/correct"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Correct a Payment",
+        description:
+          "Fix kept amount (₹0 allowed), mode or reference with a reason. A kept change posts a Payment adjusted Ledger row with the same MP; a mode or reference change only adds a history event. Refused as stale_version when someone corrected it first, nothing_changed when nothing changed. Never edits a Bill.",
+      },
+    })
+    .input(correctPaymentInputSchema)
+    .output(apiResponseSchema(correctPaymentResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await paymentService.correctPayment(ctx.user.id, input)),
+    ),
+
+  addRefund: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/refunds"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Add a Refund",
+        description:
+          "Record money Motake paid back out of the Customer's Advance, after the payout. Refused as not_in_advance when Pending or Settled and refund_above_advance when larger than the Advance. Numbered MR and debited to the Ledger. A retry with the same idempotency key returns the first Refund.",
+      },
+    })
+    .input(addRefundInputSchema)
+    .output(apiResponseSchema(addRefundResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await refundService.addRefund(ctx.user.id, input)),
+    ),
+
+  refundPaper: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/refunds/{refundId}"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Get the Refund paper",
+        description:
+          "Return a Refund's current state (mode, amount, reference, Add reason), its Customer and current Route, who recorded it, and every posted and adjusted event. latestEventId is the Correct concurrency token.",
+      },
+    })
+    .input(refundIdInputSchema)
+    .output(apiResponseSchema(refundPaperSchema))
+    .query(async ({ input }) => apiResponse(await refundService.getRefundPaper(input.refundId))),
+
+  correctRefund: adminProcedure
+    .meta({
+      openapi: {
+        method: "PATCH",
+        path: path("/refunds/{refundId}/correct"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Correct a Refund",
+        description:
+          "Fix amount (₹0 allowed), mode or reference with a reason. An amount change posts a Refund adjusted Ledger row with the same MR; a raise larger than the current Advance is refused as refund_above_advance. Refused as stale_version when someone corrected it first, nothing_changed when nothing changed.",
+      },
+    })
+    .input(correctRefundInputSchema)
+    .output(apiResponseSchema(correctRefundResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await refundService.correctRefund(ctx.user.id, input)),
     ),
 });
