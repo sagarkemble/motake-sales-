@@ -1,5 +1,8 @@
 "use client";
 
+import { BookOpenIcon } from "lucide-react";
+import Link from "next/link";
+
 import { BillPaper } from "~/components/admin/bills/bill-paper";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { Button } from "~/components/ui/button";
@@ -40,7 +43,16 @@ export function BillDetailDialog({ billId, onOpenChange, onOpenOrder }: BillDeta
                 </Button>
               </div>
             ) : (
-              <BillPaper bill={bill} onOpenOrder={onOpenOrder} />
+              <>
+                {/* Correct, Raise Note, Cancel and the PDF live on the Ledger's Bill paper. */}
+                <Button size="sm" variant="outline" className="w-full sm:w-fit" asChild>
+                  <Link href={`/admin/ledger/bills/${bill.id}`}>
+                    <BookOpenIcon />
+                    {tx("admin.bills.openPaper")}
+                  </Link>
+                </Button>
+                <BillPaper bill={bill} onOpenOrder={onOpenOrder} />
+              </>
             )}
           </div>
         </ScrollArea>

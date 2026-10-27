@@ -58,6 +58,8 @@ export function useOrders({
       utils.orders.invalidate();
       utils.gatepasses.invalidate();
       utils.customers.invalidate();
+      utils.ledger.invalidate();
+      utils.bills.invalidate();
     },
   });
 

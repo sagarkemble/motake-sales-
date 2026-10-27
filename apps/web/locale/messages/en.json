@@ -166,7 +166,8 @@
       "quickViewCustomers": "View Customers",
       "quickViewOrders": "View Orders",
       "openAccountMenu": "Open account menu",
-      "routes": "Routes"
+      "routes": "Routes",
+      "ledger": "Ledger"
     },
     "dashboard": {
       "kpi": {
@@ -357,7 +358,8 @@
       },
       "reactivate": "Reactivate",
       "reactivating": "Reactivating…",
-      "deactivate": "Deactivate"
+      "deactivate": "Deactivate",
+      "openLedger": "Open Ledger"
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -560,7 +562,8 @@
         "office": "Office"
       },
       "loadFailed": "Could not load the Bill",
-      "hideCancelled": "Hide cancelled Bills"
+      "hideCancelled": "Hide cancelled Bills",
+      "openPaper": "Open in Ledger"
     },
     "settings": {
       "title": "Settings",
@@ -712,6 +715,320 @@
         "cancelAria": "Discard change",
         "withGst": "{amount} with {rate} GST",
         "withGstExempt": "{amount} · GST exempt"
+      }
+    },
+    "ledger": {
+      "title": "Ledger",
+      "pickCustomerTitle": "Pick a Customer",
+      "pickCustomerHint": "Choose a Customer to see their Ledger. Filter by Route, then search by shop name or phone.",
+      "picker": {
+        "allRoutes": "All Routes",
+        "route": "Route",
+        "placeholder": "Pick a Customer",
+        "search": "Shop name or phone",
+        "empty": "No Customer found.",
+        "deactivated": "Deactivated"
+      },
+      "columns": {
+        "date": "Date",
+        "details": "Details",
+        "type": "Type",
+        "number": "Number",
+        "debit": "Debit",
+        "credit": "Credit"
+      },
+      "rowTypes": {
+        "opening_balance": "Opening balance",
+        "bill": "Bill",
+        "payment": "Payment",
+        "payment_adjusted": "Payment adjusted",
+        "refund": "Refund",
+        "refund_adjusted": "Refund adjusted",
+        "gst_credit_note": "GST credit note",
+        "commercial_credit_note": "Commercial credit note",
+        "debit_note": "Debit note"
+      },
+      "details": {
+        "opening_balance": "Opening balance",
+        "bill": "Bill raised",
+        "payment": "Payment received",
+        "payment_adjusted": "Payment adjusted",
+        "refund": "Refund paid",
+        "refund_adjusted": "Refund adjusted",
+        "gst_credit_note": "GST credit note on a Bill",
+        "commercial_credit_note": "Commercial credit note on a Bill",
+        "debit_note": "Debit note on a Bill"
+      },
+      "cancelled": "Cancelled",
+      "filters": {
+        "from": "From",
+        "to": "To",
+        "allTypes": "All types",
+        "notesOnly": "Notes only",
+        "pickTypes": "Pick types",
+        "typesCount": "{count} types",
+        "side": "Side",
+        "sideAll": "Debit and credit",
+        "sideDebit": "Debit only",
+        "sideCredit": "Credit only",
+        "clear": "Clear filters"
+      },
+      "rowsCount": "{count} rows",
+      "dr": "Dr",
+      "cr": "Cr",
+      "footer": {
+        "hint": "Totals cover the whole Ledger, not only this page or these filters.",
+        "opening": "Opening",
+        "currentTotal": "Current total",
+        "closing": "Closing ({state})"
+      },
+      "balance": {
+        "pending": "Pending",
+        "advance": "Advance",
+        "settled": "Settled",
+        "chip": "{state} {amount}"
+      },
+      "preorders": {
+        "title": "Open Pre-orders",
+        "notOnLedger": "· not on the Ledger until billed",
+        "forDate": "For {date}",
+        "by": "by {name}",
+        "due": {
+          "overdue": "Overdue",
+          "due": "Due today",
+          "upcoming": "Upcoming"
+        }
+      },
+      "add": {
+        "button": "Add",
+        "raiseBill": "Raise Bill",
+        "raiseNote": "Raise Note",
+        "openingBalance": "Opening balance",
+        "openingAdded": "Opening balance already added",
+        "laterNote": "Payments and refunds come in a later update."
+      },
+      "inactive": {
+        "title": "This Customer is deactivated",
+        "body": "You can read the Ledger and the Bills, but nothing new can be raised, corrected or cancelled."
+      },
+      "loadError": {
+        "title": "Could not load the Ledger",
+        "body": "Check your connection and try again."
+      },
+      "empty": {
+        "title": "Nothing on this Ledger yet",
+        "body": "Raise a Bill or add the opening balance to start.",
+        "addOpening": "Add opening balance",
+        "filteredTitle": "No rows match these filters",
+        "filteredBody": "Change or clear the filters to see more rows."
+      },
+      "opening": {
+        "title": "Opening balance",
+        "description": "The balance {shopName} carried in before Motake. It can be added once.",
+        "pending": "Pending",
+        "pendingHint": "The Customer owes this (debit).",
+        "advance": "Advance",
+        "advanceHint": "We owe the Customer this (credit).",
+        "amount": "Amount (₹)",
+        "date": "As of",
+        "dateHint": "Today or an earlier date.",
+        "reason": "Reason",
+        "reasonPlaceholder": "For example, balance from the old register",
+        "preview": "{side} {amount} on {date}",
+        "submit": "Add opening balance",
+        "submitting": "Adding…",
+        "success": "Opening balance added."
+      },
+      "pickBill": {
+        "title": "Raise Note",
+        "description": "Pick the Bill of {shopName} the note is for.",
+        "label": "Bill",
+        "placeholder": "Pick a Bill",
+        "empty": "This Customer has no Bill a note can go on.",
+        "open": "Open Bill"
+      },
+      "reason": {
+        "label": "Reason"
+      },
+      "notSaved": "Not saved",
+      "close": "Close",
+      "saving": "Saving…",
+      "refusals": {
+        "empty_basket": "Add at least one item.",
+        "bad_lines": "Some items cannot be billed. Fix the marked lines.",
+        "bill_cancelled": "This Bill is cancelled.",
+        "bill_locked": "This Bill is locked and cannot be changed.",
+        "stale_version": "Someone changed this Bill just now. Reload it and try again.",
+        "nothing_changed": "Nothing changed.",
+        "all_lines_zero": "At least one line must keep a quantity. To remove everything, cancel the Bill.",
+        "unknown_line": "A line does not belong to this Bill. Reload and try again.",
+        "below_credited_qty": "A quantity is below what was already credited.",
+        "note_amount_zero": "The note comes to ₹0. Change the quantities.",
+        "nothing_to_cancel": "Nothing is left on this Bill to cancel.",
+        "not_a_pre_order": "This order is not a Pre-order.",
+        "already_fulfilled": "This Pre-order is already fulfilled.",
+        "already_cancelled": "This is already cancelled.",
+        "no_lines": "Enter a quantity on at least one line.",
+        "credit_qty_above_remaining": "A quantity is more than is left to credit.",
+        "gst_credit_note_deadline_passed": "The deadline for a GST credit note on this Bill has passed. Use a commercial credit note.",
+        "return_date_on_debit_note": "A debit note does not take a return date.",
+        "opening_balance_exists": "This Customer already has an opening balance.",
+        "opening_date_in_future": "The date must be today or earlier.",
+        "idempotency_key_reused": "This request was already used for something different. Try again.",
+        "customer_inactive": "This Customer is deactivated.",
+        "bill_total_zero": "The Bill comes to ₹0.",
+        "seller_master_missing": "Seller details are not set up. Fill them in Settings first.",
+        "irn_missing": "This Bill has no IRN yet, so its PDF cannot be drawn.",
+        "not_found": "Not found. It may have been removed.",
+        "pre_order_cancelled": "This Pre-order was cancelled.",
+        "generic": "Something went wrong. Try again."
+      },
+      "paper": {
+        "back": "{shopName} Ledger",
+        "balanceNow": "Balance now: {balance}",
+        "officeBill": "Office Bill",
+        "locked": "Locked",
+        "inactive": "Customer deactivated",
+        "cancelledTitle": "Cancelled",
+        "cancelledBody": "This Bill was cancelled. Its number stays used and a credit note cleared it on the Ledger.",
+        "lockedTitle": "Locked",
+        "off": {
+          "cancelled": "This Bill is cancelled.",
+          "inactive": "This Customer is deactivated."
+        },
+        "billTo": "Bill to",
+        "route": "Route",
+        "placeOfSupply": "Place of supply: {state}",
+        "placed": "Placed by the salesman",
+        "officePlaced": "Raised from the office",
+        "billDate": "Bill date",
+        "gstin": "GSTIN {gstin}",
+        "columns": {
+          "index": "#",
+          "particulars": "Particulars",
+          "hsn": "HSN/SAC",
+          "rate": "Rate",
+          "gst": "GST %",
+          "withGst": "With GST",
+          "qty": "Qty",
+          "amount": "Amount"
+        },
+        "perUnit": "per {unit}",
+        "credited": "{count} credited",
+        "was": "was {qty}",
+        "atLeast": "at least {qty}",
+        "total": "Total",
+        "roundOff": "Round off",
+        "gstSummary": {
+          "title": "GST summary",
+          "rate": "Rate",
+          "taxable": "Taxable",
+          "tax": "Tax"
+        },
+        "billNote": "Note: {note}",
+        "notesTitle": "Notes on this Bill",
+        "notesEmpty": "No notes on this Bill.",
+        "returnedOn": "returned {date}",
+        "actions": {
+          "correct": "Correct",
+          "raiseNote": "Raise Note",
+          "cancel": "Cancel Bill",
+          "download": "Download PDF",
+          "opening": "Opening…",
+          "pdf": "PDF"
+        },
+        "editing": "Correcting version {version}. Saving makes version {next}.",
+        "buyerText": "Buyer text",
+        "buyer": {
+          "shopName": "Shop name",
+          "phone": "Phone",
+          "address": "Address",
+          "gstinHint": "GSTIN and the Bill note cannot be changed here."
+        },
+        "correctReasonPlaceholder": "Why is this Bill being corrected?",
+        "saveCorrect": "Save correction",
+        "correctSaved": "Saved as version {version}.",
+        "preview": {
+          "nothingYet": "Change a quantity or the buyer text to see what happens.",
+          "checking": "Checking…",
+          "text_only": "Only the text changes. No note is raised.",
+          "debit_note": "A debit note will be raised.",
+          "credit_note": "A credit note will be raised.",
+          "debit_and_credit_notes": "A debit note and a credit note will be raised.",
+          "billTotal": "New Bill total",
+          "notesWarning": "This Bill already has notes. Check them before saving."
+        },
+        "cancel": {
+          "title": "Cancel Bill",
+          "body": "Cancelling raises a credit note for everything left on the Bill. The number stays used.",
+          "stock": "Stock goes back to the salesman's gate pass.",
+          "officeStock": "Office Bills do not move stock.",
+          "placeholder": "Why is this Bill being cancelled?",
+          "submit": "Cancel Bill",
+          "done": "Cancelled. {kind} {number} for {amount}."
+        },
+        "note": {
+          "title": "Raise Note",
+          "leftToCredit": "{count} left to credit",
+          "onBill": "{count} on the Bill",
+          "returnedOn": "Returned or damaged on",
+          "amount": "{kind}: {amount}",
+          "noTax": "(no GST)",
+          "neverChanges": "A note never changes the Bill itself.",
+          "placeholder": "Why is this note being raised?",
+          "submit": "Raise {kind}",
+          "done": "{kind} {number} raised for {amount}."
+        },
+        "loadError": {
+          "title": "Could not load the Bill",
+          "body": "Check your connection and try again."
+        },
+        "pdfFailed": "Could not open the PDF."
+      },
+      "preorder": {
+        "title": "Pre-order for {date}",
+        "placedBy": "Placed by {name}",
+        "indicative": "About {amount} at today's prices",
+        "note": "Note: {note}",
+        "openBill": "Open Bill {number}",
+        "cancel": "Cancel Pre-order",
+        "cancelBody": "The Pre-order is cancelled. It never reached the Ledger, so nothing else changes.",
+        "placeholder": "Why is this Pre-order being cancelled?",
+        "done": "Pre-order cancelled.",
+        "loadError": "Could not load the Pre-order"
+      },
+      "raiseBill": {
+        "title": "Raise Bill",
+        "pickCustomer": "Pick a Customer to raise a Bill for.",
+        "search": "Search product, variety or SKU",
+        "noMatch": "Nothing matches.",
+        "perUnit": "{price} per {unit}",
+        "gst": "GST {rate}%",
+        "add": "Add",
+        "cartTitle": "Bill · {count} items",
+        "badLinesTitle": "Some items cannot be billed",
+        "badLine": {
+          "unknown_variety": "not in the catalog",
+          "bad_qty": "wrong quantity",
+          "no_route_price": "no price on this Route",
+          "no_tax_period": "no GST rate set"
+        },
+        "total": "Total · {count} qty",
+        "reasonPlaceholder": "Why is this Bill raised from the office?",
+        "submit": "Raise Bill",
+        "submitAmount": "Raise Bill · {amount}",
+        "submitting": "Raising…",
+        "successTitle": "Bill raised",
+        "success": "{number} for {amount}.",
+        "openPaper": "Open the Bill",
+        "catalogError": {
+          "title": "Could not load the catalog",
+          "body": "Check your connection and try again."
+        },
+        "catalogEmpty": {
+          "title": "No priced items on {route}",
+          "body": "Set Route prices for this Route first."
+        }
       }
     }
   },
