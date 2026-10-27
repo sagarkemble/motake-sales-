@@ -10,7 +10,6 @@ import OrderService from "../orders";
 import type { BillLockHook } from "../shared/bill-events";
 import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
 import {
-  BOOK_NOW_TOTAL_PAISE,
   billItemsOf,
   notesOf,
   placeBookNowBill,
@@ -58,7 +57,7 @@ async function correctedBill(world: CheckoutWorld) {
 }
 
 describe("AdminBillService.getBillPaper", () => {
-  it("shows the latest version with credited and remaining qty per line, the Notes, history and actions", async () => {
+  it("shows the latest version with credited and remaining qty per line, the Notes and actions", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await correctedBill(world);
 
@@ -84,7 +83,6 @@ describe("AdminBillService.getBillPaper", () => {
       reason: "Two more Milk",
       actorName: world.admin.name,
       hasPdf: false,
-      isLatest: true,
       legalType: "tax_invoice",
     });
     const milk = paper.lines.find((line) => line.id === milkLine.id)!;
@@ -101,29 +99,22 @@ describe("AdminBillService.getBillPaper", () => {
       ["gst_credit_note", "MC/26-27/000001", false],
       ["debit_note", "MD/26-27/000001", false],
     ]);
-    // Bill history, newest first.
-    expect(paper.versions.map((version) => [version.versionNumber, version.reason])).toEqual([
-      [2, "Two more Milk"],
-      [1, "Raised"],
-    ]);
     expect(paper.lock).toEqual({ correct: { allowed: true }, cancel: { allowed: true } });
     expect(paper.actions).toEqual({ canCorrect: true, canCancel: true, canRaiseNote: true });
     expect(paper.balance!.balancePaise).toBeGreaterThan(0);
   });
 
-  it("shows an older version read-only, as issued", async () => {
+  it("has no Bill history: the paper is the latest version and takes no version number", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed, milkLine } = await correctedBill(world);
+    const { placed } = await correctedBill(world);
 
-    const paper = await adminBillService.getBillPaper({ billId: placed.billId, versionNumber: 1 });
+    const paper = await adminBillService.getBillPaper({
+      billId: placed.billId,
+      versionNumber: 1,
+    } as never);
 
-    expect(paper.version).toMatchObject({ versionNumber: 1, reason: "Raised", isLatest: false });
-    expect(paper.version.totals.totalPaise).toBe(BOOK_NOW_TOTAL_PAISE);
-    expect(paper.lines.find((line) => line.id === milkLine.id)!.quantity).toBe(3);
-    expect(paper.actions).toEqual({ canCorrect: false, canCancel: false, canRaiseNote: false });
-    await expect(
-      adminBillService.getBillPaper({ billId: placed.billId, versionNumber: 3 }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(paper.version.versionNumber).toBe(2);
+    expect(paper).not.toHaveProperty("versions");
   });
 
   it("a cancelled Bill keeps its paper with every action off", async () => {

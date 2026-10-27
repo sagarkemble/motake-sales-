@@ -378,7 +378,6 @@ export const raiseNoteResultSchema = noteOutcomeSchema.extend({
 
 export const billPaperInputSchema = z.object({
   billId: z.string().uuid(),
-  versionNumber: z.coerce.number().int().min(1).optional(),
 });
 
 export const billPaperSchema = z.object({
@@ -403,22 +402,10 @@ export const billPaperSchema = z.object({
     actorName: z.string().nullable(),
     createdAt: z.date(),
     hasPdf: z.boolean(),
-    isLatest: z.boolean(),
     legalType: legalTypeSchema,
     letterhead: billLetterheadSchema,
     totals: billTotalsSchema,
   }),
-  versions: z.array(
-    z.object({
-      id: z.string(),
-      versionNumber: z.number().int(),
-      reason: z.string(),
-      actorId: z.string(),
-      actorName: z.string().nullable(),
-      hasPdf: z.boolean(),
-      createdAt: z.date(),
-    }),
-  ),
   lines: z.array(
     z.object({
       id: z.string(),

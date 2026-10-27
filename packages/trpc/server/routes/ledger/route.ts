@@ -171,7 +171,7 @@ export const ledgerRouter = router({
         protect: true,
         summary: "Get the Bill paper",
         description:
-          "Return a Bill at its latest version (or the given one, read-only): letterhead, lines with credited and remaining qty, GST summary, Bill history, Notes, lock state, actions and the Customer's Balance.",
+          "Return a Bill at its latest version: letterhead, lines with credited and remaining qty, GST summary, Notes, lock state, actions and the Customer's Balance. There is no Bill history view.",
       },
     })
     .input(billPaperInputSchema)

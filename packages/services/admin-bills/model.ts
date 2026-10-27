@@ -1,4 +1,4 @@
-import type { BillLetterhead, BillVersionListRow } from "@repo/database/queries/bills";
+import type { BillLetterhead } from "@repo/database/queries/bills";
 import type { SelectBill, SelectCustomer, SelectNote, SelectOrder } from "@repo/database/schema";
 import { z } from "zod";
 
@@ -232,10 +232,9 @@ export interface RaiseNoteResult extends NoteOutcome {
 
 // --- Bill paper and Pre-order paper reads.
 
+// The paper always shows the latest version; there is no Bill history view.
 export const billPaperInputSchema = z.object({
   billId: z.string().uuid(),
-  // The latest when left out.
-  versionNumber: versionNumberSchema.optional(),
 });
 export type BillPaperInput = z.input<typeof billPaperInputSchema>;
 
@@ -294,12 +293,10 @@ export interface BillPaper {
     actorName: string | null;
     createdAt: Date;
     hasPdf: boolean;
-    isLatest: boolean;
     legalType: SelectBill["legalType"];
     letterhead: BillLetterhead;
     totals: BillTotals;
   };
-  versions: BillVersionListRow[];
   lines: PaperLine[];
   gstSummary: GstSummaryRow[];
   notes: PaperNote[];

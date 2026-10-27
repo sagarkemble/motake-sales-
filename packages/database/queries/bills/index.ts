@@ -360,17 +360,6 @@ export async function getBillVersionByNumber(
   return version;
 }
 
-export interface BillVersionListRow {
-  id: string;
-  versionNumber: number;
-  reason: string;
-  actorId: string;
-  actorName: string | null;
-  hasPdf: boolean;
-  createdAt: Date;
-}
-
-// Bill history, newest first, with who made each version.
 // For each line id, the newest version of this Bill whose items snapshot still has that line. A
 // Note line must point at a version that contains it (db-decisions/0006); a line Correct removed
 // lives on only in older versions.
@@ -393,24 +382,4 @@ export async function findNewestVersionIdsForLines(
     if (version) newest.set(lineId, version.id);
   }
   return newest;
-}
-
-export async function listBillVersions(
-  billId: string,
-  executor: DbExecutor = db,
-): Promise<BillVersionListRow[]> {
-  return executor
-    .select({
-      id: billVersionsTable.id,
-      versionNumber: billVersionsTable.versionNumber,
-      reason: billVersionsTable.reason,
-      actorId: billVersionsTable.actorId,
-      actorName: profilesTable.name,
-      hasPdf: sql<boolean>`${billVersionsTable.pdfKey} IS NOT NULL`,
-      createdAt: billVersionsTable.createdAt,
-    })
-    .from(billVersionsTable)
-    .leftJoin(profilesTable, eq(billVersionsTable.actorId, profilesTable.id))
-    .where(eq(billVersionsTable.billId, billId))
-    .orderBy(desc(billVersionsTable.versionNumber));
 }

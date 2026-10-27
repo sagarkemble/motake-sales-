@@ -11,7 +11,6 @@ import {
   getLatestBillVersion,
   insertBillVersion,
   listBillItemsByBillId,
-  listBillVersions,
   lockBillRow,
   updateBill,
   updateBillItem,
@@ -980,22 +979,16 @@ class AdminBillService {
     };
   }
 
-  // The Bill paper: header, the shown version's lines and GST summary, Bill history, Notes, per
-  // line credited and remaining qty, lock state, actions and the Customer's current Balance.
+  // The Bill paper at its latest version: header, lines and GST summary, Notes, per line credited
+  // and remaining qty, lock state, actions and the Customer's current Balance. No Bill history.
   public async getBillPaper(input: BillPaperInput): Promise<BillPaper> {
     const parsedInput = billPaperInputSchema.parse(input);
     const bill = await getBillById(parsedInput.billId);
     if (!bill) throw notFound(`Bill ${parsedInput.billId} not found`);
     const state = await this.loadBillState(bill, db);
-    const shown =
-      parsedInput.versionNumber === undefined
-        ? state.latest
-        : await getBillVersionByNumber(bill.id, parsedInput.versionNumber);
-    if (!shown) {
-      throw notFound(`Bill ${bill.number} has no version ${parsedInput.versionNumber}`);
-    }
-    const [versions, cancelled, customerId] = await Promise.all([
-      listBillVersions(bill.id),
+    const shown = state.latest;
+    const [actor, cancelled, customerId] = await Promise.all([
+      getProfileById(shown.actorId),
       isBillCancelled(bill.id),
       getBillCustomerId(bill.id),
     ]);
@@ -1007,15 +1000,13 @@ class AdminBillService {
           correct: await this.lockHook({ bill, action: "correct" }, db),
           cancel: await this.lockHook({ bill, action: "cancel" }, db),
         };
-    const isLatest = shown.versionNumber === state.latest.versionNumber;
     // A deactivated Customer allows reads only.
-    const open = isLatest && !cancelled && customer?.status === "active";
+    const open = !cancelled && customer?.status === "active";
     const header = shown.header as SelectBill;
     const standingById = new Map(state.standing.lines.map((line) => [line.lineId, line]));
     const shownItems = shown.items as Array<
       SelectBillItem & { stamp: { name: string; unit: string; hsn: string } }
     >;
-    const versionRow = versions.find((version) => version.id === shown.id);
 
     return {
       bill: {
@@ -1036,15 +1027,13 @@ class AdminBillService {
         id: shown.id,
         versionNumber: shown.versionNumber,
         reason: shown.reason,
-        actorName: versionRow?.actorName ?? null,
+        actorName: actor?.name ?? null,
         createdAt: shown.createdAt,
         hasPdf: shown.pdfKey !== null,
-        isLatest,
         legalType: header.legalType,
         letterhead: header.letterhead as BillLetterhead,
         totals: totalsOf(header),
       },
-      versions,
       lines: shownItems.map((item) => {
         const standing = standingById.get(item.id);
         return {
