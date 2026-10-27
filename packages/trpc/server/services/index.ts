@@ -5,6 +5,7 @@ import CustomerLedgerService from "@repo/services/customer-ledger";
 import CustomerService from "@repo/services/customers";
 import DocumentService from "@repo/services/documents";
 import GatepassService from "@repo/services/gatepass";
+import GstService from "@repo/services/gst";
 import OrderService from "@repo/services/orders";
 import PaymentService from "@repo/services/payments";
 import ProductService from "@repo/services/products";
@@ -14,12 +15,14 @@ import SalesmanService from "@repo/services/salesman";
 import SettingsService from "@repo/services/settings";
 import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 
-export const adminBillService = new AdminBillService();
 export const authService = new AuthService();
 export const billService = new BillService();
 export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();
+// Spec G's Correct and Cancel take Spec I's month and IRN lock hook by default.
+export const adminBillService = new AdminBillService();
+export const gstService = new GstService(documentService);
 export const gatepassService = new GatepassService();
 export const orderService = new OrderService();
 export const paymentService = new PaymentService();
