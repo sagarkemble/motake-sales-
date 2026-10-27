@@ -11,17 +11,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import { paymentMaths, type PaymentContext, type PaymentDraft } from "~/lib/checkout-payment";
+import { cn } from "~/lib/utils";
 
 interface BalanceChangedDialogProps {
   // The Balance the Payment step showed, and the one the server found under the lock.
@@ -63,38 +56,44 @@ export function BalanceChangedDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         {was && now && wasContext && (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead />
-                <TableHead className="text-right">{tx("checkout.balanceChanged.was")}</TableHead>
-                <TableHead className="text-right">{tx("checkout.balanceChanged.now")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <CompareRow
-                label={tx("checkout.balanceChanged.balance")}
-                was={<BalanceText balancePaise={wasContext.balanceBeforePaise} />}
-                now={<BalanceText balancePaise={nowBalancePaise ?? 0} />}
-              />
-              <CompareRow
-                label={tx("checkout.balanceChanged.toClear")}
-                was={formatPaise(was.requiredPaise)}
-                now={formatPaise(now.requiredPaise)}
-              />
-              <CompareRow
-                label={tx("checkout.balanceChanged.keep")}
-                was={formatPaise(was.preview.keptPaise)}
-                now={formatPaise(now.preview.keptPaise)}
-              />
-              <CompareRow
-                label={tx("checkout.balanceChanged.giveBack")}
-                was={formatPaise(was.preview.returnedPaise)}
-                now={formatPaise(now.preview.returnedPaise)}
-                highlight
-              />
-            </TableBody>
-          </Table>
+          // Rows, not a table: at 360px each row wraps its Was / Now under the label instead of
+          // scrolling sideways.
+          <div className="flex flex-col divide-y rounded-xl border text-sm">
+            <div className="flex justify-end gap-3 px-3 py-1.5 text-xs text-muted-foreground">
+              <span>{tx("checkout.balanceChanged.was")}</span>
+              <span aria-hidden>→</span>
+              <span>{tx("checkout.balanceChanged.now")}</span>
+            </div>
+            <CompareRow
+              label={tx("checkout.balanceChanged.balance")}
+              wasLabel={tx("checkout.balanceChanged.was")}
+              nowLabel={tx("checkout.balanceChanged.now")}
+              was={<BalanceText balancePaise={wasContext.balanceBeforePaise} />}
+              now={<BalanceText balancePaise={nowBalancePaise ?? 0} />}
+            />
+            <CompareRow
+              label={tx("checkout.balanceChanged.toClear")}
+              wasLabel={tx("checkout.balanceChanged.was")}
+              nowLabel={tx("checkout.balanceChanged.now")}
+              was={formatPaise(was.requiredPaise)}
+              now={formatPaise(now.requiredPaise)}
+            />
+            <CompareRow
+              label={tx("checkout.balanceChanged.keep")}
+              wasLabel={tx("checkout.balanceChanged.was")}
+              nowLabel={tx("checkout.balanceChanged.now")}
+              was={formatPaise(was.preview.keptPaise)}
+              now={formatPaise(now.preview.keptPaise)}
+            />
+            <CompareRow
+              label={tx("checkout.balanceChanged.giveBack")}
+              wasLabel={tx("checkout.balanceChanged.was")}
+              nowLabel={tx("checkout.balanceChanged.now")}
+              was={formatPaise(was.preview.returnedPaise)}
+              now={formatPaise(now.preview.returnedPaise)}
+              highlight
+            />
+          </div>
         )}
         {needsChoice && (
           <p className="text-sm text-amber-700">{tx("checkout.balanceChanged.chooseFirst")}</p>
@@ -123,22 +122,40 @@ export function BalanceChangedDialog({
 
 function CompareRow({
   label,
+  wasLabel,
+  nowLabel,
   was,
   now,
   highlight,
 }: {
   label: string;
+  wasLabel: string;
+  nowLabel: string;
   was: React.ReactNode;
   now: React.ReactNode;
   highlight?: boolean;
 }) {
   return (
-    <TableRow className={highlight ? "bg-amber-500/10 font-medium" : undefined}>
-      <TableCell className="whitespace-normal text-muted-foreground">{label}</TableCell>
-      <TableCell className="text-right tabular-nums text-muted-foreground line-through">
-        {was}
-      </TableCell>
-      <TableCell className="text-right tabular-nums">{now}</TableCell>
-    </TableRow>
+    <div
+      className={cn(
+        "flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-3 py-2",
+        highlight && "bg-amber-500/10 font-medium",
+      )}
+    >
+      <span className="text-muted-foreground">{label}</span>
+      <span className="ml-auto flex flex-wrap items-baseline justify-end gap-x-2 tabular-nums">
+        <span className="text-muted-foreground line-through">
+          <span className="sr-only">{wasLabel} </span>
+          {was}
+        </span>
+        <span aria-hidden className="text-muted-foreground">
+          →
+        </span>
+        <span>
+          <span className="sr-only">{nowLabel} </span>
+          {now}
+        </span>
+      </span>
+    </div>
   );
 }

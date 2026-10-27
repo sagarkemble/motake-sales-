@@ -3,6 +3,7 @@
 import { PackageIcon, Trash2Icon } from "lucide-react";
 
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
+import { Button } from "~/components/ui/button";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 import type { CartLine } from "~/providers/cart-provider";
@@ -55,14 +56,16 @@ export function CartItemRow({
 
         <QuantityStepper quantity={cartLine.quantity} onQuantityChange={onQuantityChange} />
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           aria-label={tx("common.a11y.removeItem")}
           onClick={onRemove}
-          className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
+          className="shrink-0 text-muted-foreground hover:text-destructive"
         >
           <Trash2Icon className="size-4" />
-        </button>
+        </Button>
       </div>
       {footer}
     </div>

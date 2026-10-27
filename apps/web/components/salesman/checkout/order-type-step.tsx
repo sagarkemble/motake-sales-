@@ -2,6 +2,7 @@
 
 import { AlertTriangleIcon, CalendarClockIcon, HandCoinsIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useId } from "react";
 
 import { Calendar } from "~/components/ui/calendar";
 import { Label } from "~/components/ui/label";
@@ -33,6 +34,8 @@ export function OrderTypeStep({
 }: OrderTypeStepProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
+  // The checkout mounts a mobile and a desktop tree; ids must differ between them.
+  const idPrefix = useId();
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,7 +50,7 @@ export function OrderTypeStep({
         className="gap-3"
       >
         <Label
-          htmlFor="order-type-book-now"
+          htmlFor={`${idPrefix}-order-type-book-now`}
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
             orderType === "book_now" ? "border-brand bg-accent/50" : "bg-card",
@@ -78,11 +81,15 @@ export function OrderTypeStep({
               </span>
             )}
           </span>
-          <RadioGroupItem id="order-type-book-now" value="book_now" disabled={!isBookNowAllowed} />
+          <RadioGroupItem
+            id={`${idPrefix}-order-type-book-now`}
+            value="book_now"
+            disabled={!isBookNowAllowed}
+          />
         </Label>
 
         <Label
-          htmlFor="order-type-pre-order"
+          htmlFor={`${idPrefix}-order-type-pre-order`}
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
             orderType === "pre_order" ? "border-brand bg-accent/50" : "bg-card",
@@ -101,7 +108,7 @@ export function OrderTypeStep({
               })}
             </span>
           </span>
-          <RadioGroupItem id="order-type-pre-order" value="pre_order" />
+          <RadioGroupItem id={`${idPrefix}-order-type-pre-order`} value="pre_order" />
         </Label>
       </RadioGroup>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { InfoIcon, QrCodeIcon, UndoIcon, WalletIcon } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { BalanceChip, BalanceText } from "~/components/shared/checkout/balance-text";
 import { PaymentScannerDialog } from "~/components/shared/checkout/payment-scanner-dialog";
@@ -41,6 +41,8 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
   const tx = useTranslate();
   const { formatPaise } = useFormatMoney();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  // The checkout mounts a mobile and a desktop tree; ids must differ between them.
+  const idPrefix = useId();
   const maths = paymentMaths(context, draft);
   const { preview, requiredPaise, canReturnChange } = maths;
   const isField = context.billTotalPaise === null;
@@ -133,7 +135,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
           </ToggleGroup>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="payment-received" className="text-xs">
+          <Label htmlFor={`${idPrefix}-received`} className="text-xs">
             {tx("checkout.payment.received")}
           </Label>
           <div className="relative">
@@ -141,7 +143,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
               ₹
             </span>
             <Input
-              id="payment-received"
+              id={`${idPrefix}-received`}
               inputMode="decimal"
               value={draft.receivedText}
               disabled={disabled}
@@ -166,9 +168,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
               variant="outline"
               disabled={disabled}
               className="h-7 rounded-full text-xs"
-              onClick={() =>
-                update({ receivedText: paiseToRupeeInput(chip.paise), overpay: null })
-              }
+              onClick={() => update({ receivedText: paiseToRupeeInput(chip.paise), overpay: null })}
             >
               {chip.label}
             </Button>
@@ -190,7 +190,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
             </Button>
           )}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="payment-reference" className="text-xs">
+            <Label htmlFor={`${idPrefix}-reference`} className="text-xs">
               {tx(
                 draft.mode === "upi"
                   ? "checkout.payment.referenceUpi"
@@ -199,7 +199,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
               <span className="text-muted-foreground">{tx("checkout.payment.optional")}</span>
             </Label>
             <Input
-              id="payment-reference"
+              id={`${idPrefix}-reference`}
               value={draft.reference}
               maxLength={128}
               disabled={disabled}
@@ -243,51 +243,49 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
             onValueChange={(value) => update({ overpay: value as OverpayChoice })}
             className="flex flex-col gap-2"
           >
-            {(
-              [
-                {
-                  value: "return_change" as const,
-                  icon: UndoIcon,
-                  title: tx("checkout.payment.returnChange", { extra: formatPaise(extraPaise) }),
-                  hint: tx("checkout.payment.returnChangeHint", {
-                    kept: formatPaise(requiredPaise),
-                    extra: formatPaise(extraPaise),
-                  }),
-                },
-                {
-                  value: "keep_advance" as const,
-                  icon: WalletIcon,
-                  title: tx("checkout.payment.keepAdvance", { extra: formatPaise(extraPaise) }),
-                  hint: tx("checkout.payment.keepAdvanceHint", {
-                    received: formatPaise(preview.receivedPaise),
-                  }),
-                },
-              ]
-            )
+            {[
+              {
+                value: "return_change" as const,
+                icon: UndoIcon,
+                title: tx("checkout.payment.returnChange", { extra: formatPaise(extraPaise) }),
+                hint: tx("checkout.payment.returnChangeHint", {
+                  kept: formatPaise(requiredPaise),
+                  extra: formatPaise(extraPaise),
+                }),
+              },
+              {
+                value: "keep_advance" as const,
+                icon: WalletIcon,
+                title: tx("checkout.payment.keepAdvance", { extra: formatPaise(extraPaise) }),
+                hint: tx("checkout.payment.keepAdvanceHint", {
+                  received: formatPaise(preview.receivedPaise),
+                }),
+              },
+            ]
               .filter((option) => canReturnChange || option.value !== "return_change")
               .map((option) => (
-              <Label
-                key={option.value}
-                htmlFor={`overpay-${option.value}`}
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-xl border p-3 font-normal",
-                  draft.overpay === option.value ? "border-brand bg-accent/50" : "bg-background",
-                )}
-              >
-                <RadioGroupItem
-                  id={`overpay-${option.value}`}
-                  value={option.value}
-                  className="mt-0.5"
-                />
-                <span className="flex flex-col gap-0.5">
-                  <span className="flex items-center gap-1.5 text-sm font-medium">
-                    <option.icon className="size-3.5" />
-                    {option.title}
+                <Label
+                  key={option.value}
+                  htmlFor={`${idPrefix}-overpay-${option.value}`}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-xl border p-3 font-normal",
+                    draft.overpay === option.value ? "border-brand bg-accent/50" : "bg-background",
+                  )}
+                >
+                  <RadioGroupItem
+                    id={`${idPrefix}-overpay-${option.value}`}
+                    value={option.value}
+                    className="mt-0.5"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <option.icon className="size-3.5" />
+                      {option.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{option.hint}</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">{option.hint}</span>
-                </span>
-              </Label>
-            ))}
+                </Label>
+              ))}
           </RadioGroup>
         </div>
       )}

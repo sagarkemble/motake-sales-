@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
   ChevronDownIcon,
@@ -310,6 +310,8 @@ function NewCustomerFields({
 }) {
   const tx = useTranslate();
   const { createShopPhotoUploadUrlAsync } = useCustomers();
+  // The checkout mounts a mobile and a desktop tree; ids must differ between them.
+  const idPrefix = useId();
 
   return (
     <div className="flex flex-col gap-3">
@@ -345,9 +347,11 @@ function NewCustomerFields({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-customer-shop-name">{tx("salesman.checkout.customer.shopName")}</Label>
+        <Label htmlFor={`${idPrefix}-new-customer-shop-name`}>
+          {tx("salesman.checkout.customer.shopName")}
+        </Label>
         <Input
-          id="new-customer-shop-name"
+          id={`${idPrefix}-new-customer-shop-name`}
           placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
           value={newCustomerForm.shopName}
           onChange={(event) => onNewCustomerFormChange({ shopName: event.target.value })}
@@ -355,9 +359,9 @@ function NewCustomerFields({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-customer-phone">{tx("common.fields.phone")}</Label>
+        <Label htmlFor={`${idPrefix}-new-customer-phone`}>{tx("common.fields.phone")}</Label>
         <Input
-          id="new-customer-phone"
+          id={`${idPrefix}-new-customer-phone`}
           type="tel"
           placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
           value={newCustomerForm.phone}
@@ -366,9 +370,9 @@ function NewCustomerFields({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-customer-address">{tx("common.fields.address")}</Label>
+        <Label htmlFor={`${idPrefix}-new-customer-address`}>{tx("common.fields.address")}</Label>
         <Textarea
-          id="new-customer-address"
+          id={`${idPrefix}-new-customer-address`}
           placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
           value={newCustomerForm.address}
           onChange={(event) => onNewCustomerFormChange({ address: event.target.value })}
@@ -376,9 +380,11 @@ function NewCustomerFields({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-customer-language">{tx("common.preferredLanguage.label")}</Label>
+        <Label htmlFor={`${idPrefix}-new-customer-language`}>
+          {tx("common.preferredLanguage.label")}
+        </Label>
         <PreferredLanguagePicker
-          id="new-customer-language"
+          id={`${idPrefix}-new-customer-language`}
           value={newCustomerForm.preferredLanguage}
           onValueChange={(preferredLanguage) => onNewCustomerFormChange({ preferredLanguage })}
         />
