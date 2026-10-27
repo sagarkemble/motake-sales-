@@ -468,7 +468,17 @@
         "noMatch": "No orders match these filters."
       },
       "placedFor": "Placed · for",
-      "forDate": "for {date}"
+      "forDate": "for {date}",
+      "fulfil": {
+        "button": "Fulfil",
+        "fromDate": "Fulfil from {date}",
+        "opensOn": "Fulfil opens on {date}.",
+        "subtitle": "Pre-order · {date} · {route}",
+        "due": "Due",
+        "scheduled": "Scheduled",
+        "paymentTitle": "Payment at fulfil",
+        "officeNote": "Billed by Office: no GatePass, no stock change. Price and GST from the day it was placed."
+      }
     },
     "gatepass": {
       "allot": {
@@ -725,7 +735,8 @@
       "openAccount": "Open account",
       "quickNewOrder": "New Order",
       "quickMyOrders": "My Orders",
-      "quickMyAccount": "My Account"
+      "quickMyAccount": "My Account",
+      "customers": "Route Customers"
     },
     "catalog": {
       "empty": "No products yet",
@@ -741,12 +752,19 @@
     },
     "checkout": {
       "steps": {
-        "verifyProducts": "Verify products"
+        "verifyProducts": "Verify products",
+        "cart": "Cart",
+        "type": "Type",
+        "customer": "Customer",
+        "payment": "Payment"
       },
       "cta": {
         "placeOrder": "Place order",
         "nextOrderType": "Next: Order type",
-        "nextCustomer": "Next: Customer details"
+        "nextCustomer": "Next: Customer details",
+        "nextPayment": "Next: Payment",
+        "placeBookNow": "Place order & issue Bill",
+        "placePreOrder": "Place Pre-order"
       },
       "error": {
         "saveCustomer": "Could not save customer",
@@ -758,7 +776,12 @@
         "orderLabel": "Order",
         "deliverNowHint": "Deliver now and collect payment from customer.",
         "preOrderTomorrow": "Pre-order (tomorrow)",
-        "preOrderHint": "Order will be delivered {date}. Does not use gate pass."
+        "preOrderHint": "Deliver on {date} at today's price. No Bill and no stock used now.",
+        "preOrder": "Pre-order",
+        "deliveryDate": "Delivery date",
+        "dateHint": "Only days after today. Default is tomorrow.",
+        "gatepassNotActive": "Your GatePass on {route} is not active. Selling is closed for today.",
+        "shortLine": "{name}: need {need}, GatePass has {left}"
       },
       "customer": {
         "title": "Customer details",
@@ -803,6 +826,27 @@
         "addCustomer": "You cannot add a Customer.",
         "handedOver": "You handed over today's GatePass on Route {route}. Selling is closed for today.",
         "none": "You have no GatePass today. Ask the admin to allot stock to you on a Route."
+      },
+      "problem": {
+        "fixCart": "Remove the items that cannot be sold.",
+        "bookNowClosed": "Book Now is not possible. Pick Pre-order or fix the cart.",
+        "pickCustomer": "Pick a Customer."
+      },
+      "cart": {
+        "title": "Check cart",
+        "hint": "Prices are the Route price, excl. GST. The server quotes the Bill.",
+        "hintRoute": "Prices are the {route} Route price, excl. GST. The server quotes the Bill.",
+        "badLinesTitle": "{count} item(s) cannot be sold",
+        "badLinesHint": "Remove them to continue.",
+        "badLine": {
+          "unknown_sku": "This item is not in the catalog any more.",
+          "bad_qty": "Quantity must be a whole number above 0.",
+          "no_route_price": "No price on your Route for this item. Ask Admin.",
+          "no_tax_period": "No GST rate set for today. Ask Admin."
+        },
+        "shortLine": "GatePass has {left} left. Book Now needs {need}; a Pre-order is fine.",
+        "quoteFailed": "Could not price the cart.",
+        "balanceLater": "Balance and the amount to clear show on the Payment step, after you pick the Customer."
       }
     },
     "orders": {
@@ -854,6 +898,25 @@
         "igst": "IGST",
         "roundOff": "Round off",
         "total": "Bill total"
+      },
+      "route": {
+        "title": "Route Pre-orders",
+        "allSalesmen": "Your Route · all salesmen",
+        "tabDue": "Due ({count})",
+        "tabUpcoming": "Upcoming ({count})",
+        "overdue": "Overdue",
+        "overdueAlert": "{count} Pre-order(s) overdue on your Route",
+        "overdueHint": "Oldest was for {date}. Fulfil them today if the shop still wants them.",
+        "rowMeta": "{date} · placed by {by}",
+        "you": "You",
+        "anotherSalesman": "Another salesman",
+        "fulfil": "Fulfil",
+        "drawerDescription": "{qty} qty · placed by {by}",
+        "emptyDue": "Nothing due today.",
+        "emptyUpcoming": "No upcoming Pre-orders.",
+        "upcomingReadOnly": "Upcoming Pre-orders can be fulfilled on their day.",
+        "noGatepass": "Route Pre-orders show for the Route of your Active GatePass. You have none today.",
+        "loadFailed": "Could not load Route Pre-orders."
       }
     },
     "gatepass": {
@@ -913,6 +976,222 @@
       "soldOutLines": "{count} line(s) sold out. Nothing to return on them.",
       "summaryShort": "{count} short across {lines} line(s) · {missing} need a reason",
       "summaryFull": "Everything left is coming back."
+    },
+    "customers": {
+      "title": "Route Customers",
+      "hint": "Customers on your Active GatePass Route.",
+      "balance": "Balance",
+      "recordPayment": "Record Payment",
+      "noPurchase": "{shop} · no purchase",
+      "recordFailed": "Could not record the Payment"
+    }
+  },
+  "checkout": {
+    "balance": {
+      "pendingAmount": "Pending {amount}",
+      "advanceAmount": "Advance {amount}",
+      "settled": "Settled"
+    },
+    "payment": {
+      "title": "Payment",
+      "hint": "Take money from {shop}. ₹0 keeps the whole Bill Pending.",
+      "balanceNow": "Balance now",
+      "thisBill": "This Bill",
+      "toClear": "To clear Pending",
+      "nothingPendingField": "Nothing is Pending. Money taken now is kept as Advance.",
+      "advanceCoversBill": "The Advance covers this Bill. Nothing to collect; money taken now is kept as Advance.",
+      "mode": "Mode",
+      "modes": {
+        "cash": "Cash",
+        "bank": "Bank",
+        "upi": "UPI"
+      },
+      "received": "Received",
+      "receivedA11y": "Amount received",
+      "chip": {
+        "toClear": "To clear {amount}",
+        "thisBill": "This Bill {amount}",
+        "nothingNow": "Nothing now {amount}"
+      },
+      "openScanner": "Open payment scanner",
+      "scannerTitle": "Scan to pay",
+      "scannerAlt": "Company UPI payment QR code",
+      "referenceUpi": "UPI reference (UTR)",
+      "referenceBank": "Bank reference",
+      "optional": "(optional)",
+      "referenceUpiPlaceholder": "e.g. 430912345678",
+      "referenceBankPlaceholder": "e.g. NEFT ref",
+      "extraKeptAsAdvance": "{extra} more than needed. {mode} money cannot be handed back, so it is kept as Advance.",
+      "overpayQuestion": "Cash is {extra} more than needed. What should happen to it?",
+      "returnChange": "Return change {extra}",
+      "returnChangeHint": "Keep {kept}. Hand {extra} back now.",
+      "keepAdvance": "Keep {extra} as Advance",
+      "keepAdvanceHint": "Keep all {received}. The shop has Advance for next time.",
+      "preview": {
+        "received": "Received",
+        "kept": "Kept (MP)",
+        "returned": "Cash returned",
+        "balanceAfter": "Balance after"
+      },
+      "problem": {
+        "chooseOverpay": "Choose: return change or keep as Advance.",
+        "enterAmount": "Enter an amount above ₹0 to record."
+      }
+    },
+    "totals": {
+      "taxable": "Taxable value",
+      "cgst": "CGST",
+      "sgst": "SGST",
+      "igst": "IGST",
+      "roundOff": "Round off",
+      "total": "Total",
+      "taxInvoice": "Tax Invoice",
+      "billOfSupply": "Bill of Supply"
+    },
+    "success": {
+      "billed": "Sold and billed",
+      "fulfilled": "Pre-order fulfilled",
+      "preorder": "Pre-order booked",
+      "field": "Payment recorded",
+      "bill": "Bill",
+      "billTotal": "Bill total",
+      "payment": "Payment · {mode}",
+      "paymentLabel": "Payment",
+      "noPayment": "None taken. Whole Bill is Pending.",
+      "kept": "Kept",
+      "cashReturned": "Cash returned",
+      "newBalance": "New Balance",
+      "balanceUnchanged": "Balance (unchanged)",
+      "deliverOn": "Deliver on",
+      "items": "Items",
+      "itemsQty": "{count} qty",
+      "indicativeTotal": "Indicative total",
+      "indicativeValue": "≈ {amount}",
+      "notBilled": "Not billed yet. The Bill (MB) is issued on fulfil.",
+      "preorderNote": "Balance unchanged. Nothing is owed until the Pre-order is fulfilled.",
+      "returnedChanged": "Give back {now}, not {was}",
+      "returnedChangedHint": "The shop's Balance changed while saving. Hand back the amount shown here.",
+      "done": "Done",
+      "close": "Close"
+    },
+    "balanceChanged": {
+      "title": "Balance just changed",
+      "body": "{shop}'s Balance changed while placing (another Payment, Bill or Note). Nothing was saved. Here are the new amounts.",
+      "was": "Was",
+      "now": "Now",
+      "balance": "Balance",
+      "toClear": "To clear",
+      "keep": "Keep",
+      "giveBack": "Give back",
+      "chooseFirst": "Cash is now more than needed. Change payment to choose return change or keep as Advance.",
+      "changePayment": "Change payment",
+      "placeAgain": "Place with new amounts",
+      "placing": "Placing…"
+    },
+    "fulfil": {
+      "title": "Fulfil · {shop}",
+      "cta": "Fulfil & issue Bill",
+      "lockedOn": "Price & GST locked {date}",
+      "forDate": "For {date}",
+      "loadFailed": "Could not load this Pre-order.",
+      "failed": "Could not fulfil the Pre-order"
+    },
+    "refusal": {
+      "dismiss": "Dismiss",
+      "no_active_gatepass": {
+        "title": "No Active GatePass",
+        "message": "You have no Active GatePass today, so you cannot sell, book or take money. Ask Admin to allot stock on your Route.",
+        "action": "Go to GatePass"
+      },
+      "customer_not_on_route": {
+        "title": "Customer is not on your Route",
+        "message": "{shop} is not on your Active GatePass Route. Pick a Customer from your Route.",
+        "action": "Pick another Customer"
+      },
+      "customer_inactive": {
+        "title": "Customer is inactive",
+        "message": "{shop} has been deactivated by Admin. Pick another Customer or ask Admin.",
+        "action": "Pick another Customer"
+      },
+      "empty_basket": {
+        "title": "Cart is empty",
+        "message": "Add at least one item before placing.",
+        "action": "Add items"
+      },
+      "bad_lines": {
+        "title": "Some items cannot be sold",
+        "message": "{count} item(s) have no price, no GST rate or a wrong quantity. Remove them to continue.",
+        "action": "Fix cart"
+      },
+      "short_stock": {
+        "title": "Not enough stock on your GatePass",
+        "message": "Need / left: {lines}. Lower the quantity, or place a Pre-order instead.",
+        "action": "Fix quantities"
+      },
+      "price_field_refused": {
+        "title": "Prices come from the Route",
+        "message": "The app sent a price. Prices are set by the Route on the server. Update the app and try again."
+      },
+      "scheduled_date_not_after_today": {
+        "title": "Pick a later date",
+        "message": "A Pre-order must be for a day after today. For today, use Book Now.",
+        "action": "Change date"
+      },
+      "fulfil_too_early": {
+        "title": "Too early to fulfil",
+        "message": "This Pre-order is for {date}. You can fulfil it on or after that day."
+      },
+      "already_fulfilled": {
+        "title": "Already fulfilled",
+        "message": "{by} fulfilled this Pre-order at {at}. Bill {mb}. Nothing was charged now.",
+        "action": "Close"
+      },
+      "pre_order_cancelled": {
+        "title": "Pre-order was cancelled",
+        "message": "Admin cancelled this Pre-order. It cannot be fulfilled. Place a new order if the shop still wants it.",
+        "action": "Close"
+      },
+      "wrong_route": {
+        "title": "Pre-order is on another Route",
+        "message": "This Pre-order is on another Route than your Active GatePass."
+      },
+      "not_a_pre_order": {
+        "title": "Not a Pre-order",
+        "message": "Only a Pre-order can be fulfilled. A Book Now is billed when placed."
+      },
+      "overpay_choice_required": {
+        "title": "Return change or keep as Advance?",
+        "message": "Cash is {extra} more than needed to clear Pending. Choose to return change or keep it as Advance.",
+        "action": "Choose"
+      },
+      "return_change_cash_only": {
+        "title": "Change is cash only",
+        "message": "Bank and UPI money cannot be handed back. Any extra is kept as Advance."
+      },
+      "field_payment_kept_zero": {
+        "title": "Nothing to record",
+        "message": "Enter an amount above ₹0. If you returned all the cash, there is no Payment to record.",
+        "action": "Enter amount"
+      },
+      "bill_total_zero": {
+        "title": "Bill total is ₹0",
+        "message": "A Bill cannot be ₹0. Check the items and quantities.",
+        "action": "Fix cart"
+      },
+      "seller_master_missing": {
+        "title": "Billing is not set up",
+        "message": "Motake's seller details (name, address, GSTIN) are missing, so no Bill can be issued. Ask Admin to fill Settings."
+      },
+      "balance_changed": {
+        "title": "Balance just changed",
+        "message": "{shop}'s Balance changed while placing (another Payment or Bill). Nothing was saved. Check the amounts and place again.",
+        "action": "Check and retry"
+      },
+      "idempotency_key_reused": {
+        "title": "Already sent with different details",
+        "message": "This checkout was already sent with different items or payment. Start the checkout again.",
+        "action": "Start again"
+      }
     }
   }
 }

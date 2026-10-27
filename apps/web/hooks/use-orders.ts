@@ -1,4 +1,5 @@
 import type { RouterInputs } from "@repo/trpc/client";
+import { keepPreviousData } from "@tanstack/react-query";
 
 import { trpc } from "~/trpc/client";
 
@@ -10,6 +11,8 @@ interface UseOrdersParams {
   detailOrderId?: string;
   // Open Pre-orders on the salesman's Active GatePass Route.
   routePreorders?: boolean;
+  // Server price and tax for a basket, or a Pre-order's fulfil from its locked terms.
+  quoteInput?: RouterInputs["orders"]["quote"];
   enabled?: boolean;
 }
 
@@ -18,6 +21,7 @@ export function useOrders({
   orderId,
   detailOrderId,
   routePreorders = false,
+  quoteInput,
   enabled = true,
 }: UseOrdersParams = {}) {
   const utils = trpc.useUtils();
@@ -35,12 +39,25 @@ export function useOrders({
   );
   const routePreordersQuery = trpc.orders.listRoutePreorders.useQuery(undefined, {
     enabled: enabled && routePreorders,
+    // No Active GatePass is an answer, not a failure to retry.
+    retry: false,
   });
+
+  const quoteQuery = trpc.orders.quote.useQuery(
+    quoteInput ?? { lines: [], orderType: "book_now" },
+    {
+      enabled: enabled && Boolean(quoteInput),
+      // Quantities change one tap at a time; keep the last quote on screen while the next loads.
+      placeholderData: keepPreviousData,
+      retry: false,
+    },
+  );
 
   const placeBookNowOrderMutation = trpc.orders.placeBookNow.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
       utils.gatepasses.invalidate();
+      utils.customers.invalidate();
     },
   });
   const placePreOrderMutation = trpc.orders.placePreOrder.useMutation({
@@ -81,7 +98,14 @@ export function useOrders({
     duePreorders: routePreordersQuery.data?.data ?? [],
     isDuePreordersLoading: routePreordersQuery.isLoading,
     isDuePreordersError: routePreordersQuery.isError,
+    duePreordersError: routePreordersQuery.error ?? null,
     refetchDuePreorders: routePreordersQuery.refetch,
+
+    quote: quoteQuery.data?.data ?? null,
+    isQuoteLoading: quoteQuery.isLoading,
+    isQuoteFetching: quoteQuery.isFetching,
+    quoteError: quoteQuery.error ?? null,
+    refetchQuote: quoteQuery.refetch,
 
     placeBookNowOrder: placeBookNowOrderMutation.mutate,
     placeBookNowOrderAsync: placeBookNowOrderMutation.mutateAsync,
