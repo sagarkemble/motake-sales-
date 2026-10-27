@@ -68,6 +68,9 @@ export const billsTable = pgTable(
     portalCancelAckDate: date("portal_cancel_ack_date"),
     portalCancelNotes: text("portal_cancel_notes"),
 
+    // Raise Bill's client key (db-decisions/0015); null on a checkout Bill, whose key is on its order.
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).unique(),
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())

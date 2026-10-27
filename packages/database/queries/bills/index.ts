@@ -193,6 +193,18 @@ export async function listBills(
 
 // --- Bill issue (Spec F): the paper, its lines and bill_versions v1.
 
+// The Bill a Raise Bill attempt with this key already wrote (db-decisions/0015).
+export async function getBillByIdempotencyKey(
+  idempotencyKey: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor
+    .select()
+    .from(billsTable)
+    .where(eq(billsTable.idempotencyKey, idempotencyKey));
+  return bill;
+}
+
 export async function insertBill(
   newBill: InsertBill,
   executor: DbExecutor = db,

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db, eq, sql } from "@repo/database";
 import { auditLogsTable, billsTable, ledgerEntriesTable, ordersTable } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,6 +56,7 @@ describe("AdminBillService.raiseBill", () => {
     const world = await buildCheckoutWorld({ businessDate: today });
 
     const result = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey: randomUUID(),
       customerId: world.customer.id,
       lines: milkAndCurd(world),
       reason: "Goods sent by office van",
@@ -143,6 +146,7 @@ describe("AdminBillService.raiseBill", () => {
     const world = await buildCheckoutWorld({ businessDate: today });
 
     const result = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey: randomUUID(),
       customerId: world.customer.id,
       lines: [
         { varietyId: world.milk.id, quantity: 1 },
@@ -206,6 +210,7 @@ describe("AdminBillService.raiseBill", () => {
       expect(
         await refusalOf(
           adminBillService.raiseBill(world.admin.id, {
+            idempotencyKey: randomUUID(),
             customerId: world.customer.id,
             lines: lines(world),
             reason: "Office sale",
@@ -225,6 +230,7 @@ describe("AdminBillService.raiseBill", () => {
 
       const refusal = await refusalOf(
         adminBillService.raiseBill(world.admin.id, {
+          idempotencyKey: randomUUID(),
           customerId: world.customer.id,
           lines: [
             { varietyId: world.milk.id, quantity: 1 },
@@ -256,6 +262,7 @@ describe("AdminBillService.raiseBill", () => {
       expect(
         await refusalOf(
           adminBillService.raiseBill(world.admin.id, {
+            idempotencyKey: randomUUID(),
             customerId: world.customer.id,
             lines: [{ varietyId: sachet.id, quantity: 1 }],
             reason: "Sample",
@@ -272,6 +279,7 @@ describe("AdminBillService.raiseBill", () => {
       expect(
         await refusalOf(
           adminBillService.raiseBill(world.admin.id, {
+            idempotencyKey: randomUUID(),
             customerId: world.customer.id,
             lines: milkAndCurd(world),
             reason: "Office sale",
@@ -288,5 +296,104 @@ describe("AdminBillService.raiseBill", () => {
       ).toMatchObject({ reason: "customer_inactive" });
       expect(await countOf(billsTable)).toBe(0);
     });
+  });
+});
+
+describe("AdminBillService.raiseBill idempotency (db-decisions/0015)", () => {
+  it("the same key twice returns the first Bill, writes one and uses no second number", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const input = {
+      idempotencyKey: randomUUID(),
+      customerId: world.customer.id,
+      lines: milkAndCurd(world),
+      reason: "Goods sent by office van",
+    };
+
+    const first = await adminBillService.raiseBill(world.admin.id, input);
+    const replay = await adminBillService.raiseBill(world.admin.id, input);
+
+    expect(replay).toEqual(first);
+    expect(await countOf(billsTable)).toBe(1);
+    expect(await countOf(ledgerEntriesTable)).toBe(1);
+    expect(outcomes).toHaveLength(1);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(11_900);
+    const next = await adminBillService.raiseBill(world.admin.id, {
+      ...input,
+      idempotencyKey: randomUUID(),
+    });
+    expect(next.billNumber).toBe("MB/26-27/000002");
+  });
+
+  it("the same key twice at once writes one Bill and both get its result", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const input = {
+      idempotencyKey: randomUUID(),
+      customerId: world.customer.id,
+      lines: milkAndCurd(world),
+      reason: "Goods sent by office van",
+    };
+
+    const [first, second] = await Promise.all([
+      adminBillService.raiseBill(world.admin.id, input),
+      adminBillService.raiseBill(world.admin.id, input),
+    ]);
+
+    expect(second).toEqual(first);
+    expect(await countOf(billsTable)).toBe(1);
+    expect(outcomes).toHaveLength(1);
+    const next = await adminBillService.raiseBill(world.admin.id, {
+      ...input,
+      idempotencyKey: randomUUID(),
+    });
+    expect(next.billNumber).toBe("MB/26-27/000002");
+  });
+
+  it("refuses the same key with other lines or another Customer as idempotency_key_reused", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const idempotencyKey = randomUUID();
+    await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey,
+      customerId: world.customer.id,
+      lines: milkAndCurd(world),
+      reason: "Goods sent by office van",
+    });
+    outcomes.length = 0;
+
+    expect(
+      await refusalOf(
+        adminBillService.raiseBill(world.admin.id, {
+          idempotencyKey,
+          customerId: world.customer.id,
+          lines: [{ varietyId: world.milk.id, quantity: 4 }],
+          reason: "Goods sent by office van",
+        }),
+      ),
+    ).toMatchObject({ reason: "idempotency_key_reused" });
+    expect(await countOf(billsTable)).toBe(1);
+    expect(outcomes).toEqual([]);
+  });
+
+  it("a replay names the same lines however they were typed (repeats merged)", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const idempotencyKey = randomUUID();
+    const first = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey,
+      customerId: world.customer.id,
+      lines: milkAndCurd(world),
+      reason: "Office",
+    });
+
+    const replay = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey,
+      customerId: world.customer.id,
+      lines: [
+        { varietyId: world.curd.id, quantity: 1 },
+        { varietyId: world.milk.id, quantity: 1 },
+        { varietyId: world.milk.id, quantity: 2 },
+      ],
+      reason: "Office",
+    });
+
+    expect(replay).toEqual(first);
   });
 });

@@ -3,6 +3,7 @@ import type { SelectBill, SelectCustomer, SelectNote, SelectOrder } from "@repo/
 import { z } from "zod";
 
 import type { Balance } from "../ledger/model";
+import { idempotencyKeySchema } from "../payments/model";
 import type { CorrectClassification, GstSummaryRow } from "../shared/bill-arithmetic";
 import type { BillLockDecision, NoteOutcome } from "../shared/bill-events";
 import type { RouteStamp } from "../shared/checkout-events";
@@ -28,8 +29,13 @@ export const previewRaiseBillInputSchema = z.object({
 });
 export type PreviewRaiseBillInput = z.input<typeof previewRaiseBillInputSchema>;
 
-export const raiseBillInputSchema = previewRaiseBillInputSchema.extend({ reason: reasonSchema });
+// One key per attempt (db-decisions/0015): a retry with it returns the first Bill.
+export const raiseBillInputSchema = previewRaiseBillInputSchema.extend({
+  reason: reasonSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
 export type RaiseBillInput = z.input<typeof raiseBillInputSchema>;
+export type ParsedRaiseBillInput = z.output<typeof raiseBillInputSchema>;
 
 export type RaiseBillBadLineReason =
   | "unknown_variety"
@@ -208,8 +214,11 @@ export const raiseNoteInputSchema = previewRaiseNoteInputSchema.extend({
   reason: reasonSchema,
   // Credit Notes only, for a return or damage.
   returnOrDamageOn: businessDateSchema.optional(),
+  // One key per attempt (db-decisions/0015): a retry with it returns the first Note.
+  idempotencyKey: idempotencyKeySchema,
 });
 export type RaiseNoteInput = z.input<typeof raiseNoteInputSchema>;
+export type ParsedRaiseNoteInput = z.output<typeof raiseNoteInputSchema>;
 
 export interface RaiseNotePreview {
   note: NotePreview;

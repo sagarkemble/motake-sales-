@@ -153,7 +153,7 @@ export const ledgerRouter = router({
         protect: true,
         summary: "Raise Bill",
         description:
-          "Issue an office Bill (MB) with no order, salesman, GatePass or stock: version 1 (Raised) and the Ledger debit with the Admin's reason. One bad line refuses the whole Bill.",
+          "Issue an office Bill (MB) with no order, salesman, GatePass or stock: version 1 (Raised) and the Ledger debit with the Admin's reason. One bad line refuses the whole Bill. A retry with the same idempotencyKey returns the first Bill; the key with another basket is refused idempotency_key_reused.",
       },
     })
     .input(raiseBillInputSchema)
@@ -255,7 +255,7 @@ export const ledgerRouter = router({
         protect: true,
         summary: "Raise a Note",
         description:
-          "Write an independent GST Credit Note, Commercial Credit Note or Debit Note on chosen lines of the latest version. Never rewrites the Bill; allowed in a filed month. A GST Credit Note after the deadline is refused.",
+          "Write an independent GST Credit Note, Commercial Credit Note or Debit Note on chosen lines of the latest version. Never rewrites the Bill; allowed in a filed month. A GST Credit Note after the deadline is refused. A retry with the same idempotencyKey returns the first Note; the key with another Bill, kind or qty is refused idempotency_key_reused.",
       },
     })
     .input(raiseNoteInputSchema)

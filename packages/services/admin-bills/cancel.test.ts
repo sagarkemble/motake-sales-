@@ -169,6 +169,7 @@ describe("AdminBillService.cancelBill", () => {
       (item) => item.varietyId === world.milk.id,
     )!;
     const partial = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",
@@ -250,6 +251,7 @@ describe("AdminBillService.cancelBill", () => {
   it("voids an office Bill with no order or stock", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const raised = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey: randomUUID(),
       customerId: world.customer.id,
       lines: [{ varietyId: world.milk.id, quantity: 3 }],
       reason: "Office sale",
@@ -519,6 +521,7 @@ describe("AdminBillService.cancelBill (review fixes)", () => {
     const curdLine = items.find((item) => item.varietyId === world.curd.id)!;
     // Milk: 3 billed + 2 by Debit Note = 5; Correct removes the live 3, leaving 2 on v1 only.
     await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "debit_note",
@@ -559,6 +562,7 @@ describe("AdminBillService.cancelBill (review fixes)", () => {
     const placed = await placeBookNowBill(world);
     const items = await billItemsOf(placed.billId);
     await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",

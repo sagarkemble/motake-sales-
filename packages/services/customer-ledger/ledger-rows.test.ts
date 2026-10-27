@@ -41,6 +41,7 @@ async function busyLedger() {
   // The frozen clock would give every posting the same time.
   vi.setSystemTime(new Date("2026-10-25T07:00:00Z"));
   const credit = await adminBillService.raiseNote(world.admin.id, {
+    idempotencyKey: randomUUID(),
     billId: first.billId,
     expectedVersionNumber: 1,
     kind: "gst_credit_note",
@@ -58,6 +59,7 @@ async function busyLedger() {
   vi.setSystemTime(new Date("2026-10-26T06:00:00Z"));
   // The GatePass was for the 25th, so the second Bill is an office Bill.
   const second = await adminBillService.raiseBill(world.admin.id, {
+    idempotencyKey: randomUUID(),
     customerId: world.customer.id,
     lines: [
       { varietyId: world.milk.id, quantity: 3 },

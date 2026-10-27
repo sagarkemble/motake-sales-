@@ -112,6 +112,7 @@ class BillService {
         igstPaise: tax.igstPaise,
         roundOffPaise: tax.roundOffPaise,
         billDate: parsedInput.billDate,
+        idempotencyKey: parsedInput.idempotencyKey ?? null,
       },
       executor,
     );

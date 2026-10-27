@@ -5,6 +5,7 @@ import {
   findNewestVersionIdsForLines,
   getBillCustomerId,
   getBillById,
+  getBillByIdempotencyKey,
   getBillByOrderId,
   getBillVersionByNumber,
   getLatestBillVersion,
@@ -23,7 +24,13 @@ import {
   lockGatepassRow,
   restoreSoldQtyOnCancellation,
 } from "@repo/database/queries/gatepass";
-import { listNoteLinesForNotes, listNotesForBill } from "@repo/database/queries/ledger";
+import {
+  getBalanceThroughBillDebit,
+  getBalanceThroughLedgerEntry,
+  getNoteByIdempotencyKey,
+  listNoteLinesForNotes,
+  listNotesForBill,
+} from "@repo/database/queries/ledger";
 import {
   getLatestOrderVersion,
   getOrderWithItemsById,
@@ -36,6 +43,7 @@ import { listSellableVarietiesByIds } from "@repo/database/queries/products";
 import { getRouteById } from "@repo/database/queries/routes";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type {
   SelectBill,
   SelectBillItem,
@@ -116,12 +124,45 @@ import {
   type RaiseBillCatalogRow,
   type RaiseBillInput,
   type RaiseBillPreview,
+  type ParsedRaiseBillInput,
+  type ParsedRaiseNoteInput,
   type RaiseBillResult,
   type RaiseNoteInput,
   type RaiseNotePreview,
   type RaiseNoteResult,
 } from "./model";
 import { writeNote, type WrittenNote } from "./note-writer";
+
+// Raise Bill and Raise Note keys (db-decisions/0015).
+const billIdempotencyConstraint = "bills_idempotency_key_unique";
+const noteIdempotencyConstraint = "notes_idempotency_key_unique";
+
+function keyReusedRefusal(paper: "Bill" | "Note") {
+  return ledgerRefusal(
+    "idempotency_key_reused",
+    `This key was already used for a different ${paper}. Try again.`,
+  );
+}
+
+// Qty per key, summing repeats, so a replay compares what was asked, not how it was typed.
+function quantityByKey<Line>(
+  lines: Line[],
+  keyOf: (line: Line) => string,
+  qtyOf: (line: Line) => number,
+): Map<string, number> {
+  const quantities = new Map<string, number>();
+  for (const line of lines) {
+    quantities.set(keyOf(line), (quantities.get(keyOf(line)) ?? 0) + qtyOf(line));
+  }
+  return quantities;
+}
+
+function sameQuantities(first: Map<string, number>, second: Map<string, number>): boolean {
+  return (
+    first.size === second.size &&
+    [...first].every(([key, quantity]) => second.get(key) === quantity)
+  );
+}
 
 // Technical limits only, as at checkout: int4 quantities and safe-integer paise.
 const MAX_INT4 = 2_147_483_647;
@@ -335,7 +376,29 @@ class AdminBillService {
     if (parsedInput.lines.length === 0) {
       throw ledgerRefusal("empty_basket", "Add at least one Variety to the Bill.");
     }
-    const run = await runInTransaction(async (transaction): Promise<Run<RaiseBillResult>> => {
+    const firstBill = await getBillByIdempotencyKey(parsedInput.idempotencyKey);
+    if (firstBill) return this.replayRaiseBill(firstBill, parsedInput);
+    let run: Run<RaiseBillResult>;
+    try {
+      run = await this.runRaiseBill(actorProfileId, parsedInput);
+    } catch (raiseError) {
+      // A concurrent attempt with the same key won the insert; this one rolled back whole,
+      // including its MB number.
+      if (violatedUniqueConstraint(raiseError) === billIdempotencyConstraint) {
+        const winner = await getBillByIdempotencyKey(parsedInput.idempotencyKey);
+        if (winner) return this.replayRaiseBill(winner, parsedInput);
+      }
+      throw raiseError;
+    }
+    await notifyAdminBillOutcome(this.afterCommit, run.outcome);
+    return run.result;
+  }
+
+  private async runRaiseBill(
+    actorProfileId: string,
+    parsedInput: ParsedRaiseBillInput,
+  ): Promise<Run<RaiseBillResult>> {
+    return runInTransaction(async (transaction): Promise<Run<RaiseBillResult>> => {
       const billDate = businessDateOf(new Date());
       const customer = await getCustomerById(parsedInput.customerId, transaction);
       assertCustomerActive(customer, parsedInput.customerId);
@@ -371,6 +434,7 @@ class AdminBillService {
           billDate,
           billNumber: billNumber.number,
           reason: parsedInput.reason,
+          idempotencyKey: parsedInput.idempotencyKey,
         },
         transaction,
       );
@@ -395,8 +459,45 @@ class AdminBillService {
         },
       };
     });
-    await notifyAdminBillOutcome(this.afterCommit, run.outcome);
-    return run.result;
+  }
+
+  // The first Raise Bill's result for a retried key, from its version 1; the same key for another
+  // Customer or other Variety quantities is refused. Nothing is written or sent.
+  private async replayRaiseBill(
+    bill: SelectBill,
+    input: ParsedRaiseBillInput,
+  ): Promise<RaiseBillResult> {
+    const [firstVersion, customerId, balanceAfterBillPaise] = await Promise.all([
+      getBillVersionByNumber(bill.id, 1),
+      getBillCustomerId(bill.id),
+      getBalanceThroughBillDebit(bill.id),
+    ]);
+    if (!firstVersion || customerId === null || balanceAfterBillPaise === undefined) {
+      throw internalError(`Bill ${bill.number} has no version 1 or Bill debit`);
+    }
+    const firstItems = firstVersion.items as SelectBillItem[];
+    const sameBill =
+      customerId === input.customerId &&
+      sameQuantities(
+        quantityByKey(
+          firstItems,
+          (item) => item.varietyId,
+          (item) => item.quantity,
+        ),
+        quantityByKey(
+          input.lines,
+          (line) => line.varietyId,
+          (line) => line.quantity,
+        ),
+      );
+    if (!sameBill) throw keyReusedRefusal("Bill");
+    return {
+      billId: bill.id,
+      billNumber: bill.number,
+      billVersionId: firstVersion.id,
+      totalPaise: (firstVersion.header as SelectBill).totalPaise,
+      balancePaise: balanceAfterBillPaise,
+    };
   }
 
   // What Correct would do (history only, Debit Note, Credit Note or both) with the new totals and
@@ -767,9 +868,33 @@ class AdminBillService {
         "A return or damage date goes on a Credit Note only.",
       );
     }
-    const run = await runInTransaction(async (transaction): Promise<Run<RaiseNoteResult>> => {
+    const firstNote = await getNoteByIdempotencyKey(parsedInput.idempotencyKey);
+    if (firstNote) return this.replayRaiseNote(firstNote, parsedInput);
+    let run: Run<RaiseNoteResult> | { replay: SelectNote };
+    try {
+      run = await this.runRaiseNote(actorProfileId, parsedInput);
+    } catch (raiseError) {
+      if (violatedUniqueConstraint(raiseError) === noteIdempotencyConstraint) {
+        const winner = await getNoteByIdempotencyKey(parsedInput.idempotencyKey);
+        if (winner) return this.replayRaiseNote(winner, parsedInput);
+      }
+      throw raiseError;
+    }
+    if ("replay" in run) return this.replayRaiseNote(run.replay, parsedInput);
+    await notifyAdminBillOutcome(this.afterCommit, run.outcome);
+    return run.result;
+  }
+
+  private async runRaiseNote(
+    actorProfileId: string,
+    parsedInput: ParsedRaiseNoteInput,
+  ): Promise<Run<RaiseNoteResult> | { replay: SelectNote }> {
+    return runInTransaction(async (transaction) => {
       const bill = await lockBillRow(parsedInput.billId, transaction);
       if (!bill) throw notFound(`Bill ${parsedInput.billId} not found`);
+      // A retry that waited on the Bill lock behind its first attempt.
+      const winner = await getNoteByIdempotencyKey(parsedInput.idempotencyKey, transaction);
+      if (winner) return { replay: winner };
       await this.assertNotCancelled(bill, transaction);
       const customerId = await this.activeCustomerOf(bill, transaction);
       const { state, draft, issuedOn } = await this.planNoteFor(bill, parsedInput, transaction);
@@ -792,6 +917,7 @@ class AdminBillService {
           reason: parsedInput.reason,
           returnOrDamageOn: parsedInput.returnOrDamageOn ?? null,
           seller,
+          idempotencyKey: parsedInput.idempotencyKey,
         },
         transaction,
       );
@@ -813,8 +939,45 @@ class AdminBillService {
         },
       };
     });
-    await notifyAdminBillOutcome(this.afterCommit, run.outcome);
-    return run.result;
+  }
+
+  // The first Raise Note's result for a retried key; the same key for another Bill, kind or line
+  // quantities is refused. Nothing is written or sent.
+  private async replayRaiseNote(
+    note: SelectNote,
+    input: ParsedRaiseNoteInput,
+  ): Promise<RaiseNoteResult> {
+    const [lines, balanceAfterNotePaise] = await Promise.all([
+      listNoteLinesForNotes([note.id]),
+      getBalanceThroughLedgerEntry(note.ledgerEntryId),
+    ]);
+    if (balanceAfterNotePaise === undefined) {
+      throw internalError(`Note ${note.number} has no Ledger row`);
+    }
+    const sameNote =
+      note.billId === input.billId &&
+      note.kind === input.kind &&
+      sameQuantities(
+        quantityByKey(
+          lines,
+          (line) => line.snapshotLineId,
+          (line) => line.quantity,
+        ),
+        quantityByKey(
+          input.lines,
+          (line) => line.lineId,
+          (line) => line.quantity,
+        ),
+      );
+    if (!sameNote) throw keyReusedRefusal("Note");
+    return {
+      noteId: note.id,
+      number: note.number,
+      kind: note.kind,
+      amountPaise: note.amountPaise,
+      billId: note.billId,
+      balancePaise: balanceAfterNotePaise,
+    };
   }
 
   // The Bill paper: header, the shown version's lines and GST summary, Bill history, Notes, per

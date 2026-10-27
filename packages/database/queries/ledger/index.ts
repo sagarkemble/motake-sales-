@@ -199,6 +199,42 @@ export async function getBalanceThroughBillDebit(
 // --- Notes (Spec G): written in the caller's transaction with their one Ledger row (deferred FK
 // pair, checked at commit).
 
+// The Note a Raise Note attempt with this key already wrote (db-decisions/0015).
+export async function getNoteByIdempotencyKey(
+  idempotencyKey: string,
+  executor: DbExecutor = db,
+): Promise<SelectNote | undefined> {
+  const [note] = await executor
+    .select()
+    .from(notesTable)
+    .where(eq(notesTable.idempotencyKey, idempotencyKey));
+  return note;
+}
+
+// The Balance as the Ledger reads it up to and including one row (every row of that Customer whose
+// posting time is not after it), for showing a retried Raise Note its first result.
+export async function getBalanceThroughLedgerEntry(
+  ledgerEntryId: string,
+  executor: DbExecutor = db,
+): Promise<number | undefined> {
+  const through = alias(ledgerEntriesTable, "through_entry");
+  const [row] = await executor
+    .select({
+      balancePaise: sql<string>`coalesce(sum(CASE WHEN ${ledgerEntriesTable.side} = 'debit' THEN ${ledgerEntriesTable.amountPaise} ELSE -${ledgerEntriesTable.amountPaise} END), 0)`,
+    })
+    .from(through)
+    .innerJoin(
+      ledgerEntriesTable,
+      and(
+        eq(ledgerEntriesTable.customerId, through.customerId),
+        lte(ledgerEntriesTable.occurredAt, through.occurredAt),
+      ),
+    )
+    .where(eq(through.id, ledgerEntryId))
+    .groupBy(through.id);
+  return row ? Number(row.balancePaise) : undefined;
+}
+
 export async function insertNote(
   newNote: InsertNote,
   executor: DbExecutor = db,

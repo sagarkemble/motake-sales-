@@ -40,6 +40,7 @@ async function correctedBill(world: CheckoutWorld) {
     (item) => item.varietyId === world.milk.id,
   )!;
   await adminBillService.raiseNote(world.admin.id, {
+    idempotencyKey: randomUUID(),
     billId: placed.billId,
     expectedVersionNumber: 1,
     kind: "gst_credit_note",
@@ -165,6 +166,7 @@ describe("AdminBillService.getBillPaper", () => {
   it("an office Bill has no order and no Bill note; a deactivated Customer's paper still reads, every action off", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const raised = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey: randomUUID(),
       customerId: world.customer.id,
       lines: [{ varietyId: world.curd.id, quantity: 2 }],
       reason: "Office sale",
@@ -214,6 +216,7 @@ describe("Spec L draws Spec G's papers", () => {
       .where(eq(customersTable.id, world.customer.id));
     await db.update(sellerSettingsTable).set({ einvoicingRequired: true });
     const raised = await adminBillService.raiseBill(world.admin.id, {
+      idempotencyKey: randomUUID(),
       customerId: world.customer.id,
       lines: [{ varietyId: world.milk.id, quantity: 1 }],
       reason: "Office sale",

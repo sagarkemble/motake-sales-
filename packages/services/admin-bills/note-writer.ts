@@ -25,6 +25,8 @@ export interface WriteNoteInput {
   reason: string;
   returnOrDamageOn: string | null;
   seller: SelectSellerSettings;
+  // Raise Note's client key (db-decisions/0015); none for Correct and Cancel.
+  idempotencyKey?: string;
 }
 
 export interface WrittenNote {
@@ -54,6 +56,7 @@ export async function writeNote(input: WriteNoteInput, executor: DbExecutor): Pr
       sellerAddress: input.seller.address,
       sellerGstin: input.seller.gstin,
       ledgerEntryId: randomUUID(),
+      idempotencyKey: input.idempotencyKey ?? null,
     },
     executor,
   );

@@ -134,6 +134,9 @@ export const notesTable = pgTable(
       .unique()
       .references((): AnyPgColumn => ledgerEntriesTable.id, { onDelete: "restrict" }),
 
+    // Raise Note's client key (db-decisions/0015); null on Notes written by Correct and Cancel.
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).unique(),
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

@@ -212,7 +212,13 @@ export const previewRaiseBillInputSchema = z.object({
   lines: z.array(raiseBillLineSchema),
 });
 
-export const raiseBillInputSchema = previewRaiseBillInputSchema.extend({ reason: reasonSchema });
+// One key per attempt (db-decisions/0015): a retry with it returns the first Bill or Note.
+const idempotencyKeySchema = z.string().trim().min(1).max(120);
+
+export const raiseBillInputSchema = previewRaiseBillInputSchema.extend({
+  reason: reasonSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
 
 export const raiseBillCatalogRowSchema = z.object({
   varietyId: z.string(),
@@ -355,6 +361,7 @@ export const previewRaiseNoteInputSchema = z.object({
 export const raiseNoteInputSchema = previewRaiseNoteInputSchema.extend({
   reason: reasonSchema,
   returnOrDamageOn: businessDateSchema.optional(),
+  idempotencyKey: idempotencyKeySchema,
 });
 
 export const raiseNotePreviewSchema = z.object({

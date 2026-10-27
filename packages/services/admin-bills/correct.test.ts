@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db } from "@repo/database";
 import { auditLogsTable, billsTable, sellerSettingsTable } from "@repo/database/schema";
 import { eq } from "@repo/database";
@@ -274,6 +276,7 @@ describe("AdminBillService.correctBill", () => {
     expect(await versionsOf(placed.billId)).toHaveLength(1);
 
     await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "debit_note",
@@ -355,6 +358,7 @@ describe("AdminBillService.correctBill", () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       const { placed, milkLine } = await billWithLines(world);
       await adminBillService.raiseNote(world.admin.id, {
+        idempotencyKey: randomUUID(),
         billId: placed.billId,
         expectedVersionNumber: 1,
         kind: "gst_credit_note",

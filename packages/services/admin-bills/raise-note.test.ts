@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db, eq } from "@repo/database";
 import { billsTable, ledgerEntriesTable, notesTable } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -56,6 +58,7 @@ describe("AdminBillService.raiseNote", () => {
     const [billBefore] = await db.select().from(billsTable).where(eq(billsTable.id, placed.billId));
 
     const result = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",
@@ -139,6 +142,7 @@ describe("AdminBillService.raiseNote", () => {
     const { placed, milkLine, curdLine } = await billWithLines(world);
 
     const commercial = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "commercial_credit_note",
@@ -146,6 +150,7 @@ describe("AdminBillService.raiseNote", () => {
       reason: "Goodwill discount",
     });
     const debit = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "debit_note",
@@ -180,6 +185,7 @@ describe("AdminBillService.raiseNote", () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await billWithLines(world);
     const first = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",
@@ -187,6 +193,7 @@ describe("AdminBillService.raiseNote", () => {
       reason: "One Milk returned",
     });
     const rest = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",
@@ -200,6 +207,7 @@ describe("AdminBillService.raiseNote", () => {
     expect(
       await refusalOf(
         adminBillService.raiseNote(world.admin.id, {
+          idempotencyKey: randomUUID(),
           billId: placed.billId,
           expectedVersionNumber: 1,
           kind: "commercial_credit_note",
@@ -220,6 +228,7 @@ describe("AdminBillService.raiseNote", () => {
     };
 
     await new AdminBillService(undefined, lockHook).raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "debit_note",
@@ -261,6 +270,7 @@ describe("AdminBillService.raiseNote", () => {
       expect(
         await refusalOf(
           adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey: randomUUID(),
             billId: placed.billId,
             expectedVersionNumber: 1,
             kind: "gst_credit_note",
@@ -274,6 +284,7 @@ describe("AdminBillService.raiseNote", () => {
       });
       // A Commercial Credit Note is still allowed.
       await adminBillService.raiseNote(world.admin.id, {
+        idempotencyKey: randomUUID(),
         billId: placed.billId,
         expectedVersionNumber: 1,
         kind: "commercial_credit_note",
@@ -310,6 +321,7 @@ describe("AdminBillService.raiseNote", () => {
       expect(
         await refusalOf(
           adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey: randomUUID(),
             billId: placed.billId,
             expectedVersionNumber: options.expectedVersionNumber ?? 1,
             kind: options.kind,
@@ -333,6 +345,7 @@ describe("AdminBillService.raiseNote", () => {
       expect(
         await refusalOf(
           adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey: randomUUID(),
             billId: placed.billId,
             expectedVersionNumber: 1,
             kind: "debit_note",
@@ -360,6 +373,7 @@ describe("AdminBillService.raiseNote", () => {
       expect(
         await refusalOf(
           adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey: randomUUID(),
             billId: placed.billId,
             expectedVersionNumber: 1,
             kind: "debit_note",
@@ -373,6 +387,7 @@ describe("AdminBillService.raiseNote", () => {
       expect(
         await refusalOf(
           adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey: randomUUID(),
             billId: other.billId,
             expectedVersionNumber: 1,
             kind: "debit_note",
@@ -432,6 +447,7 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
     expect(
       await refusalOf(
         adminBillService.raiseNote(world.admin.id, {
+          idempotencyKey: randomUUID(),
           billId: placed.billId,
           expectedVersionNumber: 1,
           kind: "debit_note",
@@ -452,6 +468,7 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
     const { placed, milkLine, curdLine } = await billWithLines(world);
 
     const note = await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey: randomUUID(),
       billId: placed.billId,
       expectedVersionNumber: 1,
       kind: "gst_credit_note",
@@ -473,6 +490,7 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
     const { placed, milkLine, curdLine } = await billWithLines(world);
     const raise = (lineId: string) =>
       adminBillService.raiseNote(world.admin.id, {
+        idempotencyKey: randomUUID(),
         billId: placed.billId,
         expectedVersionNumber: 1,
         kind: "gst_credit_note",
@@ -487,5 +505,95 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
     expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(
       BOOK_NOW_TOTAL_PAISE - notes[0]!.amountPaise - notes[1]!.amountPaise,
     );
+  });
+});
+
+describe("AdminBillService.raiseNote idempotency (db-decisions/0015)", () => {
+  it("the same key twice returns the first Note, writes one and uses no second number", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+    const input = {
+      idempotencyKey: randomUUID(),
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "gst_credit_note" as const,
+      lines: [{ lineId: milkLine.id, quantity: 1 }],
+      reason: "One Milk returned",
+    };
+
+    const first = await adminBillService.raiseNote(world.admin.id, input);
+    const replay = await adminBillService.raiseNote(world.admin.id, input);
+
+    expect(replay).toEqual(first);
+    expect(await notesOf(placed.billId)).toHaveLength(1);
+    expect(outcomes).toHaveLength(1);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(first.balancePaise);
+    const next = await adminBillService.raiseNote(world.admin.id, {
+      ...input,
+      idempotencyKey: randomUUID(),
+    });
+    expect(next.number).toBe("MC/26-27/000002");
+  });
+
+  it("the same key twice at once writes one Note and both get its result", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+    const input = {
+      idempotencyKey: randomUUID(),
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "debit_note" as const,
+      lines: [{ lineId: milkLine.id, quantity: 1 }],
+      reason: "Short-billed",
+    };
+
+    const [first, second] = await Promise.all([
+      adminBillService.raiseNote(world.admin.id, input),
+      adminBillService.raiseNote(world.admin.id, input),
+    ]);
+
+    expect(second).toEqual(first);
+    expect(await notesOf(placed.billId)).toHaveLength(1);
+    expect(outcomes).toHaveLength(1);
+    const next = await adminBillService.raiseNote(world.admin.id, {
+      ...input,
+      idempotencyKey: randomUUID(),
+    });
+    expect(next.number).toBe("MD/26-27/000002");
+  });
+
+  it("refuses the same key with another kind or qty as idempotency_key_reused", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await billWithLines(world);
+    const idempotencyKey = randomUUID();
+    await adminBillService.raiseNote(world.admin.id, {
+      idempotencyKey,
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      kind: "gst_credit_note",
+      lines: [{ lineId: milkLine.id, quantity: 1 }],
+      reason: "One Milk returned",
+    });
+    outcomes.length = 0;
+
+    for (const changed of [
+      { kind: "debit_note" as const, quantity: 1 },
+      { kind: "gst_credit_note" as const, quantity: 2 },
+    ]) {
+      expect(
+        await refusalOf(
+          adminBillService.raiseNote(world.admin.id, {
+            idempotencyKey,
+            billId: placed.billId,
+            expectedVersionNumber: 1,
+            kind: changed.kind,
+            lines: [{ lineId: milkLine.id, quantity: changed.quantity }],
+            reason: "One Milk returned",
+          }),
+        ),
+      ).toMatchObject({ reason: "idempotency_key_reused" });
+    }
+    expect(await notesOf(placed.billId)).toHaveLength(1);
+    expect(outcomes).toEqual([]);
   });
 });

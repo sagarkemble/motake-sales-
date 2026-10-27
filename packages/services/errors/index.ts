@@ -213,7 +213,8 @@ export type LedgerRefusalReason =
   | "gst_credit_note_deadline_passed"
   | "return_date_on_debit_note"
   | "opening_balance_exists"
-  | "opening_date_in_future";
+  | "opening_date_in_future"
+  | "idempotency_key_reused";
 
 export type LedgerRefusal = Refusal<LedgerRefusalReason>;
 
@@ -238,6 +239,7 @@ const ledgerRefusalCodes: Record<LedgerRefusalReason, TRPCError["code"]> = {
   return_date_on_debit_note: "BAD_REQUEST",
   opening_balance_exists: "CONFLICT",
   opening_date_in_future: "BAD_REQUEST",
+  idempotency_key_reused: "CONFLICT",
 };
 
 export const ledgerRefusal = (
