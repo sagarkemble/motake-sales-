@@ -107,5 +107,4 @@ export type BillLockHook = (
   executor: DbExecutor,
 ) => Promise<BillLockDecision>;
 
-// Until Spec I lands every Bill is open to Correct and Cancel.
-export const allowEveryBillLock: BillLockHook = async () => ({ allowed: true });
+// Spec I's gstBillLockHook (shared/gst-gates) is AdminBillService's default.
