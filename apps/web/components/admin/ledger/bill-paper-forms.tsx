@@ -1,10 +1,12 @@
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Button } from "~/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
@@ -13,13 +15,13 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useBillPaper, useLedgerPreviews, type BillPaper, type NoteKind } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
-import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
-import { refusalMessage } from "~/lib/refusal";
+import { isOutcomeUnknown, refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 
 import type { BuyerText, CorrectEdit } from "./bill-paper-document";
 import {
   NOTE_KINDS,
+  OutcomeUnknownAlert,
   ReasonField,
   RefusalAlert,
   businessToday,
@@ -97,8 +99,10 @@ export function useCorrectPreview(paper: BillPaper, state: CorrectState) {
 export function toCorrectEdit(
   state: CorrectState,
   preview: ReturnType<typeof useCorrectPreview>,
+  disabled: boolean,
 ): CorrectEdit {
   return {
+    disabled,
     quantities: state.quantities,
     setQuantity: state.setQuantity,
     buyer: state.buyer,
@@ -149,12 +153,15 @@ export function CorrectPanel({
   paper,
   state,
   preview,
+  correct,
   onClose,
   onSaved,
 }: {
   paper: BillPaper;
   state: CorrectState;
   preview: ReturnType<typeof useCorrectPreview>;
+  // From the page, which also greys out the paper's steppers while the save runs.
+  correct: Pick<ReturnType<typeof useBillPaper>, "correctBillAsync" | "isCorrectingBill">;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -162,7 +169,8 @@ export function CorrectPanel({
   const { formatPaise } = useFormatMoney();
   const [reason, setReason] = useState("");
   const [refusal, setRefusal] = useState<string | null>(null);
-  const { correctBillAsync, isCorrectingBill } = useBillPaper();
+  const [isBuyerOpen, setIsBuyerOpen] = useState(false);
+  const { correctBillAsync, isCorrectingBill } = correct;
   const { correctPreview, correctPreviewError, isCorrectPreviewFetching } = preview;
   const canSave =
     state.hasChanges &&
@@ -194,6 +202,8 @@ export function CorrectPanel({
       <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
         {!state.hasChanges ? (
           <p className="text-muted-foreground">{tx("admin.ledger.paper.preview.nothingYet")}</p>
+        ) : !state.buyerFilled ? (
+          <p className="text-destructive">{tx("admin.ledger.paper.buyer.required")}</p>
         ) : correctPreviewError ? (
           <p className="text-destructive">
             {refusalMessage(tx, correctPreviewError, tx("admin.ledger.refusals.generic"))}
@@ -249,12 +259,24 @@ export function CorrectPanel({
           </>
         )}
       </div>
-      <details className="rounded-md border px-3 py-2">
-        <summary className="cursor-pointer text-sm">{tx("admin.ledger.paper.buyerText")}</summary>
-        <div className="pt-3">
+      <Collapsible
+        open={isBuyerOpen || !state.buyerFilled}
+        onOpenChange={setIsBuyerOpen}
+        className="rounded-md border px-3 py-2"
+      >
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-sm">
+          {tx("admin.ledger.paper.buyerText")}
+          <ChevronDownIcon
+            className={cn(
+              "size-4 transition-transform",
+              (isBuyerOpen || !state.buyerFilled) && "rotate-180",
+            )}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
           <BuyerFields state={state} disabled={isCorrectingBill} />
-        </div>
-      </details>
+        </CollapsibleContent>
+      </Collapsible>
       <ReasonField
         id="correct-reason"
         value={reason}
@@ -346,7 +368,19 @@ export function CancelForm({ paper, onDone }: { paper: BillPaper; onDone: () => 
 
 // --- Raise Note.
 
-export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () => void }) {
+export function RaiseNoteForm({
+  paper,
+  idempotencyKey,
+  onRaised,
+  onDone,
+}: {
+  paper: BillPaper;
+  // One key per Note on this paper, kept by the page across sheet closes; rotated on success only,
+  // so a retry after a lost answer (even with a reworded reason) can never raise a second Note.
+  idempotencyKey: string;
+  onRaised: () => void;
+  onDone: () => void;
+}) {
   const tx = useTranslate();
   const { formatPaise } = useFormatMoney();
   const today = businessToday();
@@ -355,8 +389,8 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
   const [reason, setReason] = useState("");
   const [returnedOn, setReturnedOn] = useState("");
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [outcomeUnknown, setOutcomeUnknown] = useState(false);
   const { raiseNoteAsync, isRaisingNote } = useBillPaper();
-  const { keyFor, clearKey } = useIdempotencyKeys();
   const isCredit = kind !== "debit_note";
   const lines = paper.lines
     .filter((line) => (picks[line.id] ?? 0) > 0)
@@ -376,25 +410,31 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
   const { raiseNotePreview, raiseNotePreviewError } = useLedgerPreviews({
     raiseNote: debouncedNoteInput,
   });
+  // A preview for the kind just left would show the wrong sign and amount, so it is hidden.
+  const previewForKind = previewInput !== null && debouncedNoteInput?.kind === kind;
 
-  const canSubmit = lines.length > 0 && !over && reason.trim() !== "" && !isRaisingNote;
+  const canSubmit =
+    lines.length > 0 &&
+    !over &&
+    reason.trim() !== "" &&
+    raiseNotePreviewError == null &&
+    !isRaisingNote;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setRefusal(null);
-    const payload = {
-      billId: paper.bill.id,
-      expectedVersionNumber: paper.bill.latestVersionNumber,
-      kind,
-      lines,
-      reason: reason.trim(),
-      returnOrDamageOn: isCredit && returnedOn ? returnedOn : undefined,
-    };
-    // One key per attempt: a retry of the same Note reuses it, a changed Note gets a new one.
-    const attemptId = JSON.stringify(payload);
+    setOutcomeUnknown(false);
     try {
-      const result = await raiseNoteAsync({ ...payload, idempotencyKey: keyFor(attemptId) });
-      clearKey(attemptId);
+      const result = await raiseNoteAsync({
+        billId: paper.bill.id,
+        expectedVersionNumber: paper.bill.latestVersionNumber,
+        kind,
+        lines,
+        reason: reason.trim(),
+        returnOrDamageOn: isCredit && returnedOn ? returnedOn : undefined,
+        idempotencyKey,
+      });
+      onRaised();
       toast.success(
         tx("admin.ledger.paper.note.done", {
           kind: tx(`admin.ledger.rowTypes.${result.data.kind}`),
@@ -404,7 +444,8 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
       );
       onDone();
     } catch (error) {
-      setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
+      if (isOutcomeUnknown(error)) setOutcomeUnknown(true);
+      else setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
     }
   }
 
@@ -444,6 +485,7 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
             <QuantityStepper
               quantity={picks[line.id] ?? 0}
               minQuantity={0}
+              disabled={isRaisingNote}
               onQuantityChange={(quantity) =>
                 setPicks((current) => ({ ...current, [line.id]: quantity }))
               }
@@ -472,7 +514,8 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
           {refusalMessage(tx, raiseNotePreviewError, tx("admin.ledger.refusals.generic"))}
         </p>
       ) : (
-        raiseNotePreview && (
+        raiseNotePreview &&
+        previewForKind && (
           <div className="space-y-2">
             <p>
               {tx("admin.ledger.paper.note.amount", {
@@ -502,6 +545,7 @@ export function RaiseNoteForm({ paper, onDone }: { paper: BillPaper; onDone: () 
         disabled={isRaisingNote}
         placeholder={tx("admin.ledger.paper.note.placeholder")}
       />
+      {outcomeUnknown && <OutcomeUnknownAlert message={tx("admin.ledger.outcomeUnknown.note")} />}
       {refusal && <RefusalAlert message={refusal} />}
       <Button className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
         {isRaisingNote && <Spinner />}

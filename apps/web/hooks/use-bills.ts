@@ -26,6 +26,7 @@ export function useBills({ listFilters, billId, enabled = true }: UseBillsParams
       billsListQuery.data?.data ?? emptyPaginatedResult(listFilters?.page, listFilters?.pageSize),
     isBillsListLoading: billsListQuery.isLoading,
     isBillsListError: billsListQuery.isError,
+    refetchBillsList: billsListQuery.refetch,
 
     bill: billQuery.data?.data ?? null,
     isBillLoading: billQuery.isLoading,

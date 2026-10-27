@@ -1,10 +1,12 @@
 "use client";
 
+import { GstRate } from "~/components/shared/gst-rate";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import type { BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
+import { billTaxRows } from "~/lib/bill-tax-rows";
 import { cn } from "~/lib/utils";
 
 type Totals = BillPaper["version"]["totals"];
@@ -17,6 +19,8 @@ export interface BuyerText {
 
 // Correct in place: qty per line, the edited buyer text and the server-previewed totals.
 export interface CorrectEdit {
+  // True while the save runs: the steppers are greyed out.
+  disabled: boolean;
   quantities: Record<string, number>;
   setQuantity: (lineId: string, quantity: number) => void;
   buyer: BuyerText;
@@ -25,8 +29,93 @@ export interface CorrectEdit {
 
 const cell = "border-y border-border px-2 py-2";
 
-function rateText(gstRateBps: number, exempt: boolean, exemptLabel: string) {
-  return exempt ? exemptLabel : `${gstRateBps / 100}%`;
+type PaperLine = BillPaper["lines"][number];
+
+// One line as shown: an edited line shows its value at the frozen per-unit value; the totals are
+// the server's exact preview.
+function lineView(line: PaperLine, edit: CorrectEdit | undefined) {
+  const quantity = edit ? (edit.quantities[line.id] ?? line.quantity) : line.quantity;
+  const unitPaise = line.quantity > 0 ? line.amountPaise / line.quantity : 0;
+  const changed = edit !== undefined && quantity !== line.quantity;
+  const amountPaise = changed ? Math.round(unitPaise * quantity) : line.amountPaise;
+  return { quantity, unitPaise, changed, amountPaise, floor: line.creditedQty };
+}
+
+function EditQuantity({ line, edit }: { line: PaperLine; edit: CorrectEdit }) {
+  const tx = useTranslate();
+  const { quantity, changed, floor } = lineView(line, edit);
+  return (
+    <div className="flex flex-col items-end gap-1 no-underline">
+      <QuantityStepper
+        quantity={quantity}
+        minQuantity={0}
+        disabled={edit.disabled}
+        onQuantityChange={(next) => edit.setQuantity(line.id, next)}
+      />
+      {changed && (
+        <span className="text-xs text-amber-700">
+          {tx("admin.ledger.paper.was", { qty: line.quantity })}
+        </span>
+      )}
+      {quantity > 0 && quantity < floor && (
+        <span className="text-xs text-destructive">
+          {tx("admin.ledger.paper.atLeast", { qty: floor })}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Correct on a phone: one card per line with the stepper in view, then Total and Round off.
+function EditLinesList({
+  paper,
+  edit,
+  totals,
+}: {
+  paper: BillPaper;
+  edit: CorrectEdit;
+  totals: Totals;
+}) {
+  const tx = useTranslate();
+  const { formatPaise } = useFormatMoney();
+  return (
+    <div className="py-3 sm:hidden">
+      <ul className="divide-y rounded-md border text-sm">
+        {paper.lines.map((line) => {
+          const { quantity, unitPaise, amountPaise } = lineView(line, edit);
+          return (
+            <li
+              key={line.id}
+              className={cn("flex flex-col gap-2 px-3 py-2", quantity === 0 && "text-zinc-400")}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className={cn("min-w-0", quantity === 0 && "line-through")}>
+                  {line.name}
+                  <span className="block text-xs text-zinc-500">
+                    {formatPaise(Math.round(unitPaise))}{" "}
+                    {tx("admin.ledger.paper.perUnit", { unit: line.unit })} ·{" "}
+                    <GstRate gstRateBps={line.gstRateBps} exempt={line.exempt} />
+                    {line.creditedQty > 0 &&
+                      ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
+                  </span>
+                </span>
+                <span className="shrink-0 tabular-nums">{formatPaise(amountPaise)}</span>
+              </div>
+              <EditQuantity line={line} edit={edit} />
+            </li>
+          );
+        })}
+      </ul>
+      <dl className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 text-sm">
+        <dt className="font-semibold">
+          {tx("admin.ledger.paper.total")} · {totals.totalQuantity}
+        </dt>
+        <dd className="text-right font-semibold tabular-nums">{formatPaise(totals.totalPaise)}</dd>
+        <dt className="text-zinc-500">{tx("admin.ledger.paper.roundOff")}</dt>
+        <dd className="text-right tabular-nums">{formatPaise(totals.roundOffPaise)}</dd>
+      </dl>
+    </div>
+  );
 }
 
 /**
@@ -39,7 +128,8 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
   const { formatPaise } = useFormatMoney();
   const { letterhead, totals: issuedTotals } = paper.version;
   const totals = edit?.totals ?? issuedTotals;
-  const interState = paper.gstSummary.some((row) => row.igstPaise > 0);
+  // CGST and SGST, or IGST when inter-state; none on a Bill of Supply.
+  const taxColumns = billTaxRows(issuedTotals).map((row) => row.tax);
   const buyer = edit
     ? { shop_name: edit.buyer.shopName, phone: edit.buyer.phone, address: edit.buyer.address }
     : letterhead.buyer;
@@ -104,7 +194,8 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
         </div>
       </section>
 
-      <div className="-mx-4 overflow-x-auto py-3 sm:mx-0">
+      {edit && <EditLinesList paper={paper} edit={edit} totals={totals} />}
+      <div className={cn("-mx-4 overflow-x-auto py-3 sm:mx-0", edit && "hidden sm:block")}>
         <table className="w-full min-w-[40rem] border-collapse border border-border text-sm">
           <thead>
             <tr className="text-left text-xs text-zinc-500">
@@ -134,13 +225,7 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
           </thead>
           <tbody>
             {paper.lines.map((line, index) => {
-              const quantity = edit ? (edit.quantities[line.id] ?? line.quantity) : line.quantity;
-              const unitPaise = line.quantity > 0 ? line.amountPaise / line.quantity : 0;
-              const changed = edit !== undefined && quantity !== line.quantity;
-              // An edited line shows its value at the frozen per-unit value; the totals below are the
-              // server's exact preview.
-              const amountPaise = changed ? Math.round(unitPaise * quantity) : line.amountPaise;
-              const floor = line.creditedQty;
+              const { quantity, unitPaise, amountPaise } = lineView(line, edit);
               return (
                 <tr
                   key={line.id}
@@ -160,33 +245,13 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
                     {formatPaise(line.routePricePaise)}
                   </td>
                   <td className={cn(cell, "text-right text-xs tabular-nums")}>
-                    {rateText(line.gstRateBps, line.exempt, tx("admin.bills.exempt"))}
+                    <GstRate gstRateBps={line.gstRateBps} exempt={line.exempt} />
                   </td>
                   <td className={cn(cell, "text-right tabular-nums")}>
                     {formatPaise(Math.round(unitPaise))}
                   </td>
                   <td className={cn(cell, "text-right tabular-nums")}>
-                    {edit ? (
-                      <div className="flex flex-col items-end gap-1 no-underline">
-                        <QuantityStepper
-                          quantity={quantity}
-                          minQuantity={0}
-                          onQuantityChange={(next) => edit.setQuantity(line.id, next)}
-                        />
-                        {changed && (
-                          <span className="text-xs text-amber-700">
-                            {tx("admin.ledger.paper.was", { qty: line.quantity })}
-                          </span>
-                        )}
-                        {quantity > 0 && quantity < floor && (
-                          <span className="text-xs text-destructive">
-                            {tx("admin.ledger.paper.atLeast", { qty: floor })}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      quantity
-                    )}
+                    {edit ? <EditQuantity line={line} edit={edit} /> : quantity}
                   </td>
                   <td className={cn(cell, "text-right tabular-nums")}>
                     {formatPaise(amountPaise)}
@@ -230,20 +295,11 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
                 <th className="border border-border px-2 py-1.5 text-right font-medium">
                   {tx("admin.ledger.paper.gstSummary.taxable")}
                 </th>
-                {interState ? (
-                  <th className="border border-border px-2 py-1.5 text-right font-medium">
-                    {tx("admin.bills.igst")}
+                {taxColumns.map((tax) => (
+                  <th key={tax} className="border border-border px-2 py-1.5 text-right font-medium">
+                    {tx(`admin.bills.${tax}`)}
                   </th>
-                ) : (
-                  <>
-                    <th className="border border-border px-2 py-1.5 text-right font-medium">
-                      {tx("admin.bills.cgst")}
-                    </th>
-                    <th className="border border-border px-2 py-1.5 text-right font-medium">
-                      {tx("admin.bills.sgst")}
-                    </th>
-                  </>
-                )}
+                ))}
                 <th className="border border-border px-2 py-1.5 text-right font-medium">
                   {tx("admin.ledger.paper.gstSummary.tax")}
                 </th>
@@ -253,25 +309,19 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
               {paper.gstSummary.map((row) => (
                 <tr key={`${row.gstRateBps}-${row.exempt}`}>
                   <td className="border border-border px-2 py-1.5">
-                    {rateText(row.gstRateBps, row.exempt, tx("admin.bills.exempt"))}
+                    <GstRate gstRateBps={row.gstRateBps} exempt={row.exempt} />
                   </td>
                   <td className="border border-border px-2 py-1.5 text-right tabular-nums">
                     {formatPaise(row.taxablePaise)}
                   </td>
-                  {interState ? (
-                    <td className="border border-border px-2 py-1.5 text-right tabular-nums">
-                      {formatPaise(row.igstPaise)}
+                  {taxColumns.map((tax) => (
+                    <td
+                      key={tax}
+                      className="border border-border px-2 py-1.5 text-right tabular-nums"
+                    >
+                      {formatPaise(row[`${tax}Paise`])}
                     </td>
-                  ) : (
-                    <>
-                      <td className="border border-border px-2 py-1.5 text-right tabular-nums">
-                        {formatPaise(row.cgstPaise)}
-                      </td>
-                      <td className="border border-border px-2 py-1.5 text-right tabular-nums">
-                        {formatPaise(row.sgstPaise)}
-                      </td>
-                    </>
-                  )}
+                  ))}
                   <td className="border border-border px-2 py-1.5 text-right tabular-nums">
                     {formatPaise(row.taxPaise)}
                   </td>

@@ -31,3 +31,11 @@ export function refusalMessage(
   }
   return getErrorMessage(error, fallbackMessage);
 }
+
+// A failure with no answer from the server (network drop, timeout, 5xx): the write may or may not
+// have happened, so the next try must reuse the key and the admin should check the Ledger first.
+export function isOutcomeUnknown(error: unknown): boolean {
+  if (!(error instanceof TRPCClientError)) return true;
+  const httpStatus = (error.data as { httpStatus?: number } | undefined)?.httpStatus;
+  return typeof httpStatus !== "number" || httpStatus >= 500;
+}

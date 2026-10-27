@@ -11,6 +11,7 @@ interface QuantityStepperProps {
   quantity: number;
   onQuantityChange: (quantity: number) => void;
   minQuantity?: number;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export function QuantityStepper({
   quantity,
   onQuantityChange,
   minQuantity = 0,
+  disabled = false,
   className,
 }: QuantityStepperProps) {
   const tx = useTranslate();
@@ -35,7 +37,7 @@ export function QuantityStepper({
         variant="outline"
         size="icon"
         className="size-8 shrink-0 rounded-full"
-        disabled={quantity <= minQuantity}
+        disabled={disabled || quantity <= minQuantity}
         onClick={() => onQuantityChange(Math.max(minQuantity, quantity - 1))}
         aria-label={tx("common.a11y.decreaseQty")}
       >
@@ -47,6 +49,7 @@ export function QuantityStepper({
         inputMode="numeric"
         pattern="[0-9]*"
         value={quantity}
+        disabled={disabled}
         onChange={(event) => handleNumericInput(event.target.value)}
         className="h-8 w-14 rounded-lg border-input px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
@@ -56,6 +59,7 @@ export function QuantityStepper({
         variant="outline"
         size="icon"
         className="size-8 shrink-0 rounded-full"
+        disabled={disabled}
         onClick={() => onQuantityChange(quantity + 1)}
         aria-label={tx("common.a11y.increaseQty")}
       >

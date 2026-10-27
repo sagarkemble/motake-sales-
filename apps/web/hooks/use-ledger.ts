@@ -1,4 +1,7 @@
 import type { RouterInputs, RouterOutputs } from "@repo/trpc/client";
+import { useEffect } from "react";
+
+import { refusalOf } from "~/lib/refusal";
 
 import { trpc } from "~/trpc/client";
 
@@ -57,6 +60,9 @@ export function useLedger({
     onSuccess: () => {
       utils.ledger.invalidate();
       utils.bills.invalidate();
+      // Lifetime stats and sales reports sum the Bills.
+      utils.customers.invalidate();
+      utils.reports.invalidate();
     },
   });
 
@@ -94,7 +100,8 @@ interface UseBillPaperParams {
   enabled?: boolean;
 }
 
-// The Bill paper and its three writes, and the Pre-order paper.
+// The Bill paper and its three writes, and the Pre-order paper. A refused write also reloads the
+// paper, so a retry never resends a version number the server has moved past.
 export function useBillPaper({ billId, orderId, enabled = true }: UseBillPaperParams = {}) {
   const utils = trpc.useUtils();
 
@@ -111,10 +118,23 @@ export function useBillPaper({ billId, orderId, enabled = true }: UseBillPaperPa
     utils.ledger.invalidate();
     utils.bills.invalidate();
     utils.orders.invalidate();
+    // Cancel gives sold qty back to the gate pass; lifetime stats and reports sum the Bills.
+    utils.gatepasses.invalidate();
+    utils.customers.invalidate();
+    utils.reports.invalidate();
   };
-  const correctMutation = trpc.ledger.correct.useMutation({ onSuccess: invalidatePapers });
-  const cancelMutation = trpc.ledger.cancel.useMutation({ onSuccess: invalidatePapers });
-  const raiseNoteMutation = trpc.ledger.raiseNote.useMutation({ onSuccess: invalidatePapers });
+  const correctMutation = trpc.ledger.correct.useMutation({
+    onSuccess: invalidatePapers,
+    onError: invalidatePapers,
+  });
+  const cancelMutation = trpc.ledger.cancel.useMutation({
+    onSuccess: invalidatePapers,
+    onError: invalidatePapers,
+  });
+  const raiseNoteMutation = trpc.ledger.raiseNote.useMutation({
+    onSuccess: invalidatePapers,
+    onError: invalidatePapers,
+  });
 
   return {
     billPaper: billPaperQuery.data?.data ?? null,
@@ -135,12 +155,20 @@ export function useBillPaper({ billId, orderId, enabled = true }: UseBillPaperPa
 
     raiseNoteAsync: raiseNoteMutation.mutateAsync,
     isRaisingNote: raiseNoteMutation.isPending,
+  };
+}
 
-    // A 5-minute link, drawn first when the PDF was never drawn; fetched on click only.
+// A Bill version's or Note's PDF: a 5-minute link, drawn first when the PDF was never drawn.
+// Fetched on click only, never cached.
+export function useDocumentDownloadLink() {
+  const utils = trpc.useUtils();
+  return {
     fetchDownloadLink: async (target: RouterInputs["documents"]["downloadLink"]) =>
       (await utils.documents.downloadLink.fetch(target, { staleTime: 0 })).data,
   };
 }
+
+const PAPER_OUT_OF_DATE = new Set(["stale_version", "bill_cancelled", "unknown_line"]);
 
 type CorrectPreviewInput = RouterInputs["ledger"]["previewCorrect"];
 type RaiseNotePreviewInput = RouterInputs["ledger"]["previewRaiseNote"];
@@ -169,6 +197,15 @@ export function useLedgerPreviews({
     raiseBill ?? { customerId: "", lines: [] },
     { enabled: Boolean(raiseBill), retry: false, placeholderData: (previous) => previous },
   );
+
+  // A preview refused because the paper is out of date reloads the paper, as a refused write does.
+  const utils = trpc.useUtils();
+  const stalePaper = [correctPreviewQuery.error, raiseNotePreviewQuery.error].some((error) =>
+    PAPER_OUT_OF_DATE.has(refusalOf(error)?.reason ?? ""),
+  );
+  useEffect(() => {
+    if (stalePaper) void utils.ledger.billPaper.invalidate();
+  }, [stalePaper, utils]);
 
   return {
     correctPreview: correct ? (correctPreviewQuery.data?.data ?? null) : null,

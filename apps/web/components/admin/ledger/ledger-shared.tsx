@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, CircleHelpIcon } from "lucide-react";
 import { useCallback } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -98,5 +98,17 @@ export function ReasonField({
         placeholder={placeholder}
       />
     </div>
+  );
+}
+
+/** The write may or may not have happened: check the Ledger before trying again. */
+export function OutcomeUnknownAlert({ message }: { message: string }) {
+  const tx = useTranslate();
+  return (
+    <Alert>
+      <CircleHelpIcon />
+      <AlertTitle>{tx("admin.ledger.outcomeUnknown.title")}</AlertTitle>
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
   );
 }

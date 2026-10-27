@@ -224,6 +224,7 @@ function LedgerPageContent() {
                 shopName={summary.customer.shopName}
               />
               <PickBillForNoteDialog
+                key={summary.customer.id}
                 open={noteOpen}
                 onOpenChange={setNoteOpen}
                 customerId={summary.customer.id}

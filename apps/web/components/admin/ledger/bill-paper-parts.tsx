@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
-import { useBillPaper, type BillPaper } from "~/hooks/use-ledger";
+import { useDocumentDownloadLink, type BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
@@ -86,7 +86,7 @@ export function DownloadPdfButton({
   className?: string;
 }) {
   const tx = useTranslate();
-  const { fetchDownloadLink } = useBillPaper();
+  const { fetchDownloadLink } = useDocumentDownloadLink();
   const [isOpening, setIsOpening] = useState(false);
 
   async function handleDownload() {

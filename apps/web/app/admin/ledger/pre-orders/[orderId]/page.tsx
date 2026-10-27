@@ -56,7 +56,6 @@ export default function AdminPreOrderPaperPage() {
       toast.success(tx("admin.ledger.preorder.done"));
       setCancelOpen(false);
       setReason("");
-      void refetchPreOrderPaper();
     } catch (error) {
       setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
     }

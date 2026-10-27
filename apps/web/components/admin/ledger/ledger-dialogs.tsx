@@ -210,13 +210,19 @@ export function PickBillForNoteDialog({
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
   const [billId, setBillId] = useState("");
-  const { billsPage, isBillsListLoading } = useBills({
+  const { billsPage, isBillsListLoading, isBillsListError, refetchBillsList } = useBills({
     listFilters: { customerId, hideCancelled: true, page: 1, pageSize: 100 },
     enabled: open,
   });
 
+  // A pick never outlives the dialog, so it cannot carry over to another Customer.
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) setBillId("");
+    onOpenChange(nextOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{tx("admin.ledger.pickBill.title")}</DialogTitle>
@@ -224,7 +230,12 @@ export function PickBillForNoteDialog({
             {tx("admin.ledger.pickBill.description", { shopName })}
           </DialogDescription>
         </DialogHeader>
-        {!isBillsListLoading && billsPage.items.length === 0 ? (
+        {isBillsListError ? (
+          <RefusalAlert
+            title={tx("admin.ledger.pickBill.loadError")}
+            message={tx("admin.ledger.loadError.body")}
+          />
+        ) : !isBillsListLoading && billsPage.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{tx("admin.ledger.pickBill.empty")}</p>
         ) : (
           <div className="grid gap-1.5">
@@ -251,9 +262,14 @@ export function PickBillForNoteDialog({
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             {tx("admin.ledger.close")}
           </Button>
+          {isBillsListError && (
+            <Button variant="outline" onClick={() => refetchBillsList()}>
+              {tx("common.actions.tryAgain")}
+            </Button>
+          )}
           <Button
             disabled={!billId}
             onClick={() => router.push(`/admin/ledger/bills/${billId}?action=note`)}

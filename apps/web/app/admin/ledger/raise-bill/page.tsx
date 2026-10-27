@@ -10,12 +10,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Fragment, Suspense, useState } from "react";
+import { toast } from "sonner";
 
 import { useDebouncedPreviewInput } from "~/components/admin/ledger/bill-paper-forms";
 import { CustomerPicker } from "~/components/admin/ledger/customer-picker";
 import { InactiveBanner } from "~/components/admin/ledger/ledger-parts";
-import { ReasonField, RefusalAlert, useBalanceText } from "~/components/admin/ledger/ledger-shared";
+import {
+  OutcomeUnknownAlert,
+  ReasonField,
+  RefusalAlert,
+  useBalanceText,
+} from "~/components/admin/ledger/ledger-shared";
+import { GstRate } from "~/components/shared/gst-rate";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -32,8 +39,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useLedger, useLedgerPreviews, type RaiseBillCatalogRow } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
-import { useIdempotencyKeys } from "~/hooks/shared/use-idempotency-keys";
-import { refusalMessage } from "~/lib/refusal";
+import { billTaxRows } from "~/lib/bill-tax-rows";
+import { isOutcomeUnknown, refusalMessage } from "~/lib/refusal";
 
 type Basket = Record<string, number>;
 
@@ -41,15 +48,6 @@ interface RaisedBill {
   billId: string;
   billNumber: string;
   totalPaise: number;
-}
-
-function gstText(
-  row: RaiseBillCatalogRow,
-  tx: (key: string, values?: Record<string, string | number>) => string,
-) {
-  return row.exempt
-    ? tx("admin.bills.exempt")
-    : tx("admin.ledger.raiseBill.gst", { rate: row.gstRateBps / 100 });
 }
 
 // Variant A: search the Route catalog, tap to add, cart with steppers and server totals beside it.
@@ -69,7 +67,10 @@ function RaiseBillCart({
   const [reason, setReason] = useState("");
   const [refusal, setRefusal] = useState<string | null>(null);
   const { raiseBillAsync, isRaisingBill } = useLedger({ customerId });
-  const { keyFor, clearKey } = useIdempotencyKeys();
+  const [outcomeUnknown, setOutcomeUnknown] = useState(false);
+  // One key per Bill being built here (the cart remounts per Customer), rotated only once the Bill
+  // is raised: a retry after a lost answer, even with a reworded reason, never bills twice.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const lines = catalog
     .filter((row) => (basket[row.varietyId] ?? 0) > 0)
@@ -93,17 +94,21 @@ function RaiseBillCart({
   async function handleSubmit() {
     if (!canSubmit) return;
     setRefusal(null);
-    const payload = { customerId, lines, reason: reason.trim() };
-    // One key per attempt: a retry of the same Bill reuses it, a changed Bill gets a new one.
-    const attemptId = JSON.stringify(payload);
+    setOutcomeUnknown(false);
     try {
-      const result = await raiseBillAsync({ ...payload, idempotencyKey: keyFor(attemptId) });
-      clearKey(attemptId);
+      const result = await raiseBillAsync({
+        customerId,
+        lines,
+        reason: reason.trim(),
+        idempotencyKey,
+      });
+      setIdempotencyKey(crypto.randomUUID());
       setBasket({});
       setReason("");
       onRaised(result.data);
     } catch (error) {
-      setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
+      if (isOutcomeUnknown(error)) setOutcomeUnknown(true);
+      else setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
     }
   }
 
@@ -136,13 +141,14 @@ function RaiseBillCart({
                     price: formatPaise(row.routePricePaise),
                     unit: row.unit,
                   })}{" "}
-                  · {gstText(row, tx)}
+                  · <GstRate gstRateBps={row.gstRateBps} exempt={row.exempt} />
                 </p>
               </div>
               {(basket[row.varietyId] ?? 0) > 0 ? (
                 <QuantityStepper
                   quantity={basket[row.varietyId]!}
                   minQuantity={0}
+                  disabled={isRaisingBill}
                   onQuantityChange={(quantity) =>
                     setBasket({ ...basket, [row.varietyId]: quantity })
                   }
@@ -218,25 +224,12 @@ function RaiseBillCart({
             <dd className="text-right tabular-nums">
               {formatPaise(raiseBillPreview.totals.taxablePaise)}
             </dd>
-            {raiseBillPreview.totals.igstPaise > 0 ? (
-              <>
-                <dt className="text-muted-foreground">{tx("admin.bills.igst")}</dt>
-                <dd className="text-right tabular-nums">
-                  {formatPaise(raiseBillPreview.totals.igstPaise)}
-                </dd>
-              </>
-            ) : (
-              <>
-                <dt className="text-muted-foreground">{tx("admin.bills.cgst")}</dt>
-                <dd className="text-right tabular-nums">
-                  {formatPaise(raiseBillPreview.totals.cgstPaise)}
-                </dd>
-                <dt className="text-muted-foreground">{tx("admin.bills.sgst")}</dt>
-                <dd className="text-right tabular-nums">
-                  {formatPaise(raiseBillPreview.totals.sgstPaise)}
-                </dd>
-              </>
-            )}
+            {billTaxRows(raiseBillPreview.totals).map((row) => (
+              <Fragment key={row.tax}>
+                <dt className="text-muted-foreground">{tx(`admin.bills.${row.tax}`)}</dt>
+                <dd className="text-right tabular-nums">{formatPaise(row.paise)}</dd>
+              </Fragment>
+            ))}
             <dt className="text-muted-foreground">{tx("admin.bills.roundOff")}</dt>
             <dd className="text-right tabular-nums">
               {formatPaise(raiseBillPreview.totals.roundOffPaise)}
@@ -261,6 +254,7 @@ function RaiseBillCart({
           disabled={isRaisingBill}
           placeholder={tx("admin.ledger.raiseBill.reasonPlaceholder")}
         />
+        {outcomeUnknown && <OutcomeUnknownAlert message={tx("admin.ledger.outcomeUnknown.bill")} />}
         {refusal && <RefusalAlert message={refusal} />}
         <Button className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
           {isRaisingBill && <Spinner />}
@@ -386,7 +380,17 @@ function RaiseBillPageContent() {
           key={customerId}
           customerId={customerId}
           catalog={catalog}
-          onRaised={setRaised}
+          onRaised={(bill) => {
+            setRaised(bill);
+            toast.success(
+              tx("admin.ledger.raiseBill.success", {
+                number: bill.billNumber,
+                amount: formatPaise(bill.totalPaise),
+              }),
+            );
+            // The notice sits above the catalog; on a phone the cart is far below it.
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
       )}
     </div>

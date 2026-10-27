@@ -845,7 +845,8 @@
         "label": "Bill",
         "placeholder": "Pick a Bill",
         "empty": "This Customer has no Bill a note can go on.",
-        "open": "Open Bill"
+        "open": "Open Bill",
+        "loadError": "Could not load this Customer's Bills"
       },
       "reason": {
         "label": "Reason"
@@ -856,18 +857,18 @@
       "refusals": {
         "empty_basket": "Add at least one item.",
         "bad_lines": "Some items cannot be billed. Fix the marked lines.",
-        "bill_cancelled": "This Bill is cancelled.",
+        "bill_cancelled": "This Bill was cancelled. It has been reloaded.",
         "bill_locked": "This Bill is locked and cannot be changed.",
-        "stale_version": "Someone changed this Bill just now. Reload it and try again.",
+        "stale_version": "Someone changed this Bill just now. It has been reloaded; redo your changes on the latest version.",
         "nothing_changed": "Nothing changed.",
         "all_lines_zero": "At least one line must keep a quantity. To remove everything, cancel the Bill.",
-        "unknown_line": "A line does not belong to this Bill. Reload and try again.",
+        "unknown_line": "A line is no longer on this Bill. It has been reloaded; redo your changes.",
         "below_credited_qty": "A quantity is below what was already credited.",
         "note_amount_zero": "The note comes to ₹0. Change the quantities.",
         "nothing_to_cancel": "Nothing is left on this Bill to cancel.",
         "not_a_pre_order": "This order is not a Pre-order.",
         "already_fulfilled": "This Pre-order is already fulfilled.",
-        "already_cancelled": "This is already cancelled.",
+        "already_cancelled": "This was already cancelled. The page has been reloaded.",
         "no_lines": "Enter a quantity on at least one line.",
         "credit_qty_above_remaining": "A quantity is more than is left to credit.",
         "gst_credit_note_deadline_passed": "The deadline for a GST credit note on this Bill has passed. Use a commercial credit note.",
@@ -943,7 +944,8 @@
           "shopName": "Shop name",
           "phone": "Phone",
           "address": "Address",
-          "gstinHint": "GSTIN and the Bill note cannot be changed here."
+          "gstinHint": "GSTIN and the Bill note cannot be changed here.",
+          "required": "Shop name, phone and address are required."
         },
         "correctReasonPlaceholder": "Why is this Bill being corrected?",
         "saveCorrect": "Save correction",
@@ -1003,7 +1005,6 @@
         "search": "Search product, variety or SKU",
         "noMatch": "Nothing matches.",
         "perUnit": "{price} per {unit}",
-        "gst": "GST {rate}%",
         "add": "Add",
         "cartTitle": "Bill · {count} items",
         "badLinesTitle": "Some items cannot be billed",
@@ -1029,6 +1030,11 @@
           "title": "No priced items on {route}",
           "body": "Set Route prices for this Route first."
         }
+      },
+      "outcomeUnknown": {
+        "title": "We could not confirm this",
+        "bill": "The connection dropped before the server answered. Check the Ledger before raising it again; raising this same Bill again from this screen will not bill twice.",
+        "note": "The connection dropped before the server answered. Check the Notes on this Bill before raising it again; raising this same Note again will not raise it twice."
       }
     }
   },

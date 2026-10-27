@@ -64,11 +64,16 @@ function PaperView({ paper }: { paper: BillPaper }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const balanceText = useBalanceText();
-  const [editing, setEditing] = useState(false);
+  const [isEditOpen, setEditing] = useState(false);
+  // A reload that finds the Bill cancelled or locked ends the edit; its notice says why.
+  const editing = isEditOpen && paper.actions.canCorrect;
   const [sheet, setSheet] = useState<SheetKind | null>(
     searchParams.get("action") === "note" && paper.actions.canRaiseNote ? "note" : null,
   );
   const correctState = useCorrectState(paper);
+  const correct = useBillPaper();
+  // One Raise Note key per paper, kept across sheet closes and rotated only once a Note is raised.
+  const [noteKey, setNoteKey] = useState(() => crypto.randomUUID());
   const correctPreview = useCorrectPreview(
     paper,
     editing ? correctState : { ...correctState, hasChanges: false },
@@ -103,12 +108,16 @@ function PaperView({ paper }: { paper: BillPaper }) {
           )}
           <BillPaperDocument
             paper={paper}
-            edit={editing ? toCorrectEdit(correctState, correctPreview) : undefined}
+            edit={
+              editing
+                ? toCorrectEdit(correctState, correctPreview, correct.isCorrectingBill)
+                : undefined
+            }
           />
           <h2 className="text-sm font-medium">{tx("admin.ledger.paper.notesTitle")}</h2>
           <NotesList paper={paper} />
         </div>
-        <aside className="order-first flex flex-col gap-3 lg:sticky lg:top-20 lg:order-none lg:self-start">
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
           <div className="space-y-3 rounded-md border bg-card p-3">
             <div>
               <p className="font-mono text-base font-semibold">{paper.bill.number}</p>
@@ -152,6 +161,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 paper={paper}
                 state={correctState}
                 preview={correctPreview}
+                correct={correct}
                 onClose={() => setEditing(false)}
                 onSaved={() => setEditing(false)}
               />
@@ -171,7 +181,14 @@ function PaperView({ paper }: { paper: BillPaper }) {
           </SheetHeader>
           <div className="px-4 pb-6">
             {sheet === "cancel" && <CancelForm paper={paper} onDone={closeSheet} />}
-            {sheet === "note" && <RaiseNoteForm paper={paper} onDone={closeSheet} />}
+            {sheet === "note" && (
+              <RaiseNoteForm
+                paper={paper}
+                idempotencyKey={noteKey}
+                onRaised={() => setNoteKey(crypto.randomUUID())}
+                onDone={closeSheet}
+              />
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -190,7 +207,7 @@ function BillPaperPageContent() {
         <Skeleton className="h-6 w-48" />
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <Skeleton className="h-[28rem] w-full" />
-          <Skeleton className="order-first h-40 w-full lg:order-none" />
+          <Skeleton className="h-40 w-full" />
         </div>
       </div>
     );
