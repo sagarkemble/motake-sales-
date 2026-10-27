@@ -1050,7 +1050,8 @@
       },
       "problem": {
         "chooseOverpay": "Choose: return change or keep as Advance.",
-        "enterAmount": "Enter an amount above ₹0 to record."
+        "enterAmount": "Enter an amount above ₹0 to record.",
+        "keepAsAdvance": "Nothing is Pending: tap Keep as Advance to record this cash."
       },
       "loadFailed": "Could not work out the amounts for this order."
     },

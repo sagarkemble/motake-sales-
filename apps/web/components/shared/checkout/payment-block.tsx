@@ -18,12 +18,12 @@ import {
   cleanReceivedText,
   PAYMENT_MODES,
   paymentMaths,
-  paiseToReceivedText,
   type OverpayChoice,
   type PaymentContext,
   type PaymentDraft,
   type PaymentMode,
 } from "~/lib/checkout-payment";
+import { paiseToRupeeInput } from "~/lib/rupee-input";
 import { cn } from "~/lib/utils";
 
 interface PaymentBlockProps {
@@ -42,7 +42,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
   const { formatPaise } = useFormatMoney();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const maths = paymentMaths(context, draft);
-  const { preview, requiredPaise } = maths;
+  const { preview, requiredPaise, canReturnChange } = maths;
   const isField = context.billTotalPaise === null;
   const extraPaise = Math.max(0, preview.receivedPaise - requiredPaise);
 
@@ -167,7 +167,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
               disabled={disabled}
               className="h-7 rounded-full text-xs"
               onClick={() =>
-                update({ receivedText: paiseToReceivedText(chip.paise), overpay: null })
+                update({ receivedText: paiseToRupeeInput(chip.paise), overpay: null })
               }
             >
               {chip.label}
@@ -246,7 +246,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
             {(
               [
                 {
-                  value: "return_change",
+                  value: "return_change" as const,
                   icon: UndoIcon,
                   title: tx("checkout.payment.returnChange", { extra: formatPaise(extraPaise) }),
                   hint: tx("checkout.payment.returnChangeHint", {
@@ -255,15 +255,17 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
                   }),
                 },
                 {
-                  value: "keep_advance",
+                  value: "keep_advance" as const,
                   icon: WalletIcon,
                   title: tx("checkout.payment.keepAdvance", { extra: formatPaise(extraPaise) }),
                   hint: tx("checkout.payment.keepAdvanceHint", {
                     received: formatPaise(preview.receivedPaise),
                   }),
                 },
-              ] as const
-            ).map((option) => (
+              ]
+            )
+              .filter((option) => canReturnChange || option.value !== "return_change")
+              .map((option) => (
               <Label
                 key={option.value}
                 htmlFor={`overpay-${option.value}`}

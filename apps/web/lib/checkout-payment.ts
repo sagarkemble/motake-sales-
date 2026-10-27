@@ -49,8 +49,11 @@ export function balanceStateOf(balancePaise: number): { state: BalanceState; amo
   return { state: "settled", amountPaise: 0 };
 }
 
+// The field keeps digits and one "." only, so "500." and ".5" are mid-typing forms of 500 and 0.50,
+// not ₹0. Empty or zero is ₹0.
 export function receivedPaiseOf(receivedText: string): number {
-  return parseRupeesToPaise(receivedText) ?? 0;
+  const typedText = receivedText.trim().replace(/\.$/, "").replace(/^\./, "0.");
+  return parseRupeesToPaise(typedText) ?? 0;
 }
 
 export function cleanReceivedText(rawInput: string): string {
@@ -64,6 +67,9 @@ export function paymentMaths(context: PaymentContext, draft: PaymentDraft) {
   const requiredPaise = Math.max(0, balanceAfterBillPaise);
   const receivedPaise = receivedPaiseOf(draft.receivedText);
   const isOverpay = draft.mode === "cash" && receivedPaise > requiredPaise;
+  // A field Payment with nothing Pending keeps everything or nothing: returning change keeps ₹0,
+  // which the server refuses (field_payment_kept_zero), so that choice is not offered.
+  const canReturnChange = !(context.billTotalPaise === null && requiredPaise === 0);
   let keptPaise = receivedPaise;
   let returnedPaise = 0;
   let needsOverpayChoice = false;
@@ -80,13 +86,16 @@ export function paymentMaths(context: PaymentContext, draft: PaymentDraft) {
     isOverpay,
     balanceAfterPaise: balanceAfterBillPaise - keptPaise,
   };
-  return { balanceAfterBillPaise, requiredPaise, preview };
+  return { balanceAfterBillPaise, requiredPaise, canReturnChange, preview };
 }
 
 // The locale key of what blocks the primary button, or null.
 export function paymentProblemKey(context: PaymentContext, draft: PaymentDraft): string | null {
-  const { preview } = paymentMaths(context, draft);
-  if (preview.needsOverpayChoice) return "checkout.payment.problem.chooseOverpay";
+  const { preview, canReturnChange } = paymentMaths(context, draft);
+  if (preview.needsOverpayChoice)
+    return canReturnChange
+      ? "checkout.payment.problem.chooseOverpay"
+      : "checkout.payment.problem.keepAsAdvance";
   if (context.billTotalPaise === null && preview.keptPaise <= 0)
     return "checkout.payment.problem.enterAmount";
   return null;
@@ -107,14 +116,4 @@ export function toCheckoutPaymentInput(
     reference: reference || undefined,
     overpay: preview.isOverpay && draft.overpay ? draft.overpay : undefined,
   };
-}
-
-// 12500 → "125", 12550 → "125.50", for the Received field.
-export function paiseToReceivedText(paise: number): string {
-  if (paise <= 0) return "0";
-  const wholeRupees = Math.floor(paise / 100);
-  const remainingPaise = paise % 100;
-  return remainingPaise === 0
-    ? String(wholeRupees)
-    : `${wholeRupees}.${String(remainingPaise).padStart(2, "0")}`;
 }
