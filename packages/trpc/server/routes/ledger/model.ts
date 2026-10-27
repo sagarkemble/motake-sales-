@@ -546,6 +546,8 @@ export const correctPaymentResultSchema = z.object({
   eventId: z.string(),
   ledgerEntryId: z.string().nullable(),
   keptPaise: z.number().int(),
+  receivedPaise: z.number().int(),
+  returnedPaise: z.number().int(),
   differencePaise: z.number().int(),
   mode: paymentModeSchema,
   reference: z.string().nullable(),

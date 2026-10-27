@@ -15,7 +15,6 @@ import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { SelectRefund } from "@repo/database/schema";
-import { formatPaise } from "@repo/pdf";
 
 import DocumentNumberService from "../document-numbers";
 import { internalError, ledgerRefusal, notFound } from "../errors";
@@ -30,6 +29,13 @@ import {
   type RefundCorrectedOutcome,
 } from "../shared/payment-events";
 import {
+  keyReusedRefusal,
+  nothingChangedRefusal,
+  SameKeyAlreadyPosted,
+  staleCorrectRefusal,
+  type Run,
+} from "../shared/payment-papers";
+import {
   addRefundInputSchema,
   correctRefundInputSchema,
   type AddRefundInput,
@@ -43,24 +49,6 @@ import {
 
 const refundIdempotencyConstraint = "refunds_idempotency_key_unique";
 
-// Rolls back an Add whose key another call already posted.
-class SameKeyAlreadyPosted extends Error {}
-
-const keyReusedRefusal = () =>
-  ledgerRefusal(
-    "idempotency_key_reused",
-    "This key was already used for a different Refund. Try again.",
-  );
-
-const staleCorrectRefusal = () =>
-  ledgerRefusal("stale_version", "Someone else corrected this Refund first. Reload it.");
-
-const nothingChangedRefusal = () =>
-  ledgerRefusal(
-    "nothing_changed",
-    "Nothing changed. Change the amount, mode or reference, or close Correct.",
-  );
-
 const notInAdvanceRefusal = (balance: Balance) =>
   ledgerRefusal(
     "not_in_advance",
@@ -70,12 +58,6 @@ const notInAdvanceRefusal = (balance: Balance) =>
 
 // The Advance is −Balance; Pending or Settled has none.
 const advanceOf = (balance: Balance) => (balance.state === "advance" ? balance.amountPaise : 0);
-
-// A transaction's result plus what it tells Spec J after commit.
-interface Run<Result, Outcome> {
-  result: Result;
-  outcome: Outcome;
-}
 
 // Refunds (Spec H): money Motake paid back out of a Customer's Advance, recorded by Admin after the
 // external payout; the app moves no money. Add, the Refund paper and Correct (admin only, checked
@@ -114,7 +96,7 @@ class RefundService {
         if (parsedInput.amountPaise > advanceOf(balance)) {
           throw ledgerRefusal(
             "refund_above_advance",
-            `A Refund cannot be more than the Advance of ${formatPaise(advanceOf(balance))}.`,
+            "A Refund cannot be more than the Customer's Advance.",
             { advancePaise: advanceOf(balance) },
           );
         }
@@ -259,14 +241,14 @@ class RefundService {
         const refund = await lockRefundRow(parsedInput.refundId, transaction);
         if (!refund) throw notFound(`Refund ${parsedInput.refundId} not found`);
         const latest = await getLatestRefundEvent(refund.id, transaction);
-        if (latest?.id !== parsedInput.expectedLatestEventId) throw staleCorrectRefusal();
+        if (latest?.id !== parsedInput.expectedLatestEventId) throw staleCorrectRefusal("Refund");
         const differencePaise = parsedInput.amountPaise - refund.amountPaise;
         if (
           differencePaise === 0 &&
           parsedInput.mode === refund.mode &&
           parsedInput.reference === refund.reference
         ) {
-          throw nothingChangedRefusal();
+          throw nothingChangedRefusal("Refund");
         }
         if (differencePaise > 0) {
           // The raise is a new Debit inside a Balance that already holds this Refund's debit.
@@ -274,7 +256,7 @@ class RefundService {
           if (differencePaise > advanceOf(balance)) {
             throw ledgerRefusal(
               "refund_above_advance",
-              `This raises the Refund by ${formatPaise(differencePaise)}, more than the Advance of ${formatPaise(advanceOf(balance))}.`,
+              "This raises the Refund by more than the Customer's Advance.",
               { advancePaise: advanceOf(balance), increasePaise: differencePaise },
             );
           }
@@ -391,7 +373,7 @@ class RefundService {
     const posted = await getPostedRefundEvent(refund.id);
     if (!posted?.ledgerEntryId) throw internalError(`Refund ${refund.number} has no Ledger row`);
     if (refund.customerId !== input.customerId || posted.amountPaise !== input.amountPaise) {
-      throw keyReusedRefusal();
+      throw keyReusedRefusal("Refund");
     }
     const balanceAfterPaise = await getBalanceThroughLedgerEntry(posted.ledgerEntryId);
     if (balanceAfterPaise === undefined) {

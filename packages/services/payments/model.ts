@@ -10,7 +10,7 @@ export const overpayChoiceSchema = z.enum(["return_change", "keep_advance"]);
 export const idempotencyKeySchema = z.string().trim().min(1).max(120);
 
 // Empty means none.
-const referenceSchema = z
+export const referenceSchema = z
   .string()
   .trim()
   .max(128)
@@ -69,10 +69,10 @@ export interface FieldPaymentResult {
 
 // --- Admin Add Payment, Payment paper and Correct (Spec H).
 
-const reasonSchema = z.string().trim().min(1).max(1000);
+export const reasonSchema = z.string().trim().min(1).max(1000);
 
 // Correct sends the reference it wants kept; empty or null clears it.
-const correctReferenceSchema = z
+export const correctReferenceSchema = z
   .string()
   .trim()
   .max(128)
@@ -116,6 +116,9 @@ export interface CorrectPaymentResult {
   // Null on a mode / reference-only Correct.
   ledgerEntryId: string | null;
   keptPaise: number;
+  // Kept + returned; returned change stays as recorded.
+  receivedPaise: number;
+  returnedPaise: number;
   // Kept after − kept before.
   differencePaise: number;
   mode: SelectPayment["mode"];

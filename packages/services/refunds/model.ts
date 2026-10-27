@@ -2,25 +2,13 @@ import type { SelectCustomer, SelectRefund } from "@repo/database/schema";
 import { z } from "zod";
 
 import type { Balance } from "../ledger/model";
-import { idempotencyKeySchema, paymentModeSchema } from "../payments/model";
-
-const reasonSchema = z.string().trim().min(1).max(1000);
-
-// Empty means none.
-const referenceSchema = z
-  .string()
-  .trim()
-  .max(128)
-  .optional()
-  .transform((reference) => reference || null);
-
-// Correct sends the reference it wants kept; empty or null clears it.
-const correctReferenceSchema = z
-  .string()
-  .trim()
-  .max(128)
-  .nullish()
-  .transform((reference) => reference || null);
+import {
+  correctReferenceSchema,
+  idempotencyKeySchema,
+  paymentModeSchema,
+  reasonSchema,
+  referenceSchema,
+} from "../payments/model";
 
 // Recorded after the external payout; only out of Advance.
 export const addRefundInputSchema = z.object({

@@ -15,7 +15,7 @@ import {
   placeBookNowBill,
   refusalOf,
 } from "../test/admin-bill-world";
-import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
+import { buildCheckoutWorld, buildCustomer, type CheckoutWorld } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import RefundService, { type AddRefundInput, type CorrectRefundInput } from "./index";
 
@@ -154,7 +154,7 @@ describe("RefundService.addRefund", () => {
     expect(result.balancePaise).toBe(-2_000);
   });
 
-  it("a retry with the same key returns the first Refund; another amount is refused", async () => {
+  it("a retry with the same key returns the first Refund; another amount or Customer is refused", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     await openWith(world, "advance", 10_000);
     const { service, outcomes } = recordingService();
@@ -172,6 +172,64 @@ describe("RefundService.addRefund", () => {
     expect(
       await refusalOf(service.addRefund(world.admin.id, { ...input, amountPaise: 2_000 })),
     ).toMatchObject({ reason: "idempotency_key_reused" });
+    const otherCustomer = await buildCustomer(world.admin.id, { routeId: world.route.id });
+    expect(
+      await refusalOf(
+        service.addRefund(world.admin.id, { ...input, customerId: otherCustomer.id }),
+      ),
+    ).toMatchObject({ reason: "idempotency_key_reused" });
+    expect(await db.select().from(refundsTable)).toHaveLength(2);
+  });
+
+  it("two Adds at once with the same key: one Refund, MR number and outcome", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    await openWith(world, "advance", 10_000);
+    const { service, outcomes } = recordingService();
+    const input = addInput(world, { idempotencyKey: "same-key" });
+
+    const concurrent = await Promise.all([
+      service.addRefund(world.admin.id, input),
+      service.addRefund(world.admin.id, input),
+    ]);
+
+    expect(concurrent[0]).toEqual(concurrent[1]);
+    expect(concurrent[0]).toMatchObject({ number: "MR/26-27/000001", balancePaise: -7_000 });
+    expect(await db.select().from(refundsTable)).toHaveLength(1);
+    expect(outcomes).toHaveLength(1);
+    expect((await ledgerRowsOf(world.customer.id)).filter((row) => row.refundId)).toHaveLength(1);
+    expect(await refundSeriesNextSeq()).toBe(2);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(-7_000);
+  });
+
+  it("a Refund in a new financial year starts that year's series", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    await openWith(world, "advance", 10_000);
+    const service = new RefundService();
+    // 31 March 2027, 23:30 in Asia/Kolkata.
+    vi.setSystemTime(new Date("2027-03-31T18:00:00Z"));
+    const march = await service.addRefund(world.admin.id, addInput(world));
+    // 1 April 2027, 00:00 in Asia/Kolkata.
+    vi.setSystemTime(new Date("2027-03-31T18:30:00Z"));
+    const april = await service.addRefund(world.admin.id, addInput(world));
+
+    expect(march.number).toBe("MR/26-27/000001");
+    expect(april.number).toBe("MR/27-28/000001");
+    const series = await db.select().from(documentNumberSeriesTable);
+    expect(series.filter((row) => row.kind === "refund")).toHaveLength(2);
+  });
+
+  it("a throwing listener does not roll the Refund back", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    await openWith(world, "advance", 10_000);
+    const service = new RefundService(() => {
+      throw new Error("WhatsApp is down");
+    });
+
+    const result = await service.addRefund(world.admin.id, addInput(world));
+
+    expect(result.number).toBe("MR/26-27/000001");
+    expect(await db.select().from(refundsTable)).toHaveLength(1);
+    expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(-7_000);
   });
 
   describe("refuses, writing nothing and giving the MR number back", () => {
@@ -209,15 +267,20 @@ describe("RefundService.addRefund", () => {
       expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(-2_500);
     });
 
-    it("₹0 and a blank reason", async () => {
+    it("₹0, a negative or fractional amount, and a blank reason", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       await openWith(world, "advance", 10_000);
       const service = new RefundService();
 
-      for (const overrides of [{ amountPaise: 0 }, { reason: "" }]) {
+      for (const overrides of [
+        { amountPaise: 0 },
+        { amountPaise: -100 },
+        { amountPaise: 10.5 },
+        { reason: "   " },
+      ]) {
         await expect(
           service.addRefund(world.admin.id, addInput(world, overrides)),
-        ).rejects.toThrow();
+        ).rejects.toMatchObject({ name: "ZodError" });
       }
       expect(await db.select().from(refundsTable)).toEqual([]);
     });

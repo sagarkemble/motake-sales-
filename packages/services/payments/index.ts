@@ -17,7 +17,7 @@ import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-error
 import type { SelectPayment } from "@repo/database/schema";
 
 import DocumentNumberService from "../document-numbers";
-import { checkoutRefusal, internalError, ledgerRefusal, notFound } from "../errors";
+import { checkoutRefusal, internalError, notFound } from "../errors";
 import GatepassService from "../gatepass";
 import LedgerService from "../ledger";
 import {
@@ -38,6 +38,13 @@ import {
   type PaymentAddedOutcome,
   type PaymentCorrectedOutcome,
 } from "../shared/payment-events";
+import {
+  keyReusedRefusal,
+  nothingChangedRefusal,
+  SameKeyAlreadyPosted,
+  staleCorrectRefusal,
+  type Run,
+} from "../shared/payment-papers";
 import {
   addPaymentInputSchema,
   correctPaymentInputSchema,
@@ -63,31 +70,6 @@ const keptZeroRefusal = () =>
     "field_payment_kept_zero",
     "Nothing is kept from this Payment. A field Payment must keep more than ₹0.",
   );
-
-// Rolls back a field or Admin Payment whose key another call already posted.
-class SameKeyAlreadyPosted extends Error {}
-
-const keyReusedRefusal = () =>
-  ledgerRefusal(
-    "idempotency_key_reused",
-    "This key was already used for a different Payment. Try again.",
-  );
-
-// Someone else corrected this Payment after the Admin opened it.
-const staleCorrectRefusal = () =>
-  ledgerRefusal("stale_version", "Someone else corrected this Payment first. Reload it.");
-
-const nothingChangedRefusal = () =>
-  ledgerRefusal(
-    "nothing_changed",
-    "Nothing changed. Change the kept amount, mode or reference, or close Correct.",
-  );
-
-// A transaction's result plus what it tells Spec J after commit.
-interface Run<Result, Outcome> {
-  result: Result;
-  outcome: Outcome;
-}
 
 // Payments: the only writer of `payments` rows and their `posted` event. Checkout (Book Now,
 // fulfil) and field Payment post here; Spec H's Admin Add Payment uses the same posting step.
@@ -427,7 +409,7 @@ class PaymentService {
         if (!payment) throw notFound(`Payment ${parsedInput.paymentId} not found`);
         const latest = await getLatestPaymentEvent(payment.id, transaction);
         if (latest?.id !== parsedInput.expectedLatestEventId) {
-          throw staleCorrectRefusal();
+          throw staleCorrectRefusal("Payment");
         }
         const differencePaise = parsedInput.keptPaise - payment.amountKeptPaise;
         if (
@@ -435,7 +417,7 @@ class PaymentService {
           parsedInput.mode === payment.mode &&
           parsedInput.reference === payment.reference
         ) {
-          throw nothingChangedRefusal();
+          throw nothingChangedRefusal("Payment");
         }
 
         const now = new Date();
@@ -478,6 +460,8 @@ class PaymentService {
             eventId: event.id,
             ledgerEntryId,
             keptPaise: updated.amountKeptPaise,
+            receivedPaise: updated.amountReceivedPaise,
+            returnedPaise: updated.amountReturnedPaise,
             differencePaise,
             mode: updated.mode,
             reference: updated.reference,
@@ -550,7 +534,7 @@ class PaymentService {
     const posted = await getPostedPaymentEvent(payment.id);
     if (!posted?.ledgerEntryId) throw internalError(`Payment ${payment.number} has no Ledger row`);
     if (payment.customerId !== input.customerId || posted.amountKeptPaise !== input.keptPaise) {
-      throw keyReusedRefusal();
+      throw keyReusedRefusal("Payment");
     }
     const balanceAfterPaise = await getBalanceThroughLedgerEntry(posted.ledgerEntryId);
     if (balanceAfterPaise === undefined) {

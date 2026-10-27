@@ -20,7 +20,7 @@ import {
   placeBookNowBill,
   refusalOf,
 } from "../test/admin-bill-world";
-import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
+import { buildCheckoutWorld, buildCustomer, type CheckoutWorld } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import PaymentService, { type AddPaymentInput } from "./index";
 
@@ -212,9 +212,17 @@ describe("PaymentService.addPayment", () => {
     const input = addInput(world);
     await service.addPayment(world.admin.id, input);
 
+    const otherCustomer = await buildCustomer(world.admin.id, { routeId: world.route.id });
+
     expect(
       await refusalOf(service.addPayment(world.admin.id, { ...input, keptPaise: 4_001 })),
     ).toMatchObject({ reason: "idempotency_key_reused" });
+    expect(
+      await refusalOf(
+        service.addPayment(world.admin.id, { ...input, customerId: otherCustomer.id }),
+      ),
+    ).toMatchObject({ reason: "idempotency_key_reused" });
+    expect(await db.select().from(paymentsTable)).toHaveLength(1);
   });
 
   describe("refuses, writing nothing", () => {
@@ -230,13 +238,13 @@ describe("PaymentService.addPayment", () => {
       ]) {
         await expect(
           service.addPayment(world.admin.id, addInput(world, overrides)),
-        ).rejects.toThrow();
+        ).rejects.toMatchObject({ name: "ZodError" });
       }
       expect(await db.select().from(paymentsTable)).toEqual([]);
       expect(await ledgerRowsOf(world.customer.id)).toEqual([]);
     });
 
-    it("a deactivated Customer (reads only), giving the MP number back", async () => {
+    it("a deactivated Customer (reads only), before an MP number is taken", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
       await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
       const { service, outcomes } = recordingService();
@@ -245,6 +253,12 @@ describe("PaymentService.addPayment", () => {
         reason: "customer_inactive",
       });
       expect(await db.select().from(paymentsTable)).toEqual([]);
+      expect(
+        await db
+          .select()
+          .from(documentNumberSeriesTable)
+          .where(eq(documentNumberSeriesTable.kind, "payment")),
+      ).toEqual([]);
       expect(outcomes).toEqual([]);
     });
   });
@@ -383,6 +397,8 @@ describe("PaymentService.correctPayment", () => {
       eventId: expect.any(String),
       ledgerEntryId: expect.any(String),
       keptPaise: 3_500,
+      receivedPaise: 3_500,
+      returnedPaise: 0,
       differencePaise: -500,
       mode: "bank",
       reference: "NEFT-77",
@@ -540,7 +556,7 @@ describe("PaymentService.correctPayment", () => {
     const service = new PaymentService();
     const paper = await service.getPaymentPaper(payment!.id);
 
-    await service.correctPayment(world.admin.id, {
+    const result = await service.correctPayment(world.admin.id, {
       paymentId: payment!.id,
       expectedLatestEventId: paper.latestEventId,
       keptPaise: 11_000,
@@ -557,6 +573,11 @@ describe("PaymentService.correctPayment", () => {
       amountKeptPaise: 11_000,
       amountReturnedPaise: 20_000 - BOOK_NOW_TOTAL_PAISE,
       amountReceivedPaise: 11_000 + 20_000 - BOOK_NOW_TOTAL_PAISE,
+    });
+    expect(result).toMatchObject({
+      keptPaise: 11_000,
+      returnedPaise: 20_000 - BOOK_NOW_TOTAL_PAISE,
+      receivedPaise: 11_000 + 20_000 - BOOK_NOW_TOTAL_PAISE,
     });
     await expectBalanceMatchesLedger(world.customer.id);
   });
@@ -644,6 +665,10 @@ describe("PaymentService.correctPayment", () => {
       const settled = await Promise.allSettled([correct(3_000), correct(2_000)]);
 
       expect(settled.filter((outcome) => outcome.status === "fulfilled")).toHaveLength(1);
+      const rejected = settled.find((outcome) => outcome.status === "rejected");
+      expect(
+        await refusalOf(Promise.reject((rejected as PromiseRejectedResult).reason)),
+      ).toMatchObject({ reason: "stale_version" });
       expect(await db.select().from(paymentEventsTable)).toHaveLength(2);
       await expectBalanceMatchesLedger(world.customer.id);
     });
@@ -699,7 +724,7 @@ describe("PaymentService.correctPayment", () => {
           reference: null,
           reason: " ",
         }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ name: "ZodError" });
       expect(await db.select().from(paymentEventsTable)).toHaveLength(1);
     });
   });
