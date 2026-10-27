@@ -848,6 +848,11 @@
         "shortLine": "GatePass has {left} left. Book Now needs {need}; a Pre-order is fine.",
         "quoteFailed": "Could not price the cart.",
         "balanceLater": "Balance and the amount to clear show on the Payment step, after you pick the Customer."
+      },
+      "outcomeUnknown": {
+        "title": "We could not confirm this order",
+        "message": "The connection dropped before the server answered. Check My orders before placing it again; placing the same order again will not bill twice.",
+        "action": "Check My orders"
       }
     },
     "orders": {
@@ -991,7 +996,9 @@
       "balance": "Balance",
       "recordPayment": "Record Payment",
       "noPurchase": "{shop} · no purchase",
-      "recordFailed": "Could not record the Payment"
+      "recordFailed": "Could not record the Payment",
+      "startOrder": "Start an order for this shop",
+      "startOrderToast": "Add products to the cart; checkout will be for {shop}."
     }
   },
   "checkout": {
@@ -1044,7 +1051,8 @@
       "problem": {
         "chooseOverpay": "Choose: return change or keep as Advance.",
         "enterAmount": "Enter an amount above ₹0 to record."
-      }
+      },
+      "loadFailed": "Could not work out the amounts for this order."
     },
     "totals": {
       "taxable": "Taxable value",

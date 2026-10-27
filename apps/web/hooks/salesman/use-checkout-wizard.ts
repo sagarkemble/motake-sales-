@@ -1,7 +1,7 @@
 import { businessDateOf, type RouterOutputs } from "@repo/trpc/client";
 import { addDays, format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { CheckoutSuccessInput } from "~/components/shared/checkout/checkout-success";
@@ -19,7 +19,11 @@ import {
   type PaymentContext,
   type PaymentDraft,
 } from "~/lib/checkout-payment";
-import { checkoutRefusalOf, type CheckoutRefusalReason } from "~/lib/checkout-refusal";
+import {
+  checkoutRefusalOf,
+  type CheckoutRefusal,
+  type CheckoutRefusalReason,
+} from "~/lib/checkout-refusal";
 import { getErrorMessage } from "~/lib/get-error-message";
 import type { PreferredLanguage } from "~/lib/preferred-language";
 import { useCart } from "~/providers/cart-provider";
@@ -70,7 +74,20 @@ const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
   preferredLanguage: "mr",
 };
 const CUSTOMER_SEARCH_PAGE_SIZE = 20;
-const CHECKOUT_ATTEMPT_ID = "checkout";
+// One idempotency key per write: the order type, the Customer, the date and the basket. A retry of
+// the same write replays its key; a different write never reuses it.
+function checkoutAttemptId(
+  orderType: OrderTypeChoice,
+  customerId: string,
+  scheduledDate: string,
+  lines: { sku: string; qty: number }[],
+) {
+  const basket = [...lines]
+    .sort((left, right) => left.sku.localeCompare(right.sku))
+    .map((line) => `${line.sku}x${line.qty}`)
+    .join(",");
+  return `checkout:${orderType}:${customerId}:${orderType === "pre_order" ? scheduledDate : ""}:${basket}`;
+}
 
 // Where the salesman goes to fix a refusal.
 const REFUSAL_STEP: Partial<Record<CheckoutRefusalReason, CheckoutStep>> = {
@@ -90,7 +107,15 @@ const REFUSAL_STEP: Partial<Record<CheckoutRefusalReason, CheckoutStep>> = {
 export function useCheckoutWizard() {
   const tx = useTranslate();
   const router = useRouter();
-  const { cartLines, totalCartQuantity, setQuantityForVariety, removeLine, clearCart } = useCart();
+  const {
+    cartLines,
+    totalCartQuantity,
+    setQuantityForVariety,
+    removeLine,
+    clearCart,
+    orderForCustomerId,
+    setOrderForCustomerId,
+  } = useCart();
 
   const businessDateKey = businessDateOf(new Date());
   const tomorrowDateKey = format(addDays(parseISO(businessDateKey), 1), "yyyy-MM-dd");
@@ -104,7 +129,7 @@ export function useCheckoutWizard() {
     useState<NewCustomerFormValues>(EMPTY_NEW_CUSTOMER_FORM);
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(EMPTY_PAYMENT_DRAFT);
   const [result, setResult] = useState<CheckoutSuccessInput | null>(null);
-  const attempt = useCheckoutAttempt(CHECKOUT_ATTEMPT_ID);
+  const attempt = useCheckoutAttempt("checkout");
 
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm, 350);
 
@@ -136,13 +161,26 @@ export function useCheckoutWizard() {
       enabled: currentStep === "customer" && Boolean(activeGatepassRoute),
     });
 
+  // "Start an order for this shop" from Route Customers: preselect that Customer once loaded.
+  const { customer: orderForCustomer } = useCustomers({
+    customerId: orderForCustomerId ?? undefined,
+    loadStats: false,
+    enabled: Boolean(orderForCustomerId) && Boolean(activeGatepassRoute),
+  });
+  const hasAppliedOrderForCustomerRef = useRef(false);
+  useEffect(() => {
+    if (!orderForCustomer || hasAppliedOrderForCustomerRef.current) return;
+    hasAppliedOrderForCustomerRef.current = true;
+    setSelectedCustomer(orderForCustomer);
+  }, [orderForCustomer]);
+
   const quoteLines = useMemo(
     () => cartLines.map((line) => ({ sku: line.sku, qty: line.quantity })),
     [cartLines],
   );
 
-  // The server quotes the basket as a Book Now so short lines show; with a Customer it adds the
-  // Balance and what clears Pending after this Bill.
+  // The server quotes the basket as a Book Now so short lines show; with a saved Customer it adds
+  // the Balance and what clears Pending after this Bill. A new Customer is saved only at Place.
   const {
     quote,
     isQuoteLoading,
@@ -199,11 +237,12 @@ export function useCheckoutWizard() {
   const isCartBlocked =
     cartLines.length === 0 || !quote || Boolean(quoteError) || quote.badLines.length > 0;
 
+  // A Customer the salesman adds now starts at Balance 0, so the quote without a Customer is enough.
   const paymentContext: PaymentContext | null =
-    quote && selectedCustomer
+    quote && (selectedCustomer || isNewCustomerFormFilled)
       ? {
           billTotalPaise: quote.totals.totalPaise,
-          balanceBeforePaise: quote.balance?.balancePaise ?? 0,
+          balanceBeforePaise: selectedCustomer ? (quote.balance?.balancePaise ?? 0) : 0,
         }
       : null;
 
@@ -239,11 +278,13 @@ export function useCheckoutWizard() {
 
   function clearSelectedCustomer() {
     setSelectedCustomer(null);
+    setOrderForCustomerId(null);
     setPaymentDraft(EMPTY_PAYMENT_DRAFT);
   }
 
   function updateNewCustomerForm(fieldValues: Partial<NewCustomerFormValues>) {
     setSelectedCustomer(null);
+    setOrderForCustomerId(null);
     setNewCustomerForm((currentValues) => ({ ...currentValues, ...fieldValues }));
   }
 
@@ -264,8 +305,8 @@ export function useCheckoutWizard() {
     router.push("/salesman");
   }
 
-  // A new Customer is saved when the salesman leaves the Customer step, so the Payment step can
-  // quote their Balance.
+  // A new Customer is saved at Place, not when leaving the Customer step, so an abandoned checkout
+  // or Back → change leaves no stray Customer. Once saved they stay selected for a retry.
   async function ensureCustomer(): Promise<CheckoutCustomer | null> {
     if (selectedCustomer) return selectedCustomer;
     if (!isNewCustomerFormFilled) return null;
@@ -308,7 +349,11 @@ export function useCheckoutWizard() {
             payment: toCheckoutPaymentInput(context, paymentDraft),
           })
         ).data,
-      { paymentContext: context, fallbackErrorKey: "salesman.checkout.error.placeOrder" },
+      {
+        paymentContext: context,
+        fallbackErrorKey: "salesman.checkout.error.placeOrder",
+        attemptId: checkoutAttemptId("book_now", customer.id, scheduledDate, quoteLines),
+      },
     );
     if (!billed) return;
     clearCart();
@@ -334,7 +379,11 @@ export function useCheckoutWizard() {
             lines: quoteLines,
           })
         ).data,
-      { paymentContext: null, fallbackErrorKey: "salesman.checkout.error.placeOrder" },
+      {
+        paymentContext: null,
+        fallbackErrorKey: "salesman.checkout.error.placeOrder",
+        attemptId: checkoutAttemptId("pre_order", customer.id, scheduledDate, quoteLines),
+      },
     );
     if (!booked) return;
     clearCart();
@@ -348,16 +397,15 @@ export function useCheckoutWizard() {
 
   async function goToNextStep() {
     attempt.clearRefusal();
-    if (currentStep === "customer") {
+    if (currentStep === "customer" && orderType === "pre_order") {
       const customer = await ensureCustomer();
-      if (!customer) return;
-      if (orderType === "pre_order") {
-        await placePreOrder(customer);
-        return;
-      }
+      if (customer) await placePreOrder(customer);
+      return;
     }
     if (currentStep === "payment") {
-      if (selectedCustomer && paymentContext) await placeBookNow(selectedCustomer, paymentContext);
+      if (!paymentContext) return;
+      const customer = await ensureCustomer();
+      if (customer) await placeBookNow(customer, paymentContext);
       return;
     }
     setCurrentStep(steps[Math.min(steps.length - 1, currentStepIndex + 1)] ?? "cart");
@@ -379,8 +427,8 @@ export function useCheckoutWizard() {
     void refetchQuote();
   }
 
-  function handleRefusalAction() {
-    const refusal = attempt.refusal;
+  // The refusal from a Place, or from the quote shown on a step.
+  function handleRefusalAction(refusal: CheckoutRefusal | null = attempt.refusal) {
     if (!refusal) return;
     attempt.clearRefusal();
     if (refusal.reason === "no_active_gatepass") {
@@ -446,6 +494,7 @@ export function useCheckoutWizard() {
     clearRefusal: attempt.clearRefusal,
     handleRefusalAction,
     balanceChange: attempt.balanceChange,
+    isOutcomeUnknown: attempt.isOutcomeUnknown,
     placeAgainWithNewAmounts,
     changePaymentAfterBalanceChange,
     result,

@@ -1,5 +1,7 @@
 "use client";
 
+import { AlertTriangleIcon } from "lucide-react";
+
 import { CartEmptyState } from "~/components/salesman/cart/cart-empty-state";
 import { CheckoutViewDesktop } from "~/components/salesman/checkout/checkout-view.desktop";
 import { CheckoutViewMobile } from "~/components/salesman/checkout/checkout-view.mobile";
@@ -11,6 +13,8 @@ import { VerifyProductsStep } from "~/components/salesman/checkout/verify-produc
 import { BalanceChangedDialog } from "~/components/shared/checkout/balance-changed-dialog";
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
 import { RefusalAlert } from "~/components/shared/checkout/refusal-alert";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
 import { useCheckoutWizard } from "~/hooks/salesman/use-checkout-wizard";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -38,7 +42,7 @@ export default function SalesmanCheckoutPage() {
     return <CartEmptyState />;
   }
 
-  const shopName = wizard.selectedCustomer?.shopName ?? "";
+  const shopName = wizard.selectedCustomer?.shopName ?? wizard.newCustomerForm.shopName.trim();
 
   const stepContent =
     wizard.currentStep === "cart" ? (
@@ -91,16 +95,38 @@ export default function SalesmanCheckoutPage() {
         paymentDraft={wizard.paymentDraft}
         onPaymentDraftChange={wizard.setPaymentDraft}
         isPlacing={wizard.isPlacingOrder}
+        quoteRefusal={wizard.quoteRefusal}
+        hasQuoteError={Boolean(wizard.quoteError)}
+        onRetryQuote={() => void wizard.refetchQuote()}
+        onQuoteRefusalAction={wizard.handleRefusalAction}
       />
     );
 
   const content = (
     <>
+      {wizard.isOutcomeUnknown && (
+        <Alert className="border-amber-500/40 bg-amber-500/5">
+          <AlertTriangleIcon className="text-amber-700" />
+          <AlertTitle>{tx("salesman.checkout.outcomeUnknown.title")}</AlertTitle>
+          <AlertDescription className="flex flex-col items-start gap-2">
+            {tx("salesman.checkout.outcomeUnknown.message")}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={wizard.goToOrdersList}
+            >
+              {tx("salesman.checkout.outcomeUnknown.action")}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       {wizard.refusal && (
         <RefusalAlert
           refusal={wizard.refusal}
           shopName={shopName}
-          onAction={wizard.handleRefusalAction}
+          onAction={() => wizard.handleRefusalAction()}
           onDismiss={wizard.clearRefusal}
         />
       )}

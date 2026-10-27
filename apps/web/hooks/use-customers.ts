@@ -8,6 +8,8 @@ interface UseCustomersParams {
   listFilters?: RouterInputs["customers"]["list"];
   customerId?: string;
   loadOpenOrders?: boolean;
+  // Lifetime stats for a Customer's detail page; off where only the Customer is needed.
+  loadStats?: boolean;
   enabled?: boolean;
 }
 
@@ -15,6 +17,7 @@ export function useCustomers({
   listFilters,
   customerId,
   loadOpenOrders = false,
+  loadStats = true,
   enabled = true,
 }: UseCustomersParams = {}) {
   const utils = trpc.useUtils();
@@ -31,7 +34,7 @@ export function useCustomers({
   );
   const customerStatsQuery = trpc.customers.getStats.useQuery(
     { id: customerId ?? "" },
-    { enabled: enabled && Boolean(customerId) },
+    { enabled: enabled && Boolean(customerId) && loadStats },
   );
   const openOrdersQuery = trpc.customers.listOpenOrders.useQuery(
     { id: customerId ?? "" },

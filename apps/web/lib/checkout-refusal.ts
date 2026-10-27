@@ -101,3 +101,11 @@ const REFUSALS_WITHOUT_ACTION = new Set<CheckoutRefusalReason>([
 export function refusalHasAction(reason: CheckoutRefusalReason) {
   return !REFUSALS_WITHOUT_ACTION.has(reason);
 }
+
+// A failure with no answer from the server (network drop, timeout, 5xx): the write may or may not
+// have happened, so the next try must reuse the key and the salesman should check before redoing it.
+export function isOutcomeUnknown(error: unknown): boolean {
+  if (!(error instanceof TRPCClientError)) return true;
+  const httpStatus = (error.data as { httpStatus?: number } | undefined)?.httpStatus;
+  return typeof httpStatus !== "number" || httpStatus >= 500;
+}

@@ -1,7 +1,16 @@
 "use client";
 
-import { MapPinIcon, PhoneIcon, SearchXIcon, UserIcon, WalletIcon } from "lucide-react";
+import {
+  MapPinIcon,
+  PhoneIcon,
+  SearchXIcon,
+  ShoppingCartIcon,
+  UserIcon,
+  WalletIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { BalanceText } from "~/components/shared/checkout/balance-text";
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
@@ -21,6 +30,7 @@ import {
 import { useRecordFieldPayment } from "~/hooks/salesman/use-record-field-payment";
 import { useCustomers } from "~/hooks/use-customers";
 import { useTranslate } from "~/hooks/use-translate";
+import { useCart } from "~/providers/cart-provider";
 
 interface RouteCustomerDrawerProps {
   customerId: string;
@@ -31,9 +41,24 @@ interface RouteCustomerDrawerProps {
 export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawerProps) {
   const tx = useTranslate();
   const [isRecordingPayment, setIsRecordingPayment] = useState(false);
-  const { customer, isCustomerLoading } = useCustomers({ customerId });
+  const { customer, isCustomerLoading } = useCustomers({ customerId, loadStats: false });
   const fieldPayment = useRecordFieldPayment(customer);
   const hint = isRecordingPayment && fieldPayment.problemKey ? tx(fieldPayment.problemKey) : null;
+  const router = useRouter();
+  const { cartLines, setOrderForCustomerId } = useCart();
+
+  // Checkout preselects this Customer; with an empty cart the salesman picks products first.
+  function startOrder() {
+    if (!customer) return;
+    setOrderForCustomerId(customer.id);
+    onClose();
+    if (cartLines.length > 0) {
+      router.push("/salesman/cart/checkout");
+      return;
+    }
+    toast.info(tx("salesman.customers.startOrderToast", { shop: customer.shopName }));
+    router.push("/salesman");
+  }
 
   const detailRows = customer
     ? [
@@ -167,14 +192,25 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                       </div>
                     </>
                   ) : (
-                    <Button
-                      type="button"
-                      className="w-full gap-2 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
-                      onClick={() => setIsRecordingPayment(true)}
-                    >
-                      <WalletIcon className="size-4" />
-                      {tx("salesman.customers.recordPayment")}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        className="w-full gap-2 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                        onClick={() => setIsRecordingPayment(true)}
+                      >
+                        <WalletIcon className="size-4" />
+                        {tx("salesman.customers.recordPayment")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full gap-2 rounded-full"
+                        onClick={startOrder}
+                      >
+                        <ShoppingCartIcon className="size-4" />
+                        {tx("salesman.customers.startOrder")}
+                      </Button>
+                    </>
                   )}
                 </DrawerFooter>
               )}
