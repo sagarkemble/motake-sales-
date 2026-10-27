@@ -1,8 +1,13 @@
+import { isCalendarDate } from "@repo/services/gst";
+
 import { z } from "../../schema";
 
 // GSTR-1 month lock and IRN capture (Spec I). Money in paise; dates `YYYY-MM-DD`; month `YYYY-MM`.
 
-const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date as YYYY-MM-DD");
+const businessDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date as YYYY-MM-DD")
+  .refine(isCalendarDate, "Use a real calendar date");
 const reasonSchema = z.string().trim().min(1, "A reason is required").max(1000);
 const notesSchema = z.string().trim().max(1000);
 const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Pick the month as YYYY-MM");

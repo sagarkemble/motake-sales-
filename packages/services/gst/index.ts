@@ -31,7 +31,14 @@ import { draftBillFileName } from "@repo/pdf";
 
 import AdminBillService from "../admin-bills";
 import DocumentService from "../documents";
-import { badRequest, conflict, documentRefused, internalError, notFound } from "../errors";
+import {
+  badRequest,
+  conflict,
+  documentRefused,
+  internalError,
+  ledgerRefusal,
+  notFound,
+} from "../errors";
 import { changedFields, oldNewPayload, recordAudit } from "../shared/audit";
 import {
   noAdminBillListener,
@@ -672,7 +679,6 @@ class GstService {
   }
 
   private assertFiledOn(filedOn: string, periodMonth: string, today: string): void {
-    if (!isCalendarDate(filedOn)) throw badRequest(`${filedOn} is not a calendar date.`);
     if (filedOn < periodMonth) {
       throw badRequest(
         `The filing date cannot be before ${monthLabelOf(periodMonth)} starts (${periodMonth}).`,
@@ -693,12 +699,17 @@ class GstService {
     return facts;
   }
 
+  // Refused like Spec G's gate: bill_cancelled, or bill_locked with the gate's lockReason.
   private assertGate(
     facts: BillGstFacts,
     action: "enterIrn" | "correctIrn" | "portalCancel",
   ): void {
     const decision = gstDecisionOf(facts, action);
-    if (!decision.allowed) throw conflict(decision.message);
+    if (decision.allowed) return;
+    if (decision.reason === "bill_cancelled") {
+      throw ledgerRefusal("bill_cancelled", decision.message);
+    }
+    throw ledgerRefusal("bill_locked", decision.message, { lockReason: decision.reason });
   }
 
   private customerOf(facts: BillGstFacts): string {
@@ -744,12 +755,8 @@ class GstService {
   }
 }
 
-function isCalendarDate(date: string): boolean {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
-}
-
 export default GstService;
+export { isCalendarDate } from "./model";
 export type {
   BillGstState,
   DraftPdf,

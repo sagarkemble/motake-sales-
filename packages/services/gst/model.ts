@@ -6,7 +6,16 @@ import { z } from "zod";
 import type { CancelBillResult } from "../admin-bills/model";
 import type { GstGates, IrnStatus } from "../shared/gst-gates";
 
-const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date as YYYY-MM-DD");
+// A real day of the calendar: `2026-02-30` matches the pattern but is no date.
+export function isCalendarDate(date: string): boolean {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+}
+
+const businessDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date as YYYY-MM-DD")
+  .refine(isCalendarDate, "Use a real calendar date");
 const reasonSchema = z.string().trim().min(1, "A reason is required").max(1000);
 const notesSchema = z.string().trim().max(1000);
 
