@@ -8,6 +8,11 @@ export function usePayments() {
       utils.customers.invalidate();
       utils.orders.quote.invalidate();
     },
+    // A refusal (Balance moved, Customer moved off the Route) re-reads the Customer and Balance.
+    onError: () => {
+      utils.customers.invalidate();
+      utils.orders.quote.invalidate();
+    },
   });
 
   return {

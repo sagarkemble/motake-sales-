@@ -50,25 +50,42 @@ export function useOrders({
       // Quantities change one tap at a time; keep the last quote on screen while the next loads.
       placeholderData: keepPreviousData,
       retry: false,
+      // Stock and Balance move under other salesmen; never trust a quote from an earlier visit.
+      staleTime: 0,
+      refetchOnMount: "always",
     },
   );
+
+  // A refused or failed write means stock, the Customer or their Balance moved: re-quote so the
+  // next try is checked against what the server sees now.
+  const refreshAfterRefusal = () => {
+    utils.orders.invalidate();
+    utils.customers.invalidate();
+  };
 
   const placeBookNowOrderMutation = trpc.orders.placeBookNow.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
       utils.gatepasses.invalidate();
       utils.customers.invalidate();
+      utils.bills.invalidate();
+      utils.reports.invalidate();
     },
+    onError: refreshAfterRefusal,
   });
   const placePreOrderMutation = trpc.orders.placePreOrder.useMutation({
     onSuccess: () => utils.orders.invalidate(),
+    onError: refreshAfterRefusal,
   });
   const fulfillOrderMutation = trpc.orders.fulfilPreOrder.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
+      utils.gatepasses.invalidate();
       utils.customers.invalidate();
+      utils.bills.invalidate();
+      utils.reports.invalidate();
     },
-    onError: () => utils.orders.invalidate(),
+    onError: refreshAfterRefusal,
   });
   const cancelOrderMutation = trpc.orders.cancel.useMutation({
     onSuccess: () => {
