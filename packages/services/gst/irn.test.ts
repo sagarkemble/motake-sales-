@@ -3,6 +3,7 @@ import { auditLogsTable } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import DocumentService from "../documents";
+import { refusalOf as refusalCarriedBy } from "../errors";
 import { refusalOf, versionsOf } from "../test/admin-bill-world";
 import { wipeApplicationTables } from "../test/database";
 import {
@@ -313,6 +314,107 @@ describe("GstService.enterIrn", () => {
     expect(cancel).toEqual({ reason: "bill_locked", details: { lockReason: "irn_recorded" } });
   });
 
+  it("refuses an ack date that is not on the calendar before it reaches the database", async () => {
+    const { world, placed } = await pendingBill();
+
+    for (const ackDate of ["2026-02-30", "2026-13-01", "2026-10-00"]) {
+      await expect(
+        harness.gstService.enterIrn(world.admin.id, {
+          billId: placed.billId,
+          ...irnFields("1", { ackDate }),
+        }),
+      ).rejects.toThrow(/real calendar date/);
+    }
+
+    expect((await billRow(placed.billId)).irn).toBeNull();
+    expect(harness.gstOutcomes).toEqual([]);
+  });
+
+  it("gate refusals carry Spec G's machine reason: bill_locked with lockReason, or bill_cancelled", async () => {
+    const world = await buildEinvoicingWorld();
+    const billOfSupply = await placeBill(world, { curd: 1 });
+    const recorded = await placeBill(world);
+    await harness.gstService.enterIrn(world.admin.id, {
+      billId: recorded.billId,
+      ...irnFields("1"),
+    });
+    const cancelled = await placeBill(world);
+    await harness.adminBillService.cancelBill(world.admin.id, {
+      billId: cancelled.billId,
+      expectedVersionNumber: 1,
+      reason: "Wrong shop",
+    });
+    const notApplicable = await placeBill(await withCustomer(world, { einvoicing: false }));
+    const refuse = (billId: string, seed: string) =>
+      rejectionOf(harness.gstService.enterIrn(world.admin.id, { billId, ...irnFields(seed) }));
+
+    const errors = [
+      await refuse(billOfSupply.billId, "2"),
+      await refuse(notApplicable.billId, "3"),
+      await refuse(recorded.billId, "4"),
+      await refuse(cancelled.billId, "5"),
+    ];
+
+    expect(errors.map((error) => error.code)).toEqual(Array(4).fill("CONFLICT"));
+    expect(errors.map((error) => refusalCarriedBy(error))).toEqual([
+      { reason: "bill_locked", details: { lockReason: "bill_of_supply" } },
+      { reason: "bill_locked", details: { lockReason: "einvoicing_not_required" } },
+      { reason: "bill_locked", details: { lockReason: "irn_already_recorded" } },
+      { reason: "bill_cancelled", details: null },
+    ]);
+  });
+
+  it("two Admins putting one IRN on two Bills at once: one lands, the other is told the Bill by the unique constraint", async () => {
+    const world = await buildEinvoicingWorld();
+    const first = await placeBill(world);
+    const second = await placeBill(world);
+    // Both calls pass the IRN-unused check, then meet here (the image is stored just before the
+    // write), so neither sees the other's IRN until the unique constraint does.
+    let arrived = 0;
+    let bothArrived!: () => void;
+    const meeting = new Promise<void>((resolve) => {
+      bothArrived = resolve;
+    });
+    class MeetingDocuments extends DocumentService {
+      public override async putSignedQrImage(
+        input: Parameters<DocumentService["putSignedQrImage"]>[0],
+      ) {
+        arrived += 1;
+        if (arrived === 2) bothArrived();
+        await meeting;
+        return super.putSignedQrImage(input);
+      }
+    }
+    const service = new GstService(new MeetingDocuments(harness.store), (outcome) => {
+      harness.gstOutcomes.push(outcome);
+    });
+    const enter = (billId: string, ackNumber: string) =>
+      service.enterIrn(world.admin.id, {
+        billId,
+        ...irnFields("1", { ackNumber }),
+        signedQrImage: png,
+      });
+
+    const results = await Promise.allSettled([
+      enter(first.billId, "111"),
+      enter(second.billId, "222"),
+    ]);
+
+    expect(arrived).toBe(2);
+    const landed = results.findIndex((result) => result.status === "fulfilled");
+    const [winner, loser] = landed === 0 ? [first, second] : [second, first];
+    expect(landed).toBeGreaterThanOrEqual(0);
+    const refused = results[1 - landed] as PromiseRejectedResult;
+    expect(refused.reason).toMatchObject({ code: "CONFLICT" });
+    expect(refused.reason.message).toContain(
+      `IRN ${irnOf("1")} is already recorded on Bill ${winner.billNumber}`,
+    );
+    expect((await billRow(winner.billId)).irn).toBe(irnOf("1"));
+    expect(await billRow(loser.billId)).toMatchObject({ irn: null, signedQrImageKey: null });
+    expect(await irnAuditRows(loser.billId)).toEqual([]);
+    expect(harness.gstOutcomes).toEqual([expect.objectContaining({ billId: winner.billId })]);
+  });
+
   it("a throwing listener never rolls the IRN back", async () => {
     const { world, placed } = await pendingBill();
     const throwing = new GstService(new DocumentService(harness.store), () => {
@@ -487,6 +589,59 @@ describe("GstService.correctIrn", () => {
     expect((await harness.gstService.getBillGstState({ billId: placed.billId })).irn).toMatchObject(
       { correctReason: "Typo", recordedByName: world.admin.name },
     );
+  });
+
+  it("refuses an ack date that is not on the calendar and keeps the recorded IRN", async () => {
+    const { world, placed } = await recordedBill();
+
+    await expect(
+      harness.gstService.correctIrn(world.admin.id, {
+        billId: placed.billId,
+        ...irnFields("2", { ackDate: "2026-02-30" }),
+        reason: "Typo",
+      }),
+    ).rejects.toThrow(/real calendar date/);
+
+    expect(await billRow(placed.billId)).toMatchObject({
+      irn: irnOf("1"),
+      irnAckDate: "2026-10-25",
+      irnCorrectReason: null,
+    });
+    expect(harness.gstOutcomes).toEqual([]);
+  });
+
+  it("gate refusals carry Spec G's machine reason", async () => {
+    const { world, placed } = await pendingBill();
+
+    const noIrn = await refusalOf(
+      harness.gstService.correctIrn(world.admin.id, {
+        billId: placed.billId,
+        ...irnFields("1"),
+        reason: "Typo",
+      }),
+    );
+
+    expect(noIrn).toEqual({ reason: "bill_locked", details: { lockReason: "irn_missing" } });
+  });
+
+  it("a throwing listener never rolls the corrected IRN back", async () => {
+    const { world, placed } = await recordedBill();
+    const throwing = new GstService(new DocumentService(harness.store), () => {
+      throw new Error("WhatsApp down");
+    });
+
+    const result = await throwing.correctIrn(world.admin.id, {
+      billId: placed.billId,
+      ...irnFields("2"),
+      reason: "Copied the wrong IRN",
+    });
+
+    expect(result.irn).toBe(irnOf("2"));
+    expect(await billRow(placed.billId)).toMatchObject({
+      irn: irnOf("2"),
+      irnCorrectReason: "Copied the wrong IRN",
+    });
+    expect(await irnAuditRows(placed.billId)).toHaveLength(2);
   });
 
   it("delivers nothing on a refusal", async () => {

@@ -3,11 +3,20 @@ import { randomUUID } from "node:crypto";
 import { db, sql } from "@repo/database";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import AdminBillService from "../admin-bills";
+import { noAdminBillListener, type BillLockHook } from "../shared/bill-events";
+import { gstBillLockHook } from "../shared/gst-gates";
 import { refusalOf, versionsOf } from "../test/admin-bill-world";
-import { wipeApplicationTables, waitForLockWaiter } from "../test/database";
 import {
+  waitForAdvisoryLockWaiter,
+  wipeApplicationTables,
+  waitForLockWaiter,
+} from "../test/database";
+import {
+  billRow,
   buildEinvoicingWorld,
   buildGstHarness,
+  irnFields,
   placeBill,
   setBusinessDay,
   type GstHarness,
@@ -24,7 +33,66 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+// A Bill write paused inside its open transaction, already past its shared month lock: `passed`
+// resolves once it is there, and it goes on (and commits) only after `release`.
+function pausePoint() {
+  const passed = deferred();
+  const released = deferred();
+  return {
+    passed: passed.promise,
+    release: released.resolve,
+    pause: async () => {
+      passed.resolve();
+      await released.promise;
+    },
+  };
+}
+
+// Spec G's Admin Bill service whose lock hook takes the real shared month lock, then pauses.
+function pausingAdminBillService(pause: () => Promise<void>) {
+  const hook: BillLockHook = async (input, executor) => {
+    const decision = await gstBillLockHook(input, executor);
+    await pause();
+    return decision;
+  };
+  return new AdminBillService(noAdminBillListener, hook);
+}
+
+// Files October while a Bill write holds the shared month lock: the filing must wait for it. The
+// write commits first, then the filing. Returns the settle order.
+async function fileWhilePaused(
+  actorId: string,
+  point: ReturnType<typeof pausePoint>,
+  write: Promise<unknown>,
+) {
+  const order: string[] = [];
+  const written = write.then(() => order.push("bill change"));
+  await point.passed;
+
+  const filing = fileOctober(actorId).then(() => order.push("filing"));
+  try {
+    await waitForAdvisoryLockWaiter();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(order).toEqual([]);
+  } finally {
+    // Never leave the write's transaction open, even when the filing did not wait.
+    point.release();
+    await Promise.allSettled([written, filing]);
+  }
+  await Promise.all([written, filing]);
+  return order;
+}
 
 async function fileOctober(actorId: string) {
   return harness.gstService.recordGstr1Filing(actorId, {
@@ -202,6 +270,84 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
       details: { lockReason: "month_filed" },
     });
     expect(await versionsOf(placed.billId)).toHaveLength(1);
+  });
+
+  it("a filing waits for a Correct already past its month lock and commits after the new version", async () => {
+    const { world, placed } = await octoberBill();
+    const [line] = (await versionsOf(placed.billId))[0]!.items as Array<{ id: string }>;
+    const point = pausePoint();
+    const correct = pausingAdminBillService(point.pause).correctBill(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      lines: [{ lineId: line!.id, quantity: 2 }],
+      reason: "Wrong qty",
+    });
+
+    const order = await fileWhilePaused(world.admin.id, point, correct);
+
+    expect(order).toEqual(["bill change", "filing"]);
+    expect(await versionsOf(placed.billId)).toHaveLength(2);
+    expect(await harness.gstService.isMonthFiled("2026-10-25")).toBe(true);
+    expect(
+      await refusalOf(
+        harness.adminBillService.correctBill(world.admin.id, {
+          billId: placed.billId,
+          expectedVersionNumber: 2,
+          lines: [{ lineId: line!.id, quantity: 1 }],
+          reason: "Wrong qty again",
+        }),
+      ),
+    ).toEqual({ reason: "bill_locked", details: { lockReason: "month_filed" } });
+  });
+
+  it("a filing waits for a Cancel already past its month lock and commits after the cancel", async () => {
+    const { world, placed } = await octoberBill();
+    const point = pausePoint();
+    const cancel = pausingAdminBillService(point.pause).cancelBill(world.admin.id, {
+      billId: placed.billId,
+      expectedVersionNumber: 1,
+      reason: "Wrong shop",
+    });
+
+    const order = await fileWhilePaused(world.admin.id, point, cancel);
+
+    expect(order).toEqual(["bill change", "filing"]);
+    expect(await harness.gstService.getBillGstState({ billId: placed.billId })).toMatchObject({
+      cancelled: true,
+      filedMonth: true,
+    });
+  });
+
+  it("a filing waits for a portal cancellation already past its month lock", async () => {
+    const world = await buildEinvoicingWorld();
+    const placed = await placeBill(world);
+    await harness.gstService.enterIrn(world.admin.id, { billId: placed.billId, ...irnFields("1") });
+    setBusinessDay("2026-11-03");
+    const point = pausePoint();
+    // The ack and audit are written under the shared month lock; pause before Spec G's Cancel core.
+    const cancelCore = AdminBillService.prototype.cancelBillInTransaction;
+    vi.spyOn(AdminBillService.prototype, "cancelBillInTransaction").mockImplementation(
+      async function (this: AdminBillService, ...args) {
+        await point.pause();
+        return cancelCore.apply(this, args);
+      },
+    );
+    const portal = harness.gstService.recordPortalCancellation(world.admin.id, {
+      billId: placed.billId,
+      ackNumber: "CNL-0001",
+      ackDate: "2026-10-25",
+      reason: "Cancelled on the portal",
+    });
+
+    const order = await fileWhilePaused(world.admin.id, point, portal);
+
+    expect(order).toEqual(["bill change", "filing"]);
+    expect((await billRow(placed.billId)).portalCancelAckNumber).toBe("CNL-0001");
+    expect(await harness.gstService.getBillGstState({ billId: placed.billId })).toMatchObject({
+      cancelled: true,
+      filedMonth: true,
+      irnStatus: "portal_cancelled",
+    });
   });
 
   it("a Correct that commits before the filing stands, and the month is locked after", async () => {

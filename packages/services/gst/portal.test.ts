@@ -13,6 +13,7 @@ import {
   soldQtyByVariety,
   versionsOf,
 } from "../test/admin-bill-world";
+import DocumentService from "../documents";
 import type { CheckoutWorld } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import { printedText } from "../test/pdf-text";
@@ -28,6 +29,7 @@ import {
   setBusinessDay,
   type GstHarness,
 } from "../test/gst-world";
+import GstService from "./index";
 
 let harness: GstHarness;
 
@@ -198,6 +200,75 @@ describe("GstService.recordPortalCancellation", () => {
 
     expect(future.message).toContain("future");
     expect((await billRow(placed.billId)).portalCancelAckNumber).toBeNull();
+  });
+
+  it("refuses an ack date that is not on the calendar before it reaches the database", async () => {
+    const { world, placed } = await irnBill();
+
+    await expect(
+      harness.gstService.recordPortalCancellation(world.admin.id, {
+        billId: placed.billId,
+        ...portalAck,
+        ackDate: "2026-02-30",
+      }),
+    ).rejects.toThrow(/real calendar date/);
+
+    expect((await billRow(placed.billId)).portalCancelAckNumber).toBeNull();
+    expect(await portalAuditRows(placed.billId)).toEqual([]);
+    expect(harness.billOutcomes).toEqual([]);
+  });
+
+  it("gate refusals carry Spec G's machine reason: bill_locked with lockReason, or bill_cancelled", async () => {
+    const world = await buildEinvoicingWorld();
+    const noIrn = await placeBill(world);
+    const { placed: cancelled } = await irnBill(world);
+    await harness.gstService.recordPortalCancellation(world.admin.id, {
+      billId: cancelled.billId,
+      ...portalAck,
+    });
+    const { placed: filed } = await irnBill(world);
+    const refuse = (billId: string) =>
+      refusalOf(
+        harness.gstService.recordPortalCancellation(world.admin.id, { billId, ...portalAck }),
+      );
+
+    const missing = await refuse(noIrn.billId);
+    const alreadyCancelled = await refuse(cancelled.billId);
+    setBusinessDay("2026-11-03");
+    await harness.gstService.recordGstr1Filing(world.admin.id, {
+      month: "2026-10",
+      filedOn: "2026-11-03",
+      reference: "OCT",
+    });
+    const monthFiled = await refuse(filed.billId);
+
+    expect(missing).toEqual({ reason: "bill_locked", details: { lockReason: "irn_missing" } });
+    expect(alreadyCancelled).toEqual({ reason: "bill_cancelled", details: null });
+    expect(monthFiled).toEqual({ reason: "bill_locked", details: { lockReason: "month_filed" } });
+  });
+
+  it("a throwing listener never rolls the portal cancellation back", async () => {
+    const { world, placed } = await irnBill();
+    const throwing = new GstService(
+      new DocumentService(harness.store),
+      () => {},
+      () => {
+        throw new Error("WhatsApp down");
+      },
+    );
+
+    const result = await throwing.recordPortalCancellation(world.admin.id, {
+      billId: placed.billId,
+      ...portalAck,
+    });
+
+    expect(result.billId).toBe(placed.billId);
+    expect((await billRow(placed.billId)).portalCancelAckNumber).toBe("CNL-0001");
+    expect(await notesOf(placed.billId)).toHaveLength(1);
+    expect(await portalAuditRows(placed.billId)).toHaveLength(1);
+    expect((await harness.gstService.getBillGstState({ billId: placed.billId })).cancelled).toBe(
+      true,
+    );
   });
 
   it("rolls the ack back when Spec G's Cancel refuses (nothing left uncredited)", async () => {

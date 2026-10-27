@@ -33,3 +33,15 @@ export async function waitForLockWaiter(): Promise<void> {
   }
   throw new Error("No transaction ever waited on the lock");
 }
+
+// Waits until some backend is blocked on an advisory lock (a filing queued behind the month lock).
+export async function waitForAdvisoryLockWaiter(): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const rows = await db.execute<{ waiting: number }>(
+      sql`SELECT count(*)::int AS waiting FROM pg_locks WHERE locktype = 'advisory' AND NOT granted`,
+    );
+    if ((rows.rows[0]?.waiting ?? 0) > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error("No transaction ever waited on the advisory lock");
+}

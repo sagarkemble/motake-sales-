@@ -155,6 +155,37 @@ describe("GstService.recordGstr1Filing", () => {
     expect(await filingRows()).toHaveLength(1);
   });
 
+  it("a month starts at midnight Asia/Kolkata: 23:59 IST on 31 Oct refuses Nov, 00:30 IST on 1 Nov allows it", async () => {
+    const admin = await buildProfile();
+    const november = { month: "2026-11", filedOn: "2026-11-01", reference: "NOV-ACK" };
+
+    // 18:29 UTC on 31 Oct is 23:59 IST, still October.
+    vi.setSystemTime(new Date("2026-10-31T18:29:00Z"));
+    const early = await rejectionOf(harness.gstService.recordGstr1Filing(admin.id, november));
+    const earlyPreview = await rejectionOf(
+      harness.gstService.previewGstr1Filing({ month: "2026-11" }),
+    );
+    // 19:00 UTC on 31 Oct is 00:30 IST on 1 Nov: still October in UTC, November in India.
+    vi.setSystemTime(new Date("2026-10-31T19:00:00Z"));
+    const preview = await harness.gstService.previewGstr1Filing({ month: "2026-11" });
+    await harness.gstService.recordGstr1Filing(admin.id, november);
+
+    expect(early).toMatchObject({ code: "BAD_REQUEST" });
+    expect(early.message).toContain("Nov 2026 has not started");
+    expect(earlyPreview.message).toContain("has not started");
+    expect(preview).toMatchObject({ month: "2026-11", alreadyFiled: false });
+    expect((await filingRows()).map((row) => row.periodMonth)).toEqual(["2026-11-01"]);
+  });
+
+  it("refuses a filing date that is not on the calendar", async () => {
+    const admin = await buildProfile();
+
+    await expect(
+      harness.gstService.recordGstr1Filing(admin.id, { ...october, filedOn: "2026-10-32" }),
+    ).rejects.toThrow(/real calendar date/);
+    expect(await filingRows()).toHaveLength(0);
+  });
+
   it("requires the reference and a YYYY-MM month", async () => {
     const admin = await buildProfile();
 
