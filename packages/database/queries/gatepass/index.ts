@@ -121,6 +121,21 @@ export async function lockActiveGatepassWithRoute(
   return row;
 }
 
+// One GatePass row by id, locked: `update` before its stock moves (Spec G Cancel restores stock
+// only while it is still active), the order a handover takes it in (GatePass, then its lines).
+export async function lockGatepassRow(
+  gatepassId: string,
+  strength: "update" | "share",
+  executor: DbExecutor = db,
+): Promise<SelectGatepass | undefined> {
+  const [gatepass] = await executor
+    .select()
+    .from(gatepassesTable)
+    .where(eq(gatepassesTable.id, gatepassId))
+    .for(strength);
+  return gatepass;
+}
+
 // The GatePass lines for these varieties, locked in variety id order (the checkout lock order).
 // A variety not on the GatePass has no row.
 export async function lockGatepassItemsForVarieties(
@@ -302,8 +317,9 @@ export async function incrementSoldQtyIfAvailable(
 export async function restoreSoldQtyOnCancellation(
   gatepassItemId: string,
   quantity: number,
+  executor: DbExecutor = db,
 ): Promise<SelectGatepassItem | undefined> {
-  const [updatedItem] = await db
+  const [updatedItem] = await executor
     .update(gatepassItemsTable)
     .set({ soldQty: sql`${gatepassItemsTable.soldQty} - ${quantity}` })
     .where(

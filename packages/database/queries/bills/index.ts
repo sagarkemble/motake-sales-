@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, ilike, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, lte, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -7,6 +7,7 @@ import {
   billVersionsTable,
   customersTable,
   ordersTable,
+  profilesTable,
   type InsertBill,
   type InsertBillItem,
   type InsertBillVersion,
@@ -22,7 +23,7 @@ import {
   type PaginatedResult,
   type PaginationParams,
 } from "../shared/pagination";
-import { billIsNotCancelled } from "./cancelled";
+import { billIsCancelled, billIsNotCancelled } from "./cancelled";
 
 export interface BillLineStamp {
   name: string;
@@ -68,7 +69,7 @@ export const billCustomerId = sql<string | null>`coalesce(
   (SELECT "orders"."customer_id" FROM "orders" WHERE "orders"."id" = "bills"."order_id")
 )`;
 
-const billCancelled = sql<boolean>`NOT ${billIsNotCancelled()}`;
+const billCancelled = sql<boolean>`${billIsCancelled()}`;
 
 async function getBillDetailWhere(
   condition: ReturnType<typeof eq>,
@@ -192,6 +193,18 @@ export async function listBills(
 
 // --- Bill issue (Spec F): the paper, its lines and bill_versions v1.
 
+// The Bill a Raise Bill attempt with this key already wrote (db-decisions/0015).
+export async function getBillByIdempotencyKey(
+  idempotencyKey: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor
+    .select()
+    .from(billsTable)
+    .where(eq(billsTable.idempotencyKey, idempotencyKey));
+  return bill;
+}
+
 export async function insertBill(
   newBill: InsertBill,
   executor: DbExecutor = db,
@@ -221,4 +234,152 @@ export async function getBillByOrderId(
 ): Promise<SelectBill | undefined> {
   const [bill] = await executor.select().from(billsTable).where(eq(billsTable.orderId, orderId));
   return bill;
+}
+
+// --- Admin Bill paper (Spec G): lock, Correct's live rewrite and Bill history reads.
+
+export async function lockBillRow(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor
+    .select()
+    .from(billsTable)
+    .where(eq(billsTable.id, billId))
+    .for("update");
+  return bill;
+}
+
+export async function getBillById(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBill | undefined> {
+  const [bill] = await executor.select().from(billsTable).where(eq(billsTable.id, billId));
+  return bill;
+}
+
+// The Customer on the Bill's Ledger Bill debit (the order's Customer for an order-backed Bill; an
+// office Bill has no other link).
+export async function getBillCustomerId(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<string | null> {
+  const [row] = await executor
+    .select({ customerId: billCustomerId })
+    .from(billsTable)
+    .where(eq(billsTable.id, billId));
+  return row?.customerId ?? null;
+}
+
+export async function listBillItemsByBillId(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBillItem[]> {
+  return executor
+    .select()
+    .from(billItemsTable)
+    .where(eq(billItemsTable.billId, billId))
+    .orderBy(asc(billItemsTable.createdAt), asc(billItemsTable.id));
+}
+
+export async function updateBill(
+  billId: string,
+  changes: Partial<
+    Pick<
+      InsertBill,
+      | "legalType"
+      | "letterhead"
+      | "totalQuantity"
+      | "totalPaise"
+      | "taxablePaise"
+      | "cgstPaise"
+      | "sgstPaise"
+      | "igstPaise"
+      | "roundOffPaise"
+    >
+  >,
+  executor: DbExecutor = db,
+): Promise<SelectBill> {
+  const updatedRows = await executor
+    .update(billsTable)
+    .set(changes)
+    .where(eq(billsTable.id, billId))
+    .returning();
+  return firstOrThrow(updatedRows, "updateBill");
+}
+
+// Correct keeps a surviving line's id, so one line has one id in every version.
+export async function updateBillItem(
+  billItemId: string,
+  changes: Pick<
+    InsertBillItem,
+    "quantity" | "taxablePaise" | "cgstPaise" | "sgstPaise" | "igstPaise"
+  >,
+  executor: DbExecutor = db,
+): Promise<SelectBillItem> {
+  const updatedRows = await executor
+    .update(billItemsTable)
+    .set(changes)
+    .where(eq(billItemsTable.id, billItemId))
+    .returning();
+  return firstOrThrow(updatedRows, "updateBillItem");
+}
+
+export async function deleteBillItems(
+  billItemIds: string[],
+  executor: DbExecutor = db,
+): Promise<void> {
+  if (billItemIds.length === 0) return;
+  await executor.delete(billItemsTable).where(inArray(billItemsTable.id, billItemIds));
+}
+
+export async function getLatestBillVersion(
+  billId: string,
+  executor: DbExecutor = db,
+): Promise<SelectBillVersion | undefined> {
+  const [version] = await executor
+    .select()
+    .from(billVersionsTable)
+    .where(eq(billVersionsTable.billId, billId))
+    .orderBy(desc(billVersionsTable.versionNumber))
+    .limit(1);
+  return version;
+}
+
+export async function getBillVersionByNumber(
+  billId: string,
+  versionNumber: number,
+  executor: DbExecutor = db,
+): Promise<SelectBillVersion | undefined> {
+  const [version] = await executor
+    .select()
+    .from(billVersionsTable)
+    .where(
+      and(eq(billVersionsTable.billId, billId), eq(billVersionsTable.versionNumber, versionNumber)),
+    );
+  return version;
+}
+
+// For each line id, the newest version of this Bill whose items snapshot still has that line. A
+// Note line must point at a version that contains it (db-decisions/0006); a line Correct removed
+// lives on only in older versions.
+export async function findNewestVersionIdsForLines(
+  billId: string,
+  lineIds: string[],
+  executor: DbExecutor = db,
+): Promise<Map<string, string>> {
+  if (lineIds.length === 0) return new Map();
+  const versions = await executor
+    .select({ id: billVersionsTable.id, items: billVersionsTable.items })
+    .from(billVersionsTable)
+    .where(eq(billVersionsTable.billId, billId))
+    .orderBy(desc(billVersionsTable.versionNumber));
+  const newest = new Map<string, string>();
+  for (const lineId of lineIds) {
+    const version = versions.find((candidate) =>
+      (candidate.items as Array<{ id: string }>).some((item) => item.id === lineId),
+    );
+    if (version) newest.set(lineId, version.id);
+  }
+  return newest;
 }

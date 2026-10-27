@@ -16,7 +16,7 @@ import {
   type SelectPaymentEvent,
 } from "../../schema";
 import { billCustomerId, type BillLetterhead, type BillLineStamp } from "../bills";
-import { billIsNotCancelled } from "../bills/cancelled";
+import { billIsCancelled } from "../bills/cancelled";
 import type { DbExecutor } from "../shared/executor";
 
 // bill_versions.header: the bills row as it stood at that version, read back from JSON
@@ -162,7 +162,7 @@ export async function getBillDocumentState(
       signedQrImageKey: billsTable.signedQrImageKey,
       irnRecordedAt: billsTable.irnRecordedAt,
       customerId: billCustomerId,
-      cancelled: sql<boolean>`NOT ${billIsNotCancelled()}`,
+      cancelled: sql<boolean>`${billIsCancelled()}`,
     })
     .from(billsTable)
     .where(eq(billsTable.id, billId));

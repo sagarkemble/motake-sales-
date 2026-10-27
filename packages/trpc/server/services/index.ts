@@ -1,5 +1,7 @@
+import AdminBillService from "@repo/services/admin-bills";
 import AuthService from "@repo/services/auth";
 import BillService from "@repo/services/bills";
+import CustomerLedgerService from "@repo/services/customer-ledger";
 import CustomerService from "@repo/services/customers";
 import DocumentService from "@repo/services/documents";
 import GatepassService from "@repo/services/gatepass";
@@ -12,8 +14,10 @@ import SalesmanService from "@repo/services/salesman";
 import SettingsService from "@repo/services/settings";
 import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 
+export const adminBillService = new AdminBillService();
 export const authService = new AuthService();
 export const billService = new BillService();
+export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();
 export const gatepassService = new GatepassService();

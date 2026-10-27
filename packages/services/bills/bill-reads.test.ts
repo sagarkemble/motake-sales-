@@ -102,7 +102,7 @@ describe("BillService reads", () => {
     });
   });
 
-  it("marks a Bill cancelled when its order is cancelled", async () => {
+  it("marks a Bill cancelled once Bill Cancel wrote its marker", async () => {
     const admin = await buildProfile();
     const customer = await buildCustomer(admin.id);
     const variety = await buildVariety();

@@ -1,4 +1,4 @@
-import { orderService } from "../../services";
+import { adminBillService, orderService } from "../../services";
 import { z, zodUndefinedModel } from "../../schema";
 import {
   adminOrSalesmanProcedure,
@@ -12,6 +12,7 @@ import { forbidden, notFound } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import {
   billedCheckoutResultSchema,
+  cancelOrderInputSchema,
   fulfilPreOrderInputSchema,
   listOrdersInputSchema,
   orderDetailSchema,
@@ -197,13 +198,16 @@ export const ordersRouter = router({
         protect: true,
         summary: "Cancel an order",
         description:
-          "Admin cancels an unfulfilled Pre-order. A salesman cannot cancel. A Book Now is cancelled from its Bill (Spec G) and is refused here.",
+          "Admin cancels an order with a reason: an unfulfilled Pre-order is cancelled as such; an order with a Bill cancels that Bill at its latest version (Spec G Cancel). A salesman cannot cancel.",
       },
     })
-    .input(orderIdInputSchema)
+    .input(cancelOrderInputSchema)
     .output(apiResponseSchema(orderSchema))
     .mutation(async ({ ctx, input }) => {
-      const cancelledOrder = await orderService.cancelOrder(input.id, ctx.user.id);
+      const cancelledOrder = await adminBillService.cancelOrder(ctx.user.id, {
+        orderId: input.id,
+        reason: input.reason,
+      });
       return apiResponse(cancelledOrder);
     }),
 });

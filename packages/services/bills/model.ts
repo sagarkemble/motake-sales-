@@ -48,6 +48,8 @@ export const issueBillInputSchema = z.object({
   billNumber: z.string().min(1).max(16),
   // Goes on the Ledger Bill debit (Admin's reason at Raise Bill); bill_versions v1 is always Raised.
   reason: z.string().trim().optional(),
+  // Raise Bill's client key (db-decisions/0015); none on a checkout Bill.
+  idempotencyKey: z.string().max(128).optional(),
   // Ledger posting time; a checkout Payment posts 1 ms after it.
   occurredAt: z.date().optional(),
 });

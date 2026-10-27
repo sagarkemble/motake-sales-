@@ -128,6 +128,10 @@ export const orderDetailSchema = z.object({
 
 export const orderIdInputSchema = z.object({ id: z.string().uuid() });
 
+export const cancelOrderInputSchema = orderIdInputSchema.extend({
+  reason: z.string().trim().min(1).max(1000),
+});
+
 export const listOrdersInputSchema = z.object({
   salesmanId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),

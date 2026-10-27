@@ -1,4 +1,6 @@
+import { db } from "@repo/database";
 import {
+  getBillCustomerId,
   getBillDetailById,
   getBillDetailByNumber,
   getBillDetailByOrderId,
@@ -10,6 +12,7 @@ import {
   type BillLetterhead,
   type BillListRow,
 } from "@repo/database/queries/bills";
+import { isBillCancelled } from "@repo/database/queries/bills/cancelled";
 import { getCustomerById } from "@repo/database/queries/customers";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
@@ -28,7 +31,7 @@ import {
 } from "./model";
 
 // The Bill (the paper). Issue runs here for checkout (Spec F) and Raise Bill (Spec G); Correct,
-// Cancel and Notes arrive with Spec G.
+// Cancel and Notes are AdminBillService (Spec G).
 class BillService {
   private readonly ledgerService = new LedgerService();
   private readonly settingsService = new SettingsService();
@@ -47,6 +50,20 @@ class BillService {
 
   public async getBillForOrder(orderId: string): Promise<BillDetail | undefined> {
     return getBillDetailByOrderId(orderId);
+  }
+
+  // The one cancelled rule (Spec G): Bill Cancel's bill/cancelled audit row. Specs I and J ask here.
+  public async isBillCancelled(billId: string, executor: DbExecutor = db): Promise<boolean> {
+    return isBillCancelled(billId, executor);
+  }
+
+  // The Customer on the Bill's Ledger Bill debit; an office Bill has no other link (Spec I's IRN
+  // pending and audit customer_id).
+  public async getBillCustomerId(
+    billId: string,
+    executor: DbExecutor = db,
+  ): Promise<string | null> {
+    return getBillCustomerId(billId, executor);
   }
 
   public async listBills(input: ListBillsInput): Promise<PaginatedResult<BillListRow>> {
@@ -95,6 +112,7 @@ class BillService {
         igstPaise: tax.igstPaise,
         roundOffPaise: tax.roundOffPaise,
         billDate: parsedInput.billDate,
+        idempotencyKey: parsedInput.idempotencyKey ?? null,
       },
       executor,
     );

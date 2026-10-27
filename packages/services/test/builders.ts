@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { db, sql } from "@repo/database";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import {
+  auditLogsTable,
   billItemsTable,
   billsTable,
   billVersionsTable,
@@ -445,7 +446,25 @@ export async function buildBill(input: {
   return { bill: bill! };
 }
 
-// A Book Now with its Bill, the common case for read tests.
+// The one Cancelled marker Spec G's Bill Cancel writes (entity bill, action cancelled).
+export async function buildBillCancelledMarker(input: {
+  bill: SelectBill;
+  actorId: string;
+  customerId: string;
+  reason?: string;
+}): Promise<void> {
+  await db.insert(auditLogsTable).values({
+    actorId: input.actorId,
+    action: "cancelled",
+    entityType: "bill",
+    entityId: input.bill.id,
+    customerId: input.customerId,
+    reason: input.reason ?? "Voided before delivery",
+  });
+}
+
+// A Book Now with its Bill, the common case for read tests. A cancelled one also carries the Bill
+// Cancelled marker, as Bill Cancel writes both.
 export async function buildBookNowWithBill(input: {
   customer: SelectCustomer;
   actorId: string;
@@ -472,6 +491,9 @@ export async function buildBookNowWithBill(input: {
     billDate: input.billDate,
     lines: input.lines,
   });
+  if (input.status === "cancelled") {
+    await buildBillCancelledMarker({ bill, actorId: input.actorId, customerId: input.customer.id });
+  }
   return { ...built, bill };
 }
 

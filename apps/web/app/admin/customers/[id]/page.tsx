@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRightLeftIcon,
+  BookOpenIcon,
   CalendarIcon,
   CheckCircle2Icon,
   IndianRupeeIcon,
@@ -198,6 +200,12 @@ export default function CustomerDetailPage() {
             >
               <ArrowRightLeftIcon />
               {tx("admin.customers.move.title")}
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-full" asChild>
+              <Link href={`/admin/ledger?customer=${customer.id}`}>
+                <BookOpenIcon />
+                {tx("admin.customers.openLedger")}
+              </Link>
             </Button>
             {isInactive ? (
               <Button

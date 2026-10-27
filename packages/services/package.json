@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "exports": {
+    "./admin-bills": "./admin-bills/index.ts",
     "./auth": "./auth/index.ts",
     "./bills": "./bills/index.ts",
     "./business-date": "./business-date/index.ts",
     "./clients": "./clients/index.ts",
+    "./customer-ledger": "./customer-ledger/index.ts",
     "./customers": "./customers/index.ts",
     "./document-numbers": "./document-numbers/index.ts",
     "./documents": "./documents/index.ts",

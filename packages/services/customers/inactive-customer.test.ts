@@ -11,6 +11,7 @@ import {
 } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import AdminBillService from "../admin-bills";
 import BillService from "../bills";
 import { checkoutRefusalOf } from "../errors";
 import LedgerService from "../ledger";
@@ -24,6 +25,7 @@ const customerService = new CustomerService();
 const orderService = new OrderService();
 const paymentService = new PaymentService();
 const billService = new BillService();
+const adminBillService = new AdminBillService();
 const ledger = new LedgerService();
 const today = "2026-10-25";
 const tomorrow = "2026-10-26";
@@ -73,7 +75,10 @@ describe("Deactivating a Customer", () => {
       message: "Customer has 1 open Pre-order and cannot be deactivated",
     });
 
-    await orderService.cancelOrder(placed.orderId, world.admin.id);
+    await adminBillService.cancelPreOrder(world.admin.id, {
+      orderId: placed.orderId,
+      reason: "Shop closing",
+    });
     const deactivated = await customerService.deactivateCustomer(world.customer.id, world.admin.id);
     expect(deactivated?.status).toBe("inactive");
   });

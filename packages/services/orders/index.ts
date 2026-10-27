@@ -9,10 +9,8 @@ import {
 } from "@repo/database/queries/gatepass";
 import { getBalanceThroughBillDebit } from "@repo/database/queries/ledger";
 import {
-  cancelBookNowOrderWithGatepassRestoration,
   countOrdersPlacedInRange,
   getLatestOrderVersion,
-  getOrderById,
   getOrderByIdempotencyKey,
   getOrderCountsPerSalesmanInRange,
   getOrderDetailById,
@@ -59,6 +57,9 @@ import {
 import {
   noCheckoutListener,
   notifyAfterCommit,
+  dueStateOf,
+  routeStampFromHeader,
+  routeStampOf,
   type CheckoutListener,
   type CheckoutOutcome,
   type RouteStamp,
@@ -132,15 +133,6 @@ type CheckoutRun<Result> =
   | { kind: "done"; result: Result; outcome: CheckoutOutcome }
   | { kind: "replay"; order: SelectOrder };
 
-function mapOrderCancellationError(caughtError: unknown) {
-  const message = caughtError instanceof Error ? caughtError.message : "Failed to cancel order";
-  if (message.includes("not found")) return notFound(message);
-  if (message.includes("already fulfilled or cancelled")) return conflict(message);
-  if (message.includes("no gatepass found")) return conflict(message);
-  if (message.includes("sold quantity would go negative")) return conflict(message);
-  return caughtError;
-}
-
 // The checkout Payment key `{key}:pay` already belongs to another checkout (a fulfil key reused on
 // another Pre-order, or a Book Now and a fulfil sharing a key): refused, nothing written.
 function keyReusedOr(caughtError: unknown): unknown {
@@ -149,22 +141,6 @@ function keyReusedOr(caughtError: unknown): unknown {
     "idempotency_key_reused",
     "This checkout key was already used for another sale. Try again.",
   );
-}
-
-function routeStampOf(route: { name: string; code: string; deliveryState: string }): RouteStamp {
-  return { name: route.name, code: route.code, delivery_state: route.deliveryState };
-}
-
-// The Route stamp copied into order_versions v1 at place and carried forward unchanged.
-function routeStampFromHeader(header: unknown): RouteStamp {
-  const stamp = (header as { route?: RouteStamp } | null)?.route;
-  if (!stamp) throw internalError("Order version has no Route stamp");
-  return stamp;
-}
-
-function dueStateOf(scheduledDate: string, today: string): PreorderDueState {
-  if (scheduledDate > today) return "upcoming";
-  return scheduledDate === today ? "due" : "overdue";
 }
 
 // A phone-supplied price, tax or amount on a line is refused by name.
@@ -689,20 +665,6 @@ class OrderService {
   public async listOrders(input: ListOrdersInput): Promise<PaginatedResult<OrderListRow>> {
     const parsedInput = listOrdersInputSchema.parse(input);
     return listOrders(parsedInput, parsedInput);
-  }
-
-  // Not rewritten by Spec F (Admin cancel is Spec G). A Book Now now carries a Bill and a Ledger
-  // debit that this path cannot reverse, so it is refused until Bill Cancel lands.
-  public async cancelOrder(orderId: string, cancelledBy: string): Promise<SelectOrder> {
-    const order = await getOrderById(orderId);
-    if (order?.type === "book_now") {
-      throw conflict("A Book Now is cancelled from its Bill (Bill Cancel), not from the order");
-    }
-    try {
-      return await cancelBookNowOrderWithGatepassRestoration(orderId, cancelledBy);
-    } catch (cancellationError) {
-      throw mapOrderCancellationError(cancellationError);
-    }
   }
 
   public async countOrdersPlacedInRange(
