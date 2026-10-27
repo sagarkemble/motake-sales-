@@ -1,7 +1,7 @@
 "use client";
 
 import { businessDateOf, type RouterOutputs } from "@repo/trpc/client";
-import { BuildingIcon } from "lucide-react";
+import { BuildingIcon, FileTextIcon } from "lucide-react";
 
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
 import { FulfilPayment, LockedLines } from "~/components/shared/checkout/fulfil-pre-order-panel";
@@ -74,13 +74,15 @@ export function FulfilRowButton({ row, onFulfil }: { row: OrderListRow; onFulfil
 interface FulfilPreOrderSheetProps {
   row: OrderListRow;
   onClose: () => void;
+  // The order detail dialog, which an open Pre-order row no longer opens.
+  onViewDetails: () => void;
 }
 
 /**
  * Admin fulfils a Pre-order from the Orders list: no GatePass, no stock change, the Bill from the
  * terms locked at place, and the same Payment block and success summary as the salesman.
  */
-export function FulfilPreOrderSheet({ row, onClose }: FulfilPreOrderSheetProps) {
+export function FulfilPreOrderSheet({ row, onClose, onViewDetails }: FulfilPreOrderSheetProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const scheduledDate = row.scheduledDate ?? "";
@@ -113,6 +115,16 @@ export function FulfilPreOrderSheet({ row, onClose }: FulfilPreOrderSheetProps) 
               {tx(isDue ? "admin.orders.fulfil.due" : "admin.orders.fulfil.scheduled")}
             </Badge>
           </SheetDescription>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto self-start p-0 text-brand"
+            onClick={onViewDetails}
+          >
+            <FileTextIcon className="size-3.5" />
+            {tx("admin.orders.fulfil.viewDetails")}
+          </Button>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">

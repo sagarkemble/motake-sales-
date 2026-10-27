@@ -102,7 +102,9 @@ export function OrderList({ customerId }: OrderListProps) {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [fulfilOrderId, setFulfilOrderId] = useState<string | null>(null);
+  // A snapshot, not an id: after fulfil (or a refusal) the list refetches and a Status filter may
+  // drop the row, but the sheet must stay to show the success or the refusal.
+  const [fulfilRow, setFulfilRow] = useState<OrderListRow | null>(null);
   const debouncedPhone = useDebouncedValue(filters.customerPhone.trim(), 350);
   const pageSize = 20;
   const showFilters = !customerId;
@@ -127,11 +129,10 @@ export function OrderList({ customerId }: OrderListProps) {
   }
 
   const activeCount = countActive(filters);
-  const fulfilRow = ordersPage.items.find((row) => row.id === fulfilOrderId) ?? null;
 
   // An open Pre-order opens the Fulfil sheet; any other order opens its detail.
   function openRow(row: OrderListRow) {
-    if (isOpenPreorder(row)) setFulfilOrderId(row.id);
+    if (isOpenPreorder(row)) setFulfilRow(row);
     else setSelectedOrderId(row.id);
   }
 
@@ -248,7 +249,11 @@ export function OrderList({ customerId }: OrderListProps) {
         <FulfilPreOrderSheet
           key={fulfilRow.id}
           row={fulfilRow}
-          onClose={() => setFulfilOrderId(null)}
+          onClose={() => setFulfilRow(null)}
+          onViewDetails={() => {
+            setSelectedOrderId(fulfilRow.id);
+            setFulfilRow(null);
+          }}
         />
       )}
     </div>

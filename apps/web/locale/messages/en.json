@@ -477,7 +477,8 @@
         "due": "Due",
         "scheduled": "Scheduled",
         "paymentTitle": "Payment at fulfil",
-        "officeNote": "Billed by Office: no GatePass, no stock change. Price and GST from the day it was placed."
+        "officeNote": "Billed by Office: no GatePass, no stock change. Price and GST from the day it was placed.",
+        "viewDetails": "View order details"
       }
     },
     "gatepass": {
