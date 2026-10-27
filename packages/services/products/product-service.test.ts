@@ -112,3 +112,17 @@ describe("ProductService varieties", () => {
     ]);
   });
 });
+
+describe("ProductService delete", () => {
+  it("refuses a second delete of the same Product as not found", async () => {
+    const admin = await buildProfile();
+    const product = await buildProduct({ name: "Buttermilk" });
+
+    const deleted = await productService.deleteProduct(product.id, admin.id);
+    const deletedAgain = await productService.deleteProduct(product.id, admin.id);
+
+    expect(deleted).toMatchObject({ id: product.id, status: "inactive" });
+    expect(deleted?.deletedAt).toBeInstanceOf(Date);
+    expect(deletedAgain).toBeUndefined();
+  });
+});

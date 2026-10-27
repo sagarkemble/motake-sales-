@@ -26,11 +26,13 @@ export const customerSchema = z.object({
   deletedAt: z.date().nullable(),
 });
 
-// Reads carry the live Route; a hidden Route is still shown, labelled.
+// Reads carry the live Route; a hidden Route is still shown, labelled. Balance: positive is
+// Pending (owes Motake), negative is Advance; field Payment shows what clears Pending from it.
 export const customerWithRouteSchema = customerSchema.extend({
   routeName: z.string(),
   routeCode: z.string(),
   routeHidden: z.boolean(),
+  balancePaise: z.number().int(),
 });
 
 export const paginatedCustomersSchema = z.object({

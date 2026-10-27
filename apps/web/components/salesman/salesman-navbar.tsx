@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, MenuIcon, UserIcon } from "lucide-react";
+import { LogOutIcon, MenuIcon, UserIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -91,6 +91,18 @@ export function SalesmanNavbar() {
                       </Link>
                     );
                   })}
+                  <Link
+                    href="/salesman/customers"
+                    onClick={closeDrawer}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                      isNavItemActive("/salesman/customers", currentPathname)
+                        ? "bg-brand/10 text-brand"
+                        : "text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <UsersIcon className="size-4" />
+                    {tx("salesman.nav.customers")}
+                  </Link>
                   <Link
                     href="/salesman/account"
                     onClick={closeDrawer}
