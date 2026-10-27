@@ -1,5 +1,7 @@
-import type { SelectPayment } from "@repo/database/schema";
+import type { SelectCustomer, SelectPayment } from "@repo/database/schema";
 import { z } from "zod";
+
+import type { Balance } from "../ledger/model";
 
 export const paymentModeSchema = z.enum(["cash", "bank", "upi"]);
 export const overpayChoiceSchema = z.enum(["return_change", "keep_advance"]);
@@ -63,4 +65,105 @@ export interface FieldPaymentResult {
   keptPaise: number;
   returnedPaise: number;
   balancePaise: number;
+}
+
+// --- Admin Add Payment, Payment paper and Correct (Spec H).
+
+const reasonSchema = z.string().trim().min(1).max(1000);
+
+// Correct sends the reference it wants kept; empty or null clears it.
+const correctReferenceSchema = z
+  .string()
+  .trim()
+  .max(128)
+  .nullish()
+  .transform((reference) => reference || null);
+
+// An office Payment: one kept amount (received = kept, nothing returned), a required reason.
+export const addPaymentInputSchema = z.object({
+  customerId: z.string().uuid(),
+  mode: paymentModeSchema,
+  keptPaise: z.number().int().positive(),
+  reference: referenceSchema,
+  reason: reasonSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
+export type AddPaymentInput = z.input<typeof addPaymentInputSchema>;
+export type ParsedAddPaymentInput = z.output<typeof addPaymentInputSchema>;
+
+// The full state the Admin wants after Correct; ₹0 kept is allowed and is not a delete.
+export const correctPaymentInputSchema = z.object({
+  paymentId: z.string().uuid(),
+  expectedLatestEventId: z.string().uuid(),
+  keptPaise: z.number().int().min(0),
+  mode: paymentModeSchema,
+  reference: correctReferenceSchema,
+  reason: reasonSchema,
+});
+export type CorrectPaymentInput = z.input<typeof correctPaymentInputSchema>;
+
+export interface AddPaymentResult {
+  paymentId: string;
+  number: string;
+  keptPaise: number;
+  balancePaise: number;
+}
+
+export interface CorrectPaymentResult {
+  paymentId: string;
+  number: string;
+  eventId: string;
+  // Null on a mode / reference-only Correct.
+  ledgerEntryId: string | null;
+  keptPaise: number;
+  // Kept after − kept before.
+  differencePaise: number;
+  mode: SelectPayment["mode"];
+  reference: string | null;
+  balancePaise: number;
+}
+
+// One row of the history list; a posted event shows no "previous".
+export interface PaymentPaperEvent {
+  id: string;
+  kind: "posted" | "adjusted";
+  occurredAt: Date;
+  keptPaise: number;
+  previousKeptPaise: number;
+  differencePaise: number;
+  mode: SelectPayment["mode"];
+  reference: string | null;
+  reason: string | null;
+  correctionDate: string | null;
+  actorName: string | null;
+  ledgerEntryId: string | null;
+}
+
+// The Payment paper: header (current state), Customer with current Route, history.
+export interface PaymentPaper {
+  payment: {
+    id: string;
+    number: string;
+    postedAt: Date;
+    mode: SelectPayment["mode"];
+    receivedPaise: number;
+    keptPaise: number;
+    returnedPaise: number;
+    reference: string | null;
+    // The Add reason from the posted event; null for a checkout or field Payment.
+    reason: string | null;
+    actorName: string | null;
+    // A salesman's checkout or field Payment carries its GatePass; the office has none.
+    source: "gatepass" | "office";
+    gatepass: { id: string; businessDate: string } | null;
+  };
+  customer: Pick<SelectCustomer, "id" | "shopName" | "status"> & {
+    routeName: string;
+    routeCode: string;
+  };
+  events: PaymentPaperEvent[];
+  // Correct's concurrency token.
+  latestEventId: string;
+  balance: Balance;
+  actions: { canCorrect: boolean };
 }

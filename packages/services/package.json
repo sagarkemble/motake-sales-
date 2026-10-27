@@ -22,6 +22,7 @@
     "./orders": "./orders/index.ts",
     "./payments": "./payments/index.ts",
     "./products": "./products/index.ts",
+    "./refunds": "./refunds/index.ts",
     "./reports": "./reports/index.ts",
     "./routes": "./routes/index.ts",
     "./salesman": "./salesman/index.ts",
