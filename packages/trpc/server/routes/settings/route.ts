@@ -1,4 +1,4 @@
-import { settingsService } from "../../services";
+import { settingsService, whatsAppTokenService } from "../../services";
 import { adminProcedure, router } from "../../trpc";
 import { z, zodUndefinedModel } from "../../schema";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
@@ -6,6 +6,7 @@ import { generatePath } from "../../utils/path-generator";
 import {
   creditNoteDeadlineEntrySchema,
   financialYearInputSchema,
+  sendWaitingResultSchema,
   numberSeriesEntrySchema,
   prepareYearInputSchema,
   sellerSettingsSchema,
@@ -16,6 +17,8 @@ import {
   setUpSellerSettingsInputSchema,
   updatePrefixInputSchema,
   updateSellerSettingsInputSchema,
+  updateWhatsAppTokenInputSchema,
+  whatsAppTokenSettingsSchema,
 } from "./model";
 
 const path = generatePath("/settings");
@@ -249,8 +252,69 @@ const creditNoteDeadlineRouter = router({
     }),
 });
 
+// Spec J-0: the WhatsApp access token. The token goes in once and never comes back out.
+const whatsappTokenRouter = router({
+  status: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/whatsapp-token"),
+        tags: ["Settings"],
+        protect: true,
+        summary: "Get the WhatsApp access token status",
+        description:
+          "Return whether the token works (unknown while the notification service does not answer), when it was last checked, how many messages are waiting, and its last 4 characters with who saved it and when.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(whatsAppTokenSettingsSchema))
+    .query(async () => {
+      const status = await whatsAppTokenService.status();
+      return apiResponse(status);
+    }),
+
+  update: adminProcedure
+    .meta({
+      openapi: {
+        method: "PUT",
+        path: path("/whatsapp-token"),
+        tags: ["Settings"],
+        protect: true,
+        summary: "Save a new WhatsApp access token",
+        description:
+          "Check the token with Meta, save it to Vault, record who saved it and have the notification service use it at once. Refused as token_invalid when Meta rejects it.",
+      },
+    })
+    .input(updateWhatsAppTokenInputSchema)
+    .output(apiResponseSchema(whatsAppTokenSettingsSchema))
+    .mutation(async ({ ctx, input }) => {
+      const status = await whatsAppTokenService.update(input, ctx.user.id);
+      return apiResponse(status);
+    }),
+
+  sendWaiting: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/whatsapp-token/send-waiting"),
+        tags: ["Settings"],
+        protect: true,
+        summary: "Send waiting WhatsApp messages",
+        description:
+          "Queue every message held on a token error now. Refused as token_not_working while the token does not work.",
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(sendWaitingResultSchema))
+    .mutation(async () => {
+      const result = await whatsAppTokenService.sendWaiting();
+      return apiResponse(result);
+    }),
+});
+
 export const settingsRouter = router({
   seller: sellerRouter,
   numberSeries: numberSeriesRouter,
   creditNoteDeadline: creditNoteDeadlineRouter,
+  whatsappToken: whatsappTokenRouter,
 });

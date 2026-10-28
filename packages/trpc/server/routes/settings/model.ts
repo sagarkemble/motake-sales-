@@ -82,6 +82,22 @@ export const creditNoteDeadlineEntrySchema = z.object({
   source: z.enum(["configured", "default"]),
 });
 
+// Spec J-0. Never the token: only its last 4 characters.
+export const whatsAppTokenSettingsSchema = z.object({
+  state: z.enum(["ok", "invalid", "unavailable", "unknown"]),
+  checkedAt: z.date().nullable(),
+  heldCount: z.number().int().nullable(),
+  last4: z.string().nullable(),
+  updatedAt: z.date().nullable(),
+  updatedBy: z.object({ id: z.string(), name: z.string().nullable() }).nullable(),
+});
+
+export const updateWhatsAppTokenInputSchema = z.object({
+  token: z.string().trim().min(1).max(2048),
+});
+
+export const sendWaitingResultSchema = z.object({ queued: z.number().int() });
+
 export const setCreditNoteDeadlineInputSchema = z.object({
   financialYear: financialYearSchema,
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

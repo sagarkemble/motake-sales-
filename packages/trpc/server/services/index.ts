@@ -15,6 +15,9 @@ import RouteService from "@repo/services/routes";
 import SalesmanService from "@repo/services/salesman";
 import SettingsService from "@repo/services/settings";
 import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
+import WhatsAppTokenService, { notificationClientConfig } from "@repo/services/whatsapp-token";
+
+import { createNotificationTokenGateway } from "../notification/token-gateway";
 
 export const authService = new AuthService();
 export const billService = new BillService();
@@ -34,3 +37,7 @@ export const routeService = new RouteService();
 export const salesmanService = new SalesmanService();
 export const settingsService = new SettingsService();
 export const varietyTaxPeriodService = new VarietyTaxPeriodService();
+// Spec J-0: reaches the notification app through the typed client with the internal key.
+export const whatsAppTokenService = new WhatsAppTokenService({
+  notification: createNotificationTokenGateway(notificationClientConfig()),
+});
