@@ -15,6 +15,8 @@
       "tryAgain": "Try again",
       "goBack": "Go back",
       "clearSearch": "Clear search",
+      "pickDate": "Pick a date",
+      "clearDate": "Clear date",
       "logout": "Logout"
     },
     "status": {
