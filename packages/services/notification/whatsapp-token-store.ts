@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "@repo/database";
-import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import {
   createVaultSecret,
   getDecryptedVaultSecretByName,
@@ -115,16 +115,13 @@ export class WhatsAppTokenStore implements WhatsAppTokenSource {
     return secret?.secret.trim() || null;
   }
 
-  // Creates the named secret or updates it. Pass the caller's transaction so the audit row commits
-  // with it; the name lock holds until that transaction ends.
+  // Creates the named secret or updates it. The caller owns the transaction (as with every lock
+  // query): pass it so the audit row commits with the secret and the name lock holds until it ends.
   public async saveVaultToken(
     token: string,
     updatedBy: string,
     executor: DbExecutor = db,
   ): Promise<WhatsAppTokenMetadata> {
-    if (executor === db) {
-      return runInTransaction((transaction) => this.saveVaultToken(token, updatedBy, transaction));
-    }
     const trimmedToken = token.trim();
     const description = JSON.stringify({ updatedBy });
     await lockVaultSecretName(this.vaultSecretName, executor);
