@@ -184,13 +184,33 @@ describe("hold on a token error", () => {
 });
 
 describe("syncToken", () => {
-  it("keeps a working file token and never touches the file", async () => {
+  it("keeps a working file token and never touches the file when Vault holds the same token", async () => {
+    await writeFile(secretFilePath, `${WORKING_TOKEN}\n`);
+    await tokenStore.saveVaultToken(WORKING_TOKEN, "0b0f8f3e-7f43-4a8e-9d2c-1f6a1b2c3d4e");
+
+    const status = await harness.service.syncToken();
+
+    expect(status).toMatchObject({ state: "ok", checkedAt: expect.any(Date), heldCount: 0 });
+    expect(await readFile(secretFilePath, "utf8")).toBe(`${WORKING_TOKEN}\n`);
+  });
+
+  it("writes a rotated Vault token over a file token that still works (Vault is the master)", async () => {
     await writeFile(secretFilePath, `${WORKING_TOKEN}\n`);
     await tokenStore.saveVaultToken(NEW_TOKEN, "0b0f8f3e-7f43-4a8e-9d2c-1f6a1b2c3d4e");
 
     const status = await harness.service.syncToken();
 
-    expect(status).toMatchObject({ state: "ok", checkedAt: expect.any(Date), heldCount: 0 });
+    expect(status.state).toBe("ok");
+    expect(await tokenStore.readWorkingToken()).toBe(NEW_TOKEN);
+  });
+
+  it("keeps a working file token when the Vault token is refused", async () => {
+    await writeFile(secretFilePath, `${WORKING_TOKEN}\n`);
+    await tokenStore.saveVaultToken(EXPIRED_TOKEN, "0b0f8f3e-7f43-4a8e-9d2c-1f6a1b2c3d4e");
+
+    const status = await harness.service.syncToken();
+
+    expect(status.state).toBe("ok");
     expect(await readFile(secretFilePath, "utf8")).toBe(`${WORKING_TOKEN}\n`);
   });
 

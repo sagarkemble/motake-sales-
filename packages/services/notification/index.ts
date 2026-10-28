@@ -79,6 +79,7 @@ import {
   type NotificationDispatcher,
   type ProviderFailure,
   type SendTemplateResult,
+  type TokenCheckResult,
   type WhatsAppProvider,
   type WhatsAppTokenSource,
 } from "./provider";
@@ -795,9 +796,10 @@ class NotificationService {
 
   // ---- WhatsApp access token (Spec J-0) ----
 
-  // Checks the working token; when it is not ok, tries the Vault token and, if that one differs
-  // and works, writes it to the secret file. A working token then resumes held messages. Runs at
-  // start-up, every 5 minutes, after a held send, and when the Admin saves a token.
+  // Vault is the master: a different Vault token that works is written to the secret file (even
+  // over a file token that still works); otherwise the file token is checked. A working token then
+  // resumes held messages. Runs at start-up, every 5 minutes, after a held send, and when the
+  // Admin saves a token.
   public async syncToken(): Promise<WhatsAppTokenStatus> {
     return this.runTokenSync("always");
   }
@@ -884,10 +886,11 @@ class NotificationService {
     return this.tokenStatus();
   }
 
+  // Vault is the master copy: a different Vault token that checks ok replaces the file token, even
+  // a file token that still works (an Admin rotation). A refused or uncheckable Vault token never
+  // replaces the file; the file token is then checked on its own.
   private async checkAndRepairToken(): Promise<TokenCheckOutcome> {
     const workingToken = await this.tokenStore.readWorkingToken();
-    const workingCheck = workingToken ? await this.provider.checkToken(workingToken) : "auth_error";
-    if (workingCheck === "ok") return { state: "ok", replaced: false };
 
     let vaultToken: string | null = null;
     let vaultReadable = true;
@@ -899,18 +902,21 @@ class NotificationService {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+
+    let vaultCheck: TokenCheckResult | null = null;
     if (vaultToken && vaultToken !== workingToken) {
-      const vaultCheck = await this.provider.checkToken(vaultToken);
+      vaultCheck = await this.provider.checkToken(vaultToken);
       if (vaultCheck === "ok") {
         await this.tokenStore.writeWorkingToken(vaultToken);
         return { state: "ok", replaced: true };
       }
-      if (vaultCheck === "unavailable") return { state: "unavailable", replaced: false };
     }
-    return {
-      state: workingCheck === "unavailable" || !vaultReadable ? "unavailable" : "invalid",
-      replaced: false,
-    };
+
+    const workingCheck = workingToken ? await this.provider.checkToken(workingToken) : "auth_error";
+    if (workingCheck === "ok") return { state: "ok", replaced: false };
+    const uncheckable =
+      workingCheck === "unavailable" || vaultCheck === "unavailable" || !vaultReadable;
+    return { state: uncheckable ? "unavailable" : "invalid", replaced: false };
   }
 
   // Debounced: held sends within the delay share one sync. The timer never keeps the process up.
