@@ -239,6 +239,14 @@ export async function listUnqueuedPendingNotifications(
     .orderBy(asc(notificationsTable.updatedAt));
 }
 
+// An attempt's `error` text starts with its failure category and a colon (formatProviderError
+// writes it). The held queries match on that prefix, so both use this one function.
+export function attemptErrorPrefix(category: string): string {
+  return `${category}:`;
+}
+
+const HELD_ATTEMPT_ERROR_PREFIX = attemptErrorPrefix("auth_error");
+
 // Held (Spec J-0): `pending`, and the current run's latest attempt failed as `auth_error`. No status
 // value of its own; resuming starts a new run, so the held attempt drops out of the current run.
 const heldCondition = sql`${notificationsTable.status} = 'pending' AND EXISTS (
@@ -246,7 +254,7 @@ const heldCondition = sql`${notificationsTable.status} = 'pending' AND EXISTS (
   WHERE attempt.notification_id = ${notificationsTable.id}
     AND attempt.created_at >= ${notificationsTable.updatedAt}
     AND attempt.status = 'failed'
-    AND attempt.error LIKE 'auth_error:%'
+    AND starts_with(attempt.error, ${HELD_ATTEMPT_ERROR_PREFIX})
     AND attempt.attempt_number = (
       SELECT max(latest.attempt_number) FROM notification_attempts AS latest
       WHERE latest.notification_id = ${notificationsTable.id}

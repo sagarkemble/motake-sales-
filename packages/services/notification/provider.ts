@@ -1,3 +1,5 @@
+import { attemptErrorPrefix } from "@repo/database/queries/notifications";
+
 import type { FailureCategory, ProviderStatusUpdate } from "./model";
 
 // A provider failure. `retriable` decides retry versus fail-at-once; `code` is the provider's own
@@ -74,5 +76,5 @@ export interface NotificationDispatcher {
 
 export function formatProviderError(failure: Omit<ProviderFailure, "ok" | "retriable">): string {
   const code = failure.code === null ? "" : ` (meta code ${failure.code})`;
-  return `${failure.category}: ${failure.message}${code}`;
+  return `${attemptErrorPrefix(failure.category)} ${failure.message}${code}`;
 }
