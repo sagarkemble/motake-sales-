@@ -10,6 +10,7 @@ import {
   notesTable,
   ordersTable,
   paymentsTable,
+  profilesTable,
   refundsTable,
   type InsertLedgerEntry,
   type InsertNote,
@@ -76,6 +77,21 @@ export async function hasOpeningBalance(
       ),
     );
   return Boolean(row);
+}
+
+// The Customer's one Opening balance row with who set it (Spec H's Opening paper).
+export async function getOpeningBalanceEntry(customerId: string, executor: DbExecutor = db) {
+  const [row] = await executor
+    .select({ entry: ledgerEntriesTable, actorName: profilesTable.name })
+    .from(ledgerEntriesTable)
+    .leftJoin(profilesTable, eq(ledgerEntriesTable.actorId, profilesTable.id))
+    .where(
+      and(
+        eq(ledgerEntriesTable.customerId, customerId),
+        eq(ledgerEntriesTable.entryType, "opening_balance"),
+      ),
+    );
+  return row;
 }
 
 // --- The papers a Ledger row reads its amount and Customer from.
