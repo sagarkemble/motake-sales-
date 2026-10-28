@@ -190,9 +190,9 @@ export const checkoutRefusal = (
 export const checkoutRefusalOf = (error: unknown): CheckoutRefusal | null =>
   refusalOf(error) as CheckoutRefusal | null;
 
-// Admin Ledger and Bill paper refusals (Spec G): the whole call is refused and nothing is written.
-// A deactivated Customer is refused as checkout's customer_inactive; a ₹0 Raise Bill as
-// bill_total_zero.
+// Admin Ledger, Bill paper (Spec G) and Payment / Refund paper (Spec H) refusals: the whole call is
+// refused and nothing is written. A deactivated Customer is refused as checkout's customer_inactive;
+// a ₹0 Raise Bill as bill_total_zero. A stale Payment or Refund Correct is stale_version.
 export type LedgerRefusalReason =
   | "empty_basket"
   | "bad_lines"
@@ -214,7 +214,9 @@ export type LedgerRefusalReason =
   | "return_date_on_debit_note"
   | "opening_balance_exists"
   | "opening_date_in_future"
-  | "idempotency_key_reused";
+  | "idempotency_key_reused"
+  | "not_in_advance"
+  | "refund_above_advance";
 
 export type LedgerRefusal = Refusal<LedgerRefusalReason>;
 
@@ -240,6 +242,8 @@ const ledgerRefusalCodes: Record<LedgerRefusalReason, TRPCError["code"]> = {
   opening_balance_exists: "CONFLICT",
   opening_date_in_future: "BAD_REQUEST",
   idempotency_key_reused: "CONFLICT",
+  not_in_advance: "CONFLICT",
+  refund_above_advance: "CONFLICT",
 };
 
 export const ledgerRefusal = (

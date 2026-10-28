@@ -1,6 +1,7 @@
-import { getCustomerWithRouteById } from "@repo/database/queries/customers";
+import { getCustomerById, getCustomerWithRouteById } from "@repo/database/queries/customers";
 import {
   getCustomerLedgerTotals,
+  getOpeningBalanceEntry,
   hasOpeningBalance,
   listCustomerLedgerRows,
   type LedgerRowRecord,
@@ -23,6 +24,7 @@ import {
   type ListLedgerRowsInput,
   type OpenPreorder,
   type OpeningBalanceResult,
+  type OpeningPaper,
 } from "./model";
 
 // Generic titles keep the table short; Note rows name their kind.
@@ -126,6 +128,26 @@ class CustomerLedgerService {
     }));
   }
 
+  // The view-only Opening paper (Spec H): side, amount, date, reason and who set it; null when the
+  // Customer has no Opening balance. There is no Opening Correct.
+  public async getOpeningPaper(customerId: string): Promise<OpeningPaper | null> {
+    const row = await getOpeningBalanceEntry(customerId);
+    if (!row) {
+      if (!(await getCustomerById(customerId))) throw notFound(`Customer ${customerId} not found`);
+      return null;
+    }
+    const { entry, actorName } = row;
+    return {
+      entryId: entry.id,
+      side: entry.side === "debit" ? "pending" : "advance",
+      amountPaise: entry.amountPaise,
+      date: businessDateOf(entry.occurredAt),
+      occurredAt: entry.occurredAt,
+      reason: entry.reason,
+      actorName,
+    };
+  }
+
   // Once per Customer, through Spec B's setOpeningBalance (which locks the Customer, refuses a
   // second one and writes the opening_set audit row). An optional past Opening date becomes the
   // row's posting time; the row still sorts first. No message is sent.
@@ -175,4 +197,4 @@ class CustomerLedgerService {
 }
 
 export default CustomerLedgerService;
-export type { LedgerRow, LedgerSummary, OpenPreorder, OpeningBalanceResult };
+export type { LedgerRow, LedgerSummary, OpenPreorder, OpeningBalanceResult, OpeningPaper };

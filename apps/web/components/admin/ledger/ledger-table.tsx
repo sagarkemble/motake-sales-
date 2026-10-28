@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import {
@@ -17,23 +18,67 @@ import type { LedgerRow } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
-// Bills and Notes open the Bill paper; Payment, Refund and Opening papers come with Spec H.
-export function openHref(row: LedgerRow): string | null {
-  if (row.open.kind === "bill") return `/admin/ledger/bills/${row.open.billId}`;
-  if (row.open.kind === "note")
-    return `/admin/ledger/bills/${row.open.billId}#note-${row.open.noteId}`;
-  return null;
+import type { MoneyAdded } from "./money-dialogs";
+
+// Bills and Notes open the Bill paper; a Payment (or Payment adjusted) row the Payment paper, a
+// Refund (or Refund adjusted) row the Refund paper, and the Opening balance row the Opening paper.
+export function openHref(row: LedgerRow, customerId: string): string | null {
+  switch (row.open.kind) {
+    case "bill":
+      return `/admin/ledger/bills/${row.open.billId}`;
+    case "note":
+      return `/admin/ledger/bills/${row.open.billId}#note-${row.open.noteId}`;
+    case "payment":
+      return `/admin/ledger/payments/${row.open.paymentId}`;
+    case "refund":
+      return `/admin/ledger/refunds/${row.open.refundId}`;
+    case "opening_balance":
+      return `/admin/ledger/opening/${customerId}`;
+  }
 }
 
+// The row a Payment or Refund just added posted (not a later adjusted row of it).
+function isAddedRow(row: LedgerRow, added: MoneyAdded | null | undefined) {
+  if (!added || row.rowType !== added.kind) return false;
+  if (row.open.kind === "payment") return row.open.paymentId === added.id;
+  if (row.open.kind === "refund") return row.open.refundId === added.id;
+  return false;
+}
+
+const HIGHLIGHT = "bg-emerald-50 dark:bg-emerald-950/40";
+
 /** The Ledger rows: a table from `sm` up, one card per row on phones. */
-export function LedgerTable({ rows }: { rows: LedgerRow[] }) {
+export function LedgerTable({
+  rows,
+  customerId,
+  highlight,
+}: {
+  rows: LedgerRow[];
+  customerId: string;
+  // The row an Add just posted, shown highlighted and scrolled to.
+  highlight?: MoneyAdded | null;
+}) {
   const tx = useTranslate();
   const router = useRouter();
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
+  const tableRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const highlightedId = rows.find((row) => isAddedRow(row, highlight))?.id ?? null;
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    for (const container of [tableRef.current, listRef.current]) {
+      const element = container?.querySelector<HTMLElement>(`[data-row-id="${highlightedId}"]`);
+      // Only the visible layout (table or phone list) has a box to scroll to.
+      if (element && element.offsetParent !== null) {
+        element.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+  }, [highlightedId]);
 
   function open(row: LedgerRow) {
-    const href = openHref(row);
+    const href = openHref(row, customerId);
     if (href) router.push(href);
   }
 
@@ -50,7 +95,7 @@ export function LedgerTable({ rows }: { rows: LedgerRow[] }) {
 
   return (
     <>
-      <div className="hidden sm:block">
+      <div ref={tableRef} className="hidden sm:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -64,12 +109,13 @@ export function LedgerTable({ rows }: { rows: LedgerRow[] }) {
           </TableHeader>
           <TableBody>
             {rows.map((row) => {
-              const opens = openHref(row) !== null;
+              const opens = openHref(row, customerId) !== null;
               return (
                 <TableRow
                   key={row.id}
+                  data-row-id={row.id}
                   tabIndex={opens ? 0 : undefined}
-                  className={cn(opens && "cursor-pointer")}
+                  className={cn(opens && "cursor-pointer", row.id === highlightedId && HIGHLIGHT)}
                   onClick={() => open(row)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -105,12 +151,16 @@ export function LedgerTable({ rows }: { rows: LedgerRow[] }) {
           </TableBody>
         </Table>
       </div>
-      <ul className="divide-y sm:hidden">
+      <ul ref={listRef} className="divide-y sm:hidden">
         {rows.map((row) => (
-          <li key={row.id}>
+          <li
+            key={row.id}
+            data-row-id={row.id}
+            className={cn(row.id === highlightedId && HIGHLIGHT)}
+          >
             <button
               type="button"
-              disabled={openHref(row) === null}
+              disabled={openHref(row, customerId) === null}
               className="flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left disabled:cursor-default"
               onClick={() => open(row)}
             >

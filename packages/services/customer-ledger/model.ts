@@ -94,3 +94,16 @@ export interface OpeningBalanceResult {
   occurredAt: Date;
   balance: Balance;
 }
+
+// The view-only Opening paper (Spec H): no number and no Correct.
+export interface OpeningPaper {
+  entryId: string;
+  // Debit = Pending brought forward, Credit = Advance brought forward.
+  side: "pending" | "advance";
+  amountPaise: number;
+  // Asia/Kolkata date of the Opening row's posting time.
+  date: string;
+  occurredAt: Date;
+  reason: string | null;
+  actorName: string | null;
+}

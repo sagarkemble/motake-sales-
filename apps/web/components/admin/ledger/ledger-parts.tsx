@@ -254,13 +254,19 @@ export function AddMenu({
   summary,
   onOpening,
   onRaiseNote,
+  onPayment,
+  onRefund,
 }: {
   summary: LedgerSummary;
   onOpening: () => void;
   onRaiseNote: () => void;
+  onPayment: () => void;
+  onRefund: () => void;
 }) {
   const tx = useTranslate();
   const inactive = summary.customer.status === "inactive";
+  // A Refund is paid only out of Advance; the server checks again under the Customer lock.
+  const inAdvance = summary.footer.closing.state === "advance";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -283,16 +289,29 @@ export function AddMenu({
         <DropdownMenuItem onSelect={onRaiseNote}>
           {tx("admin.ledger.add.raiseNote")}
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onPayment}>{tx("admin.ledger.add.payment")}</DropdownMenuItem>
+        <DropdownMenuItem disabled={!inAdvance} onSelect={onRefund}>
+          {tx("admin.ledger.add.refund")}
+          {!inAdvance && (
+            <span className="ml-auto text-xs">{tx("admin.ledger.add.refundAdvanceOnly")}</span>
+          )}
+        </DropdownMenuItem>
         <DropdownMenuItem disabled={summary.hasOpeningBalance} onSelect={onOpening}>
           {tx("admin.ledger.add.openingBalance")}
           {summary.hasOpeningBalance && (
             <span className="ml-auto text-xs">{tx("admin.ledger.add.openingAdded")}</span>
           )}
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          {tx("admin.ledger.add.laterNote")}
-        </DropdownMenuLabel>
+        {!inAdvance && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {tx("admin.ledger.add.refundNeedsAdvance", {
+                state: tx(`admin.ledger.balance.${summary.footer.closing.state}`),
+              })}
+            </DropdownMenuLabel>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
