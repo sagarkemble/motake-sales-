@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { db, eq } from "@repo/database";
 import { notificationsTable } from "@repo/database/schema";
 
+import { notificationRefused } from "../errors";
 import NotificationService, { MetaWhatsAppProvider } from "../notification";
 import type {
   DocumentReader,
@@ -16,6 +17,11 @@ import type {
   WhatsAppProvider,
   WhatsAppTokenSource,
 } from "../notification";
+import type {
+  NotificationTokenGateway,
+  ResumeHeldResult,
+  WhatsAppTokenStatus,
+} from "../whatsapp-token";
 
 // Fakes for the notification seam: tests never call Meta, R2 or Inngest.
 
@@ -185,4 +191,48 @@ export async function currentRunKey(notificationId: string): Promise<string> {
     .from(notificationsTable)
     .where(eq(notificationsTable.id, notificationId));
   return `notification/${notificationId}/run/${row!.updatedAt.getTime()}`;
+}
+
+// The notification app as the main API sees it (Spec J-0): token status, refresh and resume.
+export class FakeNotificationTokenGateway implements NotificationTokenGateway {
+  public status: WhatsAppTokenStatus = { state: "ok", checkedAt: new Date(), heldCount: 0 };
+  public queued = 0;
+  // `down` plays an unreachable notification app; `refuseResume` a token that does not work.
+  public down = false;
+  public refuseResume = false;
+  public refreshCalls = 0;
+  public resumeCalls = 0;
+
+  public async tokenStatus(): Promise<WhatsAppTokenStatus> {
+    if (this.down) throw new Error("fetch failed: ECONNREFUSED 127.0.0.1:8100");
+    return this.status;
+  }
+
+  public async refreshToken(): Promise<WhatsAppTokenStatus> {
+    if (this.down) throw new Error("fetch failed: ECONNREFUSED 127.0.0.1:8100");
+    this.refreshCalls += 1;
+    return this.status;
+  }
+
+  public async resumeHeld(): Promise<ResumeHeldResult> {
+    if (this.down) throw new Error("fetch failed: ECONNREFUSED 127.0.0.1:8100");
+    this.resumeCalls += 1;
+    if (this.refuseResume) {
+      throw notificationRefused("token_not_working", "WhatsApp messages are paused");
+    }
+    return { queued: this.queued };
+  }
+}
+
+// A Meta token check that accepts only `validTokens`; `unavailable` plays a Meta outage.
+export class FakeTokenChecker {
+  public readonly validTokens = new Set<string>();
+  public unavailable = false;
+  public checks = 0;
+
+  public async checkToken(token?: string): Promise<TokenCheckResult> {
+    this.checks += 1;
+    if (this.unavailable) return "unavailable";
+    return token !== undefined && this.validTokens.has(token) ? "ok" : "auth_error";
+  }
 }

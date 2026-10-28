@@ -103,6 +103,27 @@ export const notificationRefused = (
   details: Record<string, unknown> | null = null,
 ) => refused(notificationRefusalCodes[reason], reason, message, details);
 
+// Why an Admin WhatsApp access token call was refused (Spec J-0). The message is for the Admin and
+// never carries the token.
+export type WhatsAppTokenRefusalReason =
+  | "token_invalid"
+  | "token_check_unavailable"
+  | "token_not_working"
+  | "notification_unavailable";
+
+const whatsAppTokenRefusalCodes: Record<WhatsAppTokenRefusalReason, TRPCError["code"]> = {
+  token_invalid: "BAD_REQUEST",
+  token_check_unavailable: "SERVICE_UNAVAILABLE",
+  token_not_working: "CONFLICT",
+  notification_unavailable: "SERVICE_UNAVAILABLE",
+};
+
+export const whatsAppTokenRefused = (
+  reason: WhatsAppTokenRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(whatsAppTokenRefusalCodes[reason], reason, message, details);
+
 // Why a Document call was refused, for callers that branch on it (Specs G, I, J).
 export type DocumentRefusalReason =
   | "irn_missing"

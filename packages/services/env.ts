@@ -34,6 +34,29 @@ const envSchema = z
       .describe(
         "Private Cloudflare R2 bucket for Bill, Note and Payment receipt PDFs. No public access; the R2 token must be allowed on it too.",
       ),
+    // Spec J-0: the notification app (typed client) and the WhatsApp access token settings. Unset
+    // in dev without the notification app: the token status then reads `unknown`.
+    NOTIFICATION_URL: z
+      .url()
+      .optional()
+      .describe("Notification app base URL, e.g. http://127.0.0.1:8100"),
+    NOTIFICATION_INTERNAL_API_KEY: z
+      .string()
+      .min(32)
+      .optional()
+      .describe("Shared main API <-> notification app key; not the JWT secret"),
+    META_PHONE_NUMBER_ID: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("WhatsApp phone number id a pasted access token is checked against"),
+    WHATSAPP_TOKEN_VAULT_SECRET_NAME: z
+      .string()
+      .min(1)
+      .default("motake_whatsapp_access_token")
+      .describe(
+        "Supabase Vault secret holding the WhatsApp access token; same value as the notification app",
+      ),
   })
   .superRefine((val, ctx) => {
     if (val.NODE_ENV === "production" && val.JWT_SECRET.length < 32) {
