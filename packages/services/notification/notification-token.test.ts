@@ -231,6 +231,22 @@ describe("syncToken", () => {
     expect(await tokenStore.readWorkingToken()).toBe(NEW_TOKEN);
   });
 
+  it("fills a missing secret file from Vault while Meta cannot answer, so start-up can go on", async () => {
+    await tokenStore.saveVaultToken(NEW_TOKEN, "0b0f8f3e-7f43-4a8e-9d2c-1f6a1b2c3d4e");
+    harness.provider.tokenCheckUnavailable = true;
+
+    expect((await harness.service.syncToken()).state).toBe("unavailable");
+    expect(await tokenStore.readWorkingToken()).toBe(NEW_TOKEN);
+  });
+
+  it("fills a blank secret file with a refused Vault token and reports it invalid", async () => {
+    await writeFile(secretFilePath, "\n");
+    await tokenStore.saveVaultToken(EXPIRED_TOKEN, "0b0f8f3e-7f43-4a8e-9d2c-1f6a1b2c3d4e");
+
+    expect((await harness.service.syncToken()).state).toBe("invalid");
+    expect(await tokenStore.readWorkingToken()).toBe(EXPIRED_TOKEN);
+  });
+
   it("is invalid and leaves the file alone when both tokens are refused", async () => {
     await writeFile(secretFilePath, EXPIRED_TOKEN);
     await tokenStore.saveVaultToken(

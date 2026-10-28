@@ -267,6 +267,11 @@ function mediaFailure(retriable: boolean, message: string): ProviderFailure {
 
 // Transport-only WhatsApp notifications (ADR-0001, Spec K). Persists before it acknowledges, sends
 // provider-approved templates only, and never looks at Bills, Payments, Notes or Customers.
+function tokenStateOf(check: TokenCheckResult): WhatsAppTokenState {
+  if (check === "ok") return "ok";
+  return check === "auth_error" ? "invalid" : "unavailable";
+}
+
 class NotificationService {
   private readonly provider: WhatsAppProvider;
   private readonly documentReader: DocumentReader;
@@ -901,6 +906,14 @@ class NotificationService {
       logger.error("Could not read the WhatsApp access token from Vault", {
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+
+    // An empty secret file always takes the Vault token, checked or not: sends then hold on a bad
+    // token (and the Admin banner shows) instead of the app refusing to start.
+    if (!workingToken && vaultToken) {
+      await this.tokenStore.writeWorkingToken(vaultToken);
+      const filledCheck = await this.provider.checkToken(vaultToken);
+      return { state: tokenStateOf(filledCheck), replaced: true };
     }
 
     let vaultCheck: TokenCheckResult | null = null;
