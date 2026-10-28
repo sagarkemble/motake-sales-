@@ -39,7 +39,7 @@ export function GatepassStatusBadge({
     return (
       <Badge
         variant="outline"
-        className={cn("gap-1 border-destructive/40 text-destructive", className)}
+        className={cn("gap-1 border-transparent bg-destructive/10 text-destructive", className)}
       >
         <TriangleAlertIcon className="size-3" />
         {tx("common.gatepassStatus.flagged")}

@@ -216,9 +216,9 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
       )}
 
       {draft.mode !== "cash" && extraPaise > 0 && (
-        <Alert className="border-sky-500/30 bg-sky-500/5">
-          <InfoIcon className="text-sky-700" />
-          <AlertDescription className="text-sky-900">
+        <Alert className="border-brand/20 bg-brand/5">
+          <InfoIcon className="text-brand" />
+          <AlertDescription className="text-foreground">
             {tx("checkout.payment.extraKeptAsAdvance", {
               extra: formatPaise(extraPaise),
               mode: tx(`checkout.payment.modes.${draft.mode}`),

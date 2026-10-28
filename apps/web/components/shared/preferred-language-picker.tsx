@@ -1,8 +1,8 @@
 "use client";
 
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { useTranslate } from "~/hooks/use-translate";
 import { PREFERRED_LANGUAGES, type PreferredLanguage } from "~/lib/preferred-language";
-import { cn } from "~/lib/utils";
 
 interface PreferredLanguagePickerProps {
   id?: string;
@@ -20,30 +20,25 @@ export function PreferredLanguagePicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div
+      <ToggleGroup
         id={id}
-        role="radiogroup"
+        type="single"
+        variant="outline"
+        value={value}
+        onValueChange={(nextValue) => nextValue && onValueChange(nextValue as PreferredLanguage)}
         aria-label={tx("common.preferredLanguage.label")}
-        className="grid grid-cols-3 gap-1 rounded-full border bg-muted/40 p-1"
+        className="w-full"
       >
         {PREFERRED_LANGUAGES.map((language) => (
-          <button
+          <ToggleGroupItem
             key={language.value}
-            type="button"
-            role="radio"
-            aria-checked={value === language.value}
-            onClick={() => onValueChange(language.value)}
-            className={cn(
-              "rounded-full px-2 py-1.5 text-sm",
-              value === language.value
-                ? "bg-card font-medium shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            value={language.value}
+            className="flex-1 data-[state=on]:bg-accent data-[state=on]:text-brand"
           >
             {tx(language.labelKey)}
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
       <p className="text-xs text-muted-foreground">{tx("common.preferredLanguage.fixedHint")}</p>
     </div>
   );

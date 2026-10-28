@@ -91,6 +91,18 @@
       "hi": "Hindi",
       "en": "English",
       "fixedHint": "Messages to this Customer go in this language. It cannot be changed later."
+    },
+    "imageUpload": {
+      "uploadImage": "Upload image",
+      "uploading": "Uploading…",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "noImage": "No image",
+      "badType": "Use a JPEG, PNG or WEBP image.",
+      "tooLarge": "Image must be 5 MB or smaller.",
+      "uploadFailed": "Upload failed. Try again.",
+      "confirmRemove": "Remove this image?",
+      "removeFailed": "Could not remove the image. Try again."
     }
   },
   "auth": {
@@ -109,7 +121,8 @@
       },
       "error": {
         "wrongCredentials": "Wrong email or password. Try again."
-      }
+      },
+      "brandTitle": "Motake"
     },
     "otp": {
       "codeSent": "Code sent by SMS",
@@ -128,7 +141,10 @@
       "checkEmail": "Check your email",
       "changeEmail": "Change email",
       "resend": "Resend link",
-      "cta": "Send sign-in link"
+      "cta": "Send sign-in link",
+      "linkInvalid": "The sign-in link is wrong or expired.",
+      "backToSignIn": "Back to sign in",
+      "signingIn": "Signing you in…"
     }
   },
   "account": {
@@ -170,7 +186,8 @@
       "openAccountMenu": "Open account menu",
       "routes": "Routes",
       "ledger": "Ledger",
-      "gst": "GST"
+      "gst": "GST",
+      "brandTitle": "Motake Admin"
     },
     "dashboard": {
       "kpi": {
@@ -186,6 +203,22 @@
       },
       "orders": {
         "empty": "No orders yet"
+      },
+      "greeting": "Hello, {name} 👋",
+      "greetingFallbackName": "Admin",
+      "subtitle": "Here is what is happening with your business today.",
+      "todaysOrders": "Today's orders",
+      "todaysGatepasses": "Today's gate passes",
+      "recentActivity": "Recent activity",
+      "orderHistory": "Order history",
+      "salesmanPrefix": "Salesman {name}",
+      "discrepancy": {
+        "title": "Today's discrepancies",
+        "flaggedCount": "{count} flagged",
+        "empty": "No discrepancies flagged today",
+        "noReason": "No reason recorded",
+        "totals": "Issued {issued} · Sold {sold} · Returned {returned}",
+        "closedBy": "by {name}"
       }
     },
     "products": {
@@ -432,7 +465,9 @@
         "allot": "Allot",
         "allotAgain": "Allot again",
         "alreadyActive": "Has an Active GatePass"
-      }
+      },
+      "lastDays": "Last {count} days",
+      "salesHistory": "Sales history"
     },
     "orders": {
       "tab": {
@@ -1366,9 +1401,9 @@
       "orders": "Orders",
       "roleLabel": "Salesman",
       "openAccount": "Open account",
-      "quickNewOrder": "New Order",
-      "quickMyOrders": "My Orders",
-      "quickMyAccount": "My Account",
+      "quickNewOrder": "New order",
+      "quickMyOrders": "My orders",
+      "quickMyAccount": "My account",
       "customers": "Route Customers"
     },
     "catalog": {
@@ -1376,12 +1411,19 @@
       "inCart": "in cart",
       "size": "size",
       "sizes": "sizes",
-      "addToCart": "Add to Cart"
+      "addToCart": "Add to cart",
+      "searchPlaceholder": "Search products",
+      "noMatch": "No products match \"{term}\"",
+      "noSizes": "No sizes are set up for this product yet.",
+      "selected": "Selected"
     },
     "cart": {
       "emptyTitle": "Your cart is empty",
       "emptyBody": "Add some products to get started.",
-      "startShopping": "Start shopping"
+      "startShopping": "Start shopping",
+      "itemsInCart": "Items in cart: {count}",
+      "proceed": "Proceed to order",
+      "orderSummary": "Order summary"
     },
     "checkout": {
       "steps": {
@@ -1558,6 +1600,10 @@
         "upcomingReadOnly": "Upcoming Pre-orders can be fulfilled on their day.",
         "noGatepass": "Route Pre-orders show for the Route of your Active GatePass. You have none today.",
         "loadFailed": "Could not load Route Pre-orders."
+      },
+      "filter": {
+        "pending": "Pending ({count})",
+        "fulfilled": "Fulfilled ({count})"
       }
     },
     "gatepass": {
@@ -1591,8 +1637,14 @@
       "shortLine": "Short {count} · {reason}",
       "admin": "Admin",
       "route": "Route",
-      "issuedAt": "Issued At",
-      "issuedBy": "Issued By"
+      "issuedAt": "Issued at",
+      "issuedBy": "Issued by",
+      "productFallback": "Product",
+      "emptyHistory": "No past gate passes yet.",
+      "viewDetails": "View details",
+      "detailTitle": "Gate pass details",
+      "closedBy": "Completed by",
+      "itemsAllocated": "Items allocated"
     },
     "handover": {
       "reason": {
@@ -1602,13 +1654,13 @@
         "leaked": "Leaked",
         "other": "Other"
       },
-      "cta": "Send for Approval",
+      "cta": "Send for approval",
       "confirmTitle": "Send for approval?",
       "confirmBody": "The owner will review your declared returns. You cannot change this after you submit it.",
       "confirmBodyWithShort": "The owner will review your declared returns and the {count} short unit(s) you reported. You cannot change this after you submit it.",
       "success": "Handover sent for approval",
       "failed": "Could not submit handover",
-      "title": "Handover",
+      "title": "Hand over stock",
       "intro": "Returned is pre-filled with what is left. Lower it if something did not come back, and pick a reason.",
       "lineQuantities": "Issued {issued} · Sold {sold} · Left {left}",
       "shortWhy": "Short {short} of {left} left. Why?",
@@ -1627,6 +1679,11 @@
       "recordFailed": "Could not record the Payment",
       "startOrder": "Start an order for this shop",
       "startOrderToast": "Add products to the cart; checkout will be for {shop}."
+    },
+    "account": {
+      "avatarTitle": "Update avatar",
+      "avatarAlt": "Avatar",
+      "uploadAvatar": "Upload avatar"
     }
   },
   "checkout": {
