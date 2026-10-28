@@ -42,7 +42,7 @@ function lastFourOf(token: string): string {
   return token.slice(-4);
 }
 
-function updatedByOf(description: string): string | null {
+function updatedByIdOf(description: string): string | null {
   try {
     const parsed = JSON.parse(description) as { updatedBy?: unknown };
     return typeof parsed.updatedBy === "string" ? parsed.updatedBy : null;
@@ -150,7 +150,7 @@ export class WhatsAppTokenStore implements WhatsAppTokenSource {
       secretId: secret.id,
       last4: lastFourOf(token),
       updatedAt: secret.updatedAt,
-      updatedBy: updatedByOf(secret.description),
+      updatedBy: updatedByIdOf(secret.description),
     };
   }
 

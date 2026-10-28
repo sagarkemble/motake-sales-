@@ -82,7 +82,7 @@ class WhatsAppTokenService {
       heldCount: remote?.heldCount ?? null,
       last4: metadata?.last4 ?? null,
       updatedAt: metadata?.updatedAt ?? null,
-      updatedBy: await this.updatedByOf(metadata),
+      updatedBy: await this.updatedByProfileOf(metadata),
     };
   }
 
@@ -169,7 +169,7 @@ class WhatsAppTokenService {
     }
   }
 
-  private async updatedByOf(
+  private async updatedByProfileOf(
     metadata: WhatsAppTokenMetadata | null,
   ): Promise<WhatsAppTokenSettings["updatedBy"]> {
     // The description is plain text anyone with Vault access can edit; only a uuid is looked up.
