@@ -211,7 +211,7 @@ function GatepassPageContent() {
           title={tx("admin.gatepass.allot.title")}
         />
 
-        <section className="flex flex-col gap-4 rounded-3xl border bg-card p-4 shadow-sm sm:p-6">
+        <section className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6">
           {allottedGatepass ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 text-brand">
@@ -268,7 +268,7 @@ function GatepassPageContent() {
                       type="button"
                       disabled={index > stepIndex}
                       onClick={() => goToStep(index)}
-                      className="flex w-full flex-col gap-1 text-left disabled:cursor-default"
+                      className="flex w-full flex-col gap-1 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default"
                     >
                       <span
                         className={cn(
@@ -301,7 +301,7 @@ function GatepassPageContent() {
                     onSelectSalesman={setSelectedSalesmanId}
                   />
                   {selectedSalesmanHasActiveGatepass && (
-                    <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                    <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
                       {tx("admin.gatepass.allot.activeBlocks")}
                     </p>
                   )}
@@ -355,6 +355,7 @@ function GatepassPageContent() {
                   <Button
                     type="button"
                     variant="ghost"
+                    className="rounded-full"
                     disabled={stepIndex === 0}
                     onClick={() => goToStep(stepIndex - 1)}
                   >

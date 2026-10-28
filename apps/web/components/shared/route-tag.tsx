@@ -39,7 +39,7 @@ export function RouteTag({
       {hidden && (
         <Badge
           variant="outline"
-          className="h-4 rounded-full border-dashed px-1.5 text-[10px] text-muted-foreground"
+          className="h-4 rounded-full border-transparent bg-destructive/10 px-1.5 text-[10px] text-destructive"
         >
           {tx("admin.routes.deleted")}
         </Badge>

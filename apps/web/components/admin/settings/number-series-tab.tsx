@@ -1,7 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@repo/trpc/client";
-import { Loader2Icon, LockIcon } from "lucide-react";
+import { LockIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -72,9 +72,9 @@ export function NumberSeriesTab({
                 setEditingKind(null);
               }}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1 text-sm transition-colors",
+                "shrink-0 rounded-full border px-3 py-1 text-sm outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50",
                 financialYear === year
-                  ? "border-transparent bg-brand text-brand-foreground"
+                  ? "border-transparent bg-brand/10 text-brand"
                   : "bg-card hover:bg-accent",
               )}
             >
@@ -105,11 +105,13 @@ export function NumberSeriesTab({
           <Button
             size="sm"
             variant="outline"
+            className="rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
             disabled={missingCount === 0 || isPreparingYear}
             onClick={() => void handlePrepareYear()}
           >
-            {isPreparingYear ? <Loader2Icon className="size-4 animate-spin" /> : null}
-            {tx("admin.settings.prefixes.prepare")}
+            {isPreparingYear
+              ? tx("common.status.pleaseWait")
+              : tx("admin.settings.prefixes.prepare")}
           </Button>
         </div>
       )}
@@ -123,7 +125,12 @@ export function NumberSeriesTab({
       ) : isNumberSeriesError ? (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
           <p className="text-sm text-muted-foreground">{tx("admin.settings.loadFailed")}</p>
-          <Button variant="outline" size="sm" onClick={() => void refetchNumberSeries()}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => void refetchNumberSeries()}
+          >
             {tx("common.actions.tryAgain")}
           </Button>
         </div>
@@ -144,7 +151,12 @@ export function NumberSeriesTab({
                 <div className="flex flex-col items-end gap-2">
                   <SeriesStatus entry={entry} isNextYear={isNextYear} />
                   {entry.editable && editingKind !== entry.kind && (
-                    <Button size="sm" variant="ghost" onClick={() => setEditingKind(entry.kind)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full"
+                      onClick={() => setEditingKind(entry.kind)}
+                    >
                       {tx("common.actions.change")}
                     </Button>
                   )}
@@ -194,7 +206,7 @@ function SeriesStatus({ entry, isNextYear }: { entry: NumberSeriesEntry; isNextY
   return (
     <span className="flex flex-wrap justify-end gap-1">
       {!entry.saved && <Badge variant="outline">{tx("admin.settings.prefixes.default")}</Badge>}
-      <Badge variant="outline" className="border-emerald-500/50 text-emerald-700">
+      <Badge variant="outline" className="border-transparent bg-brand/10 text-brand">
         {isNextYear
           ? tx("admin.settings.prefixes.editableNextYear")
           : tx("admin.settings.prefixes.editable")}
@@ -258,7 +270,7 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
             maxLength={2}
             autoCapitalize="characters"
             aria-invalid={showError && !isPrefixValid}
-            className="w-20 font-mono uppercase"
+            className="w-20 rounded-xl bg-muted/40 font-mono uppercase"
             onChange={(event) => {
               setPrefix(event.target.value.toUpperCase());
               setShowError(false);
@@ -272,24 +284,27 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
       {showError && !isPrefixValid && (
         <p className="text-xs text-destructive">{tx("admin.settings.prefixes.invalid")}</p>
       )}
-      <Input
-        aria-label={tx("admin.settings.reasonLabel")}
-        placeholder={tx("admin.settings.reasonLabel")}
-        maxLength={500}
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-      />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${inputId}-reason`}>{tx("admin.settings.reasonLabel")}</Label>
+        <Input
+          id={`${inputId}-reason`}
+          placeholder={tx("admin.settings.reasonPlaceholder")}
+          maxLength={500}
+          value={reason}
+          className="rounded-xl bg-muted/40"
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </div>
       <div className="flex gap-2">
         <Button
           type="submit"
           size="sm"
           disabled={isUpdatingPrefix}
-          className="bg-brand text-brand-foreground hover:bg-brand/90"
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isUpdatingPrefix ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          {tx("admin.settings.prefixes.save")}
+          {isUpdatingPrefix ? tx("common.status.pleaseWait") : tx("admin.settings.prefixes.save")}
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onDone}>
+        <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={onDone}>
           {tx("common.actions.cancel")}
         </Button>
       </div>

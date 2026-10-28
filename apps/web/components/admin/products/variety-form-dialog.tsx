@@ -21,6 +21,7 @@ import { getErrorMessage } from "~/lib/get-error-message";
 import { bpsToPercent, percentToBps } from "~/lib/gst-rate";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -193,10 +194,10 @@ export function VarietyFormDialog({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{tx("common.fields.name")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g. 500 ml"
+                          placeholder={tx("admin.varieties.namePlaceholder")}
                           className="rounded-xl bg-muted/40"
                           {...field}
                         />
@@ -211,20 +212,32 @@ export function VarietyFormDialog({
                   name="unit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit</FormLabel>
+                      <FormLabel>{tx("admin.varieties.unit")}</FormLabel>
                       <FormControl>
                         <Input
-                          list="variety-unit-suggestions"
-                          placeholder="e.g. pouch"
+                          placeholder={tx("admin.varieties.unitPlaceholder")}
                           className="rounded-xl bg-muted/40"
                           {...field}
                         />
                       </FormControl>
-                      <datalist id="variety-unit-suggestions">
+                      <div className="flex flex-wrap gap-1.5">
                         {UNIT_SUGGESTIONS.map((unit) => (
-                          <option key={unit} value={unit} />
+                          <Button
+                            key={unit}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-7 rounded-full px-3 text-xs",
+                              field.value === unit &&
+                                "border-brand bg-brand/10 text-brand hover:bg-brand/10 hover:text-brand",
+                            )}
+                            onClick={() => field.onChange(unit)}
+                          >
+                            {unit}
+                          </Button>
                         ))}
-                      </datalist>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -267,7 +280,7 @@ export function VarietyFormDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 {isSubmitting
                   ? tx("common.status.pleaseWait")

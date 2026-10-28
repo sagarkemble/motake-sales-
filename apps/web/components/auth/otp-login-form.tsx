@@ -106,7 +106,9 @@ export function OtpLoginForm() {
       <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="otp-passcode">{tx("auth.otp.codeLabel")}</Label>
-          <p className="text-sm text-muted-foreground">Sent to +91 {contactValue}</p>
+          <p className="text-sm text-muted-foreground">
+            {tx("auth.otp.sentTo", { phone: contactValue })}
+          </p>
           <InputOTP
             id="otp-passcode"
             maxLength={6}
@@ -114,11 +116,15 @@ export function OtpLoginForm() {
             onChange={setPasscode}
             autoComplete="one-time-code"
             inputMode="numeric"
-            containerClassName="justify-between"
+            containerClassName="w-full"
           >
             <InputOTPGroup className="w-full justify-between">
               {Array.from({ length: 6 }, (_, slotIndex) => (
-                <InputOTPSlot key={slotIndex} index={slotIndex} className="h-12 w-12 text-base" />
+                <InputOTPSlot
+                  key={slotIndex}
+                  index={slotIndex}
+                  className="h-12 w-auto min-w-0 flex-1 text-base"
+                />
               ))}
             </InputOTPGroup>
           </InputOTP>
@@ -143,7 +149,7 @@ export function OtpLoginForm() {
           <button
             type="button"
             onClick={goToContactStep}
-            className="text-muted-foreground hover:text-foreground"
+            className="rounded-sm text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 hover:text-foreground"
           >
             {tx("auth.otp.changeNumber")}
           </button>
@@ -151,9 +157,11 @@ export function OtpLoginForm() {
             type="button"
             disabled={cooldownSeconds > 0 || isSending}
             onClick={() => void sendPasscode()}
-            className="text-brand disabled:text-muted-foreground disabled:opacity-60"
+            className="rounded-sm text-brand outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:text-muted-foreground disabled:opacity-60"
           >
-            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("auth.otp.resend")}
+            {cooldownSeconds > 0
+              ? tx("auth.otp.resendIn", { seconds: cooldownSeconds })
+              : tx("auth.otp.resend")}
           </button>
         </div>
       </form>

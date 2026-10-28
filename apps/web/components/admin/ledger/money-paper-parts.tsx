@@ -1,16 +1,13 @@
 "use client";
 
-import { AlertCircleIcon, ChevronLeftIcon, InfoIcon, LockIcon } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { InfoIcon, LockIcon } from "lucide-react";
+import { type ReactNode } from "react";
 
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Skeleton } from "~/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -20,6 +17,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Textarea } from "~/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import type { LedgerBalance, PaymentMode, PaymentPaper, RefundPaper } from "~/hooks/use-ledger";
@@ -27,7 +25,7 @@ import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage, refusalOf } from "~/lib/refusal";
 import { keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
 
-import { MAX_REASON_LENGTH, ledgerReturnHref } from "./ledger-shared";
+import { LedgerBackHeader, MAX_REASON_LENGTH, PaperLoadFailed } from "./ledger-shared";
 
 export const PAYMENT_MODES: PaymentMode[] = ["cash", "bank", "upi"];
 
@@ -107,23 +105,27 @@ export function ModeField({
   return (
     <div className="grid gap-1.5">
       <Label id={`${id}-label`}>{tx("admin.ledger.money.mode")}</Label>
-      <RadioGroup
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        size="sm"
         aria-labelledby={`${id}-label`}
         value={value}
-        onValueChange={(next) => onChange(next as PaymentMode)}
-        className="grid grid-cols-3 gap-2"
+        disabled={disabled}
+        onValueChange={(next) => next && onChange(next as PaymentMode)}
+        className="w-full"
       >
         {PAYMENT_MODES.map((mode) => (
-          <Label
+          <ToggleGroupItem
             key={mode}
-            htmlFor={`${id}-${mode}`}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-md border px-2 py-2 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-brand/5"
+            id={`${id}-${mode}`}
+            value={mode}
+            className="flex-1 px-4 data-[state=on]:bg-accent data-[state=on]:text-brand"
           >
-            <RadioGroupItem id={`${id}-${mode}`} value={mode} disabled={disabled} />
             {tx(`admin.ledger.money.modes.${mode}`)}
-          </Label>
+          </ToggleGroupItem>
         ))}
-      </RadioGroup>
+      </ToggleGroup>
     </div>
   );
 }
@@ -161,6 +163,7 @@ export function AmountField({
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         onChange={(event) => onChange(keepRupeeInputCharacters(event.target.value))}
+        className="rounded-xl bg-muted/40"
       />
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
@@ -198,6 +201,7 @@ export function ReferenceField({
         placeholder={tx("admin.ledger.money.referencePlaceholder")}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        className="rounded-xl bg-muted/40"
       />
     </div>
   );
@@ -227,40 +231,17 @@ export function MoneyReasonField({
         disabled={disabled}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
+        className="rounded-xl bg-muted/40"
       />
     </div>
   );
 }
 
 export function PreviewLine({ children }: { children: ReactNode }) {
-  return <div className="rounded-md bg-muted px-3 py-2 text-sm">{children}</div>;
+  return <div className="rounded-xl bg-muted px-3 py-2 text-sm">{children}</div>;
 }
 
 // --- Paper pieces.
-
-export function PaperBackLink({
-  customerId,
-  shopName,
-}: {
-  customerId?: string;
-  shopName?: string;
-}) {
-  const tx = useTranslate();
-  const [href, setHref] = useState(
-    customerId ? `/admin/ledger?customer=${customerId}` : "/admin/ledger",
-  );
-  // Read after mount: the saved Ledger URL lives in this tab's session storage.
-  useEffect(() => setHref(ledgerReturnHref(customerId)), [customerId]);
-  return (
-    <Link
-      href={href}
-      className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ChevronLeftIcon className="size-4" />
-      {shopName ? tx("admin.ledger.paper.back", { shopName }) : tx("admin.ledger.title")}
-    </Link>
-  );
-}
 
 export function Fact({
   label,
@@ -421,7 +402,7 @@ export function HistoryList({
   const newestFirst = [...events].reverse();
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-md border sm:block">
+      <div className="hidden overflow-x-auto rounded-2xl border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -471,9 +452,9 @@ export function HistoryList({
           </TableBody>
         </Table>
       </div>
-      <ol className="divide-y rounded-md border sm:hidden">
+      <ol className="flex flex-col gap-2 md:hidden">
         {newestFirst.map((event) => (
-          <li key={event.id} className="space-y-1 px-3 py-2.5">
+          <li key={event.id} className="space-y-1 rounded-2xl border bg-card p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium">
@@ -513,18 +494,7 @@ export function HistoryList({
 }
 
 export function PaperSkeleton() {
-  const tx = useTranslate();
-  return (
-    <div
-      className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-4"
-      aria-busy="true"
-      aria-label={tx("common.status.loading")}
-    >
-      <Skeleton className="h-6 w-40" />
-      <Skeleton className="h-40 w-full" />
-      <Skeleton className="h-56 w-full" />
-    </div>
-  );
+  return <DetailPageSkeleton />;
 }
 
 export function PaperLoadError({
@@ -536,20 +506,10 @@ export function PaperLoadError({
   customerId?: string;
   onRetry: () => void;
 }) {
-  const tx = useTranslate();
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-4">
-      <PaperBackLink customerId={customerId} />
-      <Alert variant="destructive">
-        <AlertCircleIcon />
-        <AlertTitle>{title}</AlertTitle>
-        <AlertDescription>
-          <p>{tx("admin.ledger.money.paper.loadErrorBody")}</p>
-          <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-            {tx("common.actions.tryAgain")}
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <LedgerBackHeader customerId={customerId} />
+      <PaperLoadFailed message={title} onRetry={onRetry} />
     </div>
   );
 }

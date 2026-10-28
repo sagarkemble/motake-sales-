@@ -1,29 +1,23 @@
 "use client";
 
-import {
-  AlertCircleIcon,
-  FileJsonIcon,
-  FileTextIcon,
-  ImageIcon,
-  LockIcon,
-  UploadIcon,
-} from "lucide-react";
+import { FileJsonIcon, FileTextIcon, ImageIcon, LockIcon, UploadIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { DatePicker } from "~/components/shared/date-picker";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
@@ -50,13 +44,19 @@ type ImageType = (typeof IMAGE_TYPES)[number];
 
 function IrnStatusChip({ gst }: { gst: BillGstState }) {
   const tx = useTranslate();
-  const variant =
+  const tone =
     gst.irnStatus === "pending"
-      ? "default"
+      ? "border-transparent bg-amber-500/10 text-amber-700"
       : gst.irnStatus === "portal_cancelled"
-        ? "destructive"
-        : "secondary";
-  return <Badge variant={variant}>{tx(`admin.ledger.paper.gst.status.${gst.irnStatus}`)}</Badge>;
+        ? "border-transparent bg-destructive/10 text-destructive"
+        : gst.irnStatus === "not_needed"
+          ? "border-transparent bg-muted text-muted-foreground"
+          : "border-transparent bg-brand/10 text-brand";
+  return (
+    <Badge variant="outline" className={tone}>
+      {tx(`admin.ledger.paper.gst.status.${gst.irnStatus}`)}
+    </Badge>
+  );
 }
 
 function FiledMonthBadge() {
@@ -77,7 +77,7 @@ function FiledMonthNote({ gst }: { gst: BillGstState }) {
   const month = formatDate(`${gst.month}-01`, "MMM yyyy");
   const filing = filings.find((row) => row.periodMonth.startsWith(gst.month));
   return (
-    <p className="flex items-start gap-2 rounded-md bg-muted px-2 py-1.5 text-xs">
+    <p className="flex items-start gap-2 rounded-xl bg-muted px-2 py-1.5 text-xs">
       <LockIcon className="mt-0.5 size-3.5 shrink-0" />
       <span>
         <span className="font-medium">{tx("admin.ledger.paper.gst.filedMonth")}:</span>{" "}
@@ -136,7 +136,7 @@ function SignedQrImageDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="rounded-2xl sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{tx("admin.ledger.paper.gst.viewQr")}</DialogTitle>
           <DialogDescription>{tx("admin.ledger.paper.gst.qrPrivate")}</DialogDescription>
@@ -150,9 +150,9 @@ function SignedQrImageDialog({
             <img
               src={url}
               alt={tx("admin.ledger.paper.gst.viewQr")}
-              className="mx-auto max-h-72 w-auto rounded-md border object-contain"
+              className="mx-auto max-h-72 w-auto rounded-xl border object-contain"
             />
-            <Button variant="outline" asChild>
+            <Button variant="outline" className="rounded-full" asChild>
               <a href={url} target="_blank" rel="noreferrer">
                 {tx("admin.ledger.paper.gst.qrFullSize")}
               </a>
@@ -210,7 +210,7 @@ function GstDetails({ gst }: { gst: BillGstState }) {
             <Button
               size="sm"
               variant="link"
-              className="h-auto w-fit px-0"
+              className="h-auto w-fit p-0 text-brand"
               onClick={() => setQrOpen(true)}
             >
               <ImageIcon className="size-4" />
@@ -220,12 +220,12 @@ function GstDetails({ gst }: { gst: BillGstState }) {
         </dl>
       )}
       {gst.irn?.correctReason && (
-        <p className="rounded-md bg-amber-100 px-2 py-1.5 text-xs text-amber-900">
+        <p className="rounded-xl bg-amber-500/10 px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400">
           {tx("admin.ledger.paper.gst.lastCorrect", { reason: gst.irn.correctReason })}
         </p>
       )}
       {gst.portalCancellation && (
-        <dl className="grid gap-2 rounded-md border p-2">
+        <dl className="grid gap-2 rounded-xl border p-2">
           <p className="text-xs font-medium">{tx("admin.ledger.paper.gst.portalCancelled")}</p>
           <div className="grid grid-cols-2 gap-2">
             <Field
@@ -291,6 +291,7 @@ function DraftDownloads({ billId }: { billId: string }) {
       <Button
         size="sm"
         variant="outline"
+        className="rounded-full"
         disabled={busy != null}
         onClick={() => void handleDownload("pdf")}
       >
@@ -302,6 +303,7 @@ function DraftDownloads({ billId }: { billId: string }) {
       <Button
         size="sm"
         variant="outline"
+        className="rounded-full"
         disabled={busy != null}
         onClick={() => void handleDownload("json")}
       >
@@ -337,13 +339,18 @@ function GstActionButtons({
     <div className="grid gap-2">
       {gst.allowed.draft && <DraftDownloads billId={gst.billId} />}
       {showEnter && (
-        <Button disabled={!gst.allowed.enterIrn} onClick={() => onOpen("enter_irn")}>
+        <Button
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          disabled={!gst.allowed.enterIrn}
+          onClick={() => onOpen("enter_irn")}
+        >
           {tx("admin.ledger.paper.gst.actions.enterIrn")}
         </Button>
       )}
       {showCorrect && (
         <Button
           variant="outline"
+          className="rounded-full"
           disabled={!gst.allowed.correctIrn}
           onClick={() => onOpen("correct_irn")}
         >
@@ -353,6 +360,7 @@ function GstActionButtons({
       {showPortal && (
         <Button
           variant="outline"
+          className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
           disabled={!gst.allowed.portalCancel}
           onClick={() => onOpen("portal_cancel")}
         >
@@ -408,10 +416,10 @@ export function GstCard({
 }) {
   const tx = useTranslate();
   return (
-    <Card className="gap-3 py-3">
-      <CardHeader className="px-3">
+    <section className="space-y-3 rounded-2xl border bg-card p-3">
+      <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-sm">{tx("admin.ledger.paper.gst.title")}</CardTitle>
+          <h2 className="text-sm font-semibold">{tx("admin.ledger.paper.gst.title")}</h2>
           {gst && (
             <div className="flex flex-wrap gap-1.5">
               <IrnStatusChip gst={gst} />
@@ -419,31 +427,30 @@ export function GstCard({
             </div>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3 px-3">
+      </div>
+      <div className="space-y-3">
         {isLoading ? (
           <div className="space-y-2" aria-busy="true">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-8 w-full" />
           </div>
         ) : isError || !gst ? (
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertTitle>{tx("admin.ledger.paper.gst.loadError")}</AlertTitle>
-            <AlertDescription>
-              <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-                {tx("common.actions.tryAgain")}
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              {tx("admin.ledger.paper.gst.loadError")}
+            </p>
+            <Button size="sm" variant="outline" className="rounded-full" onClick={onRetry}>
+              {tx("common.actions.tryAgain")}
+            </Button>
+          </div>
         ) : (
           <>
             <GstDetails gst={gst} />
             <GstActionButtons gst={gst} onOpen={onOpen} />
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -601,14 +608,7 @@ function IrnForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="irn-ack-date">{tx("admin.ledger.paper.gst.fields.ackDate")}</Label>
-          <Input
-            id="irn-ack-date"
-            type="date"
-            value={ackDate}
-            disabled={isSaving}
-            aria-invalid={Boolean(errors.ackDate)}
-            onChange={(event) => setAckDate(event.target.value)}
-          />
+          <DatePicker id="irn-ack-date" value={ackDate} disabled={isSaving} onChange={setAckDate} />
           <FieldError message={errors.ackDate} />
         </div>
       </div>
@@ -633,7 +633,7 @@ function IrnForm({
           <img
             src={image.previewUrl}
             alt={tx("admin.ledger.paper.gst.irnForm.imageAlt")}
-            className="size-28 rounded-md border object-contain"
+            className="size-28 rounded-xl border object-contain"
           />
         )}
         <input
@@ -651,6 +651,7 @@ function IrnForm({
             type="button"
             size="sm"
             variant="outline"
+            className="rounded-full"
             disabled={isSaving}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -664,6 +665,7 @@ function IrnForm({
               type="button"
               size="sm"
               variant="ghost"
+              className="rounded-full"
               disabled={isSaving}
               onClick={() => {
                 setImage(null);
@@ -697,14 +699,23 @@ function IrnForm({
         </div>
       )}
       {refusal && <RefusalAlert message={refusal} />}
-      <Button className="w-full" disabled={isSaving} onClick={() => void handleSubmit()}>
-        {isSaving && <Spinner />}
-        {isSaving
-          ? tx("admin.ledger.saving")
-          : mode === "enter"
-            ? tx("admin.ledger.paper.gst.irnForm.submitEnter")
-            : tx("admin.ledger.paper.gst.irnForm.submitCorrect")}
-      </Button>
+      <DialogFooter>
+        <Button variant="outline" className="rounded-full" disabled={isSaving} onClick={onDone}>
+          {tx("common.actions.cancel")}
+        </Button>
+        <Button
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          disabled={isSaving}
+          onClick={() => void handleSubmit()}
+        >
+          {isSaving && <Spinner />}
+          {isSaving
+            ? tx("admin.ledger.saving")
+            : mode === "enter"
+              ? tx("admin.ledger.paper.gst.irnForm.submitEnter")
+              : tx("admin.ledger.paper.gst.irnForm.submitCorrect")}
+        </Button>
+      </DialogFooter>
     </div>
   );
 }
@@ -767,7 +778,7 @@ function PortalCancelForm({
 
   return (
     <div className="space-y-3 text-sm">
-      <div className="space-y-1 rounded-md border bg-muted/40 p-3">
+      <div className="space-y-1 rounded-xl border bg-muted/40 p-3">
         <p>{tx("admin.ledger.paper.gst.portalForm.body")}</p>
         <p className="text-muted-foreground">
           {paper.bill.orderId
@@ -791,14 +802,12 @@ function PortalCancelForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="pc-date">{tx("admin.ledger.paper.gst.portalForm.ackDate")}</Label>
-          <Input
+          <DatePicker
             id="pc-date"
-            type="date"
             max={today}
             value={ackDate}
             disabled={isRecordingPortalCancellation}
-            aria-invalid={Boolean(errors.ackDate)}
-            onChange={(event) => setAckDate(event.target.value)}
+            onChange={setAckDate}
           />
           <FieldError message={errors.ackDate} />
         </div>
@@ -824,17 +833,27 @@ function PortalCancelForm({
         <FieldError message={errors.reason} />
       </div>
       {refusal && <RefusalAlert message={refusal} />}
-      <Button
-        variant="destructive"
-        className="w-full"
-        disabled={isRecordingPortalCancellation}
-        onClick={() => void handleSubmit()}
-      >
-        {isRecordingPortalCancellation && <Spinner />}
-        {isRecordingPortalCancellation
-          ? tx("admin.ledger.saving")
-          : tx("admin.ledger.paper.gst.portalForm.submit")}
-      </Button>
+      <DialogFooter>
+        <Button
+          variant="outline"
+          className="rounded-full"
+          disabled={isRecordingPortalCancellation}
+          onClick={onDone}
+        >
+          {tx("common.actions.cancel")}
+        </Button>
+        <Button
+          variant="destructive"
+          className="rounded-full"
+          disabled={isRecordingPortalCancellation}
+          onClick={() => void handleSubmit()}
+        >
+          {isRecordingPortalCancellation && <Spinner />}
+          {isRecordingPortalCancellation
+            ? tx("admin.ledger.saving")
+            : tx("admin.ledger.paper.gst.portalForm.submit")}
+        </Button>
+      </DialogFooter>
     </div>
   );
 }
@@ -860,16 +879,21 @@ export function GstDialog({
   const tx = useTranslate();
   return (
     <Dialog open={kind != null && gst != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{kind ? tx(DIALOG_TITLE[kind]) : ""}</DialogTitle>
-          <DialogDescription>{paper.bill.number}</DialogDescription>
-        </DialogHeader>
-        {gst && kind === "enter_irn" && <IrnForm mode="enter" gst={gst} onDone={onClose} />}
-        {gst && kind === "correct_irn" && <IrnForm mode="correct" gst={gst} onDone={onClose} />}
-        {gst && kind === "portal_cancel" && (
-          <PortalCancelForm gst={gst} paper={paper} onDone={onClose} />
-        )}
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-md">
+        {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+        <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          <div className="flex flex-col gap-4 p-6">
+            <DialogHeader>
+              <DialogTitle>{kind ? tx(DIALOG_TITLE[kind]) : ""}</DialogTitle>
+              <DialogDescription>{paper.bill.number}</DialogDescription>
+            </DialogHeader>
+            {gst && kind === "enter_irn" && <IrnForm mode="enter" gst={gst} onDone={onClose} />}
+            {gst && kind === "correct_irn" && <IrnForm mode="correct" gst={gst} onDone={onClose} />}
+            {gst && kind === "portal_cancel" && (
+              <PortalCancelForm gst={gst} paper={paper} onDone={onClose} />
+            )}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

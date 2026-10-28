@@ -103,7 +103,7 @@ export function FulfilPreOrderSheet({ row, onClose, onViewDetails }: FulfilPreOr
               variant="outline"
               className={
                 isDue
-                  ? "border-transparent bg-amber-500/10 text-amber-700"
+                  ? "border-transparent bg-amber-500/10 text-amber-600"
                   : "border-transparent bg-muted text-muted-foreground"
               }
             >
@@ -157,7 +157,7 @@ export function FulfilPreOrderSheet({ row, onClose, onViewDetails }: FulfilPreOr
             {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
             <Button
               type="button"
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
               disabled={!isDue || !fulfil.paymentContext || Boolean(hint) || fulfil.isFulfilling}
               onClick={() => void fulfil.fulfil()}
             >

@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SkuChip } from "~/components/admin/products/sku-chip";
 import { StatusBadge } from "~/components/admin/products/status-badge";
@@ -210,16 +209,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                   )}
                 </div>
 
-                {isInactive ? (
-                  <Badge
-                    variant="outline"
-                    className="border-transparent bg-muted text-muted-foreground"
-                  >
-                    {tx("admin.varieties.deactivated")}
-                  </Badge>
-                ) : (
-                  <StatusBadge status={variety.status} />
-                )}
+                <StatusBadge status={isInactive ? "inactive" : "active"} />
 
                 {/* On a phone the actions drop to their own line so the name keeps its width. */}
                 <div className="flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto">
@@ -286,7 +276,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeactivatingProductVariety}
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault();
                 void handleDeactivate();
@@ -319,6 +309,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isReactivatingProductVariety}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
               onClick={(event) => {
                 event.preventDefault();
                 void handleReactivate();

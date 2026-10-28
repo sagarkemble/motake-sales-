@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { RefusalAlert, ReasonField, businessToday } from "~/components/admin/ledger/ledger-shared";
+import { DatePicker } from "~/components/shared/date-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
 import { useAuth } from "~/hooks/use-auth";
@@ -80,27 +82,32 @@ export function FilingDialog({
   const existing = target && target !== "new" ? target : undefined;
   return (
     <Dialog open={target != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {existing
-              ? tx("admin.gst.form.correctTitle", { month: monthLabel(existing.periodMonth) })
-              : tx("admin.gst.form.recordTitle")}
-          </DialogTitle>
-          <DialogDescription>
-            {existing
-              ? tx("admin.gst.form.correctDescription")
-              : tx("admin.gst.form.recordDescription")}
-          </DialogDescription>
-        </DialogHeader>
-        {target && (
-          <FilingForm
-            key={existing?.id ?? "new"}
-            existing={existing}
-            filings={filings}
-            onClose={onClose}
-          />
-        )}
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-md">
+        {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+        <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          <div className="flex flex-col gap-4 p-6">
+            <DialogHeader>
+              <DialogTitle>
+                {existing
+                  ? tx("admin.gst.form.correctTitle", { month: monthLabel(existing.periodMonth) })
+                  : tx("admin.gst.form.recordTitle")}
+              </DialogTitle>
+              <DialogDescription>
+                {existing
+                  ? tx("admin.gst.form.correctDescription")
+                  : tx("admin.gst.form.recordDescription")}
+              </DialogDescription>
+            </DialogHeader>
+            {target && (
+              <FilingForm
+                key={existing?.id ?? "new"}
+                existing={existing}
+                filings={filings}
+                onClose={onClose}
+              />
+            )}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -227,15 +234,13 @@ function FilingForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="gst-filed-on">{tx("admin.gst.form.filedOn")}</Label>
-          <Input
+          <DatePicker
             id="gst-filed-on"
-            type="date"
             min={`${month}-01`}
             max={businessToday()}
             value={filedOn}
             disabled={isSaving}
-            aria-invalid={Boolean(errors.filedOn)}
-            onChange={(event) => setFiledOn(event.target.value)}
+            onChange={setFiledOn}
           />
           <FieldError message={errors.filedOn} />
         </div>
@@ -296,10 +301,11 @@ function FilingForm({
       {refusal && <RefusalAlert message={refusal} />}
 
       <DialogFooter>
-        <Button variant="outline" disabled={isSaving} onClick={onClose}>
-          {tx("admin.gst.form.close")}
+        <Button variant="outline" className="rounded-full" disabled={isSaving} onClick={onClose}>
+          {tx("common.actions.cancel")}
         </Button>
         <Button
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           disabled={isSaving}
           onClick={() => {
             if (!check()) return;
@@ -356,7 +362,7 @@ function FilingForm({
                       })}
                     </p>
                     {filingPreview.irnPendingInMonth > 0 ? (
-                      <p className="flex items-start gap-2 rounded-md bg-amber-100 px-2 py-1.5 text-amber-900">
+                      <p className="flex items-start gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 text-amber-700 dark:text-amber-400">
                         <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
                         {tx("admin.gst.form.confirm.irnPending", {
                           count: filingPreview.irnPendingInMonth,
@@ -375,6 +381,7 @@ function FilingForm({
           <AlertDialogFooter>
             <AlertDialogCancel>{tx("admin.gst.form.confirm.back")}</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
               disabled={!filingPreview || filingPreview.alreadyFiled || isFilingPreviewLoading}
               onClick={(event) => {
                 event.preventDefault();

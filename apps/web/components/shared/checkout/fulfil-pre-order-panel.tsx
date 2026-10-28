@@ -36,7 +36,12 @@ export function LockedLines({ state, shopName, scheduledDate, placedAt }: Locked
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border p-6 text-center">
         <p className="text-sm text-muted-foreground">{tx("checkout.fulfil.loadFailed")}</p>
-        <Button type="button" variant="outline" onClick={() => state.refetchQuote()}>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-full"
+          onClick={() => state.refetchQuote()}
+        >
           {tx("common.actions.tryAgain")}
         </Button>
       </div>

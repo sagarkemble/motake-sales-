@@ -50,7 +50,10 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
               {orderDetail && (
                 <DialogDescription asChild>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="font-normal">
+                    <Badge
+                      variant="outline"
+                      className="border-transparent bg-muted text-foreground"
+                    >
                       {tx(
                         orderDetail.order.type === "pre_order"
                           ? "common.orderType.preOrder"

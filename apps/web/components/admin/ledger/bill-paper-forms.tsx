@@ -4,6 +4,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DatePicker } from "~/components/shared/date-picker";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -199,7 +200,7 @@ export function CorrectPanel({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+      <div className="space-y-2 rounded-xl border bg-muted/40 p-3 text-sm">
         {!state.hasChanges ? (
           <p className="text-muted-foreground">{tx("admin.ledger.paper.preview.nothingYet")}</p>
         ) : !state.buyerFilled ? (
@@ -223,7 +224,7 @@ export function CorrectPanel({
                   <dt className="text-muted-foreground">
                     {tx(`admin.ledger.rowTypes.${correctPreview.creditNote.kind}`)}
                   </dt>
-                  <dd className="text-right tabular-nums text-emerald-700 dark:text-emerald-400">
+                  <dd className="text-right tabular-nums text-brand">
                     − {formatPaise(correctPreview.creditNote.amountPaise)}
                   </dd>
                 </>
@@ -247,7 +248,7 @@ export function CorrectPanel({
               </dd>
             </dl>
             {correctPreview.billHasNotes && correctPreview.classification !== "text_only" && (
-              <p className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-900">
+              <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
                 {tx("admin.ledger.paper.preview.notesWarning")}
               </p>
             )}
@@ -262,7 +263,7 @@ export function CorrectPanel({
       <Collapsible
         open={isBuyerOpen || !state.buyerFilled}
         onOpenChange={setIsBuyerOpen}
-        className="rounded-md border px-3 py-2"
+        className="rounded-xl border px-3 py-2"
       >
         <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-sm">
           {tx("admin.ledger.paper.buyerText")}
@@ -286,10 +287,19 @@ export function CorrectPanel({
       />
       {refusal && <RefusalAlert message={refusal} />}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end lg:flex-col-reverse">
-        <Button variant="outline" disabled={isCorrectingBill} onClick={onClose}>
-          {tx("admin.ledger.close")}
+        <Button
+          variant="outline"
+          className="rounded-full"
+          disabled={isCorrectingBill}
+          onClick={onClose}
+        >
+          {tx("common.actions.cancel")}
         </Button>
-        <Button disabled={!canSave} onClick={handleSave}>
+        <Button
+          disabled={!canSave}
+          onClick={handleSave}
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
           {isCorrectingBill && <Spinner />}
           {isCorrectingBill ? tx("admin.ledger.saving") : tx("admin.ledger.paper.saveCorrect")}
         </Button>
@@ -332,7 +342,7 @@ export function CancelForm({ paper, onDone }: { paper: BillPaper; onDone: () => 
 
   return (
     <div className="space-y-4 text-sm">
-      <div className="space-y-1 rounded-md border bg-muted/40 p-3">
+      <div className="space-y-1 rounded-xl border bg-muted/40 p-3">
         <p>{tx("admin.ledger.paper.cancel.body")}</p>
         {paper.balance && (
           <p className="text-muted-foreground">
@@ -355,7 +365,7 @@ export function CancelForm({ paper, onDone }: { paper: BillPaper; onDone: () => 
       {refusal && <RefusalAlert message={refusal} />}
       <Button
         variant="destructive"
-        className="w-full"
+        className="w-full rounded-full"
         disabled={reason.trim() === "" || isCancellingBill}
         onClick={handleCancel}
       >
@@ -459,14 +469,14 @@ export function RaiseNoteForm({
         {NOTE_KINDS.map((value) => (
           <Label
             key={value}
-            className="flex cursor-pointer items-start gap-2 rounded-md border p-2 font-normal has-[[data-state=checked]]:border-brand"
+            className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent/50"
           >
             <RadioGroupItem value={value} className="mt-0.5" disabled={isRaisingNote} />
             <span>{tx(`admin.ledger.rowTypes.${value}`)}</span>
           </Label>
         ))}
       </RadioGroup>
-      <ul className="divide-y rounded-md border">
+      <ul className="divide-y rounded-xl border">
         {paper.lines.map((line) => (
           <li key={line.id} className="flex items-center justify-between gap-2 px-3 py-2">
             <span className="min-w-0">
@@ -499,13 +509,13 @@ export function RaiseNoteForm({
       {isCredit && (
         <div className="grid gap-1.5">
           <Label htmlFor="returned-on">{tx("admin.ledger.paper.note.returnedOn")}</Label>
-          <Input
+          <DatePicker
             id="returned-on"
-            type="date"
             max={today}
             value={returnedOn}
             disabled={isRaisingNote}
-            onChange={(event) => setReturnedOn(event.target.value)}
+            clearable
+            onChange={setReturnedOn}
           />
         </div>
       )}
@@ -530,7 +540,7 @@ export function RaiseNoteForm({
               )}
             </p>
             {raiseNotePreview.billHasNotes && (
-              <p className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-900">
+              <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
                 {tx("admin.ledger.paper.preview.notesWarning")}
               </p>
             )}
@@ -547,7 +557,11 @@ export function RaiseNoteForm({
       />
       {outcomeUnknown && <OutcomeUnknownAlert message={tx("admin.ledger.outcomeUnknown.note")} />}
       {refusal && <RefusalAlert message={refusal} />}
-      <Button className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
+      <Button
+        className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        disabled={!canSubmit}
+        onClick={handleSubmit}
+      >
         {isRaisingNote && <Spinner />}
         {isRaisingNote
           ? tx("admin.ledger.saving")

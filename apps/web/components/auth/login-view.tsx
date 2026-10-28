@@ -18,7 +18,9 @@ export function LoginView() {
           <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-brand-foreground shadow-sm">
             M
           </div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Motake Admin</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">
+            {tx("auth.login.brandTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">{tx("auth.login.title")}</p>
         </div>
 

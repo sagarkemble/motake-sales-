@@ -26,10 +26,10 @@ export default function NewSalesmanPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-      <BackHeader href="/admin/salesman" title="admin.salesmen.newAria" />
+      <BackHeader href="/admin/salesman" title={tx("admin.salesmen.newAria")} />
       <SalesmanForm
         isSubmitting={isCreatingSalesmanAccount}
-        submitLabel="Create salesman"
+        submitLabel={tx("admin.salesmen.createCta")}
         onSubmit={handleSubmit}
       />
     </div>

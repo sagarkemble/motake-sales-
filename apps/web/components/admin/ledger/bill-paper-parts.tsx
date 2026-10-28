@@ -15,19 +15,35 @@ import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 
+const MUTED_CHIP = "border-transparent bg-muted text-muted-foreground";
+
 export function StatusBadges({ paper }: { paper: BillPaper }) {
   const tx = useTranslate();
   const locked = paper.lock && (!paper.lock.correct.allowed || !paper.lock.cancel.allowed);
   return (
     <div className="flex flex-wrap gap-1.5">
-      <Badge>{tx(`admin.bills.legalType.${paper.version.legalType}`)}</Badge>
+      <Badge variant="outline" className="border-transparent bg-brand/10 text-brand">
+        {tx(`admin.bills.legalType.${paper.version.legalType}`)}
+      </Badge>
       {paper.bill.orderId == null && (
-        <Badge variant="secondary">{tx("admin.ledger.paper.officeBill")}</Badge>
+        <Badge variant="outline" className={MUTED_CHIP}>
+          {tx("admin.ledger.paper.officeBill")}
+        </Badge>
       )}
-      {paper.bill.cancelled && <Badge variant="destructive">{tx("admin.ledger.cancelled")}</Badge>}
-      {locked && <Badge variant="outline">{tx("admin.ledger.paper.locked")}</Badge>}
+      {paper.bill.cancelled && (
+        <Badge variant="outline" className="border-transparent bg-destructive/10 text-destructive">
+          {tx("admin.ledger.cancelled")}
+        </Badge>
+      )}
+      {locked && (
+        <Badge variant="outline" className={MUTED_CHIP}>
+          {tx("admin.ledger.paper.locked")}
+        </Badge>
+      )}
       {paper.customer?.status === "inactive" && (
-        <Badge variant="outline">{tx("admin.ledger.paper.inactive")}</Badge>
+        <Badge variant="outline" className={MUTED_CHIP}>
+          {tx("admin.ledger.paper.inactive")}
+        </Badge>
       )}
     </div>
   );
@@ -110,8 +126,8 @@ export function DownloadPdfButton({
       size="sm"
       variant="outline"
       disabled={isOpening}
+      className={cn("rounded-full", className)}
       onClick={handleDownload}
-      className={className}
     >
       {isOpening ? <Spinner /> : <DownloadIcon className="size-4" />}
       {isOpening
@@ -128,12 +144,12 @@ export function NotesList({ paper }: { paper: BillPaper }) {
   if (paper.notes.length === 0)
     return <p className="text-sm text-muted-foreground">{tx("admin.ledger.paper.notesEmpty")}</p>;
   return (
-    <ul className="divide-y rounded-md border bg-card">
+    <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
       {paper.notes.map((note) => (
         <li
           key={note.id}
           id={`note-${note.id}`}
-          className="flex scroll-mt-20 flex-col gap-2 px-3 py-2 target:bg-brand/5 sm:flex-row sm:items-center sm:justify-between"
+          className="flex scroll-mt-20 flex-col gap-2 p-3 target:bg-brand/5 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0 text-sm">
             <p className="font-medium">
@@ -149,12 +165,7 @@ export function NotesList({ paper }: { paper: BillPaper }) {
             </p>
           </div>
           <div className="flex items-center justify-between gap-3 sm:justify-end">
-            <span
-              className={cn(
-                "tabular-nums",
-                note.kind !== "debit_note" && "text-emerald-700 dark:text-emerald-400",
-              )}
-            >
+            <span className={cn("tabular-nums", note.kind !== "debit_note" && "text-brand")}>
               {note.kind === "debit_note" ? "+" : "−"} {formatPaise(note.amountPaise)}
             </span>
             <DownloadPdfButton

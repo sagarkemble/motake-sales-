@@ -34,7 +34,7 @@ export function RouteChoiceSelect({
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger id={id} className={cn("w-full rounded-full bg-muted/40", className)}>
+      <SelectTrigger id={id} className={cn("w-full rounded-xl bg-muted/40", className)}>
         <SelectValue
           placeholder={
             isRouteChoicesLoading

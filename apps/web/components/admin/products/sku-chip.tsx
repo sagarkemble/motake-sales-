@@ -45,7 +45,7 @@ export function SkuChip({ sku, muted, className }: SkuChipProps) {
         type="button"
         onClick={handleCopy}
         aria-label={tx("admin.varieties.copySkuAria", { sku })}
-        className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-background hover:text-foreground"
+        className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 hover:bg-background hover:text-foreground"
       >
         {copied ? <CheckIcon className="size-3 text-brand" /> : <CopyIcon className="size-3" />}
       </button>

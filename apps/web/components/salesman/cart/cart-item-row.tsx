@@ -34,38 +34,40 @@ export function CartItemRow({
         tone === "short" && "border-amber-500/50",
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
           {cartLine.productImageUrl ? (
             <img
               src={cartLine.productImageUrl}
               alt={cartLine.productName}
-              className="size-full object-cover"
+              className="size-full object-contain p-1"
             />
           ) : (
             <PackageIcon className="size-5 text-muted-foreground" />
           )}
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-32 flex-1">
           <p className="truncate text-sm font-medium">{cartLine.productName}</p>
           <p className="truncate text-xs text-muted-foreground">
             {cartLine.varietyName} ({cartLine.unit})
           </p>
         </div>
 
-        <QuantityStepper quantity={cartLine.quantity} onQuantityChange={onQuantityChange} />
+        <div className="ml-auto flex items-center gap-1">
+          <QuantityStepper quantity={cartLine.quantity} onQuantityChange={onQuantityChange} />
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={tx("common.a11y.removeItem")}
-          onClick={onRemove}
-          className="shrink-0 text-muted-foreground hover:text-destructive"
-        >
-          <Trash2Icon className="size-4" />
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={tx("common.a11y.removeItem")}
+            onClick={onRemove}
+            className="shrink-0 text-muted-foreground hover:text-destructive"
+          >
+            <Trash2Icon className="size-4" />
+          </Button>
+        </div>
       </div>
       {footer}
     </div>

@@ -2,7 +2,8 @@
 
 import { CheckIcon } from "lucide-react";
 
-import { Badge } from "~/components/ui/badge";
+import { StatusBadge } from "~/components/admin/products/status-badge";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Progress } from "~/components/ui/progress";
 import type { RouteChoice } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
@@ -29,7 +30,11 @@ export function AllotRouteStep({
   const tx = useTranslate();
 
   if (isRouteChoicesLoading) {
-    return <p className="text-sm text-muted-foreground">{tx("common.status.loading")}</p>;
+    return (
+      <div className="flex flex-col gap-3">
+        <ListItemSkeleton count={2} />
+      </div>
+    );
   }
 
   return (
@@ -53,8 +58,8 @@ export function AllotRouteStep({
                 type="button"
                 onClick={() => onSelectRoute(route.id)}
                 className={cn(
-                  "flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors",
-                  isSelected ? "border-brand bg-accent/50 ring-1 ring-brand" : "hover:bg-muted/40",
+                  "flex flex-col gap-2 rounded-2xl border bg-card p-4 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors",
+                  isSelected ? "border-brand bg-accent/50" : "hover:bg-accent/50",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -65,14 +70,7 @@ export function AllotRouteStep({
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    {route.status === "inactive" && (
-                      <Badge
-                        variant="outline"
-                        className="border-transparent bg-amber-500/10 text-amber-700"
-                      >
-                        {tx("common.status.inactive")}
-                      </Badge>
-                    )}
+                    {route.status === "inactive" && <StatusBadge status="inactive" />}
                     {isSelected && <CheckIcon className="size-4 text-brand" />}
                   </div>
                 </div>

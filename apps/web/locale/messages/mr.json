@@ -15,6 +15,8 @@
       "tryAgain": "पुन्हा प्रयत्न करा",
       "goBack": "मागे जा",
       "clearSearch": "शोध साफ करा",
+      "pickDate": "तारीख निवडा",
+      "clearDate": "तारीख साफ करा",
       "logout": "लॉग आउट"
     },
     "status": {
@@ -24,7 +26,8 @@
       "active": "सक्रिय",
       "inactive": "निष्क्रिय",
       "new": "नवीन",
-      "saving": "जतन करत आहे…"
+      "saving": "जतन करत आहे…",
+      "deleted": "हटवलेले"
     },
     "a11y": {
       "openMenu": "मेनू उघडा",
@@ -89,6 +92,18 @@
       "hi": "हिंदी",
       "en": "इंग्रजी",
       "fixedHint": "या ग्राहकाला संदेश याच भाषेत जातात. ती नंतर बदलता येत नाही."
+    },
+    "imageUpload": {
+      "uploadImage": "प्रतिमा अपलोड करा",
+      "uploading": "अपलोड होत आहे…",
+      "remove": "काढा",
+      "removing": "काढत आहे…",
+      "noImage": "प्रतिमा नाही",
+      "badType": "JPEG, PNG किंवा WEBP प्रतिमा वापरा.",
+      "tooLarge": "प्रतिमा 5 MB किंवा त्यापेक्षा लहान असावी.",
+      "uploadFailed": "अपलोड अयशस्वी. पुन्हा प्रयत्न करा.",
+      "confirmRemove": "ही प्रतिमा काढायची?",
+      "removeFailed": "प्रतिमा काढता आली नाही. पुन्हा प्रयत्न करा."
     }
   },
   "auth": {
@@ -107,7 +122,8 @@
       },
       "error": {
         "wrongCredentials": "ईमेल किंवा पासवर्ड चुकीचा आहे. पुन्हा प्रयत्न करा."
-      }
+      },
+      "brandTitle": "Motake"
     },
     "otp": {
       "codeSent": "एसएमएसने कोड पाठवला",
@@ -118,7 +134,9 @@
       "changeNumber": "नंबर बदला",
       "resend": "कोड पुन्हा पाठवा",
       "phonePlaceholder": "१० अंकी मोबाइल नंबर",
-      "sendCta": "कोड पाठवा"
+      "sendCta": "कोड पाठवा",
+      "sentTo": "+91 {phone} वर पाठवला",
+      "resendIn": "{seconds} सेकंदांनी पुन्हा पाठवा"
     },
     "magicLink": {
       "sent": "साइन-इन लिंक आपल्या ईमेलवर पाठवली",
@@ -126,7 +144,10 @@
       "checkEmail": "आपला ईमेल तपासा",
       "changeEmail": "ईमेल बदला",
       "resend": "लिंक पुन्हा पाठवा",
-      "cta": "साइन-इन लिंक पाठवा"
+      "cta": "साइन-इन लिंक पाठवा",
+      "linkInvalid": "साइन-इन लिंक चुकीची आहे किंवा तिची मुदत संपली आहे.",
+      "backToSignIn": "साइन इनकडे परत",
+      "signingIn": "साइन इन करत आहे…"
     }
   },
   "account": {
@@ -143,7 +164,10 @@
       "updated": "अवतार अपडेट झाला",
       "removed": "अवतार काढला",
       "saveFailed": "अवतार जतन करता आला नाही. पुन्हा प्रयत्न करा.",
-      "removeFailed": "अवतार काढता आला नाही. पुन्हा प्रयत्न करा."
+      "removeFailed": "अवतार काढता आला नाही. पुन्हा प्रयत्न करा.",
+      "title": "अवतार अपडेट करा",
+      "alt": "अवतार",
+      "upload": "अवतार अपलोड करा"
     },
     "phone": {
       "title": "फोन नंबर अपडेट करा",
@@ -168,7 +192,8 @@
       "openAccountMenu": "खाते मेनू उघडा",
       "routes": "रूट",
       "ledger": "खातेवही",
-      "gst": "GST"
+      "gst": "GST",
+      "brandTitle": "Motake ॲडमिन"
     },
     "dashboard": {
       "kpi": {
@@ -184,6 +209,22 @@
       },
       "orders": {
         "empty": "अद्याप ऑर्डर नाहीत"
+      },
+      "greeting": "नमस्कार, {name} 👋",
+      "greetingFallbackName": "ॲडमिन",
+      "subtitle": "आज तुमच्या व्यवसायात काय चालले आहे ते येथे पहा.",
+      "todaysOrders": "आजच्या ऑर्डर",
+      "todaysGatepasses": "आजचे गेट पास",
+      "recentActivity": "अलीकडील हालचाल",
+      "orderHistory": "ऑर्डर इतिहास",
+      "salesmanPrefix": "विक्रेता {name}",
+      "discrepancy": {
+        "title": "आजच्या विसंगती",
+        "flaggedCount": "{count} फ्लॅग केलेले",
+        "empty": "आज कोणतीही विसंगती फ्लॅग केलेली नाही",
+        "noReason": "कारण नोंदवलेले नाही",
+        "totals": "दिलेला {issued} · विक्री {sold} · परत {returned}",
+        "closedBy": "{name} यांनी"
       }
     },
     "products": {
@@ -211,7 +252,22 @@
       "varietyCountOne": "1 प्रकार",
       "varietyCountOther": "{count} प्रकार",
       "inactiveCount": "{count} निष्क्रिय",
-      "renameKeepsSkus": "उत्पादनाचे नाव बदलल्याने त्याच्या प्रकारांचे SKU बदलत नाहीत."
+      "renameKeepsSkus": "उत्पादनाचे नाव बदलल्याने त्याच्या प्रकारांचे SKU बदलत नाहीत.",
+      "createCta": "उत्पादन तयार करा",
+      "description": "वर्णन",
+      "descriptionPlaceholder": "थोडक्यात वर्णन",
+      "edit": "संपादित करा",
+      "editTitle": "उत्पादन संपादित करा",
+      "imageAlt": "उत्पादन",
+      "namePlaceholder": "उत्पादनाचे नाव",
+      "noMatch": "\"{term}\" शी जुळणारी उत्पादने नाहीत",
+      "notFound": "उत्पादन सापडले नाही",
+      "reactivate": "पुन्हा सक्रिय करा",
+      "saveChanges": "बदल जतन करा",
+      "searchPlaceholder": "उत्पादने शोधा…",
+      "showDeleted": "हटवलेली उत्पादने दाखवा",
+      "statusLabel": "उत्पादनाची स्थिती",
+      "uploadImage": "प्रतिमा अपलोड करा"
     },
     "varieties": {
       "editAria": "प्रकार संपादित करा",
@@ -249,7 +305,10 @@
       "reactivateBody": "{name} पुन्हा सक्रिय होईल आणि वाटप व विक्री करता येईल.",
       "reactivateConfirm": "पुन्हा सक्रिय करा",
       "reactivateSuccess": "प्रकार पुन्हा सक्रिय केला",
-      "reactivateFailed": "प्रकार पुन्हा सक्रिय करता आला नाही. पुन्हा प्रयत्न करा."
+      "reactivateFailed": "प्रकार पुन्हा सक्रिय करता आला नाही. पुन्हा प्रयत्न करा.",
+      "namePlaceholder": "उदा. 500 ml",
+      "unit": "एकक",
+      "unitPlaceholder": "उदा. pouch"
     },
     "varietyTax": {
       "gstButton": "GST",
@@ -360,7 +419,22 @@
       "reactivate": "पुन्हा सक्रिय करा",
       "reactivating": "पुन्हा सक्रिय करत आहे…",
       "deactivate": "निष्क्रिय करा",
-      "openLedger": "खातेवही उघडा"
+      "openLedger": "खातेवही उघडा",
+      "deactivateDialog": {
+        "checking": "चालू प्री-ऑर्डर तपासत आहे…",
+        "openPreordersRule": "चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "blockedTitle": "निष्क्रिय करता येत नाही",
+        "blockedBodyOne": "या ग्राहकाची 1 प्री-ऑर्डर चालू आहे. चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "blockedBodyOther": "या ग्राहकाच्या {count} प्री-ऑर्डर चालू आहेत. चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "title": "हा ग्राहक निष्क्रिय करायचा?",
+        "body": "ते सक्रिय यादीतून जातील. ऑर्डर इतिहास राहतो. विक्रेते नवीन ऑर्डरसाठी त्यांना निवडू शकत नाहीत."
+      },
+      "stats": {
+        "title": "एकूण आकडेवारी",
+        "totalOrders": "एकूण ऑर्डर",
+        "lifetimeValue": "एकूण मूल्य",
+        "lastOrder": "शेवटची ऑर्डर"
+      }
     },
     "salesmen": {
       "empty": "अद्याप विक्रेते नाहीत",
@@ -430,7 +504,25 @@
         "allot": "वाटप करा",
         "allotAgain": "पुन्हा वाटप करा",
         "alreadyActive": "सक्रिय गेट पास आहे"
-      }
+      },
+      "lastDays": "मागील {count} दिवस",
+      "salesHistory": "विक्री इतिहास",
+      "createCta": "विक्रेता तयार करा",
+      "deleteConfirmPrompt": "तुम्हाला हा विक्रेता नक्की हटवायचा आहे का?",
+      "form": {
+        "codePlaceholder": "वेगळा कोड",
+        "emailPlaceholder": "ईमेल पत्ता",
+        "namePlaceholder": "पूर्ण नाव",
+        "passwordKeepPlaceholder": "सध्याचा पासवर्ड ठेवण्यासाठी रिकामे सोडा",
+        "passwordPlaceholder": "किमान 8 अक्षरे",
+        "phone": "फोन",
+        "moreCharsOne": "आणखी 1 अक्षर हवे",
+        "moreCharsOther": "आणखी {count} अक्षरे हवी"
+      },
+      "notFound": "विक्रेता सापडला नाही",
+      "showDeleted": "हटवलेले विक्रेते दाखवा",
+      "title": "विक्रेते",
+      "unnamed": "नाव नाही"
     },
     "orders": {
       "tab": {
@@ -1374,12 +1466,19 @@
       "inCart": "कार्टमध्ये",
       "size": "साइज",
       "sizes": "साइज",
-      "addToCart": "कार्टमध्ये जोडा"
+      "addToCart": "कार्टमध्ये जोडा",
+      "searchPlaceholder": "उत्पादने शोधा",
+      "noMatch": "\"{term}\" शी जुळणारे उत्पादन नाही",
+      "noSizes": "या उत्पादनासाठी अजून आकार सेट केलेले नाहीत.",
+      "selected": "निवडलेले"
     },
     "cart": {
       "emptyTitle": "आपली कार्ट रिकामी आहे",
       "emptyBody": "सुरुवात करण्यासाठी काही उत्पादने जोडा.",
-      "startShopping": "खरेदी सुरू करा"
+      "startShopping": "खरेदी सुरू करा",
+      "itemsInCart": "कार्टमधील वस्तू: {count}",
+      "proceed": "ऑर्डरसाठी पुढे जा",
+      "orderSummary": "ऑर्डर सारांश"
     },
     "checkout": {
       "steps": {
@@ -1556,6 +1655,10 @@
         "upcomingReadOnly": "येणाऱ्या प्री-ऑर्डर त्यांच्या दिवशी पूर्ण करता येतील.",
         "noGatepass": "रूटवरील प्री-ऑर्डर तुमच्या सक्रिय गेट पासच्या रूटसाठी दिसतात. आज तुमच्याकडे तो नाही.",
         "loadFailed": "रूटवरील प्री-ऑर्डर लोड करता आल्या नाहीत."
+      },
+      "filter": {
+        "pending": "प्रलंबित ({count})",
+        "fulfilled": "पूर्ण ({count})"
       }
     },
     "gatepass": {
@@ -1590,7 +1693,13 @@
       "admin": "ॲडमिन",
       "route": "रूट",
       "issuedAt": "दिल्याची वेळ",
-      "issuedBy": "यांनी दिला"
+      "issuedBy": "यांनी दिला",
+      "productFallback": "उत्पादन",
+      "emptyHistory": "अजून कोणतेही जुने गेट पास नाहीत.",
+      "viewDetails": "तपशील पहा",
+      "detailTitle": "गेट पास तपशील",
+      "closedBy": "यांनी पूर्ण केला",
+      "itemsAllocated": "दिलेल्या वस्तू"
     },
     "handover": {
       "reason": {
@@ -1606,7 +1715,7 @@
       "confirmBodyWithShort": "मालक आपला घोषित परतावा आणि आपण नोंदवलेली {count} कमी युनिट(्स) तपासेल. सबमिट केल्यानंतर बदलता येणार नाही.",
       "success": "हँडओव्हर मंजुरीसाठी पाठवला",
       "failed": "हँडओव्हर सबमिट करता आला नाही",
-      "title": "माल सोपवणे",
+      "title": "माल परत सोपवा",
       "intro": "परत संख्या शिल्लक मालाने आधीच भरलेली आहे. काही परत आले नसेल तर ती कमी करा आणि कारण निवडा.",
       "lineQuantities": "दिलेला {issued} · विक्री {sold} · शिल्लक {left}",
       "shortWhy": "{left} शिल्लकपैकी {short} कमी. कारण काय?",
@@ -1625,6 +1734,11 @@
       "recordFailed": "पेमेंट नोंदवता आले नाही",
       "startOrder": "या दुकानासाठी ऑर्डर सुरू करा",
       "startOrderToast": "कार्टमध्ये उत्पादने जोडा; चेकआउट {shop} साठी होईल."
+    },
+    "account": {
+      "avatarTitle": "अवतार बदला",
+      "avatarAlt": "अवतार",
+      "uploadAvatar": "अवतार अपलोड करा"
     }
   },
   "checkout": {

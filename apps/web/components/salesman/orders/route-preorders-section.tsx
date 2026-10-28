@@ -89,7 +89,7 @@ export function RoutePreordersSection() {
           </p>
           <p className="text-[11px] text-muted-foreground">
             {tx("salesman.orders.route.rowMeta", {
-              date: formatDate(order.scheduledDate, "EEE, d MMM"),
+              date: formatDate(order.scheduledDate, "EEE, d MMM yyyy"),
               by: placedByLabel(order),
             })}
           </p>
@@ -97,7 +97,7 @@ export function RoutePreordersSection() {
         {isUpcoming ? (
           <Badge variant="outline" className="shrink-0 gap-1 font-normal text-muted-foreground">
             <LockIcon className="size-3" />
-            {formatDate(order.scheduledDate, "d MMM")}
+            {formatDate(order.scheduledDate, "EEE, d MMM yyyy")}
           </Badge>
         ) : (
           <Button
@@ -143,12 +143,23 @@ export function RoutePreordersSection() {
           <AlertDescription>{tx("salesman.orders.route.noGatepass")}</AlertDescription>
         </Alert>
       ) : duePreordersError ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border p-4 text-center">
-          <p className="text-sm text-muted-foreground">{tx("salesman.orders.route.loadFailed")}</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => refetchDuePreorders()}>
-            {tx("common.actions.tryAgain")}
-          </Button>
-        </div>
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+          <AlertTriangleIcon />
+          <AlertTitle className="line-clamp-none">
+            {tx("salesman.orders.route.loadFailed")}
+          </AlertTitle>
+          <AlertDescription>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-1 rounded-full"
+              onClick={() => refetchDuePreorders()}
+            >
+              {tx("common.actions.tryAgain")}
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : (
         <Tabs defaultValue="due">
           <TabsList className="w-full">

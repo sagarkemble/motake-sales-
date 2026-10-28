@@ -15,7 +15,12 @@ import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
-import { isNavItemActive, salesmanNavItems, salesmanQuickActions } from "./nav-items";
+import {
+  getPageTitleForPathname,
+  isNavItemActive,
+  salesmanNavItems,
+  salesmanQuickActions,
+} from "./nav-items";
 
 export function SalesmanNavbar() {
   const tx = useTranslate();
@@ -25,6 +30,7 @@ export function SalesmanNavbar() {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  const pageTitle = getPageTitleForPathname(currentPathname);
   const avatarInitial = getNameInitials(signedInUser?.name, "S");
 
   function closeDrawer() {
@@ -142,14 +148,15 @@ export function SalesmanNavbar() {
                 </div>
 
                 <div className="mt-4 border-t border-border px-4 pt-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                    className="h-auto w-full justify-start gap-3 rounded-md px-3 py-2 text-sm font-normal text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <LogOutIcon className="size-4" />
                     {tx("common.actions.logout")}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </ScrollArea>
@@ -157,7 +164,9 @@ export function SalesmanNavbar() {
         </Sheet>
 
         <div className="leading-tight">
-          <p className="font-display text-base font-semibold text-foreground">Motake</p>
+          <p className="font-display text-base font-semibold text-foreground">
+            {pageTitle === "Motake" ? pageTitle : tx(pageTitle)}
+          </p>
           <p className="text-xs text-muted-foreground">{tx("salesman.nav.roleLabel")}</p>
         </div>
       </div>

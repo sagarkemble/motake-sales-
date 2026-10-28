@@ -23,7 +23,7 @@ export function CartViewMobile({
   return (
     <div className="flex flex-col gap-4 px-4 py-4 pb-28">
       <p className="text-sm text-muted-foreground">
-        {totalCartQuantity} {totalCartQuantity === 1 ? "item" : "items"} in cart
+        {tx("salesman.cart.itemsInCart", { count: totalCartQuantity })}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -37,7 +37,7 @@ export function CartViewMobile({
         ))}
       </div>
 
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background px-4 py-3">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
             {tx("salesman.checkout.success.totalItems")}
@@ -48,7 +48,7 @@ export function CartViewMobile({
           asChild
           className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          <Link href="/salesman/cart/checkout">Proceed to order</Link>
+          <Link href="/salesman/cart/checkout">{tx("salesman.cart.proceed")}</Link>
         </Button>
       </div>
     </div>

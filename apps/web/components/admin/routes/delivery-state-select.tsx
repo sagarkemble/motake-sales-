@@ -35,7 +35,7 @@ export function DeliveryStateSelect({
       disabled={disabled}
       onValueChange={(nextValue) => onValueChange(nextValue as IndianStateName)}
     >
-      <SelectTrigger id={id} className={cn("w-full rounded-full bg-muted/40", className)}>
+      <SelectTrigger id={id} className={cn("w-full rounded-xl bg-muted/40", className)}>
         <SelectValue placeholder={tx("admin.routes.deliveryStatePlaceholder")} />
       </SelectTrigger>
       <SelectContent>

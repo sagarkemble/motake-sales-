@@ -1,9 +1,7 @@
 "use client";
 
-import { AlertCircleIcon, ChevronLeftIcon } from "lucide-react";
-import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 
 import { BillPaperDocument } from "~/components/admin/ledger/bill-paper-document";
 import {
@@ -27,8 +25,12 @@ import {
   StatusBadges,
   offReason,
 } from "~/components/admin/ledger/bill-paper-parts";
-import { ledgerReturnHref, useBalanceText } from "~/components/admin/ledger/ledger-shared";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import {
+  LedgerBackHeader,
+  PaperLoadFailed,
+  useBalanceText,
+} from "~/components/admin/ledger/ledger-shared";
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { Button } from "~/components/ui/button";
 import {
   Sheet,
@@ -37,7 +39,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
-import { Skeleton } from "~/components/ui/skeleton";
 import { useBillGst } from "~/hooks/use-gst";
 import { useBillPaper, type BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
@@ -45,36 +46,15 @@ import { useTranslate } from "~/hooks/use-translate";
 type SheetKind = "cancel" | "note";
 
 function BackLink({ paper }: { paper: BillPaper | null }) {
-  const tx = useTranslate();
   const searchParams = useSearchParams();
-  const fromGst = searchParams.get("from") === "gst";
-  const customerId = paper?.customer?.id;
-  const [href, setHref] = useState(
-    customerId ? `/admin/ledger?customer=${customerId}` : "/admin/ledger",
-  );
-  // Read after mount: the saved Ledger URL lives in this tab's session storage.
-  useEffect(() => setHref(ledgerReturnHref(customerId)), [customerId]);
   // Opened from the GST page's IRN pending list: Back returns there.
-  if (fromGst)
-    return (
-      <Link
-        href="/admin/gst?tab=irn"
-        className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeftIcon className="size-4" />
-        {tx("admin.gst.back")}
-      </Link>
-    );
+  const fromGst = searchParams.get("from") === "gst";
   return (
-    <Link
-      href={href}
-      className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ChevronLeftIcon className="size-4" />
-      {paper?.customer
-        ? tx("admin.ledger.paper.back", { shopName: paper.customer.shopName })
-        : tx("admin.ledger.title")}
-    </Link>
+    <LedgerBackHeader
+      customerId={paper?.customer?.id}
+      shopName={paper?.customer?.shopName}
+      href={fromGst ? "/admin/gst?tab=irn" : undefined}
+    />
   );
 }
 
@@ -122,7 +102,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
         <div className="flex min-w-0 flex-col gap-3">
           <LockNotice paper={paper} />
           {editing && (
-            <p className="rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900">
+            <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
               {tx("admin.ledger.paper.editing", {
                 version: paper.bill.latestVersionNumber,
                 next: paper.bill.latestVersionNumber + 1,
@@ -141,7 +121,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
           <NotesList paper={paper} />
         </div>
         <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
-          <div className="space-y-3 rounded-md border bg-card p-3">
+          <div className="space-y-3 rounded-2xl border bg-card p-3">
             <div>
               <p className="font-mono text-base font-semibold">{paper.bill.number}</p>
               {paper.customer && (
@@ -152,7 +132,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
             {!editing ? (
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
                 <Button
-                  className="col-span-2 lg:col-span-1"
+                  className="col-span-2 rounded-full bg-brand text-brand-foreground hover:bg-brand/90 lg:col-span-1"
                   disabled={!paper.actions.canCorrect}
                   title={offReason(paper, "correct", tx)}
                   onClick={() => setEditing(true)}
@@ -161,6 +141,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 </Button>
                 <Button
                   variant="outline"
+                  className="rounded-full"
                   disabled={!paper.actions.canRaiseNote}
                   onClick={() => setSheet("note")}
                 >
@@ -168,6 +149,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 </Button>
                 <Button
                   variant="outline"
+                  className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={!paper.actions.canCancel}
                   title={offReason(paper, "cancel", tx)}
                   onClick={() => setSheet("cancel")}
@@ -241,32 +223,16 @@ function BillPaperPageContent() {
   const { billId } = useParams<{ billId: string }>();
   const { billPaper, isBillPaperLoading, refetchBillPaper } = useBillPaper({ billId });
 
-  if (isBillPaperLoading) {
-    return (
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4" aria-busy="true">
-        <Skeleton className="h-6 w-48" />
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <Skeleton className="h-[28rem] w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      </div>
-    );
-  }
+  if (isBillPaperLoading) return <DetailPageSkeleton />;
 
   if (!billPaper) {
     return (
       <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-4">
         <BackLink paper={null} />
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertTitle>{tx("admin.ledger.paper.loadError.title")}</AlertTitle>
-          <AlertDescription>
-            <p>{tx("admin.ledger.paper.loadError.body")}</p>
-            <Button size="sm" variant="outline" className="mt-2" onClick={() => refetchBillPaper()}>
-              {tx("common.actions.tryAgain")}
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <PaperLoadFailed
+          message={tx("admin.ledger.paper.loadError.title")}
+          onRetry={() => void refetchBillPaper()}
+        />
       </div>
     );
   }
@@ -279,7 +245,7 @@ function BillPaperPageContent() {
 
 export default function AdminBillPaperPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DetailPageSkeleton />}>
       <BillPaperPageContent />
     </Suspense>
   );

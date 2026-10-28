@@ -5,6 +5,7 @@ import { ReceiptTextIcon } from "lucide-react";
 
 import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { Button } from "~/components/ui/button";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
@@ -64,13 +65,15 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
           {bill.cancelled && <OrderStatusBadge status="cancelled" />}
           {bill.orderId ? (
             onOpenOrder && (
-              <button
+              <Button
                 type="button"
-                className="text-xs text-brand underline-offset-2 hover:underline"
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs text-brand"
                 onClick={() => bill.orderId && onOpenOrder(bill.orderId)}
               >
                 {tx("admin.bills.openOrder")}
-              </button>
+              </Button>
             )
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">

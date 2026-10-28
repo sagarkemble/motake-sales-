@@ -41,7 +41,10 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
       z.object({
         name: z.string().min(1, tx("admin.salesmen.validation.name")).max(120),
         phone: z.string().min(1, tx("admin.salesmen.validation.phone")).max(20),
-        email: z.string().min(1, tx("admin.salesmen.validation.email")).email(tx("admin.salesmen.validation.emailInvalid")),
+        email: z
+          .string()
+          .min(1, tx("admin.salesmen.validation.email"))
+          .email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.string().min(minPasswordLength, tx("admin.salesmen.validation.passwordMin")),
         salesmanCode: z.string().min(1, tx("admin.salesmen.validation.code")).max(32),
       }),
@@ -68,9 +71,13 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{tx("common.fields.name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Full name" {...field} />
+                  <Input
+                    placeholder={tx("admin.salesmen.form.namePlaceholder")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -82,9 +89,13 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>{tx("admin.salesmen.form.phone")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="common.fields.phone" {...field} />
+                  <Input
+                    placeholder={tx("common.fields.phone")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -96,9 +107,14 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{tx("common.fields.email")}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Email address" {...field} />
+                  <Input
+                    type="email"
+                    placeholder={tx("admin.salesmen.form.emailPlaceholder")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -113,13 +129,23 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
               const showRemainingCharactersHint = field.value.length > 0 && remainingCharacters > 0;
               return (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{tx("common.fields.password")}</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="At least 8 characters" {...field} />
+                    <Input
+                      type="password"
+                      placeholder={tx("admin.salesmen.form.passwordPlaceholder")}
+                      className="rounded-xl bg-muted/40"
+                      {...field}
+                    />
                   </FormControl>
                   {showRemainingCharactersHint && (
                     <p className="text-xs text-muted-foreground">
-                      {remainingCharacters} more character{remainingCharacters === 1 ? "" : "s"} needed
+                      {tx(
+                        remainingCharacters === 1
+                          ? "admin.salesmen.form.moreCharsOne"
+                          : "admin.salesmen.form.moreCharsOther",
+                        { count: remainingCharacters },
+                      )}
                     </p>
                   )}
                   <FormMessage />
@@ -133,9 +159,13 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
             name="salesmanCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Salesman code</FormLabel>
+                <FormLabel>{tx("account.profile.salesmanCode")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Unique code" {...field} />
+                  <Input
+                    placeholder={tx("admin.salesmen.form.codePlaceholder")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -148,7 +178,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
           disabled={isSubmitting}
           className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {submitLabel}
+          {isSubmitting ? tx("common.status.pleaseWait") : submitLabel}
         </Button>
       </form>
     </Form>

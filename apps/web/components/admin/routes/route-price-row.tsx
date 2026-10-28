@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge } from "~/components/ui/badge";
+import { StatusBadge } from "~/components/admin/products/status-badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -129,11 +129,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <p className="text-sm font-medium">{variety.varietyName}</p>
-          {!variety.varietyActive && (
-            <Badge variant="secondary" className="h-4 rounded-full px-1.5 text-[10px]">
-              {tx("common.status.inactive")}
-            </Badge>
-          )}
+          {!variety.varietyActive && <StatusBadge status="inactive" />}
         </div>
         <p className="font-mono text-[11px] text-muted-foreground">
           {variety.sku} · {variety.unit}
@@ -190,8 +186,10 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
             </Button>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">₹</span>
+        <div className="relative">
+          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
+            ₹
+          </span>
           <Input
             ref={priceInputRef}
             id={priceInputId}
@@ -216,7 +214,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
               if (event.key === "Enter" && isEdited) handleSaveClick();
               if (event.key === "Escape" && isEdited) handleCancelClick();
             }}
-            className="text-right"
+            className="rounded-xl bg-muted/40 pl-7 text-right"
           />
         </div>
         {errorMessage ? (

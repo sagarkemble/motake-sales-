@@ -37,7 +37,7 @@ function OpeningPaperPageContent() {
 
 export default function AdminOpeningPaperPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PaperSkeleton />}>
       <OpeningPaperPageContent />
     </Suspense>
   );

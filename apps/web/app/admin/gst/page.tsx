@@ -56,9 +56,17 @@ function GstPageContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="font-display text-2xl">{tx("admin.gst.title")}</h1>
-        <Button size="sm" disabled={isFilingsLoading} onClick={() => setTarget("new")}>
+      <div className="flex items-center justify-end gap-2 md:justify-between">
+        {/* The phone navbar already names the page. */}
+        <h1 className="sr-only md:not-sr-only md:text-base md:font-semibold">
+          {tx("admin.gst.title")}
+        </h1>
+        <Button
+          size="sm"
+          disabled={isFilingsLoading}
+          onClick={() => setTarget("new")}
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
           <PlusIcon className="size-4" />
           {tx("admin.gst.recordFiling")}
         </Button>
@@ -119,7 +127,13 @@ function GstPageContent() {
 
 export default function AdminGstPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="mx-auto w-full max-w-5xl px-4 py-4">
+          <GstSkeleton />
+        </div>
+      }
+    >
       <GstPageContent />
     </Suspense>
   );

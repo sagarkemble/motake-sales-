@@ -129,7 +129,10 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     <div className="flex min-h-0 flex-1 flex-col gap-5">
       <header className="flex shrink-0 flex-col gap-4">
         {isHidden && (
-          <Badge variant="outline" className="w-fit border-dashed text-muted-foreground">
+          <Badge
+            variant="outline"
+            className="w-fit border-transparent bg-destructive/10 text-destructive"
+          >
             {tx("admin.routes.deleted")}
           </Badge>
         )}

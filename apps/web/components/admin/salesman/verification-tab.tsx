@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { getErrorMessage } from "~/lib/get-error-message";
 import { sumGatepassQuantities } from "~/lib/gatepass-quantities";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -81,11 +82,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
       await verifyGatepassAsync({ id: pendingGatepass.id });
       toast.success(tx("admin.salesmen.verify.approved"));
     } catch (verifyError) {
-      const errorMessage =
-        verifyError instanceof Error
-          ? verifyError.message
-          : tx("admin.salesmen.verify.closeFailed");
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(verifyError, tx("admin.salesmen.verify.closeFailed")));
     }
   }
 
@@ -99,9 +96,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
       setIsFlagOpen(false);
       setFlagReason("");
     } catch (flagError) {
-      const errorMessage =
-        flagError instanceof Error ? flagError.message : tx("admin.salesmen.verify.flagFailed");
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(flagError, tx("admin.salesmen.verify.flagFailed")));
     }
   }
 
@@ -144,7 +139,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
           variant="outline"
           disabled={isVerifyingGatepass || isFlaggingGatepass}
           onClick={() => setIsFlagOpen(true)}
-          className="flex-1 rounded-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
+          className="flex-1 rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
           {tx("admin.salesmen.verify.flagCta")}
         </Button>
@@ -171,7 +166,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
             value={flagReason}
             onChange={(event) => setFlagReason(event.target.value)}
             placeholder={tx("admin.salesmen.verify.flagPlaceholder")}
-            className="resize-none rounded-xl text-sm"
+            className="resize-none rounded-xl bg-muted/40 text-sm"
           />
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isFlaggingGatepass}>
@@ -183,7 +178,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
                 event.preventDefault();
                 void handleFlagDiscrepancy();
               }}
-              className="bg-amber-600 hover:bg-amber-600/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               {isFlaggingGatepass
                 ? tx("admin.salesmen.verify.flagging")

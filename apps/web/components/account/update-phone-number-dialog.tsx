@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -124,7 +123,9 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
           <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone-update-passcode">{tx("auth.otp.codeLabel")}</Label>
-              <p className="text-sm text-muted-foreground">Sent to +91 {contactValue}</p>
+              <p className="text-sm text-muted-foreground">
+                {tx("auth.otp.sentTo", { phone: contactValue })}
+              </p>
               <InputOTP
                 id="phone-update-passcode"
                 maxLength={6}
@@ -132,14 +133,14 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
                 onChange={setPasscode}
                 autoComplete="one-time-code"
                 inputMode="numeric"
-                containerClassName="justify-between"
+                containerClassName="w-full"
               >
                 <InputOTPGroup className="w-full justify-between">
                   {Array.from({ length: 6 }, (_, slotIndex) => (
                     <InputOTPSlot
                       key={slotIndex}
                       index={slotIndex}
-                      className="h-12 w-12 text-base"
+                      className="h-12 w-auto min-w-0 flex-1 text-base"
                     />
                   ))}
                 </InputOTPGroup>
@@ -155,35 +156,38 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
             <Button
               type="submit"
               disabled={isVerifying || passcode.length < 6}
-              className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
+              className="h-10 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
             >
-              {isVerifying ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              {tx("account.phone.verifyCta")}
+              {isVerifying ? tx("common.status.pleaseWait") : tx("account.phone.verifyCta")}
             </Button>
 
             <div className="flex items-center justify-between text-sm">
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={goToContactStep}
-                className="text-muted-foreground hover:text-foreground"
+                className="h-auto p-0 text-muted-foreground hover:text-foreground"
               >
                 {tx("auth.otp.changeNumber")}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="link"
                 disabled={cooldownSeconds > 0 || isSending}
                 onClick={() => void sendPasscode()}
-                className="text-brand disabled:text-muted-foreground disabled:opacity-60"
+                className="h-auto p-0 text-brand disabled:text-muted-foreground"
               >
-                {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("auth.otp.resend")}
-              </button>
+                {cooldownSeconds > 0
+                  ? tx("auth.otp.resendIn", { seconds: cooldownSeconds })
+                  : tx("auth.otp.resend")}
+              </Button>
             </div>
           </form>
         ) : (
           <form onSubmit={handleSendPasscode} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone-update-contact">{tx("account.phone.newLabel")}</Label>
-              <div className="flex h-10 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
+              <div className="flex h-10 items-center rounded-xl border border-input bg-muted/40 pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
                 <span className="text-sm text-muted-foreground">+91</span>
                 <Input
                   id="phone-update-contact"
@@ -196,7 +200,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
                     setContactValue(event.target.value.replace(/\D/g, "").slice(0, 10))
                   }
                   required
-                  className="h-10 border-none pl-2 shadow-none focus-visible:ring-0"
+                  className="h-10 border-none bg-transparent pl-2 shadow-none focus-visible:ring-0"
                 />
               </div>
             </div>
@@ -210,10 +214,9 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
             <Button
               type="submit"
               disabled={isSending || contactValue.trim().length < 10}
-              className="h-10 bg-brand text-brand-foreground hover:bg-brand/90"
+              className="h-10 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
             >
-              {isSending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              {tx("auth.otp.sendCta")}
+              {isSending ? tx("common.status.pleaseWait") : tx("auth.otp.sendCta")}
             </Button>
           </form>
         )}

@@ -45,9 +45,9 @@ function isAddedRow(row: LedgerRow, added: MoneyAdded | null | undefined) {
   return false;
 }
 
-const HIGHLIGHT = "bg-emerald-50 dark:bg-emerald-950/40";
+const HIGHLIGHT = "bg-brand/5";
 
-/** The Ledger rows: a table from `sm` up, one card per row on phones. */
+/** The Ledger rows: a table from `md` up, one card per row on phones. */
 export function LedgerTable({
   rows,
   customerId,
@@ -86,7 +86,10 @@ export function LedgerTable({
     <>
       {tx(`admin.ledger.rowTypes.${row.rowType}`)}
       {row.cancelled && (
-        <Badge variant="outline" className="ml-2">
+        <Badge
+          variant="outline"
+          className="ml-2 border-transparent bg-destructive/10 text-destructive"
+        >
           {tx("admin.ledger.cancelled")}
         </Badge>
       )}
@@ -95,7 +98,7 @@ export function LedgerTable({
 
   return (
     <>
-      <div ref={tableRef} className="hidden sm:block">
+      <div ref={tableRef} className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -151,17 +154,20 @@ export function LedgerTable({
           </TableBody>
         </Table>
       </div>
-      <ul ref={listRef} className="divide-y sm:hidden">
+      <ul ref={listRef} className="flex flex-col gap-2 p-3 md:hidden">
         {rows.map((row) => (
           <li
             key={row.id}
             data-row-id={row.id}
-            className={cn(row.id === highlightedId && HIGHLIGHT)}
+            className={cn(
+              "overflow-hidden rounded-2xl border bg-card",
+              row.id === highlightedId && HIGHLIGHT,
+            )}
           >
             <button
               type="button"
               disabled={openHref(row, customerId) === null}
-              className="flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left disabled:cursor-default"
+              className="flex w-full items-start justify-between gap-3 p-3 text-left transition-colors hover:bg-accent/50 disabled:cursor-default disabled:hover:bg-transparent"
               onClick={() => open(row)}
             >
               <span className="min-w-0">
@@ -180,7 +186,7 @@ export function LedgerTable({
                     {tx("admin.ledger.dr")} {formatPaise(row.debitPaise)}
                   </span>
                 ) : (
-                  <span className="text-emerald-700 dark:text-emerald-400">
+                  <span className="text-brand">
                     {tx("admin.ledger.cr")} {formatPaise(row.creditPaise ?? 0)}
                   </span>
                 )}

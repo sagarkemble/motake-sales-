@@ -1,9 +1,11 @@
 "use client";
 
-import { AlertCircleIcon, ChevronDownIcon, PlusIcon, ReceiptIcon } from "lucide-react";
+import { AlertCircleIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { DatePicker } from "~/components/shared/date-picker";
+import { TableRowsSkeleton } from "~/components/shared/table-rows-skeleton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -15,15 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "~/components/ui/empty";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -32,13 +25,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Skeleton } from "~/components/ui/skeleton";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import type { LedgerRowType, LedgerSummary, OpenPreorder } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 
-import { LEDGER_ROW_TYPES, NOTE_KINDS, businessToday, useBalanceText } from "./ledger-shared";
+import {
+  DUE_CHIP,
+  LEDGER_ROW_TYPES,
+  NOTE_KINDS,
+  businessToday,
+  useBalanceText,
+} from "./ledger-shared";
 
 export interface LedgerFilters {
   types: LedgerRowType[];
@@ -138,27 +137,33 @@ export function FilterFields({
           </SelectContent>
         </Select>
       </div>
-      <Label className="flex min-w-0 flex-col items-start gap-1 text-xs font-normal text-muted-foreground sm:flex-row sm:items-center">
-        {tx("admin.ledger.filters.from")}
-        <Input
-          type="date"
+      <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center">
+        <Label htmlFor="ledger-filter-from" className="text-xs font-normal text-muted-foreground">
+          {tx("admin.ledger.filters.from")}
+        </Label>
+        <DatePicker
+          id="ledger-filter-from"
           value={filters.from}
           max={filters.to || today}
-          onChange={(event) => onChange({ ...filters, from: event.target.value })}
-          className="h-8 w-full min-w-0 text-sm sm:w-40"
+          clearable
+          onChange={(from) => onChange({ ...filters, from })}
+          className="w-full min-w-0 sm:w-44"
         />
-      </Label>
-      <Label className="flex min-w-0 flex-col items-start gap-1 text-xs font-normal text-muted-foreground sm:flex-row sm:items-center">
-        {tx("admin.ledger.filters.to")}
-        <Input
-          type="date"
+      </div>
+      <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center">
+        <Label htmlFor="ledger-filter-to" className="text-xs font-normal text-muted-foreground">
+          {tx("admin.ledger.filters.to")}
+        </Label>
+        <DatePicker
+          id="ledger-filter-to"
           value={filters.to}
           min={filters.from || undefined}
           max={today}
-          onChange={(event) => onChange({ ...filters, to: event.target.value })}
-          className="h-8 w-full min-w-0 text-sm sm:w-40"
+          clearable
+          onChange={(to) => onChange({ ...filters, to })}
+          className="w-full min-w-0 sm:w-44"
         />
-      </Label>
+      </div>
       {filtersActive(filters) && (
         <Button
           variant="ghost"
@@ -214,19 +219,13 @@ export function LedgerFooter({ summary }: { summary: LedgerSummary }) {
   );
 }
 
-const DUE_BADGE = {
-  overdue: "destructive",
-  due: "default",
-  upcoming: "secondary",
-} as const;
-
 export function PreorderItem({ preorder }: { preorder: OpenPreorder }) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   return (
     <Link
       href={`/admin/ledger/pre-orders/${preorder.id}`}
-      className="flex items-start justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm hover:border-brand/40"
+      className="flex items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-sm transition-colors hover:bg-accent/50"
     >
       <div className="min-w-0">
         <p className="font-medium">
@@ -243,7 +242,7 @@ export function PreorderItem({ preorder }: { preorder: OpenPreorder }) {
           </p>
         )}
       </div>
-      <Badge variant={DUE_BADGE[preorder.dueState]}>
+      <Badge variant="outline" className={cn("shrink-0", DUE_CHIP[preorder.dueState])}>
         {tx(`admin.ledger.preorders.due.${preorder.dueState}`)}
       </Badge>
     </Link>
@@ -274,7 +273,7 @@ export function AddMenu({
           size="sm"
           disabled={inactive}
           title={inactive ? tx("admin.ledger.inactive.body") : undefined}
-          className="bg-brand text-brand-foreground hover:bg-brand/90"
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
           <PlusIcon className="size-4" />
           {tx("admin.ledger.add.button")}
@@ -328,11 +327,17 @@ export function InactiveBanner() {
   );
 }
 
+const BALANCE_CHIP = {
+  pending: "border-transparent bg-amber-500/10 text-amber-700",
+  advance: "border-transparent bg-brand/10 text-brand",
+  settled: "border-transparent bg-muted text-muted-foreground",
+} as const;
+
 export function BalanceChip({ summary }: { summary: LedgerSummary }) {
   const balanceText = useBalanceText();
   const closing = summary.footer.closing;
   return (
-    <Badge variant={closing.state === "pending" ? "default" : "secondary"} className="tabular-nums">
+    <Badge variant="outline" className={cn("tabular-nums", BALANCE_CHIP[closing.state])}>
       {balanceText(closing)}
     </Badge>
   );
@@ -341,12 +346,8 @@ export function BalanceChip({ summary }: { summary: LedgerSummary }) {
 export function LedgerSkeleton({ rows = 8 }: { rows?: number }) {
   const tx = useTranslate();
   return (
-    <div className="space-y-2 p-3" aria-busy="true" aria-label={tx("common.status.loading")}>
-      <Skeleton className="h-8 w-full" />
-      {Array.from({ length: rows }, (_, index) => (
-        <Skeleton key={index} className="h-7 w-full" />
-      ))}
-      <Skeleton className="ml-auto h-20 w-full max-w-lg" />
+    <div aria-busy="true" aria-label={tx("common.status.loading")}>
+      <TableRowsSkeleton rows={rows} columns={4} />
     </div>
   );
 }
@@ -354,17 +355,11 @@ export function LedgerSkeleton({ rows = 8 }: { rows?: number }) {
 export function LedgerError({ onRetry }: { onRetry: () => void }) {
   const tx = useTranslate();
   return (
-    <div className="p-3">
-      <Alert variant="destructive">
-        <AlertCircleIcon />
-        <AlertTitle>{tx("admin.ledger.loadError.title")}</AlertTitle>
-        <AlertDescription>
-          <p>{tx("admin.ledger.loadError.body")}</p>
-          <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-            {tx("common.actions.tryAgain")}
-          </Button>
-        </AlertDescription>
-      </Alert>
+    <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+      <p className="text-sm text-muted-foreground">{tx("admin.ledger.loadError.title")}</p>
+      <Button type="button" variant="outline" className="rounded-full" onClick={onRetry}>
+        {tx("common.actions.tryAgain")}
+      </Button>
     </div>
   );
 }
@@ -384,38 +379,37 @@ export function LedgerEmpty({
 }) {
   const tx = useTranslate();
   return (
-    <Empty className="py-10">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <ReceiptIcon />
-        </EmptyMedia>
-        <EmptyTitle>
+    <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+      <div>
+        <p className="text-sm font-medium">
           {filtered ? tx("admin.ledger.empty.filteredTitle") : tx("admin.ledger.empty.title")}
-        </EmptyTitle>
-        <EmptyDescription>
+        </p>
+        <p className="text-sm text-muted-foreground">
           {filtered ? tx("admin.ledger.empty.filteredBody") : tx("admin.ledger.empty.body")}
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        {filtered ? (
-          <Button size="sm" variant="outline" onClick={onClear}>
-            {tx("admin.ledger.filters.clear")}
-          </Button>
-        ) : (
-          canAdd && (
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button size="sm" onClick={onOpening}>
-                {tx("admin.ledger.empty.addOpening")}
-              </Button>
-              <Button size="sm" variant="outline" asChild>
-                <Link href={`/admin/ledger/raise-bill?customer=${customerId}`}>
-                  {tx("admin.ledger.add.raiseBill")}
-                </Link>
-              </Button>
-            </div>
-          )
-        )}
-      </EmptyContent>
-    </Empty>
+        </p>
+      </div>
+      {filtered ? (
+        <Button size="sm" variant="outline" className="rounded-full" onClick={onClear}>
+          {tx("admin.ledger.filters.clear")}
+        </Button>
+      ) : (
+        canAdd && (
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button
+              size="sm"
+              className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+              onClick={onOpening}
+            >
+              {tx("admin.ledger.empty.addOpening")}
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-full" asChild>
+              <Link href={`/admin/ledger/raise-bill?customer=${customerId}`}>
+                {tx("admin.ledger.add.raiseBill")}
+              </Link>
+            </Button>
+          </div>
+        )
+      )}
+    </div>
   );
 }

@@ -116,7 +116,12 @@ function SettingsHistoryContent({ subject }: { subject: SettingsHistorySubject }
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {tx("admin.settings.history.loadFailed")}
-        <Button variant="outline" size="sm" onClick={() => void refetchHistory()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => void refetchHistory()}
+        >
           {tx("common.actions.tryAgain")}
         </Button>
       </div>

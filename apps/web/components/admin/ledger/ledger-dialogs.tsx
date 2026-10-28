@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DatePicker } from "~/components/shared/date-picker";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
 import { useBills } from "~/hooks/use-bills";
@@ -98,96 +100,115 @@ export function OpeningBalanceDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{tx("admin.ledger.opening.title")}</DialogTitle>
-          <DialogDescription>
-            {tx("admin.ledger.opening.description", { shopName })}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4">
-          <RadioGroup
-            value={side}
-            onValueChange={(value) => setSide(value as OpeningSide)}
-            className="grid grid-cols-2 gap-2"
-          >
-            {(["pending", "advance"] as const).map((value) => (
-              <Label
-                key={value}
-                className="flex cursor-pointer items-start gap-2 rounded-md border p-3 font-normal has-[[data-state=checked]]:border-brand"
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-md">
+        {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+        <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          <div className="flex flex-col gap-4 p-6">
+            <DialogHeader>
+              <DialogTitle>{tx("admin.ledger.opening.title")}</DialogTitle>
+              <DialogDescription>
+                {tx("admin.ledger.opening.description", { shopName })}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <RadioGroup
+                value={side}
+                onValueChange={(value) => setSide(value as OpeningSide)}
+                className="grid grid-cols-2 gap-2"
               >
-                <RadioGroupItem value={value} className="mt-0.5" />
-                <span>
-                  <span className="block font-medium">{tx(`admin.ledger.opening.${value}`)}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {tx(`admin.ledger.opening.${value}Hint`)}
-                  </span>
-                </span>
-              </Label>
-            ))}
-          </RadioGroup>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="opening-amount">{tx("admin.ledger.opening.amount")}</Label>
-              <Input
-                id="opening-amount"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={amount}
-                onChange={(event) => setAmount(keepRupeeInputCharacters(event.target.value))}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="opening-date">{tx("admin.ledger.opening.date")}</Label>
-              <Input
-                id="opening-date"
-                type="date"
-                max={today}
-                value={openingDate}
-                onChange={(event) => setOpeningDate(event.target.value)}
-                aria-invalid={!dateValid}
-              />
-              <p
-                className={dateValid ? "text-xs text-muted-foreground" : "text-xs text-destructive"}
-              >
-                {dateValid
-                  ? tx("admin.ledger.opening.dateHint")
-                  : tx("admin.ledger.refusals.opening_date_in_future")}
+                {(["pending", "advance"] as const).map((value) => (
+                  <Label
+                    key={value}
+                    className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent/50"
+                  >
+                    <RadioGroupItem value={value} className="mt-0.5" />
+                    <span>
+                      <span className="block font-medium">
+                        {tx(`admin.ledger.opening.${value}`)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {tx(`admin.ledger.opening.${value}Hint`)}
+                      </span>
+                    </span>
+                  </Label>
+                ))}
+              </RadioGroup>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="opening-amount">{tx("admin.ledger.opening.amount")}</Label>
+                  <Input
+                    id="opening-amount"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(event) => setAmount(keepRupeeInputCharacters(event.target.value))}
+                    className="rounded-xl bg-muted/40"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="opening-date">{tx("admin.ledger.opening.date")}</Label>
+                  <DatePicker
+                    id="opening-date"
+                    max={today}
+                    value={openingDate}
+                    onChange={setOpeningDate}
+                  />
+                  <p
+                    className={
+                      dateValid ? "text-xs text-muted-foreground" : "text-xs text-destructive"
+                    }
+                  >
+                    {dateValid
+                      ? tx("admin.ledger.opening.dateHint")
+                      : tx("admin.ledger.refusals.opening_date_in_future")}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="opening-reason">{tx("admin.ledger.opening.reason")}</Label>
+                <Textarea
+                  id="opening-reason"
+                  maxLength={MAX_REASON_LENGTH}
+                  placeholder={tx("admin.ledger.opening.reasonPlaceholder")}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  className="rounded-xl bg-muted/40"
+                />
+              </div>
+              <p className="text-sm">
+                {tx("admin.ledger.opening.preview", {
+                  side: tx(
+                    side === "pending"
+                      ? "admin.ledger.columns.debit"
+                      : "admin.ledger.columns.credit",
+                  ),
+                  amount: amountPaise === null ? "—" : formatPaise(amountPaise),
+                  date: dateValid ? formatDate(openingDate, "d MMM yyyy") : "—",
+                })}
               </p>
+              {refusal && <RefusalAlert message={refusal} />}
             </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => onOpenChange(false)}
+              >
+                {tx("common.actions.cancel")}
+              </Button>
+              <Button
+                disabled={!valid || isAddingOpeningBalance}
+                onClick={handleSubmit}
+                className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+              >
+                {isAddingOpeningBalance && <Spinner />}
+                {isAddingOpeningBalance
+                  ? tx("admin.ledger.opening.submitting")
+                  : tx("admin.ledger.opening.submit")}
+              </Button>
+            </DialogFooter>
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="opening-reason">{tx("admin.ledger.opening.reason")}</Label>
-            <Textarea
-              id="opening-reason"
-              maxLength={MAX_REASON_LENGTH}
-              placeholder={tx("admin.ledger.opening.reasonPlaceholder")}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          </div>
-          <p className="text-sm">
-            {tx("admin.ledger.opening.preview", {
-              side: tx(
-                side === "pending" ? "admin.ledger.columns.debit" : "admin.ledger.columns.credit",
-              ),
-              amount: amountPaise === null ? "—" : formatPaise(amountPaise),
-              date: dateValid ? formatDate(openingDate, "d MMM yyyy") : "—",
-            })}
-          </p>
-          {refusal && <RefusalAlert message={refusal} />}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {tx("admin.ledger.close")}
-          </Button>
-          <Button disabled={!valid || isAddingOpeningBalance} onClick={handleSubmit}>
-            {isAddingOpeningBalance && <Spinner />}
-            {isAddingOpeningBalance
-              ? tx("admin.ledger.opening.submitting")
-              : tx("admin.ledger.opening.submit")}
-          </Button>
-        </DialogFooter>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -223,7 +244,7 @@ export function PickBillForNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="rounded-2xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{tx("admin.ledger.pickBill.title")}</DialogTitle>
           <DialogDescription>
@@ -241,7 +262,7 @@ export function PickBillForNoteDialog({
           <div className="grid gap-1.5">
             <Label htmlFor="note-bill">{tx("admin.ledger.pickBill.label")}</Label>
             <Select value={billId} onValueChange={setBillId}>
-              <SelectTrigger id="note-bill" className="w-full">
+              <SelectTrigger id="note-bill" className="w-full rounded-xl bg-muted/40">
                 <SelectValue
                   placeholder={
                     isBillsListLoading
@@ -262,17 +283,22 @@ export function PickBillForNoteDialog({
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            {tx("admin.ledger.close")}
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => handleOpenChange(false)}
+          >
+            {tx("common.actions.cancel")}
           </Button>
           {isBillsListError && (
-            <Button variant="outline" onClick={() => refetchBillsList()}>
+            <Button variant="outline" className="rounded-full" onClick={() => refetchBillsList()}>
               {tx("common.actions.tryAgain")}
             </Button>
           )}
           <Button
             disabled={!billId}
             onClick={() => router.push(`/admin/ledger/bills/${billId}?action=note`)}
+            className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
             {tx("admin.ledger.pickBill.open")}
           </Button>

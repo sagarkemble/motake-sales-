@@ -123,10 +123,14 @@ function CorrectFooter({
   const tx = useTranslate();
   return (
     <DialogFooter>
-      <Button variant="outline" disabled={busy} onClick={onClose}>
-        {tx("admin.ledger.close")}
+      <Button variant="outline" className="rounded-full" disabled={busy} onClick={onClose}>
+        {tx("common.actions.cancel")}
       </Button>
-      <Button disabled={disabled || busy} onClick={onSubmit}>
+      <Button
+        disabled={disabled || busy}
+        onClick={onSubmit}
+        className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+      >
         {busy && <Spinner />}
         {busy ? tx("admin.ledger.saving") : tx("admin.ledger.money.correct.submit")}
       </Button>
@@ -211,6 +215,12 @@ export function CorrectPaymentForm({
 
   return (
     <div className="grid gap-4">
+      <ModeField
+        id="correct-payment-mode"
+        value={fields.mode}
+        onChange={fields.setMode}
+        disabled={isCorrectingPayment}
+      />
       <AmountField
         id="correct-payment-kept"
         label={tx("admin.ledger.money.addPayment.kept")}
@@ -225,12 +235,6 @@ export function CorrectPaymentForm({
               })
             : tx("admin.ledger.money.correct.keptZeroHint")
         }
-      />
-      <ModeField
-        id="correct-payment-mode"
-        value={fields.mode}
-        onChange={fields.setMode}
-        disabled={isCorrectingPayment}
       />
       <ReferenceField
         id="correct-payment-reference"
@@ -350,6 +354,12 @@ export function CorrectRefundForm({
 
   return (
     <div className="grid gap-4">
+      <ModeField
+        id="correct-refund-mode"
+        value={fields.mode}
+        onChange={fields.setMode}
+        disabled={isCorrectingRefund}
+      />
       <AmountField
         id="correct-refund-amount"
         label={tx("admin.ledger.money.addRefund.amount")}
@@ -362,12 +372,6 @@ export function CorrectRefundForm({
           amount: formatPaise(refund.amountPaise),
           advance: formatPaise(advancePaise),
         })}
-      />
-      <ModeField
-        id="correct-refund-mode"
-        value={fields.mode}
-        onChange={fields.setMode}
-        disabled={isCorrectingRefund}
       />
       <ReferenceField
         id="correct-refund-reference"

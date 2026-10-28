@@ -1,18 +1,19 @@
 "use client";
 
-import { AlertCircleIcon, ChevronLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import {
+  DUE_CHIP,
+  LedgerBackHeader,
+  PaperLoadFailed,
   ReasonField,
   RefusalAlert,
-  ledgerReturnHref,
 } from "~/components/admin/ledger/ledger-shared";
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,7 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
 import { useBillPaper } from "~/hooks/use-ledger";
 import { useFormatDate } from "~/hooks/use-format-date";
@@ -31,8 +31,7 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage } from "~/lib/refusal";
-
-const DUE_BADGE = { overdue: "destructive", due: "default", upcoming: "secondary" } as const;
+import { cn } from "~/lib/utils";
 
 export default function AdminPreOrderPaperPage() {
   const tx = useTranslate();
@@ -45,8 +44,6 @@ export default function AdminPreOrderPaperPage() {
   const [reason, setReason] = useState("");
   const [refusal, setRefusal] = useState<string | null>(null);
   const customerId = preOrderPaper?.customer.id;
-  const [backHref, setBackHref] = useState("/admin/ledger");
-  useEffect(() => setBackHref(ledgerReturnHref(customerId)), [customerId]);
 
   async function handleCancel() {
     if (reason.trim() === "" || isCancellingOrder) return;
@@ -62,44 +59,19 @@ export default function AdminPreOrderPaperPage() {
   }
 
   const back = (
-    <Link
-      href={backHref}
-      className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ChevronLeftIcon className="size-4" />
-      {preOrderPaper
-        ? tx("admin.ledger.paper.back", { shopName: preOrderPaper.customer.shopName })
-        : tx("admin.ledger.title")}
-    </Link>
+    <LedgerBackHeader customerId={customerId} shopName={preOrderPaper?.customer.shopName} />
   );
 
-  if (isPreOrderPaperLoading) {
-    return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-4" aria-busy="true">
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+  if (isPreOrderPaperLoading) return <DetailPageSkeleton />;
 
   if (!preOrderPaper) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-4">
         {back}
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertTitle>{tx("admin.ledger.preorder.loadError")}</AlertTitle>
-          <AlertDescription>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2"
-              onClick={() => refetchPreOrderPaper()}
-            >
-              {tx("common.actions.tryAgain")}
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <PaperLoadFailed
+          message={tx("admin.ledger.preorder.loadError")}
+          onRetry={() => void refetchPreOrderPaper()}
+        />
       </div>
     );
   }
@@ -110,14 +82,14 @@ export default function AdminPreOrderPaperPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-4">
       {back}
-      <div className="rounded-md border bg-card p-4">
+      <div className="rounded-2xl border bg-card p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-lg font-semibold">
+            <h2 className="text-base font-semibold">
               {tx("admin.ledger.preorder.title", {
                 date: formatDate(order.scheduledDate, "d MMM yyyy"),
               })}
-            </p>
+            </h2>
             <p className="text-xs text-muted-foreground">
               {preOrderPaper.placedByName &&
                 `${tx("admin.ledger.preorder.placedBy", { name: preOrderPaper.placedByName })} · `}
@@ -125,7 +97,7 @@ export default function AdminPreOrderPaperPage() {
             </p>
           </div>
           {open ? (
-            <Badge variant={DUE_BADGE[order.dueState]}>
+            <Badge variant="outline" className={cn("shrink-0", DUE_CHIP[order.dueState])}>
               {tx(`admin.ledger.preorders.due.${order.dueState}`)}
             </Badge>
           ) : (
@@ -158,7 +130,7 @@ export default function AdminPreOrderPaperPage() {
           </p>
         )}
         {preOrderPaper.bill && (
-          <Button size="sm" variant="outline" className="mt-3" asChild>
+          <Button size="sm" variant="outline" className="mt-3 rounded-full" asChild>
             <Link href={`/admin/ledger/bills/${preOrderPaper.bill.id}`}>
               {tx("admin.ledger.preorder.openBill", { number: preOrderPaper.bill.number })}
             </Link>
@@ -166,14 +138,18 @@ export default function AdminPreOrderPaperPage() {
         )}
         {preOrderPaper.actions.canCancel && (
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => setCancelOpen(true)}>
+            <Button
+              variant="outline"
+              className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setCancelOpen(true)}
+            >
               {tx("admin.ledger.preorder.cancel")}
             </Button>
           </div>
         )}
       </div>
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{tx("admin.ledger.preorder.cancel")}</DialogTitle>
             <DialogDescription>{tx("admin.ledger.preorder.cancelBody")}</DialogDescription>
@@ -189,13 +165,15 @@ export default function AdminPreOrderPaperPage() {
           <DialogFooter>
             <Button
               variant="outline"
+              className="rounded-full"
               disabled={isCancellingOrder}
               onClick={() => setCancelOpen(false)}
             >
-              {tx("admin.ledger.close")}
+              {tx("common.actions.cancel")}
             </Button>
             <Button
               variant="destructive"
+              className="rounded-full"
               disabled={reason.trim() === "" || isCancellingOrder}
               onClick={handleCancel}
             >

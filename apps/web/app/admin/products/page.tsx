@@ -8,6 +8,8 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { StatusBadge } from "~/components/admin/products/status-badge";
+import { Badge } from "~/components/ui/badge";
+import { ListPager } from "~/components/shared/list-pager";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
@@ -29,7 +31,7 @@ function ProductsPageContent() {
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search products..."
+            placeholder={tx("admin.products.searchPlaceholder")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="rounded-full bg-muted/40 pl-9 pr-9"
@@ -39,7 +41,7 @@ function ProductsPageContent() {
               type="button"
               aria-label={tx("common.actions.clearSearch")}
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground"
             >
               <XIcon className="size-4" />
             </button>
@@ -63,7 +65,7 @@ function ProductsPageContent() {
             onCheckedChange={(checked) => setIncludeDeleted(checked === true)}
             className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
-          Show deleted products
+          {tx("admin.products.showDeleted")}
         </label>
       </div>
 
@@ -73,7 +75,7 @@ function ProductsPageContent() {
         ) : productsPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {debouncedSearchTerm
-              ? `No products match "${debouncedSearchTerm}"`
+              ? tx("admin.products.noMatch", { term: debouncedSearchTerm })
               : tx("admin.products.empty")}
           </p>
         ) : (
@@ -83,7 +85,7 @@ function ProductsPageContent() {
             return (
               <div
                 key={product.id}
-                className={`flex flex-col gap-2.5 rounded-3xl border bg-card p-3 shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
+                className={`flex flex-col gap-2.5 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50 ${
                   product.deletedAt ? "opacity-60" : ""
                 }`}
               >
@@ -102,9 +104,12 @@ function ProductsPageContent() {
                   <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
                     <StatusBadge status={product.status} />
                     {product.deletedAt && (
-                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                        Deleted
-                      </span>
+                      <Badge
+                        variant="outline"
+                        className="border-transparent bg-destructive/10 text-destructive"
+                      >
+                        {tx("common.status.deleted")}
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -138,9 +143,9 @@ function ProductsPageContent() {
                   className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
                 >
                   {product.deletedAt ? (
-                    "Edit"
+                    tx("admin.products.edit")
                   ) : (
-                    <Link href={`/admin/products/${product.id}`}>Edit</Link>
+                    <Link href={`/admin/products/${product.id}`}>{tx("admin.products.edit")}</Link>
                   )}
                 </Button>
               </div>
@@ -149,33 +154,11 @@ function ProductsPageContent() {
         )}
       </div>
 
-      {productsPage.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {productsPage.page} of {productsPage.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={productsPage.page <= 1}
-              onClick={() => setPage(productsPage.page - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={productsPage.page >= productsPage.totalPages}
-              onClick={() => setPage(productsPage.page + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <ListPager
+        page={productsPage.page}
+        totalPages={productsPage.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

@@ -34,7 +34,7 @@ function PaymentPaperPageContent() {
 
 export default function AdminPaymentPaperPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PaperSkeleton />}>
       <PaymentPaperPageContent />
     </Suspense>
   );
