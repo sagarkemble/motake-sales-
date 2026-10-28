@@ -12,7 +12,7 @@ export function AdminBottomTabs() {
   const currentPathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_12px_rgba(0,0,0,0.04)] backdrop-blur-md md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_12px_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-md md:hidden">
       <div className="grid grid-cols-8">
         {adminNavItems.map((navItem) => {
           const NavIcon = navItem.icon;

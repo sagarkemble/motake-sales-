@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon, Loader2Icon, SettingsIcon } from "lucide-react";
+import { ChevronRightIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +11,6 @@ import { InstallAppButton } from "~/components/shared/install-app-button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -66,7 +65,12 @@ export default function AdminAccountPage() {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-3 px-4 py-10 text-center">
         <p className="text-sm text-muted-foreground">{tx("account.profile.loadFailed")}</p>
-        <Button variant="outline" size="sm" onClick={() => void refetchSignedInUser()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => void refetchSignedInUser()}
+        >
           {tx("common.actions.tryAgain")}
         </Button>
       </div>
@@ -75,79 +79,87 @@ export default function AdminAccountPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
-      <Card className="bg-card">
-        <CardContent className="flex flex-col items-center gap-3">
-          <Avatar className="size-24 ring-4 ring-brand/10">
-            <AvatarImage src={signedInUser.avatarUrl ?? undefined} alt="Avatar" />
-            <AvatarFallback className="text-2xl">{avatarInitial}</AvatarFallback>
-          </Avatar>
-          <Badge variant="secondary" className="capitalize">
-            {signedInUser.role}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={() => setIsUpdateAvatarDialogOpen(true)}>
-            {tx("account.profile.changeAvatar")}
-          </Button>
-        </CardContent>
-      </Card>
+      <section className="flex flex-col items-center gap-3 rounded-2xl border bg-card p-4">
+        <Avatar className="size-24 ring-4 ring-brand/10">
+          <AvatarImage src={signedInUser.avatarUrl ?? undefined} alt={tx("account.avatar.alt")} />
+          <AvatarFallback className="bg-brand/10 text-2xl font-semibold text-brand">
+            {avatarInitial}
+          </AvatarFallback>
+        </Avatar>
+        <Badge variant="secondary" className="capitalize">
+          {signedInUser.role}
+        </Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => setIsUpdateAvatarDialogOpen(true)}
+        >
+          {tx("account.profile.changeAvatar")}
+        </Button>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{tx("account.profile.title")}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-name">{tx("common.fields.name")}</Label>
-            <div className="flex gap-2">
-              <Input
-                id="account-name"
-                value={nameInputValue}
-                onChange={(event) => setNameInputValue(event.target.value)}
-                placeholder={tx("account.profile.namePlaceholder")}
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={
-                  !hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0
-                }
-                onClick={() => void handleSaveName()}
-              >
-                {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                {tx("common.actions.save")}
-              </Button>
-            </div>
+      <section className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        <h2 className="text-base font-semibold">{tx("account.profile.title")}</h2>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="account-name">{tx("common.fields.name")}</Label>
+          <div className="flex gap-2">
+            <Input
+              id="account-name"
+              value={nameInputValue}
+              onChange={(event) => setNameInputValue(event.target.value)}
+              placeholder={tx("account.profile.namePlaceholder")}
+              className="rounded-xl bg-muted/40"
+            />
+            <Button
+              type="button"
+              className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+              disabled={
+                !hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0
+              }
+              onClick={() => void handleSaveName()}
+            >
+              {isUpdatingMyProfile ? tx("common.status.pleaseWait") : tx("common.actions.save")}
+            </Button>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-email">{tx("common.fields.email")}</Label>
-            <Input id="account-email" value={signedInUser.email} readOnly disabled />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="account-email">{tx("common.fields.email")}</Label>
+          <Input
+            id="account-email"
+            value={signedInUser.email}
+            readOnly
+            disabled
+            className="rounded-xl bg-muted/40"
+          />
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-phone">{tx("common.fields.phone")}</Label>
-            <div className="flex gap-2">
-              <Input
-                id="account-phone"
-                value={signedInUser.phone ?? tx("common.status.notSet")}
-                readOnly
-                disabled
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsUpdatePhoneDialogOpen(true)}
-              >
-                {tx("common.actions.change")}
-              </Button>
-            </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="account-phone">{tx("common.fields.phone")}</Label>
+          <div className="flex gap-2">
+            <Input
+              id="account-phone"
+              value={signedInUser.phone ?? tx("common.status.notSet")}
+              readOnly
+              disabled
+              className="rounded-xl bg-muted/40"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setIsUpdatePhoneDialogOpen(true)}
+            >
+              {tx("common.actions.change")}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <Link
         href="/admin/settings"
-        className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
+        className="flex items-center gap-3 rounded-2xl border bg-card p-4 outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
           <SettingsIcon className="size-5" />

@@ -26,7 +26,8 @@
       "active": "सक्रिय",
       "inactive": "निष्क्रिय",
       "new": "नवीन",
-      "saving": "जतन करत आहे…"
+      "saving": "जतन करत आहे…",
+      "deleted": "हटवलेले"
     },
     "a11y": {
       "openMenu": "मेनू उघडा",
@@ -109,7 +110,8 @@
       },
       "error": {
         "wrongCredentials": "ईमेल किंवा पासवर्ड चुकीचा आहे. पुन्हा प्रयत्न करा."
-      }
+      },
+      "brandTitle": "Motake"
     },
     "otp": {
       "codeSent": "एसएमएसने कोड पाठवला",
@@ -120,7 +122,9 @@
       "changeNumber": "नंबर बदला",
       "resend": "कोड पुन्हा पाठवा",
       "phonePlaceholder": "१० अंकी मोबाइल नंबर",
-      "sendCta": "कोड पाठवा"
+      "sendCta": "कोड पाठवा",
+      "sentTo": "+91 {phone} वर पाठवला",
+      "resendIn": "{seconds} सेकंदांनी पुन्हा पाठवा"
     },
     "magicLink": {
       "sent": "साइन-इन लिंक आपल्या ईमेलवर पाठवली",
@@ -128,7 +132,10 @@
       "checkEmail": "आपला ईमेल तपासा",
       "changeEmail": "ईमेल बदला",
       "resend": "लिंक पुन्हा पाठवा",
-      "cta": "साइन-इन लिंक पाठवा"
+      "cta": "साइन-इन लिंक पाठवा",
+      "linkInvalid": "साइन-इन लिंक चुकीची आहे किंवा तिची मुदत संपली आहे.",
+      "backToSignIn": "साइन इनकडे परत",
+      "signingIn": "साइन इन करत आहे…"
     }
   },
   "account": {
@@ -145,7 +152,10 @@
       "updated": "अवतार अपडेट झाला",
       "removed": "अवतार काढला",
       "saveFailed": "अवतार जतन करता आला नाही. पुन्हा प्रयत्न करा.",
-      "removeFailed": "अवतार काढता आला नाही. पुन्हा प्रयत्न करा."
+      "removeFailed": "अवतार काढता आला नाही. पुन्हा प्रयत्न करा.",
+      "title": "अवतार अपडेट करा",
+      "alt": "अवतार",
+      "upload": "अवतार अपलोड करा"
     },
     "phone": {
       "title": "फोन नंबर अपडेट करा",
@@ -170,7 +180,8 @@
       "openAccountMenu": "खाते मेनू उघडा",
       "routes": "रूट",
       "ledger": "खातेवही",
-      "gst": "GST"
+      "gst": "GST",
+      "brandTitle": "Motake ॲडमिन"
     },
     "dashboard": {
       "kpi": {
@@ -186,6 +197,22 @@
       },
       "orders": {
         "empty": "अद्याप ऑर्डर नाहीत"
+      },
+      "greeting": "नमस्कार, {name} 👋",
+      "greetingFallbackName": "ॲडमिन",
+      "subtitle": "आज तुमच्या व्यवसायात काय चालले आहे ते येथे पहा.",
+      "todaysOrders": "आजच्या ऑर्डर",
+      "todaysGatepasses": "आजचे गेट पास",
+      "recentActivity": "अलीकडील हालचाल",
+      "orderHistory": "ऑर्डर इतिहास",
+      "salesmanPrefix": "विक्रेता {name}",
+      "discrepancy": {
+        "title": "आजच्या विसंगती",
+        "flaggedCount": "{count} फ्लॅग केलेले",
+        "empty": "आज कोणतीही विसंगती फ्लॅग केलेली नाही",
+        "noReason": "कारण नोंदवलेले नाही",
+        "totals": "दिलेला {issued} · विक्री {sold} · परत {returned}",
+        "closedBy": "{name} यांनी"
       }
     },
     "products": {
@@ -213,7 +240,22 @@
       "varietyCountOne": "1 प्रकार",
       "varietyCountOther": "{count} प्रकार",
       "inactiveCount": "{count} निष्क्रिय",
-      "renameKeepsSkus": "उत्पादनाचे नाव बदलल्याने त्याच्या प्रकारांचे SKU बदलत नाहीत."
+      "renameKeepsSkus": "उत्पादनाचे नाव बदलल्याने त्याच्या प्रकारांचे SKU बदलत नाहीत.",
+      "createCta": "उत्पादन तयार करा",
+      "description": "वर्णन",
+      "descriptionPlaceholder": "थोडक्यात वर्णन",
+      "edit": "संपादित करा",
+      "editTitle": "उत्पादन संपादित करा",
+      "imageAlt": "उत्पादन",
+      "namePlaceholder": "उत्पादनाचे नाव",
+      "noMatch": "\"{term}\" शी जुळणारी उत्पादने नाहीत",
+      "notFound": "उत्पादन सापडले नाही",
+      "reactivate": "पुन्हा सक्रिय करा",
+      "saveChanges": "बदल जतन करा",
+      "searchPlaceholder": "उत्पादने शोधा…",
+      "showDeleted": "हटवलेली उत्पादने दाखवा",
+      "statusLabel": "उत्पादनाची स्थिती",
+      "uploadImage": "प्रतिमा अपलोड करा"
     },
     "varieties": {
       "editAria": "प्रकार संपादित करा",
@@ -251,7 +293,10 @@
       "reactivateBody": "{name} पुन्हा सक्रिय होईल आणि वाटप व विक्री करता येईल.",
       "reactivateConfirm": "पुन्हा सक्रिय करा",
       "reactivateSuccess": "प्रकार पुन्हा सक्रिय केला",
-      "reactivateFailed": "प्रकार पुन्हा सक्रिय करता आला नाही. पुन्हा प्रयत्न करा."
+      "reactivateFailed": "प्रकार पुन्हा सक्रिय करता आला नाही. पुन्हा प्रयत्न करा.",
+      "namePlaceholder": "उदा. 500 ml",
+      "unit": "एकक",
+      "unitPlaceholder": "उदा. pouch"
     },
     "varietyTax": {
       "gstButton": "GST",
@@ -362,7 +407,22 @@
       "reactivate": "पुन्हा सक्रिय करा",
       "reactivating": "पुन्हा सक्रिय करत आहे…",
       "deactivate": "निष्क्रिय करा",
-      "openLedger": "खातेवही उघडा"
+      "openLedger": "खातेवही उघडा",
+      "deactivateDialog": {
+        "checking": "चालू प्री-ऑर्डर तपासत आहे…",
+        "openPreordersRule": "चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "blockedTitle": "निष्क्रिय करता येत नाही",
+        "blockedBodyOne": "या ग्राहकाची 1 प्री-ऑर्डर चालू आहे. चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "blockedBodyOther": "या ग्राहकाच्या {count} प्री-ऑर्डर चालू आहेत. चालू प्री-ऑर्डर असलेला ग्राहक निष्क्रिय करता येत नाही.",
+        "title": "हा ग्राहक निष्क्रिय करायचा?",
+        "body": "ते सक्रिय यादीतून जातील. ऑर्डर इतिहास राहतो. विक्रेते नवीन ऑर्डरसाठी त्यांना निवडू शकत नाहीत."
+      },
+      "stats": {
+        "title": "एकूण आकडेवारी",
+        "totalOrders": "एकूण ऑर्डर",
+        "lifetimeValue": "एकूण मूल्य",
+        "lastOrder": "शेवटची ऑर्डर"
+      }
     },
     "salesmen": {
       "empty": "अद्याप विक्रेते नाहीत",
@@ -432,7 +492,25 @@
         "allot": "वाटप करा",
         "allotAgain": "पुन्हा वाटप करा",
         "alreadyActive": "सक्रिय गेट पास आहे"
-      }
+      },
+      "lastDays": "मागील {count} दिवस",
+      "salesHistory": "विक्री इतिहास",
+      "createCta": "विक्रेता तयार करा",
+      "deleteConfirmPrompt": "तुम्हाला हा विक्रेता नक्की हटवायचा आहे का?",
+      "form": {
+        "codePlaceholder": "वेगळा कोड",
+        "emailPlaceholder": "ईमेल पत्ता",
+        "namePlaceholder": "पूर्ण नाव",
+        "passwordKeepPlaceholder": "सध्याचा पासवर्ड ठेवण्यासाठी रिकामे सोडा",
+        "passwordPlaceholder": "किमान 8 अक्षरे",
+        "phone": "फोन",
+        "moreCharsOne": "आणखी 1 अक्षर हवे",
+        "moreCharsOther": "आणखी {count} अक्षरे हवी"
+      },
+      "notFound": "विक्रेता सापडला नाही",
+      "showDeleted": "हटवलेले विक्रेते दाखवा",
+      "title": "विक्रेते",
+      "unnamed": "नाव नाही"
     },
     "orders": {
       "tab": {

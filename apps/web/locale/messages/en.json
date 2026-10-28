@@ -26,7 +26,8 @@
       "active": "Active",
       "inactive": "Inactive",
       "new": "New",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "deleted": "Deleted"
     },
     "a11y": {
       "openMenu": "Open menu",
@@ -109,7 +110,8 @@
       },
       "error": {
         "wrongCredentials": "Wrong email or password. Try again."
-      }
+      },
+      "brandTitle": "Motake"
     },
     "otp": {
       "codeSent": "Code sent by SMS",
@@ -120,7 +122,9 @@
       "changeNumber": "Change number",
       "resend": "Resend code",
       "phonePlaceholder": "10-digit mobile number",
-      "sendCta": "Send code"
+      "sendCta": "Send code",
+      "sentTo": "Sent to +91 {phone}",
+      "resendIn": "Resend in {seconds}s"
     },
     "magicLink": {
       "sent": "Sign-in link sent to your email",
@@ -128,7 +132,10 @@
       "checkEmail": "Check your email",
       "changeEmail": "Change email",
       "resend": "Resend link",
-      "cta": "Send sign-in link"
+      "cta": "Send sign-in link",
+      "linkInvalid": "The sign-in link is wrong or expired.",
+      "backToSignIn": "Back to sign in",
+      "signingIn": "Signing you in…"
     }
   },
   "account": {
@@ -145,7 +152,10 @@
       "updated": "Avatar updated",
       "removed": "Avatar removed",
       "saveFailed": "Could not save the avatar. Try again.",
-      "removeFailed": "Could not remove the avatar. Try again."
+      "removeFailed": "Could not remove the avatar. Try again.",
+      "title": "Update avatar",
+      "alt": "Avatar",
+      "upload": "Upload avatar"
     },
     "phone": {
       "title": "Update phone number",
@@ -170,7 +180,8 @@
       "openAccountMenu": "Open account menu",
       "routes": "Routes",
       "ledger": "Ledger",
-      "gst": "GST"
+      "gst": "GST",
+      "brandTitle": "Motake Admin"
     },
     "dashboard": {
       "kpi": {
@@ -186,6 +197,22 @@
       },
       "orders": {
         "empty": "No orders yet"
+      },
+      "greeting": "Hello, {name} 👋",
+      "greetingFallbackName": "Admin",
+      "subtitle": "Here is what is happening with your business today.",
+      "todaysOrders": "Today's orders",
+      "todaysGatepasses": "Today's gate passes",
+      "recentActivity": "Recent activity",
+      "orderHistory": "Order history",
+      "salesmanPrefix": "Salesman {name}",
+      "discrepancy": {
+        "title": "Today's discrepancies",
+        "flaggedCount": "{count} flagged",
+        "empty": "No discrepancies flagged today",
+        "noReason": "No reason recorded",
+        "totals": "Issued {issued} · Sold {sold} · Returned {returned}",
+        "closedBy": "by {name}"
       }
     },
     "products": {
@@ -213,7 +240,22 @@
       "varietyCountOne": "1 variety",
       "varietyCountOther": "{count} varieties",
       "inactiveCount": "{count} inactive",
-      "renameKeepsSkus": "Renaming the Product does not change its Variety SKUs."
+      "renameKeepsSkus": "Renaming the Product does not change its Variety SKUs.",
+      "createCta": "Create product",
+      "description": "Description",
+      "descriptionPlaceholder": "Short description",
+      "edit": "Edit",
+      "editTitle": "Edit product",
+      "imageAlt": "Product",
+      "namePlaceholder": "Product name",
+      "noMatch": "No products match \"{term}\"",
+      "notFound": "Product not found",
+      "reactivate": "Reactivate",
+      "saveChanges": "Save changes",
+      "searchPlaceholder": "Search products…",
+      "showDeleted": "Show deleted products",
+      "statusLabel": "Product status",
+      "uploadImage": "Upload image"
     },
     "varieties": {
       "editAria": "Edit variety",
@@ -251,7 +293,10 @@
       "reactivateBody": "{name} will be active again and can be allotted and sold.",
       "reactivateConfirm": "Reactivate",
       "reactivateSuccess": "Variety reactivated",
-      "reactivateFailed": "Could not reactivate variety. Try again."
+      "reactivateFailed": "Could not reactivate variety. Try again.",
+      "namePlaceholder": "e.g. 500 ml",
+      "unit": "Unit",
+      "unitPlaceholder": "e.g. pouch"
     },
     "varietyTax": {
       "gstButton": "GST",
@@ -362,7 +407,22 @@
       "reactivate": "Reactivate",
       "reactivating": "Reactivating…",
       "deactivate": "Deactivate",
-      "openLedger": "Open Ledger"
+      "openLedger": "Open Ledger",
+      "deactivateDialog": {
+        "checking": "Checking open Pre-orders…",
+        "openPreordersRule": "A customer with open Pre-orders cannot be deactivated.",
+        "blockedTitle": "Cannot deactivate",
+        "blockedBodyOne": "This customer has 1 open Pre-order. A customer with open Pre-orders cannot be deactivated.",
+        "blockedBodyOther": "This customer has {count} open Pre-orders. A customer with open Pre-orders cannot be deactivated.",
+        "title": "Deactivate this customer?",
+        "body": "They will leave the active list. Order history stays. Salesmen cannot select them for new orders."
+      },
+      "stats": {
+        "title": "Lifetime stats",
+        "totalOrders": "Total orders",
+        "lifetimeValue": "Lifetime value",
+        "lastOrder": "Last order"
+      }
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -432,7 +492,25 @@
         "allot": "Allot",
         "allotAgain": "Allot again",
         "alreadyActive": "Has an Active GatePass"
-      }
+      },
+      "lastDays": "Last {count} days",
+      "salesHistory": "Sales history",
+      "createCta": "Create salesman",
+      "deleteConfirmPrompt": "Are you sure you want to delete this salesman?",
+      "form": {
+        "codePlaceholder": "Unique code",
+        "emailPlaceholder": "Email address",
+        "namePlaceholder": "Full name",
+        "passwordKeepPlaceholder": "Leave blank to keep current password",
+        "passwordPlaceholder": "At least 8 characters",
+        "phone": "Phone",
+        "moreCharsOne": "1 more character needed",
+        "moreCharsOther": "{count} more characters needed"
+      },
+      "notFound": "Salesman not found",
+      "showDeleted": "Show deleted salesmen",
+      "title": "Salesmen",
+      "unnamed": "Unnamed"
     },
     "orders": {
       "tab": {
