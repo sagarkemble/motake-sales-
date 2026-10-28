@@ -1502,6 +1502,7 @@
         "sending": "Sending…",
         "blockedInvalid": "Fix the access token first. Meta refuses the current one, so nothing can be sent.",
         "blockedUnknown": "The notification app is not answering. Try again when it is back.",
+        "blockedUnavailable": "The access token cannot be checked right now because Meta is not answering. Try again in a few minutes.",
         "blockedNone": "No messages are waiting.",
         "queuedOne": "1 message queued. It goes out once.",
         "queuedOther": "{count} messages queued. Each goes out once.",

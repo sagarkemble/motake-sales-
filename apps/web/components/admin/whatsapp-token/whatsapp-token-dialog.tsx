@@ -256,8 +256,10 @@ function PasteTokenForm({
   );
 }
 
+// Disabled whenever the token is not working (every state but `ok`), with the reason shown.
 function sendBlockedReason(tx: Tx, status: WhatsAppTokenSettings): string | null {
   if (status.state === "invalid") return tx("admin.whatsappToken.send.blockedInvalid");
+  if (status.state === "unavailable") return tx("admin.whatsappToken.send.blockedUnavailable");
   if (status.state === "unknown") return tx("admin.whatsappToken.send.blockedUnknown");
   if (!status.heldCount) return tx("admin.whatsappToken.send.blockedNone");
   return null;
