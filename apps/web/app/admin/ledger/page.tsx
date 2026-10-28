@@ -5,6 +5,11 @@ import { Suspense, useEffect, useState } from "react";
 
 import { CustomerPicker } from "~/components/admin/ledger/customer-picker";
 import {
+  AddMoneyDialog,
+  type MoneyAddKind,
+  type MoneyAdded,
+} from "~/components/admin/ledger/money-dialogs";
+import {
   OpeningBalanceDialog,
   PickBillForNoteDialog,
 } from "~/components/admin/ledger/ledger-dialogs";
@@ -52,10 +57,15 @@ function LedgerPageContent() {
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const [openingOpen, setOpeningOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [moneyAdd, setMoneyAdd] = useState<MoneyAddKind | null>(null);
+  // The Payment or Refund just added: highlighted on the table, which turns to the last page once.
+  const [added, setAdded] = useState<MoneyAdded | null>(null);
+  const [jumpToAdded, setJumpToAdded] = useState(false);
 
   const {
     rowsPage,
     isRowsLoading,
+    isRowsFetching,
     isRowsError,
     refetchRows,
     summary,
@@ -102,10 +112,35 @@ function LedgerPageContent() {
     });
   }
 
+  // A new row posts last; when the refetched page does not hold it, turn to the last page once.
+  useEffect(() => {
+    // Wait for the rows the Add's refetch brings; the cached page is from before it.
+    if (!jumpToAdded || isRowsFetching || !added) return;
+    setJumpToAdded(false);
+    const onPage = rowsPage.items.some(
+      (row) =>
+        (row.open.kind === "payment" && row.open.paymentId === added.id) ||
+        (row.open.kind === "refund" && row.open.refundId === added.id),
+    );
+    if (onPage || rowsPage.page >= rowsPage.totalPages) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(rowsPage.totalPages));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [jumpToAdded, isRowsFetching, added, rowsPage, searchParams, pathname, router]);
+
+  function handleMoneyAdded(next: MoneyAdded) {
+    setMoneyAdd(null);
+    setAdded(next);
+    setJumpToAdded(true);
+  }
+
   // Switching Customer closes any open paper and starts on a clean table.
   function setCustomer(nextCustomerId: string) {
     setOpeningOpen(false);
     setNoteOpen(false);
+    setMoneyAdd(null);
+    setAdded(null);
+    setJumpToAdded(false);
     router.replace(`${pathname}?customer=${nextCustomerId}`, { scroll: false });
   }
 
@@ -130,6 +165,8 @@ function LedgerPageContent() {
               summary={summary}
               onOpening={() => setOpeningOpen(true)}
               onRaiseNote={() => setNoteOpen(true)}
+              onPayment={() => setMoneyAdd("payment")}
+              onRefund={() => setMoneyAdd("refund")}
             />
           </div>
         )}
@@ -195,7 +232,11 @@ function LedgerPageContent() {
                   />
                 ) : (
                   <>
-                    <LedgerTable rows={rowsPage.items} />
+                    <LedgerTable
+                      rows={rowsPage.items}
+                      customerId={summary.customer.id}
+                      highlight={added}
+                    />
                     <div className="border-t px-3 pb-2">
                       <p className="pt-2 text-xs text-muted-foreground">
                         {tx("admin.ledger.rowsCount", { count: rowsPage.totalCount })}
@@ -222,6 +263,12 @@ function LedgerPageContent() {
                 onOpenChange={setOpeningOpen}
                 customerId={summary.customer.id}
                 shopName={summary.customer.shopName}
+              />
+              <AddMoneyDialog
+                kind={moneyAdd}
+                onOpenChange={(open) => !open && setMoneyAdd(null)}
+                summary={summary}
+                onAdded={handleMoneyAdded}
               />
               <PickBillForNoteDialog
                 key={summary.customer.id}
