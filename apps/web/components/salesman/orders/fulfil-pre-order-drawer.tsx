@@ -11,6 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "~/components/ui/drawer";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useFulfilPreOrder } from "~/hooks/shared/use-fulfil-pre-order";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -36,10 +37,10 @@ export function FulfilPreOrderDrawer({ target, onClose }: FulfilPreOrderDrawerPr
 
   return (
     <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[94dvh]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col">
           {fulfil.result ? (
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
               <DrawerHeader className="sr-only">
                 <DrawerTitle>{tx("checkout.success.fulfilled")}</DrawerTitle>
               </DrawerHeader>
@@ -47,15 +48,15 @@ export function FulfilPreOrderDrawer({ target, onClose }: FulfilPreOrderDrawerPr
                 input={fulfil.result}
                 actions={[{ label: tx("checkout.success.done"), primary: true, onClick: onClose }]}
               />
-            </div>
+            </ScrollArea>
           ) : (
             <>
               <DrawerHeader className="text-left">
                 <DrawerTitle>{tx("checkout.fulfil.title", { shop: target.shopName })}</DrawerTitle>
                 <DrawerDescription>{target.description}</DrawerDescription>
               </DrawerHeader>
-              <div className="min-h-0 flex-1 overflow-y-auto px-4">
-                <div className="flex flex-col gap-4 pb-4">
+              <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+                <div className="flex flex-col gap-4 px-4 pb-4">
                   <LockedLines
                     state={fulfil}
                     shopName={target.shopName}
@@ -64,17 +65,30 @@ export function FulfilPreOrderDrawer({ target, onClose }: FulfilPreOrderDrawerPr
                   />
                   <FulfilPayment state={fulfil} shopName={target.shopName} />
                 </div>
-              </div>
+              </ScrollArea>
               <DrawerFooter>
                 {hint && <p className="text-center text-xs text-muted-foreground">{hint}</p>}
-                <Button
-                  type="button"
-                  className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
-                  disabled={!fulfil.paymentContext || Boolean(hint) || fulfil.isFulfilling}
-                  onClick={() => void fulfil.fulfil()}
-                >
-                  {fulfil.isFulfilling ? tx("common.status.pleaseWait") : tx("checkout.fulfil.cta")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={fulfil.isFulfilling}
+                    onClick={onClose}
+                  >
+                    {tx("common.actions.cancel")}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+                    disabled={!fulfil.paymentContext || Boolean(hint) || fulfil.isFulfilling}
+                    onClick={() => void fulfil.fulfil()}
+                  >
+                    {fulfil.isFulfilling
+                      ? tx("common.status.pleaseWait")
+                      : tx("checkout.fulfil.cta")}
+                  </Button>
+                </div>
               </DrawerFooter>
             </>
           )}

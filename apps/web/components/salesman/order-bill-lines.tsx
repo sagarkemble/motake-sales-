@@ -30,7 +30,7 @@ export function OrderBillLines({ bill }: OrderBillLinesProps) {
   ];
 
   return (
-    <div className="overflow-hidden rounded-xl border text-xs">
+    <div className="overflow-hidden rounded-2xl border text-xs">
       <div className="flex items-center justify-between gap-2 bg-muted/40 px-3 py-2">
         <p className="font-medium">
           {tx(

@@ -1,8 +1,9 @@
 "use client";
 
-import { PackageIcon } from "lucide-react";
+import { AlertTriangleIcon, PackageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
   Drawer,
@@ -79,7 +80,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   return (
     <>
       <Drawer open={Boolean(orderId)} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
           <DrawerHeader className="text-left">
             <DrawerTitle className="flex items-center gap-2">
               {orderDetail ? (
@@ -98,19 +99,28 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
           </DrawerHeader>
 
           {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
-          <ScrollArea className="flex max-h-[65vh] min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
             <div className="flex flex-col gap-4 px-4 pb-4">
               {isOrderDetailLoading ? (
                 <CardDetailSkeleton />
               ) : !orderDetail ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">
+                <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+                  <AlertTriangleIcon />
+                  <AlertTitle className="line-clamp-none">
                     {tx("salesman.orders.sheet.loadFailed")}
-                  </p>
-                  <Button type="button" variant="outline" onClick={() => refetchOrderDetail()}>
-                    {tx("common.actions.tryAgain")}
-                  </Button>
-                </div>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="mt-1 rounded-full"
+                      onClick={() => refetchOrderDetail()}
+                    >
+                      {tx("common.actions.tryAgain")}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <>
                   <div className="flex items-start gap-3 rounded-2xl border bg-muted/30 p-3">
@@ -136,7 +146,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   {orderDetail.bill ? (
                     <div
                       className={cn(
-                        "rounded-xl p-3",
+                        "rounded-2xl p-3",
                         isCancelled ? "bg-destructive/5" : "bg-brand/5",
                       )}
                     >
@@ -159,7 +169,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       </p>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed p-3">
+                    <div className="rounded-2xl border border-dashed p-3">
                       <p className="text-xs text-muted-foreground">
                         {tx(
                           isCancelled
@@ -209,7 +219,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                           {tx("salesman.orders.sheet.scheduledFor")}
                         </p>
                         <p className="font-medium">
-                          {formatDate(new Date(orderDetail.order.scheduledDate), "d MMM yyyy")}
+                          {formatDate(new Date(orderDetail.order.scheduledDate), "EEE, d MMM yyyy")}
                         </p>
                       </div>
                     )}
@@ -286,14 +296,14 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       orderDetail.items.map((item) => (
                         <div
                           key={item.varietyId}
-                          className="flex items-start gap-3 rounded-xl border p-3 text-sm"
+                          className="flex items-start gap-3 rounded-2xl border p-3 text-sm"
                         >
                           <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
                             {item.imageUrl ? (
                               <img
                                 src={item.imageUrl}
                                 alt={item.stamp.name}
-                                className="size-full object-cover"
+                                className="size-full object-contain p-1"
                               />
                             ) : (
                               <PackageIcon className="size-5 text-muted-foreground" />
@@ -326,14 +336,26 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     ) : isOrderBillLoading ? (
                       <CardDetailSkeleton />
                     ) : isOrderBillError || !orderBill ? (
-                      <div className="flex flex-col items-center gap-3 py-6 text-center">
-                        <p className="text-sm text-muted-foreground">
+                      <Alert
+                        variant="destructive"
+                        className="border-destructive/30 bg-destructive/5"
+                      >
+                        <AlertTriangleIcon />
+                        <AlertTitle className="line-clamp-none">
                           {tx("salesman.orders.sheet.billLoadFailed")}
-                        </p>
-                        <Button type="button" variant="outline" onClick={() => refetchOrderBill()}>
-                          {tx("common.actions.tryAgain")}
-                        </Button>
-                      </div>
+                        </AlertTitle>
+                        <AlertDescription>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 rounded-full"
+                            onClick={() => refetchOrderBill()}
+                          >
+                            {tx("common.actions.tryAgain")}
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
                     ) : (
                       <OrderBillLines bill={orderBill} />
                     )}

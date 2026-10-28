@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,7 +8,6 @@ import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-numbe
 import { InstallAppButton } from "~/components/shared/install-app-button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -66,7 +64,12 @@ export default function SalesmanAccountPage() {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-3 px-4 py-10 text-center">
         <p className="text-sm text-muted-foreground">{tx("account.profile.loadFailed")}</p>
-        <Button variant="outline" size="sm" onClick={() => void refetchMySalesmanProfile()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => void refetchMySalesmanProfile()}
+        >
           {tx("common.actions.tryAgain")}
         </Button>
       </div>
@@ -75,23 +78,26 @@ export default function SalesmanAccountPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3">
-          <Avatar className="size-24">
-            <AvatarImage src={profile.avatarUrl ?? undefined} alt="Avatar" />
-            <AvatarFallback className="text-2xl">{avatarInitial}</AvatarFallback>
-          </Avatar>
-          <Button variant="outline" size="sm" onClick={() => setIsUpdateAvatarDialogOpen(true)}>
-            {tx("account.profile.changeAvatar")}
-          </Button>
-        </CardContent>
-      </Card>
+      <p className="text-base font-semibold">{tx("common.nav.account")}</p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{tx("account.profile.title")}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card p-4">
+        <Avatar className="size-24">
+          <AvatarImage src={profile.avatarUrl ?? undefined} alt="Avatar" />
+          <AvatarFallback className="text-2xl">{avatarInitial}</AvatarFallback>
+        </Avatar>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => setIsUpdateAvatarDialogOpen(true)}
+        >
+          {tx("account.profile.changeAvatar")}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        <p className="text-sm font-semibold">{tx("account.profile.title")}</p>
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="account-name">{tx("common.fields.name")}</Label>
             <div className="flex gap-2">
@@ -100,47 +106,51 @@ export default function SalesmanAccountPage() {
                 value={nameInputValue}
                 onChange={(event) => setNameInputValue(event.target.value)}
                 placeholder={tx("account.profile.namePlaceholder")}
+                className="h-10 rounded-xl"
               />
               <Button
                 type="button"
-                size="sm"
+                className="h-10 shrink-0 rounded-full bg-brand px-4 text-brand-foreground hover:bg-brand/90"
                 disabled={
                   !hasNameChanged || isUpdatingMyProfile || nameInputValue.trim().length === 0
                 }
                 onClick={() => void handleSaveName()}
               >
-                {isUpdatingMyProfile ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                {tx("common.actions.save")}
+                {isUpdatingMyProfile ? tx("common.status.pleaseWait") : tx("common.actions.save")}
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-email">{tx("common.fields.email")}</Label>
-            <Input id="account-email" value={profile.email} readOnly disabled />
-          </div>
+          <div className="flex flex-col divide-y rounded-xl border">
+            <div className="flex flex-col gap-0.5 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">{tx("common.fields.email")}</p>
+              <p className="break-all text-sm font-medium">{profile.email}</p>
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-phone">{tx("common.fields.phone")}</Label>
-            <div className="flex gap-2">
-              <Input id="account-phone" value={profile.phone ?? tx("common.status.notSet")} readOnly disabled />
+            <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <p className="text-xs text-muted-foreground">{tx("common.fields.phone")}</p>
+                <p className="truncate text-sm font-medium tabular-nums">
+                  {profile.phone ?? tx("common.status.notSet")}
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                className="h-10 shrink-0 rounded-full px-4"
                 onClick={() => setIsUpdatePhoneDialogOpen(true)}
               >
                 {tx("common.actions.change")}
               </Button>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-salesman-code">{tx("account.profile.salesmanCode")}</Label>
-            <Input id="account-salesman-code" value={salesman.salesmanCode} readOnly disabled />
+            <div className="flex flex-col gap-0.5 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">{tx("account.profile.salesmanCode")}</p>
+              <p className="font-mono text-sm font-medium">{salesman.salesmanCode}</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <InstallAppButton />
 
