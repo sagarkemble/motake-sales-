@@ -5,6 +5,7 @@ import type {
   WhatsAppTokenStatus,
 } from "@repo/services/whatsapp-token";
 import { TRPCClientError } from "@trpc/client";
+import { TRPC_ERROR_CODES_BY_KEY, type TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 
 import { createNotificationClient, type NotificationClientConfig } from "./client";
 
@@ -23,14 +24,28 @@ function toTokenStatus(status: WireTokenStatus): WhatsAppTokenStatus {
   };
 }
 
-// A refused call keeps its machine reason (`data.refusal`) so WhatsAppTokenService can branch on it.
+interface WireErrorData {
+  code?: unknown;
+  refusal?: { reason?: unknown; details?: unknown };
+}
+
+// The tRPC code the notification app answered with; INTERNAL_SERVER_ERROR if it is missing.
+function errorCodeOf(data: WireErrorData | null): TRPC_ERROR_CODE_KEY {
+  const code = data?.code;
+  return typeof code === "string" && code in TRPC_ERROR_CODES_BY_KEY
+    ? (code as TRPC_ERROR_CODE_KEY)
+    : "INTERNAL_SERVER_ERROR";
+}
+
+// A refused call keeps its machine reason (`data.refusal`) and its tRPC code so
+// WhatsAppTokenService can branch on it.
 function rethrowWithRefusal(error: unknown): never {
   if (error instanceof TRPCClientError) {
-    const refusal = (error.data as { refusal?: { reason?: unknown; details?: unknown } } | null)
-      ?.refusal;
+    const data = error.data as WireErrorData | null;
+    const refusal = data?.refusal;
     if (typeof refusal?.reason === "string") {
       throw refused(
-        "CONFLICT",
+        errorCodeOf(data),
         refusal.reason,
         error.message,
         (refusal.details as Record<string, unknown> | null) ?? null,
