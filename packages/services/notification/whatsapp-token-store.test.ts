@@ -57,6 +57,19 @@ describe("working token (secret file)", () => {
     expect(await store.readWorkingToken()).toBe("EAAG-new-token");
   });
 
+  it("creates a missing folder owner-only on the first write", async () => {
+    const nestedPath = path.join(directory, "secrets", "whatsapp-access-token");
+    const nested = new WhatsAppTokenStore({
+      secretFilePath: nestedPath,
+      vaultSecretName: TEST_VAULT_SECRET_NAME,
+    });
+
+    await nested.writeWorkingToken("EAAG-nested");
+
+    expect(await nested.readWorkingToken()).toBe("EAAG-nested");
+    expect((await stat(path.dirname(nestedPath))).mode & 0o777).toBe(0o700);
+  });
+
   it("refuses file access when no secret file is configured", async () => {
     const vaultOnly = new WhatsAppTokenStore({ vaultSecretName: TEST_VAULT_SECRET_NAME });
 

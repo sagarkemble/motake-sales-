@@ -29,13 +29,15 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /repo/apps/notification/dist ./dist
 COPY apps/notification/docker/start.sh /usr/local/bin/start-notification
-RUN chmod +x /usr/local/bin/start-notification && mkdir -p /var/lib/inngest
+RUN chmod +x /usr/local/bin/start-notification && mkdir -p /var/lib/inngest \
+  && mkdir -m 700 -p /var/lib/motake-secrets
 
 ENV NODE_ENV=production \
   HOST=0.0.0.0 \
   PORT=8100 \
   INNGEST_PORT=8288 \
-  INNGEST_BASE_URL=http://127.0.0.1:8288
+  INNGEST_BASE_URL=http://127.0.0.1:8288 \
+  WHATSAPP_TOKEN_FILE=/var/lib/motake-secrets/whatsapp-access-token
 
 # Inngest's local state (queued runs) lives on a named volume so it survives restarts.
 VOLUME ["/var/lib/inngest"]

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "@repo/database";
@@ -36,6 +36,7 @@ interface CachedWorkingToken {
 }
 
 const OWNER_ONLY_FILE_MODE = 0o600;
+const OWNER_ONLY_DIRECTORY_MODE = 0o700;
 
 function lastFourOf(token: string): string {
   return token.slice(-4);
@@ -95,6 +96,7 @@ export class WhatsAppTokenStore implements WhatsAppTokenSource {
       path.dirname(filePath),
       `.${path.basename(filePath)}.${randomUUID()}.tmp`,
     );
+    await mkdir(path.dirname(filePath), { recursive: true, mode: OWNER_ONLY_DIRECTORY_MODE });
     try {
       await writeFile(temporaryPath, `${token.trim()}\n`, {
         mode: OWNER_ONLY_FILE_MODE,

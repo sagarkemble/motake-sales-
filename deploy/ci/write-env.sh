@@ -50,12 +50,13 @@ Optional (defaults applied if unset):
 
 Notification service (switched on by NOTIFICATION_INTERNAL_API_KEY; then all are required,
 unset skips the notification container):
-  NOTIFICATION_INTERNAL_API_KEY, META_ACCESS_TOKEN, META_PHONE_NUMBER_ID, META_APP_SECRET,
+  NOTIFICATION_INTERNAL_API_KEY, META_PHONE_NUMBER_ID, META_APP_SECRET,
   META_WEBHOOK_VERIFY_TOKEN, INNGEST_EVENT_KEY, INNGEST_SIGNING_KEY, NOTIFICATION_R2_ACCOUNT_ID,
   NOTIFICATION_R2_ACCESS_KEY_ID, NOTIFICATION_R2_SECRET_ACCESS_KEY
   These go to deploy/generated/notification.env (mode 600) with R2_DOCUMENTS_BUCKET_NAME, not
-  the root .env; the root .env only gets NOTIFICATION_URL and NOTIFICATION_INTERNAL_API_KEY for
-  the main API.
+  the root .env; the root .env only gets NOTIFICATION_URL, NOTIFICATION_INTERNAL_API_KEY and
+  META_PHONE_NUMBER_ID (to check a pasted WhatsApp token) for the main API. The WhatsApp access
+  token is not an env value: it lives in Supabase Vault (Spec J-0).
 EOF
 }
 
@@ -122,6 +123,7 @@ if [[ -n "${NOTIFICATION_INTERNAL_API_KEY:-}" ]]; then
     echo
     echo "NOTIFICATION_URL=http://127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-$DEFAULT_NOTIFICATION_PORT}"
     echo "NOTIFICATION_INTERNAL_API_KEY=${NOTIFICATION_INTERNAL_API_KEY}"
+    echo "META_PHONE_NUMBER_ID=${META_PHONE_NUMBER_ID:-}"
   } >>"$ENV_FILE"
 fi
 

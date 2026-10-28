@@ -34,6 +34,8 @@ k6/data/users.json
 .env
 .env.*
 !.env.example
+# WhatsApp access token working copy (Spec J-0; apps/notification WHATSAPP_TOKEN_FILE)
+.secrets/
 
 # Next.js
 next-env.d.ts

@@ -233,8 +233,7 @@ Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNA
 | Secret | Purpose |
 |--------|---------|
 | `NOTIFICATION_INTERNAL_API_KEY` | Shared main API ↔ notification key (`openssl rand -hex 32`); not the JWT secret or Supabase key |
-| `META_ACCESS_TOKEN` | Meta system-user token with `whatsapp_business_messaging` |
-| `META_PHONE_NUMBER_ID` | WhatsApp Business phone number id |
+| `META_PHONE_NUMBER_ID` | WhatsApp Business phone number id (also written to the root `.env`: the main API checks a pasted token against it) |
 | `META_APP_SECRET` | Meta app secret (webhook `X-Hub-Signature-256`) |
 | `META_WEBHOOK_VERIFY_TOKEN` | Any long random string; the same value goes into the Meta webhook settings |
 | `INNGEST_EVENT_KEY` | Self-hosted Inngest event key (`openssl rand -hex 16`) |
@@ -607,16 +606,23 @@ motake-back.lunarstudio.dev {
 `apps/notification` runs as one Docker container (`motake-notification`): the Express app plus a self-hosted Inngest server, with Inngest state on the named volume `motake-inngest-data`. It publishes only `127.0.0.1:${MOTAKE_NOTIFICATION_PORT:-8100}`. The deploy builds the image on the VPS (`docker build -f apps/notification/Dockerfile .`) and replaces the container on every deploy (`docker stop -t 30` first, so an in-flight send can finish; dangling images are pruned after a healthy start); it is skipped while `NOTIFICATION_INTERNAL_API_KEY` (§5.1) is unset. It runs after PM2, Caddy and the api/web health checks: a notification failure leaves the API and web live and fails the deploy job loudly at the end.
 
 - `ensure-production.sh` installs Docker only when `NOTIFICATION_INTERNAL_API_KEY` is set. It first rewrites the managed `/etc/sudoers.d/deploy-motake` (validated with `visudo -c`), so an existing VPS gains `/usr/sbin/usermod`, then adds the deploy user to the `docker` group. Until the next SSH login the deploy runs docker through `sg docker`.
-- The main API gets `NOTIFICATION_URL=http://127.0.0.1:<port>` and `NOTIFICATION_INTERNAL_API_KEY` in its `.env`.
+- The main API gets `NOTIFICATION_URL=http://127.0.0.1:<port>`, `NOTIFICATION_INTERNAL_API_KEY` and `META_PHONE_NUMBER_ID` in its `.env`.
+- **WhatsApp access token (Spec J-0).** Not an env value. The master copy is the Supabase Vault secret `motake_whatsapp_access_token` (override with `WHATSAPP_TOKEN_VAULT_SECRET_NAME`, the same value on both apps); the working copy is the file `WHATSAPP_TOKEN_FILE` inside the container (`/var/lib/motake-secrets/whatsapp-access-token`, mode 600). At start-up, every 5 minutes and right after a send hits a token error, the app checks the file's token with one read-only Graph call and, if it stopped working, copies a working Vault token into the file. With no token in the file or Vault the container refuses to start (and restarts until one is saved). A message that fails on the token stays `pending` (held) and is sent once a working token is in place. To change the token, paste it in Admin Settings → WhatsApp access token: Motake checks it with Meta, saves it to Vault and the app picks it up within seconds.
 
 **Meta one-time setup** (WhatsApp Business account):
 
-1. Create a system user with `whatsapp_business_messaging` and generate a permanent token → `META_ACCESS_TOKEN`; note the phone number id → `META_PHONE_NUMBER_ID`; app secret → `META_APP_SECRET`.
+1. Create the access token (a permanent System User token, no expiry):
+   1. Meta Business Suite → Business settings → Users → System users → **Add**: a name (e.g. `motake-notification`), role **Admin**.
+   2. **Assign assets**: the Motake app (Full control) and the WhatsApp Business account (Full control).
+   3. **Generate new token**: the Motake app, expiry **Never**, permissions `business_management`, `whatsapp_business_messaging` and `whatsapp_business_management`.
+   4. Paste it in Admin Settings → WhatsApp access token (or, before the main API is up, store it in Vault by hand in the Supabase SQL editor: `select vault.create_secret('<token>', 'motake_whatsapp_access_token', '{}');`). Never put it in an env file, a log or a ticket.
+
+   Note the phone number id → `META_PHONE_NUMBER_ID`; app secret → `META_APP_SECRET`.
 2. Subscribe the app to the WABA: `POST https://graph.facebook.com/v26.0/<WABA-ID>/subscribed_apps` with the token.
 3. In the app's WhatsApp → Configuration, set the callback URL `https://<api-domain>/webhooks/whatsapp` and the verify token `META_WEBHOOK_VERIFY_TOKEN`; subscribe the `messages` field.
 4. Create the message templates in WhatsApp Manager and wait for approval; then insert a matching `notification_templates` row per name/language/version with `verified = true` (nothing is sent for a template that is not in the table and verified).
 
-Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when the database and the in-container Inngest server answer; 503 when either is down). It does not check Meta or R2 credentials; a missing setting stops the app at start-up, so `/health` does not answer at all.
+Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when the database and the in-container Inngest server answer; 503 when either is down). Its `whatsappToken` field shows the token state at the last check (`ok`, `invalid`, `unavailable`) but never makes it unhealthy. It does not check R2 credentials; a missing setting stops the app at start-up, so `/health` does not answer at all.
 
 ### 9.2 Non-interactive invocation (from CI)
 

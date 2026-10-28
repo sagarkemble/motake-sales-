@@ -131,7 +131,6 @@ export CORS_ALLOWED_ORIGIN="${CORS_ALLOWED_ORIGIN:-}"
 # Notification service (Spec K): NOTIFICATION_INTERNAL_API_KEY switches it on, then all of these
 # are required; unset skips the container. Separate secrets.
 export NOTIFICATION_INTERNAL_API_KEY="${NOTIFICATION_INTERNAL_API_KEY:-}"
-export META_ACCESS_TOKEN="${META_ACCESS_TOKEN:-}"
 export META_PHONE_NUMBER_ID="${META_PHONE_NUMBER_ID:-}"
 export META_APP_SECRET="${META_APP_SECRET:-}"
 export META_WEBHOOK_VERIFY_TOKEN="${META_WEBHOOK_VERIFY_TOKEN:-}"

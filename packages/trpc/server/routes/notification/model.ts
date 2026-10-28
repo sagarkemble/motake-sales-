@@ -90,11 +90,22 @@ export const suppressResultSchema = z.union([
   z.object({ suppressed: z.literal(false), status: notificationStatusSchema }),
 ]);
 
+const whatsAppTokenStateSchema = z.enum(["ok", "invalid", "unavailable"]);
+
 export const healthSchema = z.object({
   status: z.enum(["ok", "degraded"]),
   database: z.enum(["ok", "down"]),
   inngest: z.enum(["ok", "down"]),
+  whatsappToken: whatsAppTokenStateSchema,
 });
+
+export const whatsAppTokenStatusSchema = z.object({
+  state: whatsAppTokenStateSchema,
+  checkedAt: z.date().nullable(),
+  heldCount: z.number().int(),
+});
+
+export const resumeHeldResultSchema = z.object({ queued: z.number().int() });
 
 export const listTemplatesInputSchema = z.object({
   provider: notificationProviderSchema.optional(),
