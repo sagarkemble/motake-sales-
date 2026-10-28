@@ -7,6 +7,12 @@ import { Suspense, useEffect, useState } from "react";
 
 import { BillPaperDocument } from "~/components/admin/ledger/bill-paper-document";
 import {
+  BillGateReasons,
+  GstCard,
+  GstDialog,
+  type GstDialogKind,
+} from "~/components/admin/ledger/bill-paper-gst";
+import {
   CancelForm,
   CorrectPanel,
   RaiseNoteForm,
@@ -32,6 +38,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useBillGst } from "~/hooks/use-gst";
 import { useBillPaper, type BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -39,12 +46,25 @@ type SheetKind = "cancel" | "note";
 
 function BackLink({ paper }: { paper: BillPaper | null }) {
   const tx = useTranslate();
+  const searchParams = useSearchParams();
+  const fromGst = searchParams.get("from") === "gst";
   const customerId = paper?.customer?.id;
   const [href, setHref] = useState(
     customerId ? `/admin/ledger?customer=${customerId}` : "/admin/ledger",
   );
   // Read after mount: the saved Ledger URL lives in this tab's session storage.
   useEffect(() => setHref(ledgerReturnHref(customerId)), [customerId]);
+  // Opened from the GST page's IRN pending list: Back returns there.
+  if (fromGst)
+    return (
+      <Link
+        href="/admin/gst?tab=irn"
+        className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeftIcon className="size-4" />
+        {tx("admin.gst.back")}
+      </Link>
+    );
   return (
     <Link
       href={href}
@@ -70,6 +90,9 @@ function PaperView({ paper }: { paper: BillPaper }) {
   const [sheet, setSheet] = useState<SheetKind | null>(
     searchParams.get("action") === "note" && paper.actions.canRaiseNote ? "note" : null,
   );
+  const [gstDialog, setGstDialog] = useState<GstDialogKind | null>(null);
+  const { billGstState, isBillGstStateLoading, isBillGstStateError, refetchBillGstState } =
+    useBillGst({ billId: paper.bill.id });
   const correctState = useCorrectState(paper);
   const correct = useBillPaper();
   // One Raise Note key per paper, kept across sheet closes and rotated only once a Note is raised.
@@ -151,10 +174,14 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 >
                   {tx("admin.ledger.paper.actions.cancel")}
                 </Button>
-                <DownloadPdfButton
-                  className="col-span-2 lg:col-span-1"
-                  target={{ billVersionId: paper.version.id }}
-                />
+                {/* While IRN pending the final PDF is not drawn; the GST card has the Draft PDF. */}
+                {!billGstState?.allowed.draft && (
+                  <DownloadPdfButton
+                    className="col-span-2 lg:col-span-1"
+                    target={{ billVersionId: paper.version.id }}
+                  />
+                )}
+                <BillGateReasons paper={paper} className="col-span-2 lg:col-span-1" />
               </div>
             ) : (
               <CorrectPanel
@@ -167,6 +194,13 @@ function PaperView({ paper }: { paper: BillPaper }) {
               />
             )}
           </div>
+          <GstCard
+            gst={billGstState}
+            isLoading={isBillGstStateLoading}
+            isError={isBillGstStateError}
+            onRetry={() => void refetchBillGstState()}
+            onOpen={setGstDialog}
+          />
         </aside>
       </div>
       <Sheet open={sheet != null} onOpenChange={(open) => !open && closeSheet()}>
@@ -192,6 +226,12 @@ function PaperView({ paper }: { paper: BillPaper }) {
           </div>
         </SheetContent>
       </Sheet>
+      <GstDialog
+        kind={gstDialog}
+        gst={billGstState}
+        paper={paper}
+        onClose={() => setGstDialog(null)}
+      />
     </div>
   );
 }
