@@ -13,6 +13,7 @@ import {
   orUndefined,
 } from "~/components/admin/orders/filter-fields";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
+import { DatePicker } from "~/components/shared/date-picker";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
@@ -143,21 +144,21 @@ export function BillList() {
           />
         </FilterField>
         <FilterField label={tx("admin.bills.billDateFrom")}>
-          <Input
-            type="date"
+          <DatePicker
             value={billDateFrom}
-            onChange={(event) => {
-              setBillDateFrom(event.target.value);
+            clearable
+            onChange={(value) => {
+              setBillDateFrom(value);
               setPage(1);
             }}
           />
         </FilterField>
         <FilterField label={tx("admin.bills.billDateTo")}>
-          <Input
-            type="date"
+          <DatePicker
             value={billDateTo}
-            onChange={(event) => {
-              setBillDateTo(event.target.value);
+            clearable
+            onChange={(value) => {
+              setBillDateTo(value);
               setPage(1);
             }}
           />
