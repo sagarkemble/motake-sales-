@@ -167,7 +167,8 @@
       "quickViewOrders": "ऑर्डर पहा",
       "openAccountMenu": "खाते मेनू उघडा",
       "routes": "रूट",
-      "ledger": "खातेवही"
+      "ledger": "खातेवही",
+      "gst": "GST"
     },
     "dashboard": {
       "kpi": {
@@ -996,7 +997,88 @@
           "title": "बिल लोड झाले नाही",
           "body": "कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
         },
-        "pdfFailed": "PDF उघडता आली नाही."
+        "pdfFailed": "PDF उघडता आली नाही.",
+        "gst": {
+          "title": "GST",
+          "status": {
+            "not_needed": "IRN लागत नाही",
+            "pending": "IRN बाकी",
+            "recorded": "IRN नोंदवला",
+            "portal_cancelled": "पोर्टलवर रद्द"
+          },
+          "filedMonth": "फाइल झालेला महिना",
+          "filedMonthNote": "{month} ची GSTR-1 {date} ला फाइल ({reference}).",
+          "filedMonthPlain": "{month} ची GSTR-1 फाइल झाली आहे.",
+          "pendingBody": "IRN ची वाट पाहत आहे. IRN जतन केल्यावर अंतिम टॅक्स इनव्हॉइस PDF आणि बिल WhatsApp जाते.",
+          "notNeeded": "या बिलाला IRN लागत नाही.",
+          "loadError": "GST स्थिती लोड झाली नाही.",
+          "fields": {
+            "irn": "IRN",
+            "ackNumber": "Ack क्रमांक",
+            "ackDate": "Ack तारीख",
+            "signedQrText": "Signed QR मजकूर",
+            "recorded": "नोंद",
+            "recordedValue": "{name} · {when}",
+            "notes": "टीप"
+          },
+          "viewQr": "Signed QR प्रतिमा पहा",
+          "qrFailed": "Signed QR प्रतिमा उघडता आली नाही.",
+          "lastCorrect": "IRN दुरुस्त: “{reason}”",
+          "portalCancelled": "सरकारी पोर्टलवर रद्द",
+          "actions": {
+            "draftPdf": "Draft PDF",
+            "drawing": "तयार करत आहे…",
+            "portalJson": "Portal JSON",
+            "enterIrn": "IRN भरा",
+            "correctIrn": "IRN Correct करा",
+            "portalCancel": "पोर्टल रद्दीकरण नोंदवा"
+          },
+          "draftDone": "{filename} डाउनलोड झाले. फक्त ड्राफ्ट, टॅक्स इनव्हॉइस नाही.",
+          "draftFailed": "ड्राफ्ट डाउनलोड करता आला नाही.",
+          "irnForm": {
+            "correctBody": "पोर्टलवरून चुकीचे कॉपी झालेले दुरुस्त करा. जुनी मूल्ये ऑडिट लॉगमध्ये राहतात. यामुळे ओळ Correct किंवा Cancel कधीच चालू होत नाही.",
+            "lateIrn": "महिना फाइल झाला आहे; उशिराचा IRN तरीही भरता येतो.",
+            "image": "Signed QR प्रतिमा (ऐच्छिक, PNG किंवा JPEG, 1 MB पर्यंत)",
+            "pickImage": "प्रतिमा निवडा",
+            "changeImage": "प्रतिमा बदला",
+            "removeImage": "काढा",
+            "imageAlt": "अपलोड करायची Signed QR प्रतिमा",
+            "correctImageHint": "प्रतिमेशिवाय जतन करण्यासाठी रिकामे ठेवा (जुनी स्टोरेजमध्ये राहते, दिसत नाही).",
+            "reasonPlaceholder": "उदा. Ack क्रमांकात टायपो",
+            "errors": {
+              "irn": "IRN आवश्यक आहे.",
+              "ackNumber": "Ack क्रमांक आवश्यक आहे.",
+              "ackNumberLength": "Ack क्रमांक जास्तीत जास्त 64 अक्षरांचा.",
+              "ackDate": "Ack तारीख आवश्यक आहे.",
+              "signedQrText": "Signed QR मजकूर आवश्यक आहे.",
+              "imageType": "फक्त PNG किंवा JPEG प्रतिमा.",
+              "imageSize": "प्रतिमा 1 MB पेक्षा मोठी आहे.",
+              "imageRead": "प्रतिमा वाचता आली नाही. पुन्हा निवडा.",
+              "reason": "कारण आवश्यक आहे."
+            },
+            "submitEnter": "IRN जतन करा",
+            "submitCorrect": "IRN Correct जतन करा",
+            "entered": "{number} वर IRN जतन झाला. आता हे अंतिम टॅक्स इनव्हॉइस आहे.",
+            "corrected": "{number} वर IRN दुरुस्त झाला. ओळ Correct बंदच राहते."
+          },
+          "portalForm": {
+            "body": "सरकारी पोर्टलवर IRN रद्द केल्यानंतरच. यामुळे Motake बिल रद्द होते: बिलावर उरलेल्या सर्वांसाठी क्रेडिट नोट, पेमेंट राहतात, क्रमांक राहतो, गेट पास चालू असेल तरच माल परत.",
+            "window": "पोर्टलची रद्दीकरण मुदत ॲप तपासत नाही.",
+            "ackNumber": "पोर्टल ack क्रमांक",
+            "ackDate": "Ack तारीख",
+            "notes": "टीप (ऐच्छिक)",
+            "reasonPlaceholder": "उदा. चुकीच्या GSTIN वर बिल",
+            "errors": {
+              "ackNumber": "पोर्टल ack क्रमांक आवश्यक आहे.",
+              "ackDate": "Ack तारीख आवश्यक आहे.",
+              "ackDateFuture": "Ack तारीख भविष्यातील असू शकत नाही."
+            },
+            "submit": "नोंदवा आणि बिल रद्द करा",
+            "done": "पोर्टल रद्दीकरण नोंदवले. {amount} ची {kind} {number}."
+          },
+          "qrPrivate": "खासगी लिंक, फक्त 5 मिनिटे उघडते. दुकानाला कधीच पाठवली जात नाही.",
+          "qrFullSize": "पूर्ण आकारात उघडा"
+        }
       },
       "preorder": {
         "title": "{date} साठी प्री-ऑर्डर",
@@ -1047,6 +1129,90 @@
         "bill": "सर्व्हरचे उत्तर येण्यापूर्वी कनेक्शन तुटले. पुन्हा बिल करण्यापूर्वी खातेवही तपासा; याच स्क्रीनवरून हेच बिल पुन्हा केल्यास दोनदा बिल होणार नाही.",
         "note": "सर्व्हरचे उत्तर येण्यापूर्वी कनेक्शन तुटले. पुन्हा नोट करण्यापूर्वी या बिलावरील नोट्स तपासा; हीच नोट पुन्हा केल्यास ती दोनदा होणार नाही."
       }
+    },
+    "gst": {
+      "title": "GST",
+      "recordFiling": "फायलिंग नोंदवा",
+      "tabs": {
+        "filings": "फाइल झालेले महिने",
+        "irnPending": "IRN बाकी"
+      },
+      "filedMonth": "फाइल झालेला महिना",
+      "loadError": {
+        "title": "GST लोड झाले नाही",
+        "body": "कनेक्शन तपासा आणि पुन्हा प्रयत्न करा. तुमच्या फायलिंग सुरक्षित आहेत."
+      },
+      "filings": {
+        "hint": "नवीन आधी. Correct करण्यासाठी महिन्यावर टॅप करा. फाइल झालेले महिने फाइलच राहतात.",
+        "emptyTitle": "अजून एकही महिना फाइल झालेला नाही",
+        "emptyBody": "CA ने फाइल केल्यावर पहिली GSTR-1 फायलिंग नोंदवा.",
+        "columns": {
+          "month": "महिना",
+          "filedOn": "फाइल तारीख",
+          "reference": "संदर्भ",
+          "filer": "फाइल करणारे",
+          "notes": "टीप"
+        },
+        "filedBy": "{date} ला फाइल · {filer}",
+        "correct": "Correct"
+      },
+      "irn": {
+        "hint": "जुने बिल आधी. Draft PDF किंवा Portal JSON डाउनलोड करण्यासाठी आणि IRN भरण्यासाठी बिल उघडा.",
+        "emptyTitle": "कोणतेही बिल IRN ची वाट पाहत नाही",
+        "emptyBody": "IRN असलेली बिले त्यांच्या बिल पेपरवर आहेत.",
+        "columns": {
+          "bill": "बिल",
+          "customer": "ग्राहक",
+          "route": "रूट",
+          "billDate": "बिल तारीख",
+          "total": "एकूण"
+        },
+        "open": "उघडा",
+        "count": "{count} बिले IRN ची वाट पाहत आहेत"
+      },
+      "form": {
+        "recordTitle": "GSTR-1 फायलिंग नोंदवा",
+        "recordDescription": "फाइल झालेल्या महिन्यातील प्रत्येक बिलावर Correct आणि Cancel बंद होतात.",
+        "correctTitle": "{month} फायलिंग Correct करा",
+        "correctDescription": "तारीख, संदर्भ किंवा टीप दुरुस्त करा. कारण आवश्यक आहे.",
+        "month": "GSTR-1 महिना",
+        "monthFiled": "{month} · फाइल झाला",
+        "filedOn": "फाइल तारीख",
+        "reference": "संदर्भ / पोचपावती",
+        "referencePlaceholder": "GST पोर्टलवरील ARN",
+        "notes": "टीप (ऐच्छिक)",
+        "notesPlaceholder": "CA ने सांगितलेले काही",
+        "filer": "फाइल करणारे",
+        "filerYou": "{name} (तुम्ही)",
+        "filerOriginal": "{name} (मूळ फाइल करणारेच राहतात)",
+        "reasonPlaceholder": "उदा. ARN मध्ये टायपो",
+        "correctHint": "Correct फक्त तारीख, संदर्भ आणि टीप बदलते. महिना फाइलच राहतो; अनफाइल करता येत नाही.",
+        "errors": {
+          "filedOnRequired": "फाइल तारीख आवश्यक आहे.",
+          "filedOnBeforeMonth": "फाइल तारीख {month} सुरू होण्याआधीची असू शकत नाही.",
+          "filedOnFuture": "फाइल तारीख आजनंतरची असू शकत नाही.",
+          "referenceRequired": "संदर्भ आवश्यक आहे.",
+          "reasonRequired": "कारण आवश्यक आहे."
+        },
+        "close": "बंद करा",
+        "submitRecord": "फायलिंग नोंदवा…",
+        "submitCorrect": "Correct जतन करा",
+        "recorded": "{month} फाइल झाला. त्या महिन्यातील बिलांवर आता Correct आणि Cancel बंद आहेत.",
+        "recordedIrnPending": "{month} फाइल झाला. त्यातील {count} बिलांना अजून IRN हवा आहे.",
+        "corrected": "{month} फायलिंग दुरुस्त झाली. महिना फाइलच राहतो.",
+        "confirm": {
+          "title": "{month} फाइल करायचा?",
+          "checking": "महिना तपासत आहे…",
+          "bills": "{month} मध्ये {count} बिले आहेत. फाइल केल्यावर त्या सर्वांवर Correct आणि Cancel बंद होतील (Raise Note चालू राहते). हे परत करता येत नाही.",
+          "irnPending": "या महिन्यात {count} बिलांचा IRN अजून बाकी आहे. तुम्ही आता फाइल करून IRN नंतर भरू शकता.",
+          "noIrnPending": "या महिन्यातील कोणतेही बिल IRN ची वाट पाहत नाही.",
+          "alreadyFiled": "{month} आधीच फाइल झाला आहे — तो Correct करा.",
+          "previewFailed": "महिना तपासता आला नाही. पुन्हा प्रयत्न करा.",
+          "back": "मागे",
+          "submit": "{month} फाइल करा"
+        }
+      },
+      "back": "GST · IRN बाकी"
     }
   },
   "salesman": {

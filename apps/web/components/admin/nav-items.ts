@@ -1,5 +1,6 @@
 import {
   BookOpenIcon,
+  FileCheck2Icon,
   LayoutDashboard,
   Package,
   PackagePlusIcon,
@@ -28,6 +29,7 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "admin.nav.orders", href: "/admin/orders", icon: ShoppingCart },
   { label: "admin.nav.customers", href: "/admin/customers", icon: Store },
   { label: "admin.nav.ledger", href: "/admin/ledger", icon: BookOpenIcon },
+  { label: "admin.nav.gst", href: "/admin/gst", icon: FileCheck2Icon },
   { label: "admin.nav.routes", href: "/admin/routes", icon: RouteIcon },
 ];
 
