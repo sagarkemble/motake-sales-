@@ -11,6 +11,7 @@ import {
 } from "~/lib/gatepass-quantities";
 import { GatepassStatGrid } from "~/components/salesman/gatepass/gatepass-stat-grid";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "~/components/ui/drawer";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
@@ -49,9 +50,9 @@ export function GatepassDetailDrawer({
 
   return (
     <Drawer open={Boolean(businessDate)} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <DrawerHeader className="text-left">
-          <DrawerTitle>Gate Pass Details</DrawerTitle>
+          <DrawerTitle>{tx("salesman.gatepass.detailTitle")}</DrawerTitle>
         </DrawerHeader>
 
         {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
@@ -82,7 +83,7 @@ export function GatepassDetailDrawer({
                     <div>
                       <p className="text-muted-foreground">{tx("salesman.gatepass.issuedAt")}</p>
                       <p className="font-medium">
-                        {formatDate(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, hh:mm a")}
+                        {formatDate(new Date(myGatepass.gatepass.createdAt), "d MMM yyyy, h:mm a")}
                       </p>
                     </div>
                     <div>
@@ -93,7 +94,7 @@ export function GatepassDetailDrawer({
                     </div>
                     {myGatepass.closedByName && (
                       <div>
-                        <p className="text-muted-foreground">Fulfilled By</p>
+                        <p className="text-muted-foreground">{tx("salesman.gatepass.closedBy")}</p>
                         <p className="font-medium">{myGatepass.closedByName}</p>
                       </div>
                     )}
@@ -101,21 +102,17 @@ export function GatepassDetailDrawer({
                 </div>
 
                 {myGatepass.gatepass.hasDiscrepancy && (
-                  <div className="flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs">
-                    <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">
-                        {tx("salesman.gatepass.flaggedBy", {
-                          name: myGatepass.closedByName ?? tx("salesman.gatepass.admin"),
-                        })}
-                      </p>
-                      {myGatepass.gatepass.discrepancyReason && (
-                        <p className="text-muted-foreground">
-                          {myGatepass.gatepass.discrepancyReason}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+                    <TriangleAlertIcon />
+                    <AlertTitle className="line-clamp-none">
+                      {tx("salesman.gatepass.flaggedBy", {
+                        name: myGatepass.closedByName ?? tx("salesman.gatepass.admin"),
+                      })}
+                    </AlertTitle>
+                    {myGatepass.gatepass.discrepancyReason && (
+                      <AlertDescription>{myGatepass.gatepass.discrepancyReason}</AlertDescription>
+                    )}
+                  </Alert>
                 )}
 
                 <div className="rounded-2xl border bg-card p-4">
@@ -123,7 +120,7 @@ export function GatepassDetailDrawer({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-semibold">Items Allocated</p>
+                  <p className="text-sm font-semibold">{tx("salesman.gatepass.itemsAllocated")}</p>
 
                   <div className="flex flex-col divide-y rounded-2xl border bg-card">
                     <div className="grid grid-cols-6 gap-2 px-3 py-2 text-xs text-muted-foreground">
@@ -144,7 +141,7 @@ export function GatepassDetailDrawer({
                           <div className="grid grid-cols-6 gap-2 tabular-nums">
                             <div className="col-span-2 min-w-0">
                               <p className="truncate font-medium">
-                                {display?.productName ?? "Product"}
+                                {display?.productName ?? tx("salesman.gatepass.productFallback")}
                               </p>
                               <p className="truncate text-xs text-muted-foreground">
                                 {display?.varietyName} ({display?.unit})
@@ -152,7 +149,14 @@ export function GatepassDetailDrawer({
                             </div>
                             <p className="text-right font-medium">{item.issuedQty}</p>
                             <p className="text-right font-medium">{item.soldQty}</p>
-                            <p className="text-right font-medium">{item.sellableQty}</p>
+                            <p
+                              className={cn(
+                                "text-right font-semibold text-brand",
+                                item.sellableQty === 0 && "text-muted-foreground",
+                              )}
+                            >
+                              {item.sellableQty}
+                            </p>
                             <p className="text-right font-medium">
                               {handedOver ? item.returnedQty : "—"}
                             </p>
@@ -174,8 +178,8 @@ export function GatepassDetailDrawer({
                   </div>
                 </div>
 
-                <div className="flex gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
-                  <InfoIcon className="size-4 shrink-0 text-brand" />
+                <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
+                  <InfoIcon className="mt-0.5 size-4 shrink-0 text-brand" />
                   <p className="text-foreground">{tx("salesman.gatepass.hint.soldOrdersOnly")}</p>
                 </div>
               </>

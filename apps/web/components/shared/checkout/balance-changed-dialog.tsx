@@ -99,7 +99,11 @@ export function BalanceChangedDialog({
           <p className="text-sm text-amber-700">{tx("checkout.balanceChanged.chooseFirst")}</p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPlacing} onClick={onChangePayment}>
+          <AlertDialogCancel
+            disabled={isPlacing}
+            onClick={onChangePayment}
+            className="rounded-full"
+          >
             {tx("checkout.balanceChanged.changePayment")}
           </AlertDialogCancel>
           <AlertDialogAction
@@ -108,7 +112,7 @@ export function BalanceChangedDialog({
               event.preventDefault();
               onPlaceAgain();
             }}
-            className="bg-brand text-brand-foreground hover:bg-brand/90"
+            className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
             {isPlacing
               ? tx("checkout.balanceChanged.placing")

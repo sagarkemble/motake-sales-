@@ -16,9 +16,9 @@ export function InstallAppButton() {
 
   if (isIos) {
     return (
-      <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-        <Share className="size-4" />
-        <span>{tx("common.install.hint")}</span>
+      <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
+        <Share className="mt-0.5 size-4 shrink-0 text-brand" />
+        <span className="text-foreground">{tx("common.install.hint")}</span>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export function InstallAppButton() {
   }
 
   return (
-    <Button onClick={promptInstall} variant="outline">
+    <Button onClick={promptInstall} variant="outline" className="rounded-full">
       <Download className="size-4" />
       {tx("common.install.cta")}
     </Button>

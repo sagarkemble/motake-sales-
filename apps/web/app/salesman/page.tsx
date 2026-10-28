@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { SearchIcon, XIcon } from "lucide-react";
+import { PackageSearchIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { AddToCartDrawer } from "~/components/salesman/add-to-cart-drawer";
 import { ProductCatalogCard } from "~/components/salesman/product-catalog-card";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useProducts } from "~/hooks/use-products";
@@ -33,20 +34,22 @@ function SalesmanCatalogContent() {
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search for a product..."
+          placeholder={tx("salesman.catalog.searchPlaceholder")}
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          className="rounded-full bg-muted/40 pl-9 pr-9"
+          className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
         />
         {searchTerm && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label={tx("common.actions.clearSearch")}
             onClick={() => setSearchTerm("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-1.5 top-1/2 size-8 -translate-y-1/2 rounded-full text-muted-foreground"
           >
             <XIcon className="size-4" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -54,11 +57,14 @@ function SalesmanCatalogContent() {
         {isProductsListLoading ? (
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm
-              ? `No products match "${debouncedSearchTerm}"`
-              : tx("salesman.catalog.empty")}
-          </p>
+          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <PackageSearchIcon className="size-6 text-muted-foreground" />
+            <p className="text-sm font-medium">
+              {debouncedSearchTerm
+                ? tx("salesman.catalog.noMatch", { term: debouncedSearchTerm })
+                : tx("salesman.catalog.empty")}
+            </p>
+          </div>
         ) : (
           productsPage.items.map(({ product, varieties }) => (
             <ProductCatalogCard

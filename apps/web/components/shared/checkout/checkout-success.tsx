@@ -172,17 +172,15 @@ export function CheckoutSuccess({
       </div>
 
       {returnedChange && (
-        <Alert className="max-w-sm border-amber-500/50 bg-amber-500/10 text-left">
+        <Alert className="max-w-sm border-amber-500/40 bg-amber-500/5 text-left">
           <AlertTriangleIcon className="text-amber-700" />
-          <AlertTitle className="line-clamp-none text-amber-900">
+          <AlertTitle className="line-clamp-none">
             {tx("checkout.success.returnedChanged", {
               now: formatPaise(returnedChange.now),
               was: formatPaise(returnedChange.was),
             })}
           </AlertTitle>
-          <AlertDescription className="text-amber-900">
-            {tx("checkout.success.returnedChangedHint")}
-          </AlertDescription>
+          <AlertDescription>{tx("checkout.success.returnedChangedHint")}</AlertDescription>
         </Alert>
       )}
 
@@ -192,7 +190,7 @@ export function CheckoutSuccess({
             key={row.key}
             className={cn(
               "flex items-start justify-between gap-3",
-              row.highlight && "-mx-2 rounded-md bg-amber-500/15 px-2 py-1",
+              row.highlight && "-mx-2 rounded-md bg-amber-500/10 px-2 py-1",
             )}
           >
             <p className="text-xs text-muted-foreground">{row.label}</p>
@@ -200,7 +198,7 @@ export function CheckoutSuccess({
               className={cn(
                 "break-all text-right text-sm font-medium",
                 row.mono && "font-mono text-xs",
-                row.highlight && "font-semibold text-amber-800",
+                row.highlight && "font-semibold text-amber-700",
               )}
             >
               {row.value}
@@ -227,7 +225,7 @@ export function CheckoutSuccess({
           <Button
             key={action.label}
             type="button"
-            variant={action.primary ? "default" : "ghost"}
+            variant={action.primary ? "default" : "outline"}
             onClick={action.onClick}
             className={cn(
               "w-full rounded-full",

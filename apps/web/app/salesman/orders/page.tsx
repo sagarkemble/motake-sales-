@@ -1,12 +1,12 @@
 "use client";
 
+import { CalendarCheckIcon, ClipboardListIcon } from "lucide-react";
 import { useState } from "react";
 
 import type { RouterOutputs } from "@repo/trpc/client";
 
 import { isPreorderPending } from "~/lib/is-preorder-pending";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { OrderDetailSheet } from "~/components/salesman/order-detail-sheet";
 import { OrderListRow } from "~/components/salesman/order-list-row";
@@ -15,6 +15,7 @@ import { useFormatDate } from "~/hooks/use-format-date";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ListPager } from "~/components/shared/list-pager";
 
 const ORDERS_PAGE_SIZE = 20;
 const PREORDERS_PAGE_SIZE = 20;
@@ -66,9 +67,10 @@ export default function SalesmanOrdersPage() {
           {isBookNowLoading ? (
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
-              {tx("salesman.orders.empty.orders")}
-            </p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+              <ClipboardListIcon className="size-6 text-muted-foreground" />
+              <p className="text-sm font-medium">{tx("salesman.orders.empty.orders")}</p>
+            </div>
           ) : (
             bookNowOrdersPage.items.map((row) => (
               <OrderListRow
@@ -85,51 +87,49 @@ export default function SalesmanOrdersPage() {
             ))
           )}
 
-          {bookNowOrdersPage.totalPages > 1 && (
-            <PaginationFooter
-              page={bookNowOrdersPage.page}
-              totalPages={bookNowOrdersPage.totalPages}
-              onPageChange={setBookNowPage}
-            />
-          )}
+          <ListPager
+            page={bookNowOrdersPage.page}
+            totalPages={bookNowOrdersPage.totalPages}
+            onPageChange={setBookNowPage}
+          />
         </TabsContent>
 
         <TabsContent value="pre_order" className="flex flex-col gap-4">
-          <div className="inline-flex w-fit gap-1 rounded-full border bg-muted/40 p-1">
-            <button
-              type="button"
-              onClick={() => setPreorderStatusFilter("pending")}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                preorderStatusFilter === "pending"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground",
-              )}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={preorderStatusFilter}
+            onValueChange={(value) =>
+              value && setPreorderStatusFilter(value as PreorderStatusFilter)
+            }
+            className="w-full sm:w-fit"
+          >
+            <ToggleGroupItem
+              value="pending"
+              className="flex-1 px-4 data-[state=on]:bg-accent data-[state=on]:text-brand"
             >
-              Pending ({pendingPreorderRows.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreorderStatusFilter("fulfilled")}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                preorderStatusFilter === "fulfilled"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground",
-              )}
+              {tx("salesman.orders.filter.pending", { count: pendingPreorderRows.length })}
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="fulfilled"
+              className="flex-1 px-4 data-[state=on]:bg-accent data-[state=on]:text-brand"
             >
-              Fulfilled ({fulfilledPreorderRows.length})
-            </button>
-          </div>
+              {tx("salesman.orders.filter.fulfilled", { count: fulfilledPreorderRows.length })}
+            </ToggleGroupItem>
+          </ToggleGroup>
 
           {isMyPreordersLoading ? (
             <ListItemSkeleton count={5} />
           ) : visiblePreorderRows.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
-              {preorderStatusFilter === "pending"
-                ? tx("salesman.orders.empty.preOrdersPending")
-                : tx("salesman.orders.empty.preOrdersFulfilled")}
-            </p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+              <CalendarCheckIcon className="size-6 text-muted-foreground" />
+              <p className="text-sm font-medium">
+                {preorderStatusFilter === "pending"
+                  ? tx("salesman.orders.empty.preOrdersPending")
+                  : tx("salesman.orders.empty.preOrdersFulfilled")}
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {visiblePreorderRows.map((row) => (
@@ -151,13 +151,11 @@ export default function SalesmanOrdersPage() {
             </div>
           )}
 
-          {myPreordersPageData.totalPages > 1 && (
-            <PaginationFooter
-              page={myPreordersPageData.page}
-              totalPages={myPreordersPageData.totalPages}
-              onPageChange={setPreorderPage}
-            />
-          )}
+          <ListPager
+            page={myPreordersPageData.page}
+            totalPages={myPreordersPageData.totalPages}
+            onPageChange={setPreorderPage}
+          />
         </TabsContent>
       </Tabs>
 
@@ -165,42 +163,6 @@ export default function SalesmanOrdersPage() {
         orderId={selectedOrderId}
         onOpenChange={(open) => !open && setSelectedOrderId(null)}
       />
-    </div>
-  );
-}
-
-interface PaginationFooterProps {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
-
-function PaginationFooter({ page, totalPages, onPageChange }: PaginationFooterProps) {
-  return (
-    <div className="flex items-center justify-between pt-2">
-      <p className="text-xs text-muted-foreground">
-        Page {page} of {totalPages}
-      </p>
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-full"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          Previous
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-full"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          Next
-        </Button>
-      </div>
     </div>
   );
 }

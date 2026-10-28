@@ -1,6 +1,6 @@
 "use client";
 
-import { LockIcon, MapPinIcon, PhoneIcon, SearchXIcon, UserIcon } from "lucide-react";
+import { LanguagesIcon, MapPinIcon, PhoneIcon, SearchXIcon, UserIcon } from "lucide-react";
 
 import { CardDetailSkeleton } from "~/components/shared/card-detail-skeleton";
 import { RouteTag } from "~/components/shared/route-tag";
@@ -51,7 +51,7 @@ export function CustomerDetailDrawer({
 
   return (
     <Drawer open={Boolean(customerId)} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <DrawerHeader className="text-left">
           <DrawerTitle>{tx("salesman.checkout.customer.detailTitle")}</DrawerTitle>
         </DrawerHeader>
@@ -98,7 +98,7 @@ export function CustomerDetailDrawer({
                     </div>
                   ))}
                   <div className="flex items-start gap-3 px-3 py-2.5">
-                    <LockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <LanguagesIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">
                         {tx("common.preferredLanguage.label")}

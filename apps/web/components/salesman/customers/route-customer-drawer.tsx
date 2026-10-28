@@ -27,6 +27,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "~/components/ui/drawer";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useRecordFieldPayment } from "~/hooks/salesman/use-record-field-payment";
 import { useCustomers } from "~/hooks/use-customers";
 import { useTranslate } from "~/hooks/use-translate";
@@ -74,10 +75,10 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
 
   return (
     <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[94dvh]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col">
           {fieldPayment.result ? (
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
               <DrawerHeader className="sr-only">
                 <DrawerTitle>{tx("checkout.success.field")}</DrawerTitle>
               </DrawerHeader>
@@ -85,7 +86,7 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                 input={fieldPayment.result}
                 actions={[{ label: tx("checkout.success.done"), primary: true, onClick: onClose }]}
               />
-            </div>
+            </ScrollArea>
           ) : (
             <>
               <DrawerHeader className="text-left">
@@ -101,8 +102,8 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                 </DrawerDescription>
               </DrawerHeader>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-4">
-                <div className="flex flex-col gap-3 pb-4">
+              <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+                <div className="flex flex-col gap-3 px-4 pb-4">
                   {isCustomerLoading ? (
                     <CardDetailSkeleton />
                   ) : !customer ? (
@@ -162,7 +163,7 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                     </>
                   )}
                 </div>
-              </div>
+              </ScrollArea>
 
               {customer && (
                 <DrawerFooter>
@@ -203,7 +204,7 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                       </Button>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         className="w-full gap-2 rounded-full"
                         onClick={startOrder}
                       >

@@ -3,6 +3,7 @@
 import { parseISO } from "date-fns";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { RouteTag } from "~/components/shared/route-tag";
 import { useFormatDate } from "~/hooks/use-format-date";
 import type { GatepassStatus } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
@@ -33,18 +34,12 @@ export function GatepassTodayHeaderCard({
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {tx("salesman.gatepass.route")}
-          </p>
-          <p className="truncate text-xl font-semibold leading-tight">{routeName}</p>
-          <p className="truncate font-mono text-xs text-muted-foreground">{routeCode}</p>
-        </div>
+        <p className="min-w-0 text-base font-semibold">
+          {tx("salesman.gatepass.todayTitle")} · {formatDate(parseISO(businessDate), "d MMM yyyy")}
+        </p>
         <GatepassStatusBadge status={status} hasDiscrepancy={hasDiscrepancy} />
       </div>
-      <p className="text-xs text-muted-foreground">
-        {tx("salesman.gatepass.todayTitle")} · {formatDate(parseISO(businessDate), "d MMM yyyy")}
-      </p>
+      <RouteTag name={routeName} code={routeCode} className="text-sm" />
       <GatepassStatGrid totals={totals} status={status} />
     </div>
   );

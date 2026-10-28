@@ -45,12 +45,14 @@ export function OrderItemAvatars({
           key={itemPreview.productName + itemPreviewIndex}
           className={cn(
             avatarSizeClasses[size],
-            "border-card bg-secondary shadow-sm ring-1 ring-black/5",
+            "border-card bg-secondary shadow-sm ring-1 ring-border",
           )}
           style={{ zIndex: itemPreviews.length - itemPreviewIndex }}
         >
           {itemPreview.imageUrl && <AvatarImage src={itemPreview.imageUrl} alt="" />}
-          <AvatarFallback className={cn(fallbackTextSizeBySize[size], "font-medium text-muted-foreground")}>
+          <AvatarFallback
+            className={cn(fallbackTextSizeBySize[size], "font-medium text-muted-foreground")}
+          >
             {getInitial(itemPreview.productName)}
           </AvatarFallback>
         </Avatar>

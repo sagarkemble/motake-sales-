@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Loader2, Trash2, Upload } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
 const maxFileSizeBytes = 5 * 1024 * 1024;
@@ -37,9 +38,10 @@ export function ImageUpload({
   requestUploadUrl,
   altText,
   shape = "square",
-  uploadButtonLabel = "Upload image",
+  uploadButtonLabel,
   className,
 }: ImageUploadProps) {
+  const tx = useTranslate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(imageUrl);
   const [isUploading, setIsUploading] = useState(false);
@@ -51,11 +53,11 @@ export function ImageUpload({
     setUploadErrorMessage(null);
 
     if (!acceptedContentTypes.includes(selectedFile.type as AcceptedContentType)) {
-      setUploadErrorMessage("Use a JPEG, PNG, or WEBP image.");
+      setUploadErrorMessage(tx("common.imageUpload.badType"));
       return;
     }
     if (selectedFile.size > maxFileSizeBytes) {
-      setUploadErrorMessage("Image must be 5MB or smaller.");
+      setUploadErrorMessage(tx("common.imageUpload.tooLarge"));
       return;
     }
 
@@ -78,7 +80,7 @@ export function ImageUpload({
       setPreviewUrl(uploadedImageUrl);
       onUploaded({ imageKey, imageUrl: uploadedImageUrl });
     } catch {
-      setUploadErrorMessage("Upload failed. Try again.");
+      setUploadErrorMessage(tx("common.imageUpload.uploadFailed"));
     } finally {
       setIsUploading(false);
     }
@@ -86,7 +88,7 @@ export function ImageUpload({
 
   async function handleDeleteClicked() {
     if (!onDelete) return;
-    if (!window.confirm("Remove this image?")) return;
+    if (!window.confirm(tx("common.imageUpload.confirmRemove"))) return;
 
     setUploadErrorMessage(null);
     setIsDeleting(true);
@@ -94,7 +96,7 @@ export function ImageUpload({
       await onDelete();
       setPreviewUrl(null);
     } catch {
-      setUploadErrorMessage("Could not remove the image. Try again.");
+      setUploadErrorMessage(tx("common.imageUpload.removeFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -117,7 +119,7 @@ export function ImageUpload({
             previewShapeClassName,
           )}
         >
-          No image
+          {tx("common.imageUpload.noImage")}
         </div>
       )}
 
@@ -134,11 +136,14 @@ export function ImageUpload({
           type="button"
           variant="outline"
           size="sm"
+          className="rounded-full"
           disabled={isUploading || isDeleting}
           onClick={() => fileInputRef.current?.click()}
         >
           {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
-          {isUploading ? "Uploading" : uploadButtonLabel}
+          {isUploading
+            ? tx("common.imageUpload.uploading")
+            : (uploadButtonLabel ?? tx("common.imageUpload.uploadImage"))}
         </Button>
 
         {onDelete && previewUrl && (
@@ -146,11 +151,12 @@ export function ImageUpload({
             type="button"
             variant="outline"
             size="sm"
+            className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={isUploading || isDeleting}
             onClick={handleDeleteClicked}
           >
             {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
-            {isDeleting ? "Removing" : "Remove"}
+            {isDeleting ? tx("common.imageUpload.removing") : tx("common.imageUpload.remove")}
           </Button>
         )}
       </div>

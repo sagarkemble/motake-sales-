@@ -1,7 +1,7 @@
 "use client";
 
 import { businessDateOf } from "@repo/trpc/client";
-import { ChevronRightIcon, SearchIcon, UsersIcon } from "lucide-react";
+import { ChevronRightIcon, SearchIcon, SearchXIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
@@ -72,15 +72,30 @@ export default function SalesmanRouteCustomersPage() {
                 setPage(1);
               }}
               placeholder={tx("salesman.checkout.customer.searchPlaceholder")}
-              className="h-11 rounded-full bg-muted/40 pl-9"
+              className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
             />
+            {searchTerm && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={tx("common.actions.clearSearch")}
+                onClick={() => {
+                  setSearchTerm("");
+                  setPage(1);
+                }}
+                className="absolute right-1.5 top-1/2 size-8 -translate-y-1/2 rounded-full text-muted-foreground"
+              >
+                <XIcon className="size-4" />
+              </Button>
+            )}
           </div>
 
           {isCustomersListLoading ? (
             <ListItemSkeleton count={5} />
           ) : customersPage.items.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
-              <UsersIcon className="size-6 text-muted-foreground" />
+              <SearchXIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">
                 {debouncedSearchTerm
                   ? tx("salesman.checkout.customer.noMatchOnRoute", {
@@ -88,6 +103,9 @@ export default function SalesmanRouteCustomersPage() {
                       term: debouncedSearchTerm,
                     })
                   : tx("salesman.checkout.customer.noneOnRoute", { route: activeRouteName })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tx("salesman.checkout.customer.onlyRouteListed")}
               </p>
             </div>
           ) : (
@@ -97,7 +115,7 @@ export default function SalesmanRouteCustomersPage() {
                   key={customer.id}
                   type="button"
                   variant="outline"
-                  className="h-auto justify-between gap-3 rounded-2xl p-3 text-left font-normal"
+                  className="h-auto justify-between gap-3 whitespace-normal rounded-2xl bg-card p-3 text-left font-normal shadow-none hover:bg-accent/50"
                   onClick={() => setOpenedCustomerId(customer.id)}
                 >
                   <ShopPhotoThumbnail

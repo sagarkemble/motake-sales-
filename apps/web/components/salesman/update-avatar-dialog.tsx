@@ -42,15 +42,15 @@ export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Update avatar</DialogTitle>
+          <DialogTitle>{tx("salesman.account.avatarTitle")}</DialogTitle>
         </DialogHeader>
 
         <ImageUpload
           imageUrl={signedInUser?.avatarUrl ?? null}
           requestUploadUrl={createAvatarUploadUrlAsync}
-          altText="Avatar"
+          altText={tx("salesman.account.avatarAlt")}
           shape="circle"
-          uploadButtonLabel="Upload avatar"
+          uploadButtonLabel={tx("salesman.account.uploadAvatar")}
           onUploaded={handleUploaded}
           onDelete={handleDeleted}
         />

@@ -2,8 +2,8 @@
 
 import { TicketXIcon } from "lucide-react";
 
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { useTranslate } from "~/hooks/use-translate";
-import { cn } from "~/lib/utils";
 
 interface NoActiveGatepassNoticeProps {
   // The Route of today's GatePass when it was handed over or closed; null when none was allotted.
@@ -21,27 +21,25 @@ export function NoActiveGatepassNotice({
   const tx = useTranslate();
 
   return (
-    <div
-      role="status"
-      className={cn(
-        "flex flex-col gap-2 rounded-2xl border border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100",
-        compact ? "p-3" : "items-center p-6 text-center",
-      )}
-    >
-      <TicketXIcon className={cn("text-amber-600", compact ? "size-5" : "size-9")} />
-      <p className="text-base font-semibold">{tx("salesman.checkout.noActiveGatepass.title")}</p>
-      <p className="text-sm font-medium">
-        {context === "customers"
-          ? tx("salesman.checkout.noActiveGatepass.customers")
-          : tx("salesman.checkout.noActiveGatepass.addCustomer")}
-      </p>
-      {!compact && (
-        <p className="text-sm">
-          {handedOverRouteName
-            ? tx("salesman.checkout.noActiveGatepass.handedOver", { route: handedOverRouteName })
-            : tx("salesman.checkout.noActiveGatepass.none")}
+    <Alert role="status" className="border-amber-500/40 bg-amber-500/5">
+      <TicketXIcon className="text-amber-700" />
+      <AlertTitle className="line-clamp-none">
+        {tx("salesman.checkout.noActiveGatepass.title")}
+      </AlertTitle>
+      <AlertDescription>
+        <p className="font-medium text-foreground">
+          {context === "customers"
+            ? tx("salesman.checkout.noActiveGatepass.customers")
+            : tx("salesman.checkout.noActiveGatepass.addCustomer")}
         </p>
-      )}
-    </div>
+        {!compact && (
+          <p>
+            {handedOverRouteName
+              ? tx("salesman.checkout.noActiveGatepass.handedOver", { route: handedOverRouteName })
+              : tx("salesman.checkout.noActiveGatepass.none")}
+          </p>
+        )}
+      </AlertDescription>
+    </Alert>
   );
 }

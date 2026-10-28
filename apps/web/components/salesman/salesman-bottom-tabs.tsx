@@ -15,7 +15,7 @@ export function SalesmanBottomTabs() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_12px_rgba(0,0,0,0.04)] backdrop-blur-md">
-      <div className="grid grid-cols-4">
+      <div className="grid h-16 grid-cols-4">
         {salesmanNavItems.map((navItem) => {
           const NavIcon = navItem.icon;
           const isActiveTab = isNavItemActive(navItem.href, currentPathname);
@@ -25,7 +25,7 @@ export function SalesmanBottomTabs() {
               key={navItem.href}
               href={navItem.href}
               className={cn(
-                "relative flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2 text-muted-foreground transition-colors",
+                "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 py-2 text-muted-foreground transition-colors",
                 isActiveTab && "text-brand",
               )}
             >

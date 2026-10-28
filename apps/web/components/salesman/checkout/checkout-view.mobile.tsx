@@ -33,7 +33,7 @@ export function CheckoutViewMobile({
     <div className="flex flex-col gap-4 px-4 pb-40 pt-4">
       {children}
 
-      <div className="fixed inset-x-0 bottom-16 z-30 flex flex-col gap-2 border-t border-border bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] z-30 flex flex-col gap-2 border-t border-border bg-background px-4 py-3">
         {hint && <p className="text-center text-xs text-muted-foreground">{hint}</p>}
         <div className="flex gap-2">
           {showBackButton && (
