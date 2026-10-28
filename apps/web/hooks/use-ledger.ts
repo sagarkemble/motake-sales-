@@ -16,6 +16,10 @@ export type BillPaper = RouterOutputs["ledger"]["billPaper"]["data"];
 export type PreOrderPaper = RouterOutputs["ledger"]["preOrderPaper"]["data"];
 export type RaiseBillCatalogRow = RouterOutputs["ledger"]["raiseBillCatalog"]["data"][number];
 export type NoteKind = BillPaper["notes"][number]["kind"];
+export type PaymentPaper = RouterOutputs["ledger"]["paymentPaper"]["data"];
+export type RefundPaper = RouterOutputs["ledger"]["refundPaper"]["data"];
+export type OpeningPaper = RouterOutputs["ledger"]["openingPaper"]["data"];
+export type PaymentMode = PaymentPaper["payment"]["mode"];
 
 interface UseLedgerParams {
   customerId?: string;
@@ -56,6 +60,19 @@ export function useLedger({
   const addOpeningBalanceMutation = trpc.ledger.addOpeningBalance.useMutation({
     onSuccess: () => utils.ledger.invalidate(),
   });
+  // A Payment or Refund moves the Balance the Customer screens show.
+  const invalidateMoney = () => {
+    utils.ledger.invalidate();
+    utils.customers.invalidate();
+  };
+  const addPaymentMutation = trpc.ledger.addPayment.useMutation({
+    onSuccess: invalidateMoney,
+    onError: invalidateMoney,
+  });
+  const addRefundMutation = trpc.ledger.addRefund.useMutation({
+    onSuccess: invalidateMoney,
+    onError: invalidateMoney,
+  });
   const raiseBillMutation = trpc.ledger.raiseBill.useMutation({
     onSuccess: () => {
       utils.ledger.invalidate();
@@ -71,6 +88,7 @@ export function useLedger({
       rowsQuery.data?.data ??
       emptyPaginatedResult<LedgerRow>(rowFilters?.page, rowFilters?.pageSize),
     isRowsLoading: rowsQuery.isLoading,
+    isRowsFetching: rowsQuery.isFetching,
     isRowsError: rowsQuery.isError,
     refetchRows: rowsQuery.refetch,
 
@@ -91,6 +109,88 @@ export function useLedger({
 
     raiseBillAsync: raiseBillMutation.mutateAsync,
     isRaisingBill: raiseBillMutation.isPending,
+
+    addPaymentAsync: addPaymentMutation.mutateAsync,
+    isAddingPayment: addPaymentMutation.isPending,
+
+    addRefundAsync: addRefundMutation.mutateAsync,
+    isAddingRefund: addRefundMutation.isPending,
+  };
+}
+
+interface UseMoneyPaperParams {
+  paymentId?: string;
+  refundId?: string;
+  // The Opening paper is read by Customer; it has no id of its own.
+  openingCustomerId?: string;
+  enabled?: boolean;
+}
+
+// The Payment, Refund and Opening papers (Spec H) and the two Corrects. A refused Correct also
+// reloads the paper, as a refused Bill write does; the open Correct form keeps the event it was
+// opened on, so a stale save is refused rather than resent on the newer paper.
+export function useMoneyPaper({
+  paymentId,
+  refundId,
+  openingCustomerId,
+  enabled = true,
+}: UseMoneyPaperParams = {}) {
+  const utils = trpc.useUtils();
+
+  const paymentPaperQuery = trpc.ledger.paymentPaper.useQuery(
+    { paymentId: paymentId ?? "" },
+    { enabled: enabled && Boolean(paymentId) },
+  );
+  const refundPaperQuery = trpc.ledger.refundPaper.useQuery(
+    { refundId: refundId ?? "" },
+    { enabled: enabled && Boolean(refundId) },
+  );
+  const openingPaperQuery = trpc.ledger.openingPaper.useQuery(
+    { customerId: openingCustomerId ?? "" },
+    { enabled: enabled && Boolean(openingCustomerId) },
+  );
+  const openingSummaryQuery = trpc.ledger.summary.useQuery(
+    { customerId: openingCustomerId ?? "" },
+    { enabled: enabled && Boolean(openingCustomerId) },
+  );
+
+  const invalidatePapers = () => {
+    utils.ledger.invalidate();
+    utils.customers.invalidate();
+  };
+  const correctPaymentMutation = trpc.ledger.correctPayment.useMutation({
+    onSuccess: invalidatePapers,
+    onError: invalidatePapers,
+  });
+  const correctRefundMutation = trpc.ledger.correctRefund.useMutation({
+    onSuccess: invalidatePapers,
+    onError: invalidatePapers,
+  });
+
+  return {
+    paymentPaper: paymentPaperQuery.data?.data ?? null,
+    isPaymentPaperLoading: paymentPaperQuery.isLoading,
+    refetchPaymentPaper: paymentPaperQuery.refetch,
+
+    refundPaper: refundPaperQuery.data?.data ?? null,
+    isRefundPaperLoading: refundPaperQuery.isLoading,
+    refetchRefundPaper: refundPaperQuery.refetch,
+
+    // Undefined until loaded; null when the Customer has no Opening balance.
+    openingPaper: openingPaperQuery.data?.data,
+    openingSummary: openingSummaryQuery.data?.data ?? null,
+    isOpeningPaperLoading: openingPaperQuery.isLoading || openingSummaryQuery.isLoading,
+    isOpeningPaperError: openingPaperQuery.isError || openingSummaryQuery.isError,
+    refetchOpeningPaper: () => {
+      void openingPaperQuery.refetch();
+      void openingSummaryQuery.refetch();
+    },
+
+    correctPaymentAsync: correctPaymentMutation.mutateAsync,
+    isCorrectingPayment: correctPaymentMutation.isPending,
+
+    correctRefundAsync: correctRefundMutation.mutateAsync,
+    isCorrectingRefund: correctRefundMutation.isPending,
   };
 }
 
