@@ -88,8 +88,9 @@ run_db_migrate() {
     CI=true NODE_ENV=development pnpm install --frozen-lockfile --filter @repo/database...
     pnpm --filter @repo/database db:migrate
   ); then
-    echo "  warn: db:migrate failed — check DATABASE_URL and drizzle-kit install" >&2
-    return 1
+    echo "error: db:migrate failed — deploy stopped before restarting the apps." >&2
+    echo "  Check DATABASE_URL (use the Supabase pooler host) and the drizzle-kit install." >&2
+    exit 1
   fi
 }
 

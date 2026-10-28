@@ -7,7 +7,7 @@
     "db:generate": "dotenv -- turbo db:generate",
     "db:migrate": "dotenv -- turbo db:migrate",
     "lint": "turbo run lint",
-    "test": "dotenv -- turbo test",
+    "test": "dotenv -e .env.testing -- turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "loadtest": "dotenv -- bash k6/run.sh",

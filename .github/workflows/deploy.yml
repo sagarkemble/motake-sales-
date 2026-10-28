@@ -1,21 +1,12 @@
 name: Deploy to VPS
 
+# Deploys main only after the Test workflow passed on that commit (or by hand). Every green main
+# commit deploys, whichever app or package it touched.
 on:
-  push:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'apps/api/**'
-      - 'apps/web/**'
-      - 'apps/notification/**'
-      - 'packages/trpc/**'
-      - 'packages/database/**'
-      - 'packages/services/**'
-      - 'packages/logger/**'
-      - 'deploy/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'turbo.json'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 concurrency:
@@ -25,11 +16,14 @@ concurrency:
 jobs:
   build:
     name: Build
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -74,6 +68,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4

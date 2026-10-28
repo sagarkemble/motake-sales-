@@ -4,7 +4,8 @@ on:
   push:
   pull_request:
 
-# Every run wipes the database at DATABASE_URL, so only one may run at a time.
+# Every run wipes the test database (motake-testing, the root .env.testing), so only one may run at
+# a time. Production is never reachable from here: this job only has the testing environment.
 concurrency:
   group: test-database
   cancel-in-progress: false
@@ -13,8 +14,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    # DATABASE_URL is stored on the production environment, not as a repo secret.
-    environment: production
+    # DATABASE_URL is the testing environment's secret (the .env.testing database), never production.
+    environment: testing
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,7 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The suite truncates every app table at DATABASE_URL; after go-live this secret must not be production.
+      # The suite truncates every app table at DATABASE_URL; the wipe guard refuses anything but a
+      # test database.
       - name: Run tests
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
