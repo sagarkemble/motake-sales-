@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Spinner } from "~/components/ui/spinner";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useLedger, type LedgerSummary, type PaymentMode } from "~/hooks/use-ledger";
@@ -59,36 +60,39 @@ export function AddMoneyDialog({
   const tx = useTranslate();
   return (
     <Dialog open={kind != null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto p-4 sm:max-w-md sm:p-6">
-        {kind && (
-          <>
-            <DialogHeader>
-              <DialogTitle>
-                {kind === "payment"
-                  ? tx("admin.ledger.money.addPayment.title")
-                  : tx("admin.ledger.money.addRefund.title")}
-              </DialogTitle>
-              <DialogDescription>
-                {kind === "payment"
-                  ? tx("admin.ledger.money.addPayment.description")
-                  : tx("admin.ledger.money.addRefund.description")}
-              </DialogDescription>
-            </DialogHeader>
-            {kind === "payment" ? (
-              <AddPaymentForm
-                summary={summary}
-                onAdded={onAdded}
-                onClose={() => onOpenChange(false)}
-              />
-            ) : (
-              <AddRefundForm
-                summary={summary}
-                onAdded={onAdded}
-                onClose={() => onOpenChange(false)}
-              />
-            )}
-          </>
-        )}
+      <DialogContent className="flex max-h-[92dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-md">
+        {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+        <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+          {kind && (
+            <div className="flex flex-col gap-4 p-4 sm:p-6">
+              <DialogHeader>
+                <DialogTitle>
+                  {kind === "payment"
+                    ? tx("admin.ledger.money.addPayment.title")
+                    : tx("admin.ledger.money.addRefund.title")}
+                </DialogTitle>
+                <DialogDescription>
+                  {kind === "payment"
+                    ? tx("admin.ledger.money.addPayment.description")
+                    : tx("admin.ledger.money.addRefund.description")}
+                </DialogDescription>
+              </DialogHeader>
+              {kind === "payment" ? (
+                <AddPaymentForm
+                  summary={summary}
+                  onAdded={onAdded}
+                  onClose={() => onOpenChange(false)}
+                />
+              ) : (
+                <AddRefundForm
+                  summary={summary}
+                  onAdded={onAdded}
+                  onClose={() => onOpenChange(false)}
+                />
+              )}
+            </div>
+          )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -143,10 +147,14 @@ function AddFooter({
   const tx = useTranslate();
   return (
     <DialogFooter>
-      <Button variant="outline" disabled={busy} onClick={onClose}>
-        {tx("admin.ledger.close")}
+      <Button variant="outline" className="rounded-full" disabled={busy} onClick={onClose}>
+        {tx("common.actions.cancel")}
       </Button>
-      <Button disabled={disabled || busy} onClick={onSubmit}>
+      <Button
+        disabled={disabled || busy}
+        onClick={onSubmit}
+        className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+      >
         {busy && <Spinner />}
         {busy ? tx("admin.ledger.saving") : label}
       </Button>
@@ -275,8 +283,8 @@ function AddRefundForm({ summary, onAdded, onClose }: AddFormProps) {
       <div className="grid gap-3">
         <RefundNotInAdvance balance={balance} />
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {tx("admin.ledger.close")}
+          <Button variant="outline" className="rounded-full" onClick={onClose}>
+            {tx("common.actions.cancel")}
           </Button>
         </DialogFooter>
       </div>
@@ -349,7 +357,7 @@ function AddRefundForm({ summary, onAdded, onClose }: AddFormProps) {
             type="button"
             size="sm"
             variant="link"
-            className="h-auto px-0"
+            className="h-auto p-0 text-brand"
             disabled={isAddingRefund}
             onClick={() => fields.setAmount(paiseToRupeeInput(advancePaise))}
           >

@@ -13,18 +13,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import type { LedgerSummary, OpeningPaper, PaymentPaper, RefundPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 
-import { useBalanceText } from "./ledger-shared";
+import { LedgerBackHeader, useBalanceText } from "./ledger-shared";
 import { CorrectPaymentForm, CorrectRefundForm } from "./money-paper-forms";
 import {
   Fact,
   HistoryList,
   InactiveNotice,
-  PaperBackLink,
   PaymentFacts,
   RefundFacts,
   paymentHistory,
@@ -56,7 +56,7 @@ function PaperHeading({ model }: { model: MoneyPaperModel }) {
         <p className="text-xs text-muted-foreground">
           {tx(`admin.ledger.money.paper.${model.kind}`)}
         </p>
-        <p className="font-mono text-lg font-semibold break-all">{numberOf(model)}</p>
+        <h2 className="font-mono text-base font-semibold break-all">{numberOf(model)}</h2>
         <p className="text-sm">
           <span className="font-medium tabular-nums">{amount}</span>
           <span className="text-muted-foreground"> · {tx(`admin.ledger.money.modes.${mode}`)}</span>
@@ -116,17 +116,17 @@ export function MoneyPaperView({
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <PaperBackLink customerId={paper.customer.id} shopName={paper.customer.shopName} />
+        <LedgerBackHeader customerId={paper.customer.id} shopName={paper.customer.shopName} />
         <span className="text-xs text-muted-foreground">
           {tx("admin.ledger.paper.balanceNow", { balance: balanceText(paper.balance) })}
         </span>
       </div>
       {!canCorrect && <InactiveNotice />}
-      <article className="space-y-4 rounded-md border bg-card p-4">
+      <article className="space-y-4 rounded-2xl border bg-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <PaperHeading model={model} />
           <Button
-            className="w-full sm:w-auto"
+            className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
             disabled={!canCorrect}
             title={canCorrect ? undefined : tx("admin.ledger.paper.off.inactive")}
             onClick={() => setOpen(true)}
@@ -155,24 +155,27 @@ export function MoneyPaperView({
         </div>
       </article>
       <Dialog open={open && canCorrect} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[92dvh] overflow-y-auto p-4 sm:max-w-lg sm:p-6">
-          {open && (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  {tx("admin.ledger.money.correct.title", { number: numberOf(model) })}
-                </DialogTitle>
-                <DialogDescription>
-                  {tx("admin.ledger.money.correct.description")}
-                </DialogDescription>
-              </DialogHeader>
-              {model.kind === "payment" ? (
-                <CorrectPaymentForm key={formKey} paper={model.paper} {...formProps} />
-              ) : (
-                <CorrectRefundForm key={formKey} paper={model.paper} {...formProps} />
-              )}
-            </>
-          )}
+        <DialogContent className="flex max-h-[92dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-lg">
+          {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
+          <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
+            {open && (
+              <div className="flex flex-col gap-4 p-4 sm:p-6">
+                <DialogHeader>
+                  <DialogTitle>
+                    {tx("admin.ledger.money.correct.title", { number: numberOf(model) })}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {tx("admin.ledger.money.correct.description")}
+                  </DialogDescription>
+                </DialogHeader>
+                {model.kind === "payment" ? (
+                  <CorrectPaymentForm key={formKey} paper={model.paper} {...formProps} />
+                ) : (
+                  <CorrectRefundForm key={formKey} paper={model.paper} {...formProps} />
+                )}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
@@ -193,7 +196,7 @@ export function OpeningPaperView({
   const { customer } = summary;
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4">
-      <PaperBackLink customerId={customer.id} shopName={customer.shopName} />
+      <LedgerBackHeader customerId={customer.id} shopName={customer.shopName} />
       {opening == null ? (
         <Alert>
           <InfoIcon />
@@ -201,15 +204,22 @@ export function OpeningPaperView({
           <AlertDescription>{tx("admin.ledger.money.opening.noneBody")}</AlertDescription>
         </Alert>
       ) : (
-        <article className="rounded-md border bg-card p-4">
+        <article className="rounded-2xl border bg-card p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="text-lg font-semibold">{tx("admin.ledger.money.opening.title")}</p>
+              <h2 className="text-base font-semibold">{tx("admin.ledger.money.opening.title")}</h2>
               <p className="text-xs text-muted-foreground">
                 {tx("admin.ledger.money.opening.noNumber")}
               </p>
             </div>
-            <Badge variant={opening.side === "pending" ? "default" : "secondary"}>
+            <Badge
+              variant="outline"
+              className={
+                opening.side === "pending"
+                  ? "border-transparent bg-amber-500/10 text-amber-700"
+                  : "border-transparent bg-brand/10 text-brand"
+              }
+            >
               {opening.side === "pending"
                 ? tx("admin.ledger.money.opening.pendingDebit")
                 : tx("admin.ledger.money.opening.advanceCredit")}
@@ -231,7 +241,7 @@ export function OpeningPaperView({
               <dd className="text-sm break-words">{opening.reason ?? "—"}</dd>
             </div>
           </dl>
-          <p className="mt-4 flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+          <p className="mt-4 flex items-start gap-2 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
             <LockIcon className="mt-0.5 size-3.5 shrink-0" />
             {tx("admin.ledger.money.opening.locked")}
           </p>

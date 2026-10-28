@@ -31,7 +31,7 @@ function RefundPaperPageContent() {
 
 export default function AdminRefundPaperPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PaperSkeleton />}>
       <RefundPaperPageContent />
     </Suspense>
   );
