@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  AlertCircleIcon,
-  CheckCircle2Icon,
-  ChevronLeftIcon,
-  PackageIcon,
-  PlusIcon,
-  SearchIcon,
-} from "lucide-react";
-import Link from "next/link";
+import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -18,23 +10,17 @@ import { CustomerPicker } from "~/components/admin/ledger/customer-picker";
 import { InactiveBanner } from "~/components/admin/ledger/ledger-parts";
 import {
   OutcomeUnknownAlert,
+  PaperLoadFailed,
   ReasonField,
   RefusalAlert,
   useBalanceText,
 } from "~/components/admin/ledger/ledger-shared";
+import { BackHeader } from "~/components/admin/products/back-header";
 import { GstRate } from "~/components/shared/gst-rate";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "~/components/ui/empty";
 import { Input } from "~/components/ui/input";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useLedger, useLedgerPreviews, type RaiseBillCatalogRow } from "~/hooks/use-ledger";
@@ -114,15 +100,27 @@ function RaiseBillCart({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <section className="min-w-0 rounded-md border bg-card">
+      <section className="min-w-0 overflow-hidden rounded-2xl border bg-card">
         <div className="relative border-b p-3">
-          <SearchIcon className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <SearchIcon className="pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={tx("admin.ledger.raiseBill.search")}
-            className="pl-8"
+            className="rounded-full bg-muted/40 pl-9 pr-9"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
+          {query && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tx("common.actions.clearSearch")}
+              onClick={() => setQuery("")}
+              className="absolute right-4 top-1/2 size-7 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <XIcon className="size-4" />
+            </Button>
+          )}
         </div>
         <ul className="divide-y">
           {found.length === 0 && (
@@ -157,6 +155,7 @@ function RaiseBillCart({
                 <Button
                   size="sm"
                   variant="outline"
+                  className="rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
                   disabled={isRaisingBill}
                   onClick={() => setBasket({ ...basket, [row.varietyId]: 1 })}
                 >
@@ -167,7 +166,7 @@ function RaiseBillCart({
           ))}
         </ul>
       </section>
-      <aside className="space-y-3 rounded-md border bg-card p-3 lg:sticky lg:top-20 lg:self-start">
+      <aside className="space-y-3 rounded-2xl border bg-card p-3 lg:sticky lg:top-20 lg:self-start">
         <p className="text-sm font-medium">
           {tx("admin.ledger.raiseBill.cartTitle", { count: lines.length })}
         </p>
@@ -256,7 +255,11 @@ function RaiseBillCart({
         />
         {outcomeUnknown && <OutcomeUnknownAlert message={tx("admin.ledger.outcomeUnknown.bill")} />}
         {refusal && <RefusalAlert message={refusal} />}
-        <Button className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
+        <Button
+          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          disabled={!canSubmit}
+          onClick={handleSubmit}
+        >
           {isRaisingBill && <Spinner />}
           {isRaisingBill
             ? tx("admin.ledger.raiseBill.submitting")
@@ -279,7 +282,6 @@ function RaiseBillPageContent() {
   const balanceText = useBalanceText();
   const { formatPaise } = useFormatMoney();
   const customerId = searchParams.get("customer");
-  const [raised, setRaised] = useState<RaisedBill | null>(null);
   const { summary, catalog, isCatalogLoading, isCatalogError, refetchCatalog } = useLedger({
     customerId: customerId ?? undefined,
     loadCatalog: true,
@@ -289,25 +291,20 @@ function RaiseBillPageContent() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <Link
+        <BackHeader
           href={customerId ? `/admin/ledger?customer=${customerId}` : "/admin/ledger"}
-          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" />
-          {tx("admin.ledger.title")}
-        </Link>
+          title={tx("admin.ledger.raiseBill.title")}
+        />
         <CustomerPicker
           value={customerId}
           selectedLabel={
             summary ? `${summary.customer.shopName} · ${summary.customer.phone}` : undefined
           }
           onChange={(nextCustomerId) => {
-            setRaised(null);
             router.replace(`${pathname}?customer=${nextCustomerId}`, { scroll: false });
           }}
         />
       </div>
-      <h1 className="text-base font-semibold">{tx("admin.ledger.raiseBill.title")}</h1>
       {summary && (
         <p className="text-sm">
           <span className="font-medium">{summary.customer.shopName}</span>
@@ -318,78 +315,51 @@ function RaiseBillPageContent() {
           </span>
         </p>
       )}
-      {raised && (
-        <Alert>
-          <CheckCircle2Icon />
-          <AlertTitle>{tx("admin.ledger.raiseBill.successTitle")}</AlertTitle>
-          <AlertDescription>
-            <p>
-              {tx("admin.ledger.raiseBill.success", {
-                number: raised.billNumber,
-                amount: formatPaise(raised.totalPaise),
-              })}
-            </p>
-            <Button size="sm" variant="outline" className="mt-2" asChild>
-              <Link href={`/admin/ledger/bills/${raised.billId}`}>
-                {tx("admin.ledger.raiseBill.openPaper")}
-              </Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
       {!customerId ? (
-        <div className="rounded-md border border-dashed bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
           {tx("admin.ledger.raiseBill.pickCustomer")}
-        </div>
+        </p>
       ) : inactive ? (
         <InactiveBanner />
       ) : isCatalogLoading ? (
-        <div className="space-y-2" aria-busy="true">
-          <Skeleton className="h-9 w-full" />
-          {Array.from({ length: 5 }, (_, index) => (
-            <Skeleton key={index} className="h-12 w-full" />
-          ))}
+        <div className="flex flex-col gap-2" aria-busy="true">
+          <ListItemSkeleton count={5} />
         </div>
       ) : isCatalogError ? (
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertTitle>{tx("admin.ledger.raiseBill.catalogError.title")}</AlertTitle>
-          <AlertDescription>
-            <p>{tx("admin.ledger.raiseBill.catalogError.body")}</p>
-            <Button size="sm" variant="outline" className="mt-2" onClick={() => refetchCatalog()}>
-              {tx("common.actions.tryAgain")}
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <PaperLoadFailed
+          message={tx("admin.ledger.raiseBill.catalogError.title")}
+          onRetry={() => void refetchCatalog()}
+        />
       ) : catalog.length === 0 ? (
-        <Empty className="rounded-md border bg-card py-10">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <PackageIcon />
-            </EmptyMedia>
-            <EmptyTitle>
-              {tx("admin.ledger.raiseBill.catalogEmpty.title", {
-                route: summary?.customer.routeName ?? "",
-              })}
-            </EmptyTitle>
-            <EmptyDescription>{tx("admin.ledger.raiseBill.catalogEmpty.body")}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
+          <p className="text-sm font-medium">
+            {tx("admin.ledger.raiseBill.catalogEmpty.title", {
+              route: summary?.customer.routeName ?? "",
+            })}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {tx("admin.ledger.raiseBill.catalogEmpty.body")}
+          </p>
+        </div>
       ) : (
         <RaiseBillCart
           key={customerId}
           customerId={customerId}
           catalog={catalog}
           onRaised={(bill) => {
-            setRaised(bill);
+            // The toast carries the way to the new Bill paper (it was an inline notice before).
             toast.success(
               tx("admin.ledger.raiseBill.success", {
                 number: bill.billNumber,
                 amount: formatPaise(bill.totalPaise),
               }),
+              {
+                action: {
+                  label: tx("admin.ledger.raiseBill.openPaper"),
+                  onClick: () => router.push(`/admin/ledger/bills/${bill.billId}`),
+                },
+              },
             );
-            // The notice sits above the catalog; on a phone the cart is far below it.
-            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       )}
@@ -399,7 +369,13 @@ function RaiseBillPageContent() {
 
 export default function AdminRaiseBillPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4">
+          <ListItemSkeleton count={5} />
+        </div>
+      }
+    >
       <RaiseBillPageContent />
     </Suspense>
   );

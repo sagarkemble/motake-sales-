@@ -80,18 +80,21 @@ function EditLinesList({
   const { formatPaise } = useFormatMoney();
   return (
     <div className="py-3 sm:hidden">
-      <ul className="divide-y rounded-md border text-sm">
+      <ul className="divide-y rounded-xl border text-sm">
         {paper.lines.map((line) => {
           const { quantity, unitPaise, amountPaise } = lineView(line, edit);
           return (
             <li
               key={line.id}
-              className={cn("flex flex-col gap-2 px-3 py-2", quantity === 0 && "text-zinc-400")}
+              className={cn(
+                "flex flex-col gap-2 px-3 py-2",
+                quantity === 0 && "text-muted-foreground/60",
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <span className={cn("min-w-0", quantity === 0 && "line-through")}>
                   {line.name}
-                  <span className="block text-xs text-zinc-500">
+                  <span className="block text-xs text-muted-foreground">
                     {formatPaise(Math.round(unitPaise))}{" "}
                     {tx("admin.ledger.paper.perUnit", { unit: line.unit })} ·{" "}
                     <GstRate gstRateBps={line.gstRateBps} exempt={line.exempt} />
@@ -111,7 +114,7 @@ function EditLinesList({
           {tx("admin.ledger.paper.total")} · {totals.totalQuantity}
         </dt>
         <dd className="text-right font-semibold tabular-nums">{formatPaise(totals.totalPaise)}</dd>
-        <dt className="text-zinc-500">{tx("admin.ledger.paper.roundOff")}</dt>
+        <dt className="text-muted-foreground">{tx("admin.ledger.paper.roundOff")}</dt>
         <dd className="text-right tabular-nums">{formatPaise(totals.roundOffPaise)}</dd>
       </dl>
     </div>
@@ -137,53 +140,53 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-md border bg-white p-4 text-zinc-900 shadow-sm sm:p-6",
+        "relative overflow-hidden rounded-2xl border bg-card p-4 text-card-foreground sm:p-6",
       )}
     >
       {paper.bill.cancelled && (
-        <span className="pointer-events-none absolute right-4 top-16 rotate-[-12deg] rounded border-4 border-red-600/60 px-3 py-1 text-2xl font-bold uppercase text-red-600/60">
+        <span className="pointer-events-none absolute right-4 top-16 rotate-[-12deg] rounded-lg border-4 border-destructive/60 px-3 py-1 text-2xl font-bold uppercase text-destructive/60">
           {tx("admin.ledger.cancelled")}
         </span>
       )}
       <header className="flex flex-col gap-3 border-b pb-3 sm:flex-row sm:justify-between">
         <div className="min-w-0">
           <p className="font-semibold">{letterhead.seller.legal_name}</p>
-          <p className="text-xs text-zinc-600">{letterhead.seller.address}</p>
-          <p className="text-xs text-zinc-600">
+          <p className="text-xs text-muted-foreground">{letterhead.seller.address}</p>
+          <p className="text-xs text-muted-foreground">
             {tx("admin.ledger.paper.gstin", { gstin: letterhead.seller.gstin })}
           </p>
         </div>
         <div className="text-left sm:text-right">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {tx(`admin.bills.legalType.${paper.version.legalType}`)}
           </p>
           <p className="font-mono text-sm font-semibold">{paper.bill.number}</p>
-          <p className="text-xs text-zinc-600">
+          <p className="text-xs text-muted-foreground">
             {tx("admin.ledger.paper.billDate")} {formatDate(paper.bill.billDate, "d MMM yyyy")}
           </p>
         </div>
       </header>
       <section className="grid gap-3 border-b py-3 text-sm sm:grid-cols-2">
         <div className="min-w-0">
-          <p className="text-xs text-zinc-500">{tx("admin.ledger.paper.billTo")}</p>
+          <p className="text-xs text-muted-foreground">{tx("admin.ledger.paper.billTo")}</p>
           <p className="font-medium">{buyer.shop_name}</p>
-          <p className="text-xs text-zinc-600">{buyer.address}</p>
-          <p className="text-xs text-zinc-600">{buyer.phone}</p>
+          <p className="text-xs text-muted-foreground">{buyer.address}</p>
+          <p className="text-xs text-muted-foreground">{buyer.phone}</p>
           {letterhead.buyer.gstin && (
-            <p className="text-xs text-zinc-600">
+            <p className="text-xs text-muted-foreground">
               {tx("admin.ledger.paper.gstin", { gstin: letterhead.buyer.gstin })}
             </p>
           )}
         </div>
         <div className="sm:text-right">
-          <p className="text-xs text-zinc-500">{tx("admin.ledger.paper.route")}</p>
+          <p className="text-xs text-muted-foreground">{tx("admin.ledger.paper.route")}</p>
           <p>
             {letterhead.route.name} ({letterhead.route.code})
           </p>
-          <p className="text-xs text-zinc-600">
+          <p className="text-xs text-muted-foreground">
             {tx("admin.ledger.paper.placeOfSupply", { state: letterhead.route.delivery_state })}
           </p>
-          <p className="text-xs text-zinc-600">
+          <p className="text-xs text-muted-foreground">
             {tx(
               paper.bill.orderId ? "admin.ledger.paper.placed" : "admin.ledger.paper.officePlaced",
               {
@@ -198,7 +201,7 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
       <div className={cn("-mx-4 overflow-x-auto py-3 sm:mx-0", edit && "hidden sm:block")}>
         <table className="w-full min-w-[40rem] border-collapse border border-border text-sm">
           <thead>
-            <tr className="text-left text-xs text-zinc-500">
+            <tr className="text-left text-xs text-muted-foreground">
               <th className={cn(cell, "w-8 font-medium")}>
                 {tx("admin.ledger.paper.columns.index")}
               </th>
@@ -229,12 +232,15 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
               return (
                 <tr
                   key={line.id}
-                  className={cn("align-top", quantity === 0 && "text-zinc-400 line-through")}
+                  className={cn(
+                    "align-top",
+                    quantity === 0 && "text-muted-foreground/60 line-through",
+                  )}
                 >
                   <td className={cell}>{index + 1}</td>
                   <td className={cell}>
                     {line.name}
-                    <span className="block text-xs text-zinc-500">
+                    <span className="block text-xs text-muted-foreground">
                       {tx("admin.ledger.paper.perUnit", { unit: line.unit })}
                       {line.creditedQty > 0 &&
                         ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
@@ -283,12 +289,12 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
 
       {!edit && paper.gstSummary.length > 0 && (
         <div className="-mx-4 overflow-x-auto sm:mx-0">
-          <p className="mb-1 text-xs font-medium text-zinc-500">
+          <p className="mb-1 text-xs font-medium text-muted-foreground">
             {tx("admin.ledger.paper.gstSummary.title")}
           </p>
           <table className="w-full min-w-[28rem] border-collapse border border-border text-sm">
             <thead>
-              <tr className="text-xs text-zinc-500">
+              <tr className="text-xs text-muted-foreground">
                 <th className="border border-border px-2 py-1.5 text-left font-medium">
                   {tx("admin.ledger.paper.gstSummary.rate")}
                 </th>
@@ -333,7 +339,7 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
       )}
 
       {paper.bill.billNote && (
-        <p className="mt-3 border-t pt-2 text-xs text-zinc-600">
+        <p className="mt-3 border-t pt-2 text-xs text-muted-foreground">
           {tx("admin.ledger.paper.billNote", { note: paper.bill.billNote })}
         </p>
       )}
