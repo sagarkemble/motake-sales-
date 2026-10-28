@@ -66,6 +66,13 @@ export function billEinvoicingApplies(): SQL {
   return sql`("bills"."legal_type" = 'tax_invoice' AND ${sellerEinvoicingRequired} AND ${customerEinvoicingRequired})`;
 }
 
+// The Bill's Customer is active (not deactivated); a deactivated Customer's Bills are read-only.
+const customerActive = sql<boolean>`coalesce(
+  (SELECT "customers"."status" = 'active' AND "customers"."deleted_at" IS NULL
+   FROM "customers" WHERE "customers"."id" = ${billCustomerId}),
+  false
+)`;
+
 export function billIrnPending(): SQL {
   return sql`(${billEinvoicingApplies()} AND "bills"."irn" IS NULL AND ${billIsNotCancelled()})`;
 }
@@ -96,6 +103,9 @@ export type BillGstFacts = Pick<
   | "portalCancelNotes"
 > & {
   customerId: string | null;
+  customerShopName: string | null;
+  // A deactivated Customer allows reads only, so no IRN write.
+  customerActive: boolean;
   irnRecordedByName: string | null;
   cancelled: boolean;
   filedMonth: boolean;
@@ -126,6 +136,10 @@ export async function getBillGstFacts(
       portalCancelAckDate: billsTable.portalCancelAckDate,
       portalCancelNotes: billsTable.portalCancelNotes,
       customerId: billCustomerId,
+      customerShopName: sql<string | null>`(
+        SELECT "customers"."shop_name" FROM "customers" WHERE "customers"."id" = ${billCustomerId}
+      )`,
+      customerActive: sql<boolean>`${customerActive}`,
       irnRecordedByName: profilesTable.name,
       cancelled: sql<boolean>`${billIsCancelled()}`,
       filedMonth: sql<boolean>`${billInFiledMonth()}`,

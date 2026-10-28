@@ -33,6 +33,7 @@ import AdminBillService from "../admin-bills";
 import DocumentService from "../documents";
 import {
   badRequest,
+  checkoutRefusal,
   conflict,
   documentRefused,
   internalError,
@@ -699,7 +700,8 @@ class GstService {
     return facts;
   }
 
-  // Refused like Spec G's gate: bill_cancelled, or bill_locked with the gate's lockReason.
+  // Refused like Spec G's gate: bill_cancelled, or bill_locked with the gate's lockReason. A
+  // deactivated Customer is refused as Spec G refuses it (checkout's customer_inactive).
   private assertGate(
     facts: BillGstFacts,
     action: "enterIrn" | "correctIrn" | "portalCancel",
@@ -708,6 +710,11 @@ class GstService {
     if (decision.allowed) return;
     if (decision.reason === "bill_cancelled") {
       throw ledgerRefusal("bill_cancelled", decision.message);
+    }
+    if (decision.reason === "customer_inactive") {
+      throw checkoutRefusal("customer_inactive", decision.message, {
+        customerId: this.customerOf(facts),
+      });
     }
     throw ledgerRefusal("bill_locked", decision.message, { lockReason: decision.reason });
   }

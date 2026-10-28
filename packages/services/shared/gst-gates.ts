@@ -61,8 +61,22 @@ export function irnStatusOf(facts: BillGstFacts): IrnStatus {
 type GateDecision = { reason: string; message: string } | null;
 
 // Spec I's table: cancelled closes everything; a Filed month closes line Correct, Cancel and
-// portal cancellation (Raise Note instead); an IRN closes line Correct and plain Cancel.
+// portal cancellation (Raise Note instead); an IRN closes line Correct and plain Cancel. A
+// deactivated Customer allows reads only, so it closes the IRN writes and portal cancellation
+// last, after the Bill's own gates (as Spec G checks the Customer after its lock hook).
 function decide(facts: BillGstFacts, action: GstAction): GateDecision {
+  const gate = decideBillGate(facts, action);
+  if (gate || facts.customerActive || !CUSTOMER_WRITES.includes(action)) return gate;
+  return {
+    reason: "customer_inactive",
+    message: `${facts.customerShopName ?? "The Customer"} is inactive`,
+  };
+}
+
+// The GST writes on a Bill that a deactivated Customer refuses (Spec G refuses its own).
+const CUSTOMER_WRITES: GstAction[] = ["enterIrn", "correctIrn", "portalCancel"];
+
+function decideBillGate(facts: BillGstFacts, action: GstAction): GateDecision {
   const bill = `Bill ${facts.number}`;
   if (facts.cancelled) return { reason: "bill_cancelled", message: `${bill} is cancelled.` };
   const filed = {
@@ -180,8 +194,11 @@ export async function readBillGstFacts(
 }
 
 // Spec G's lock hook: called inside Correct and Cancel right after the bills row lock. Cancelled
-// stays G's own refusal (it checks first), so only the month and IRN gates decide here.
+// and a deactivated Customer stay G's own refusals, so only the month and IRN gates decide here.
 export const gstBillLockHook: BillLockHook = async ({ bill, action }, executor) => {
   const facts = await readBillGstFacts(bill.id, bill.billDate, executor);
-  return gstDecisionOf({ ...facts, cancelled: false }, lockActionToGstAction[action]);
+  return gstDecisionOf(
+    { ...facts, cancelled: false, customerActive: true },
+    lockActionToGstAction[action],
+  );
 };
