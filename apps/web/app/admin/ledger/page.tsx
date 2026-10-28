@@ -29,6 +29,7 @@ import {
 } from "~/components/admin/ledger/ledger-parts";
 import { LEDGER_RETURN_KEY, LEDGER_ROW_TYPES } from "~/components/admin/ledger/ledger-shared";
 import { LedgerTable } from "~/components/admin/ledger/ledger-table";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { useLedger, type LedgerRowType } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
@@ -173,7 +174,7 @@ function LedgerPageContent() {
       </div>
 
       {!customerId ? (
-        <div className="rounded-md border border-dashed bg-card px-4 py-10 text-center">
+        <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
           <p className="text-sm font-medium">{tx("admin.ledger.pickCustomerTitle")}</p>
           <p className="text-sm text-muted-foreground">{tx("admin.ledger.pickCustomerHint")}</p>
         </div>
@@ -182,7 +183,7 @@ function LedgerPageContent() {
           {inactive && <InactiveBanner />}
 
           {openPreorders.length > 0 && (
-            <section className="rounded-md border bg-card p-3">
+            <section className="rounded-2xl border bg-card p-3">
               <p className="mb-2 text-sm font-medium">
                 {tx("admin.ledger.preorders.title")}{" "}
                 <span className="text-muted-foreground">
@@ -197,7 +198,7 @@ function LedgerPageContent() {
             </section>
           )}
 
-          <section className="overflow-hidden rounded-md border bg-card">
+          <section className="overflow-hidden rounded-2xl border bg-card">
             {isLoading ? (
               <LedgerSkeleton />
             ) : isError || !summary ? (
@@ -287,7 +288,13 @@ function LedgerPageContent() {
 
 export default function AdminLedgerPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
+          <ListItemSkeleton count={4} />
+        </div>
+      }
+    >
       <LedgerPageContent />
     </Suspense>
   );
