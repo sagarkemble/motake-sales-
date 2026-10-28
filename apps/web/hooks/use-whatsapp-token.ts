@@ -9,17 +9,12 @@ export type WhatsAppTokenState = WhatsAppTokenSettings["state"];
 // notification app reports the token working again.
 const STATUS_REFETCH_INTERVAL_MS = 60_000;
 
-interface UseWhatsAppTokenParams {
-  enabled?: boolean;
-}
-
 // The WhatsApp access token (Spec J-0): status for the Admin banner, paste a new token, and send
 // the messages held while it was not working. Never holds the token: only its last 4 characters.
-export function useWhatsAppToken({ enabled = true }: UseWhatsAppTokenParams = {}) {
+export function useWhatsAppToken() {
   const utils = trpc.useUtils();
 
   const statusQuery = trpc.settings.whatsappToken.status.useQuery(undefined, {
-    enabled,
     refetchInterval: STATUS_REFETCH_INTERVAL_MS,
     refetchOnWindowFocus: true,
   });
