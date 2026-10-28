@@ -79,9 +79,9 @@ export function ProductForm({
                   <ImageUpload
                     imageUrl={form.watch("imageUrl") || null}
                     requestUploadUrl={createImageUploadUrlAsync}
-                    altText="Product"
+                    altText={tx("admin.products.imageAlt")}
                     shape="square"
-                    uploadButtonLabel="Upload image"
+                    uploadButtonLabel={tx("admin.products.uploadImage")}
                     onUploaded={(result) => {
                       form.setValue("imageKey", result.imageKey);
                       form.setValue("imageUrl", result.imageUrl);
@@ -107,9 +107,13 @@ export function ProductForm({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{tx("common.fields.name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Product name" className="rounded-xl bg-muted/40" {...field} />
+                  <Input
+                    placeholder={tx("admin.products.namePlaceholder")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 {productId && (
                   <p className="text-[11px] text-muted-foreground">
@@ -126,10 +130,10 @@ export function ProductForm({
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>{tx("admin.products.description")}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Short description"
+                    placeholder={tx("admin.products.descriptionPlaceholder")}
                     rows={4}
                     className="rounded-xl bg-muted/40"
                     {...field}
@@ -144,9 +148,9 @@ export function ProductForm({
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isSubmitting ? "Saving" : submitLabel}
+          {isSubmitting ? tx("common.status.pleaseWait") : submitLabel}
         </Button>
       </form>
     </Form>

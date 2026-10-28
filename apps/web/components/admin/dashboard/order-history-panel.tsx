@@ -18,10 +18,7 @@ interface OrderHistoryPanelProps {
   heading?: string;
 }
 
-export function OrderHistoryPanel({
-  salesmanId,
-  heading = "Order history",
-}: OrderHistoryPanelProps = {}) {
+export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProps = {}) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const {
@@ -51,9 +48,11 @@ export function OrderHistoryPanel({
   }, [loadMoreOrders]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-3xl border bg-card p-4 sm:p-5">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted-foreground">{heading}</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {heading ?? tx("admin.dashboard.orderHistory")}
+        </h2>
       </div>
 
       {isOrderHistoryLoading ? (
@@ -83,7 +82,7 @@ export function OrderHistoryPanel({
                 key={id}
                 type="button"
                 onClick={() => setSelectedOrderId(id)}
-                className="flex items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-accent/50"
+                className="flex items-center justify-between gap-3 rounded-lg py-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <ShopPhotoThumbnail
@@ -100,14 +99,17 @@ export function OrderHistoryPanel({
                       {type === "pre_order"
                         ? tx("common.orderType.preOrder")
                         : tx("common.orderType.bookNow")}
-                      {!salesmanId && ` · Salesman ${salesmanName ?? salesmanCode}`}
+                      {!salesmanId &&
+                        ` · ${tx("admin.dashboard.salesmanPrefix", { name: salesmanName ?? salesmanCode ?? "" })}`}
                       {customerPhone ? ` · ${customerPhone}` : ""}
                     </p>
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{totalQuantity} qty</p>
+                    <p className="text-sm font-medium">
+                      {totalQuantity} {tx("common.units.qty")}
+                    </p>
                     <OrderItemAvatars itemPreviews={itemPreviews} size="sm" />
                   </div>
                   <p className="text-xs text-muted-foreground">

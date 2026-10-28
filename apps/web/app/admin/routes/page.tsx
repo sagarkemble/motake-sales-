@@ -55,7 +55,7 @@ function RoutesPageContent() {
                 type="button"
                 aria-label={tx("common.actions.clearSearch")}
                 onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground"
               >
                 <XIcon className="size-4" />
               </button>
@@ -95,7 +95,7 @@ function RoutesPageContent() {
           {isRoutesListLoading ? (
             <ListItemSkeleton count={4} />
           ) : routes.length === 0 ? (
-            <p className="rounded-2xl border bg-card px-3 py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               {debouncedSearchTerm
                 ? tx("admin.routes.noMatch", { term: debouncedSearchTerm })
                 : tx("admin.routes.empty")}
@@ -107,7 +107,7 @@ function RoutesPageContent() {
                 type="button"
                 onClick={() => selectRoute(route.id)}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50",
+                  "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   activeRouteId === route.id && "border-brand bg-accent/50",
                   route.hidden && "border-dashed",
                 )}
@@ -125,7 +125,10 @@ function RoutesPageContent() {
                 <div className="flex flex-col items-end gap-1">
                   <StatusBadge status={route.status} />
                   {route.hidden && (
-                    <Badge variant="outline" className="border-dashed text-muted-foreground">
+                    <Badge
+                      variant="outline"
+                      className="border-transparent bg-destructive/10 text-destructive"
+                    >
                       {tx("admin.routes.deleted")}
                     </Badge>
                   )}

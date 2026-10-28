@@ -44,7 +44,7 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-2xl border bg-card p-3.5 shadow-sm ring-1 ring-black/[0.02] transition-colors sm:p-4",
+        "flex flex-col gap-2 rounded-2xl border bg-card p-3.5 shadow-sm transition-colors sm:p-4",
         className,
       )}
     >
@@ -56,7 +56,7 @@ export function KpiCard({
           <span
             className={cn(
               "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-              isIncrease && "bg-emerald-500/10 text-emerald-600",
+              isIncrease && "bg-brand/10 text-brand",
               isDecrease && "bg-destructive/10 text-destructive",
               !isIncrease && !isDecrease && "bg-muted text-muted-foreground",
             )}
@@ -71,7 +71,9 @@ export function KpiCard({
         <p className="text-xl font-semibold leading-none sm:text-2xl">{value}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{tx(label)}</p>
         {percentChangeLabel && (
-          <p className="text-[10px] text-muted-foreground/70">{tx("admin.dashboard.kpi.vsYesterday")}</p>
+          <p className="text-[10px] text-muted-foreground/70">
+            {tx("admin.dashboard.kpi.vsYesterday")}
+          </p>
         )}
       </div>
     </div>

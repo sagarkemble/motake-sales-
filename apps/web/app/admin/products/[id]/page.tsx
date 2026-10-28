@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
@@ -91,34 +92,37 @@ export default function EditProductPage() {
   }
 
   if (!product) {
-    return <div className="p-4 text-sm text-muted-foreground">Product not found</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{tx("admin.products.notFound")}</div>;
   }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4">
-      <BackHeader href="/admin/products" title="Edit product" />
+      <BackHeader href="/admin/products" title={tx("admin.products.editTitle")} />
 
       <div className="flex items-center justify-between rounded-2xl border bg-card p-4">
         <div>
           <p className="text-sm font-medium">{product.name}</p>
-          <p className="text-xs text-muted-foreground">Product status</p>
+          <p className="text-xs text-muted-foreground">{tx("admin.products.statusLabel")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={product.status} />
           {product.deletedAt && (
-            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
-              Deleted
-            </span>
+            <Badge
+              variant="outline"
+              className="border-transparent bg-destructive/10 text-destructive"
+            >
+              {tx("common.status.deleted")}
+            </Badge>
           )}
           {product.status === "active" ? (
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full"
+              className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
               disabled={isDeactivatingProduct || Boolean(product.deletedAt)}
               onClick={() => setIsDeactivateConfirmOpen(true)}
             >
-              Deactivate
+              {tx("admin.products.deactivateConfirm")}
             </Button>
           ) : (
             <Button
@@ -128,7 +132,7 @@ export default function EditProductPage() {
               disabled={isReactivatingProduct || Boolean(product.deletedAt)}
               onClick={handleReactivate}
             >
-              Reactivate
+              {tx("admin.products.reactivate")}
             </Button>
           )}
           <Button
@@ -138,7 +142,7 @@ export default function EditProductPage() {
             disabled={isDeletingProduct || Boolean(product.deletedAt)}
             onClick={() => setIsDeleteConfirmOpen(true)}
           >
-            Delete
+            {tx("admin.products.deleteConfirm")}
           </Button>
         </div>
       </div>
@@ -152,7 +156,7 @@ export default function EditProductPage() {
           imageUrl: product.imageUrl ?? "",
         }}
         isSubmitting={isUpdatingProduct}
-        submitLabel="Save changes"
+        submitLabel={tx("admin.products.saveChanges")}
         onSubmit={handleSubmit}
       />
 
@@ -172,7 +176,7 @@ export default function EditProductPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeactivatingProduct}
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault();
                 void handleDeactivate();

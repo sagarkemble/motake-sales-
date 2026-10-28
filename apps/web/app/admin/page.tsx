@@ -21,6 +21,7 @@ import { cn } from "~/lib/utils";
 import { useAuth } from "~/hooks/use-auth";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useReports } from "~/hooks/use-reports";
+import { useTranslate } from "~/hooks/use-translate";
 
 function KpiGridSkeleton({ count, columnClassName }: { count: number; columnClassName: string }) {
   return (
@@ -44,6 +45,7 @@ export default function AdminDashboardPage() {
   const today = new Date();
   const yesterday = subDays(today, 1);
 
+  const tx = useTranslate();
   const { signedInUser } = useAuth();
   const { formatPaiseCompact } = useFormatMoney();
   const { dailyKpiSummary: todayKpiSummary, isDailyKpiSummaryLoading: isTodayKpiSummaryLoading } =
@@ -53,19 +55,23 @@ export default function AdminDashboardPage() {
   });
 
   const trimmedSignedInUserName = signedInUser?.name?.trim();
-  const firstName = trimmedSignedInUserName ? trimmedSignedInUserName.split(" ")[0] : "Admin";
+  const firstName = trimmedSignedInUserName
+    ? trimmedSignedInUserName.split(" ")[0]
+    : tx("admin.dashboard.greetingFallbackName");
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:gap-8 sm:p-6">
       <section>
-        <h1 className="text-xl font-semibold sm:text-2xl">Hello, {firstName} 👋</h1>
-        <p className="text-sm text-muted-foreground">
-          Here is what is happening with your business today.
-        </p>
+        <h1 className="text-xl font-semibold sm:text-2xl">
+          {tx("admin.dashboard.greeting", { name: firstName ?? "" })}
+        </h1>
+        <p className="text-sm text-muted-foreground">{tx("admin.dashboard.subtitle")}</p>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Today&apos;s orders</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("admin.dashboard.todaysOrders")}
+        </h2>
         {isTodayKpiSummaryLoading ? (
           <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
@@ -100,7 +106,9 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Today&apos;s gate passes</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("admin.dashboard.todaysGatepasses")}
+        </h2>
         {isTodayKpiSummaryLoading ? (
           <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
@@ -143,7 +151,9 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Quick actions</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("common.nav.quickActions")}
+        </h2>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
           {adminQuickActions.map((quickAction) => (
             <QuickActionLink
@@ -157,7 +167,9 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Recent activity</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("admin.dashboard.recentActivity")}
+        </h2>
         <OrderHistoryPanel />
       </section>
     </div>
