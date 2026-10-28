@@ -24,7 +24,7 @@ import type { SelectGstCreditNoteDeadline, SelectSellerSettings } from "@repo/da
 import DocumentNumberService, { formatDocumentNumber } from "../document-numbers";
 import { badRequest, conflict, internalError, notFound } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
-import { changedFields, createdFields, recordAudit, type FieldChange } from "../shared/audit";
+import { changedFields, createdFields, oldNewPayload, recordAudit } from "../shared/audit";
 import { sellerMasterMissingRefusal } from "../shared/checkout";
 import {
   financialYearBounds,
@@ -76,13 +76,6 @@ function assertGstinMatchesState(gstin: string, state: string): void {
   if (gstin.slice(0, 2) !== code) {
     throw badRequest(`GSTIN ${gstin} does not belong to ${state} (state code ${code})`);
   }
-}
-
-// Settings audit payloads record each changed field as { old, new } (Spec E).
-function oldNewPayload(changes: Record<string, FieldChange>): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(changes).map(([field, change]) => [field, { old: change.from, new: change.to }]),
-  );
 }
 
 function onlySellerRow(rows: SelectSellerSettings[]): SelectSellerSettings | null {

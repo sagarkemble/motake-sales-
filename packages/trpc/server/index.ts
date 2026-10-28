@@ -6,6 +6,7 @@ import { billsRouter } from "./routes/bills/route";
 import { customersRouter } from "./routes/customers/route";
 import { documentsRouter } from "./routes/documents/route";
 import { gatepassRouter } from "./routes/gatepass/route";
+import { gstRouter } from "./routes/gst/route";
 import { healthRouter } from "./routes/health/route";
 import { ledgerRouter } from "./routes/ledger/route";
 import { ordersRouter } from "./routes/orders/route";
@@ -24,6 +25,7 @@ export const serverRouter = router({
   customers: customersRouter,
   documents: documentsRouter,
   gatepasses: gatepassRouter,
+  gst: gstRouter,
   ledger: ledgerRouter,
   orders: ordersRouter,
   payments: paymentsRouter,

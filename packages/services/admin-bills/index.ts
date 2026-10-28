@@ -75,7 +75,6 @@ import {
   type NoteDraft,
 } from "../shared/bill-arithmetic";
 import {
-  allowEveryBillLock,
   noAdminBillListener,
   notifyAdminBillOutcome,
   type AdminBillListener,
@@ -86,6 +85,7 @@ import {
   type NoteOutcome,
 } from "../shared/bill-events";
 import { assertCustomerActive } from "../shared/checkout";
+import { gstBillLockHook } from "../shared/gst-gates";
 import { dueStateOf, routeStampFromHeader, routeStampOf } from "../shared/checkout-events";
 import { recordAudit } from "../shared/audit";
 import { financialYearOf } from "../shared/financial-year";
@@ -311,7 +311,7 @@ class AdminBillService {
   // Spec J's listener, called once after each successful commit; Spec I's month and IRN lock.
   public constructor(
     private readonly afterCommit: AdminBillListener = noAdminBillListener,
-    private readonly lockHook: BillLockHook = allowEveryBillLock,
+    private readonly lockHook: BillLockHook = gstBillLockHook,
   ) {}
 
   // The Varieties sellable to this Customer today: a Route price on its Route and a tax period

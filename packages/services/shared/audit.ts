@@ -26,6 +26,13 @@ export function changedFields<Row extends object>(
   return changes;
 }
 
+// Changed fields as { field: { old, new } }, the payload of a Correct audit row (Specs E, I).
+export function oldNewPayload(changes: Record<string, FieldChange>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(changes).map(([field, change]) => [field, { old: change.from, new: change.to }]),
+  );
+}
+
 // The fields a create set, dropping the ones left empty.
 export function createdFields(values: object): Record<string, unknown> {
   return Object.fromEntries(

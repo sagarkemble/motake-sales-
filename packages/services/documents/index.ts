@@ -1,5 +1,5 @@
 import { getProfileById } from "@repo/database/queries/auth";
-import { getCustomerById, getCustomerWithRouteById } from "@repo/database/queries/customers";
+import { getCustomerWithRouteById } from "@repo/database/queries/customers";
 import {
   getBillDocumentState,
   getBillVersionSnapshot,
@@ -16,6 +16,7 @@ import {
   type BillDocumentState,
   type BillVersionSnapshot,
 } from "@repo/database/queries/documents";
+import { getBillGstFacts } from "@repo/database/queries/gst";
 import { businessDateOf, businessTimeOf } from "@repo/database/queries/shared/business-date";
 import type { SelectNote, SelectNoteLine } from "@repo/database/schema";
 import {
@@ -577,23 +578,16 @@ class DocumentService {
     return latest;
   }
 
-  // Stand-in for Spec I's "is e-invoiced" rule: a Tax Invoice needs an IRN when the seller and
-  // its Customer both have E-invoicing required. The seller flag defaults to on while the Seller
-  // master is not set up. It decides irn_missing, the Draft PDF's IRN-pending check and the
-  // superseded_version refusal; Spec I replaces all three together.
+  // Spec I's "is e-invoiced" rule (queries/gst): a Tax Invoice needs an IRN when the seller and
+  // its Customer both have E-invoicing required. It decides irn_missing and superseded_version.
   private async einvoicingRequired(bill: BillDocumentState): Promise<boolean> {
-    if (bill.legalType !== "tax_invoice" || !bill.customerId) return false;
-    const [customer, settings] = await Promise.all([
-      getCustomerById(bill.customerId),
-      this.settingsService.getSellerSettings(),
-    ]);
-    return Boolean(customer?.einvoicingRequired) && (settings?.einvoicingRequired ?? true);
+    return Boolean((await getBillGstFacts(bill.id))?.einvoicingApplies);
   }
 
-  // Stand-in for Spec I's `assertDraftAllowed(billId)` until it lands: the Bill is IRN pending.
+  // Spec I's Draft rule (the same one GstService.assertDraftAllowed applies): the Bill is IRN
+  // pending.
   private async assertDraftAllowed(bill: BillDocumentState): Promise<void> {
-    const irnPending = !bill.irn && !bill.cancelled && (await this.einvoicingRequired(bill));
-    if (!irnPending) {
+    if (!(await getBillGstFacts(bill.id))?.irnPending) {
       throw documentRefused(
         "irn_not_pending",
         `Bill ${bill.number} is not waiting for an IRN; download its PDF instead`,

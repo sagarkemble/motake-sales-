@@ -14,6 +14,7 @@
     "./documents": "./documents/index.ts",
     "./errors": "./errors/index.ts",
     "./gatepass": "./gatepass/index.ts",
+    "./gst": "./gst/index.ts",
     "./gst-credit-note-deadline": "./gst-credit-note-deadline/index.ts",
     "./indian-states": "./indian-states/index.ts",
     "./k6-cleanup": "./k6-cleanup/index.ts",
