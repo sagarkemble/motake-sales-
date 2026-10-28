@@ -82,20 +82,27 @@ export function DeactivateCustomerDialog({
             {isOpenOrdersLoading ? (
               <>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Checking open Pre-orders…</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {tx("admin.customers.deactivateDialog.checking")}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    A customer with open Pre-orders cannot be deactivated.
+                    {tx("admin.customers.deactivateDialog.openPreordersRule")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
               </>
             ) : hasOpenOrders ? (
               <>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Cannot deactivate</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {tx("admin.customers.deactivateDialog.blockedTitle")}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    This customer has {openOrderCount} open Pre-order
-                    {openOrderCount === 1 ? "" : "s"}. A customer with open Pre-orders cannot be
-                    deactivated.
+                    {tx(
+                      openOrderCount === 1
+                        ? "admin.customers.deactivateDialog.blockedBodyOne"
+                        : "admin.customers.deactivateDialog.blockedBodyOther",
+                      { count: openOrderCount },
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -117,30 +124,34 @@ export function DeactivateCustomerDialog({
                 </div>
 
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Keep active</AlertDialogCancel>
+                  <AlertDialogCancel>{tx("common.actions.cancel")}</AlertDialogCancel>
                 </AlertDialogFooter>
               </>
             ) : (
               <>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Deactivate this customer?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {tx("admin.customers.deactivateDialog.title")}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    They will leave the active list. Order history stays. Salesmen cannot select
-                    them for new orders.
+                    {tx("admin.customers.deactivateDialog.body")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={isDeactivatingCustomer}>
-                    Keep active
+                    {tx("common.actions.cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     disabled={!canDeactivate || isDeactivatingCustomer}
+                    className="bg-destructive text-white hover:bg-destructive/90"
                     onClick={(event) => {
                       event.preventDefault();
                       void handleDeactivate();
                     }}
                   >
-                    {isDeactivatingCustomer ? "Deactivating…" : "Deactivate"}
+                    {isDeactivatingCustomer
+                      ? tx("common.status.pleaseWait")
+                      : tx("admin.customers.deactivate")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </>

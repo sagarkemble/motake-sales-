@@ -34,14 +34,18 @@ export function PasswordLoginForm() {
   const passwordLoginFormSchema = useMemo(
     () =>
       z.object({
-        email: z.string().min(1, tx("auth.login.validation.emailRequired")).email(tx("auth.login.validation.emailInvalid")),
+        email: z
+          .string()
+          .min(1, tx("auth.login.validation.emailRequired"))
+          .email(tx("auth.login.validation.emailInvalid")),
         password: z.string().min(minPasswordLength, tx("auth.login.validation.passwordMin")),
       }),
     [tx],
   );
 
   const remainingPasswordCharacters = minPasswordLength - password.length;
-  const showRemainingPasswordCharactersHint = password.length > 0 && remainingPasswordCharacters > 0;
+  const showRemainingPasswordCharactersHint =
+    password.length > 0 && remainingPasswordCharacters > 0;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -49,7 +53,9 @@ export function PasswordLoginForm() {
 
     const parsedForm = passwordLoginFormSchema.safeParse({ email: email.trim(), password });
     if (!parsedForm.success) {
-      setFormError(parsedForm.error.issues[0]?.message ?? tx("auth.login.validation.formIncomplete"));
+      setFormError(
+        parsedForm.error.issues[0]?.message ?? tx("auth.login.validation.formIncomplete"),
+      );
       return;
     }
 
@@ -100,16 +106,22 @@ export function PasswordLoginForm() {
           <button
             type="button"
             onClick={toggleIsPasswordVisible}
-            aria-label={isPasswordVisible ? tx("auth.login.hidePassword") : tx("auth.login.showPassword")}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+            aria-label={
+              isPasswordVisible ? tx("auth.login.hidePassword") : tx("auth.login.showPassword")
+            }
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </button>
         </div>
         {showRemainingPasswordCharactersHint && (
           <p className="text-xs text-muted-foreground">
-            {remainingPasswordCharacters} more character{remainingPasswordCharacters === 1 ? "" : "s"}{" "}
-            needed
+            {tx(
+              remainingPasswordCharacters === 1
+                ? "admin.salesmen.form.moreCharsOne"
+                : "admin.salesmen.form.moreCharsOther",
+              { count: remainingPasswordCharacters },
+            )}
           </p>
         )}
       </div>

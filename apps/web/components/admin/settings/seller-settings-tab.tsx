@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { INDIAN_STATES, type RouterOutputs } from "@repo/trpc/client";
-import { AlertTriangleIcon, Loader2Icon, PencilIcon } from "lucide-react";
+import { AlertTriangleIcon, PencilIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -94,7 +94,12 @@ export function SellerSettingsTab() {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <p className="text-sm text-muted-foreground">{tx("admin.settings.loadFailed")}</p>
-        <Button variant="outline" size="sm" onClick={() => void refetchSeller()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => void refetchSeller()}
+        >
           {tx("common.actions.tryAgain")}
         </Button>
       </div>
@@ -104,7 +109,7 @@ export function SellerSettingsTab() {
   if (!seller) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+        <div className="flex gap-3 rounded-2xl bg-amber-500/10 p-3 text-sm">
           <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <div>
             <p className="font-medium">{tx("admin.settings.seller.notSetUpTitle")}</p>
@@ -129,7 +134,12 @@ export function SellerSettingsTab() {
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="font-medium">{tx("admin.settings.seller.title")}</h2>
           {!isEditing && (
-            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setIsEditing(true)}
+            >
               <PencilIcon />
               {tx("admin.settings.seller.edit")}
             </Button>
@@ -280,7 +290,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             <FormItem>
               <FormLabel>{tx("admin.settings.fields.legalName")}</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} className="rounded-xl bg-muted/40" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -294,7 +304,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             <FormItem>
               <FormLabel>{tx("admin.settings.fields.address")}</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={2} className="min-h-16" />
+                <Textarea {...field} rows={2} className="min-h-16 rounded-xl bg-muted/40" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -310,7 +320,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                 <FormLabel>{tx("admin.settings.fields.state")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full rounded-xl bg-muted/40">
                       <SelectValue placeholder={tx("admin.settings.seller.statePlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
@@ -338,7 +348,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                     {...field}
                     maxLength={15}
                     autoCapitalize="characters"
-                    className="font-mono uppercase"
+                    className="rounded-xl bg-muted/40 font-mono uppercase"
                     onChange={(event) => field.onChange(event.target.value.toUpperCase())}
                   />
                 </FormControl>
@@ -356,7 +366,12 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
               <FormItem>
                 <FormLabel>{tx("admin.settings.fields.phone")}</FormLabel>
                 <FormControl>
-                  <Input {...field} inputMode="tel" maxLength={20} />
+                  <Input
+                    {...field}
+                    inputMode="tel"
+                    maxLength={20}
+                    className="rounded-xl bg-muted/40"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -370,7 +385,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
               <FormItem>
                 <FormLabel>{tx("admin.settings.seller.emailOptional")}</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" />
+                  <Input {...field} type="email" className="rounded-xl bg-muted/40" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -389,6 +404,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                   {...field}
                   maxLength={500}
                   placeholder={tx("admin.settings.reasonPlaceholder")}
+                  className="rounded-xl bg-muted/40"
                 />
               </FormControl>
               <FormMessage />
@@ -402,15 +418,22 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="sm:flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
+            className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90 sm:flex-1"
           >
-            {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
-            {mode === "setup"
-              ? tx("admin.settings.seller.confirm")
-              : tx("admin.settings.seller.saveChanges")}
+            {isSubmitting
+              ? tx("common.status.pleaseWait")
+              : mode === "setup"
+                ? tx("admin.settings.seller.confirm")
+                : tx("admin.settings.seller.saveChanges")}
           </Button>
           {onCancel && (
-            <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-full"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
               {tx("common.actions.cancel")}
             </Button>
           )}

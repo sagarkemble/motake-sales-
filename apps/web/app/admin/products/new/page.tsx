@@ -29,7 +29,7 @@ export default function NewProductPage() {
       <BackHeader href="/admin/products" title={tx("admin.products.newAria")} />
       <ProductForm
         isSubmitting={isCreatingProduct}
-        submitLabel="Create product"
+        submitLabel={tx("admin.products.createCta")}
         onSubmit={handleSubmit}
       />
     </div>

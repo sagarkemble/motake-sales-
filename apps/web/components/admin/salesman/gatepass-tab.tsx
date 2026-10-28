@@ -1,5 +1,6 @@
 "use client";
 
+import { parseISO } from "date-fns";
 import Link from "next/link";
 
 import {
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { useGatepasses, type AllotmentMatrixRow } from "~/hooks/use-gatepasses";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
@@ -34,6 +36,7 @@ interface GatepassTabProps {
 
 export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassTabProps) {
   const tx = useTranslate();
+  const formatDate = useFormatDate();
   const { canonicalBusinessDate: businessDate, isCanonicalDateLoading } = useGatepasses();
   const { gatepasses, allotmentMatrix, isGatepassesLoading, isAllotmentMatrixLoading } =
     useGatepasses({ businessDate: businessDate || undefined, includeAdminOverview: true });
@@ -64,7 +67,9 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
       <div className="flex items-center justify-between rounded-2xl border bg-card p-4">
         <div>
           <p className="text-sm font-medium">{tx("admin.salesmen.gatepass.todayTitle")}</p>
-          <p className="text-xs text-muted-foreground">{businessDate}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatDate(parseISO(businessDate), "d MMM yyyy")}
+          </p>
           {todaysGatepass && (
             <RouteTag
               name={todaysGatepass.routeName}
@@ -170,61 +175,123 @@ interface GatepassLinesTableProps {
 export function GatepassLinesTable({ rows, handedOver }: GatepassLinesTableProps) {
   const tx = useTranslate();
 
+  function shortReasonLabel(item: AllotmentMatrixRow) {
+    return item.shortReason
+      ? tx(SHORT_REASON_LABEL_KEYS[item.shortReason])
+      : tx("admin.salesmen.gatepass.noReason");
+  }
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{tx("admin.varieties.product")}</TableHead>
-          <TableHead>{tx("admin.salesmen.gatepass.variety")}</TableHead>
-          <TableHead className="text-right">{tx("salesman.gatepass.col.issued")}</TableHead>
-          <TableHead className="text-right">{tx("salesman.gatepass.col.sold")}</TableHead>
-          <TableHead className="text-right">{tx("salesman.gatepass.col.left")}</TableHead>
-          <TableHead className="text-right">{tx("salesman.gatepass.col.returned")}</TableHead>
-          <TableHead>{tx("salesman.gatepass.col.short")}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      {/* Seven columns do not fit a phone; below md each line is its own card. */}
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{tx("admin.varieties.product")}</TableHead>
+              <TableHead>{tx("admin.salesmen.gatepass.variety")}</TableHead>
+              <TableHead className="text-right">{tx("salesman.gatepass.col.issued")}</TableHead>
+              <TableHead className="text-right">{tx("salesman.gatepass.col.sold")}</TableHead>
+              <TableHead className="text-right">{tx("salesman.gatepass.col.left")}</TableHead>
+              <TableHead className="text-right">{tx("salesman.gatepass.col.returned")}</TableHead>
+              <TableHead>{tx("salesman.gatepass.col.short")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((item, index) => {
+              const short = handedOver ? shortQtyOf(item) : 0;
+              return (
+                <TableRow
+                  key={`${item.varietyId}-${index}`}
+                  className={short > 0 ? "bg-amber-500/5" : undefined}
+                >
+                  <TableCell className="font-medium">{item.productName}</TableCell>
+                  <TableCell className="text-muted-foreground">{item.varietyName}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.issuedQty}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.soldQty}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {item.sellableQty}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {handedOver ? item.returnedQty : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {short > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Badge
+                          variant="outline"
+                          className="w-fit border-transparent bg-amber-500/10 text-amber-600"
+                        >
+                          {short} · {shortReasonLabel(item)}
+                        </Badge>
+                        {item.shortNote && (
+                          <span className="text-xs text-muted-foreground">{item.shortNote}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex flex-col gap-2 md:hidden">
         {rows.map((item, index) => {
           const short = handedOver ? shortQtyOf(item) : 0;
+          const quantities = [
+            { label: "salesman.gatepass.col.issued", value: item.issuedQty },
+            { label: "salesman.gatepass.col.sold", value: item.soldQty },
+            { label: "salesman.gatepass.col.left", value: item.sellableQty, isStrong: true },
+            {
+              label: "salesman.gatepass.col.returned",
+              value: handedOver ? item.returnedQty : "—",
+            },
+          ];
           return (
-            <TableRow
+            <div
               key={`${item.varietyId}-${index}`}
-              className={short > 0 ? "bg-amber-500/5" : undefined}
+              className={cn(
+                "flex flex-col gap-2 rounded-xl border bg-card p-3",
+                short > 0 && "border-amber-500/30 bg-amber-500/5",
+              )}
             >
-              <TableCell className="font-medium">{item.productName}</TableCell>
-              <TableCell className="text-muted-foreground">{item.varietyName}</TableCell>
-              <TableCell className="text-right tabular-nums">{item.issuedQty}</TableCell>
-              <TableCell className="text-right tabular-nums">{item.soldQty}</TableCell>
-              <TableCell className="text-right font-semibold tabular-nums">
-                {item.sellableQty}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {handedOver ? item.returnedQty : "—"}
-              </TableCell>
-              <TableCell>
-                {short > 0 ? (
-                  <div className="flex flex-col gap-0.5">
-                    <Badge
-                      variant="outline"
-                      className="w-fit border-transparent bg-amber-500/10 text-amber-600"
-                    >
-                      {short} ·{" "}
-                      {item.shortReason
-                        ? tx(SHORT_REASON_LABEL_KEYS[item.shortReason])
-                        : tx("admin.salesmen.gatepass.noReason")}
-                    </Badge>
-                    {item.shortNote && (
-                      <span className="text-xs text-muted-foreground">{item.shortNote}</span>
-                    )}
+              <p className="text-sm font-medium">
+                {item.productName}{" "}
+                <span className="font-normal text-muted-foreground">· {item.varietyName}</span>
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {quantities.map((quantity) => (
+                  <div key={quantity.label} className="min-w-0">
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {tx(quantity.label)}
+                    </p>
+                    <p className={cn("text-sm tabular-nums", quantity.isStrong && "font-semibold")}>
+                      {quantity.value}
+                    </p>
                   </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
-                )}
-              </TableCell>
-            </TableRow>
+                ))}
+              </div>
+              {short > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  <Badge
+                    variant="outline"
+                    className="w-fit border-transparent bg-amber-500/10 text-amber-600"
+                  >
+                    {tx("salesman.gatepass.col.short")} {short} · {shortReasonLabel(item)}
+                  </Badge>
+                  {item.shortNote && (
+                    <span className="text-xs text-muted-foreground">{item.shortNote}</span>
+                  )}
+                </div>
+              )}
+            </div>
           );
         })}
-      </TableBody>
-    </Table>
+      </div>
+    </>
   );
 }

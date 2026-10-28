@@ -7,12 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -56,7 +51,10 @@ export function SalesmanEditDialog({
       z.object({
         name: z.string().min(1, tx("admin.salesmen.validation.name")).max(120),
         phone: z.string().min(1, tx("admin.salesmen.validation.phone")).max(20),
-        email: z.string().min(1, tx("admin.salesmen.validation.email")).email(tx("admin.salesmen.validation.emailInvalid")),
+        email: z
+          .string()
+          .min(1, tx("admin.salesmen.validation.email"))
+          .email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
       }),
     [tx],
@@ -91,7 +89,7 @@ export function SalesmanEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Edit salesman</DialogTitle>
+          <DialogTitle>{tx("admin.salesmen.editAria")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -101,9 +99,13 @@ export function SalesmanEditDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{tx("common.fields.name")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Full name" {...field} />
+                    <Input
+                      placeholder={tx("admin.salesmen.form.namePlaceholder")}
+                      className="rounded-xl bg-muted/40"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -115,9 +117,13 @@ export function SalesmanEditDialog({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>{tx("admin.salesmen.form.phone")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="common.fields.phone" {...field} />
+                    <Input
+                      placeholder={tx("common.fields.phone")}
+                      className="rounded-xl bg-muted/40"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,9 +135,14 @@ export function SalesmanEditDialog({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{tx("common.fields.email")}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Email address" {...field} />
+                    <Input
+                      type="email"
+                      placeholder={tx("admin.salesmen.form.emailPlaceholder")}
+                      className="rounded-xl bg-muted/40"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,20 +155,27 @@ export function SalesmanEditDialog({
               render={({ field }) => {
                 const passwordValue = field.value ?? "";
                 const remainingCharacters = minPasswordLength - passwordValue.length;
-                const showRemainingCharactersHint = passwordValue.length > 0 && remainingCharacters > 0;
+                const showRemainingCharactersHint =
+                  passwordValue.length > 0 && remainingCharacters > 0;
                 return (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{tx("common.fields.password")}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Leave blank to keep current password"
+                        placeholder={tx("admin.salesmen.form.passwordKeepPlaceholder")}
+                        className="rounded-xl bg-muted/40"
                         {...field}
                       />
                     </FormControl>
                     {showRemainingCharactersHint && (
                       <p className="text-xs text-muted-foreground">
-                        {remainingCharacters} more character{remainingCharacters === 1 ? "" : "s"} needed
+                        {tx(
+                          remainingCharacters === 1
+                            ? "admin.salesmen.form.moreCharsOne"
+                            : "admin.salesmen.form.moreCharsOther",
+                          { count: remainingCharacters },
+                        )}
                       </p>
                     )}
                     <FormMessage />
@@ -171,7 +189,9 @@ export function SalesmanEditDialog({
               disabled={isUpdatingSalesmanAccount}
               className="mt-2 w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
             >
-              {isUpdatingSalesmanAccount ? "Saving" : "Save changes"}
+              {isUpdatingSalesmanAccount
+                ? tx("common.status.pleaseWait")
+                : tx("admin.products.saveChanges")}
             </Button>
           </form>
         </Form>

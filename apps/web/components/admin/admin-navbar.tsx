@@ -64,7 +64,7 @@ export function AdminNavbar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-72">
             <SheetHeader>
-              <SheetTitle>Motake Admin</SheetTitle>
+              <SheetTitle>{tx("admin.nav.brandTitle")}</SheetTitle>
             </SheetHeader>
             {/* Radix lays the viewport content out as a table; block keeps the content at the sheet width. */}
             <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
@@ -77,7 +77,7 @@ export function AdminNavbar() {
                       <Link
                         key={navItem.href}
                         href={navItem.href}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                        className={`flex items-center gap-3 rounded-full px-3 py-2 text-sm transition-colors ${
                           isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
                         }`}
                       >
@@ -143,10 +143,19 @@ export function AdminNavbar() {
         <LanguageSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button aria-label={tx("admin.nav.openAccountMenu")}>
+            <button
+              type="button"
+              aria-label={tx("admin.nav.openAccountMenu")}
+              className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
               <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">
-                <AvatarImage src={signedInUser?.avatarUrl ?? undefined} alt="Avatar" />
-                <AvatarFallback>{avatarInitial}</AvatarFallback>
+                <AvatarImage
+                  src={signedInUser?.avatarUrl ?? undefined}
+                  alt={tx("account.avatar.alt")}
+                />
+                <AvatarFallback className="bg-brand/10 font-medium text-brand">
+                  {avatarInitial}
+                </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>

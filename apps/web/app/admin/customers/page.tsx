@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ListPager } from "~/components/shared/list-pager";
 import { RouteTag } from "~/components/shared/route-tag";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { useCustomers } from "~/hooks/use-customers";
@@ -47,7 +48,7 @@ function CustomersPageContent() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -62,7 +63,7 @@ function CustomersPageContent() {
               type="button"
               aria-label={tx("common.actions.clearSearch")}
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground"
             >
               <XIcon className="size-4" />
             </button>
@@ -89,7 +90,7 @@ function CustomersPageContent() {
         >
           <SelectTrigger
             aria-label={tx("admin.customers.routeFilter")}
-            className="w-full rounded-full bg-card sm:w-64"
+            className="w-full rounded-full bg-muted/40 sm:w-64"
           >
             <SelectValue />
           </SelectTrigger>
@@ -122,7 +123,7 @@ function CustomersPageContent() {
           : tx("admin.customers.totalCount", { count: customersPage.totalCount })}
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {isCustomersListLoading ? (
           <ListItemSkeleton count={6} />
         ) : customersPage.items.length === 0 ? (
@@ -141,7 +142,7 @@ function CustomersPageContent() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") router.push(`/admin/customers/${customer.id}`);
               }}
-              className="flex items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+              className="flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ShopPhotoThumbnail
                 shopPhotoUrl={customer.shopPhotoUrl}
@@ -170,36 +171,11 @@ function CustomersPageContent() {
         )}
       </div>
 
-      {customersPage.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            {tx("common.pagination.pageOf", {
-              page: customersPage.page,
-              total: customersPage.totalPages,
-            })}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={customersPage.page <= 1}
-              onClick={() => setPage(customersPage.page - 1)}
-            >
-              {tx("common.pagination.previous")}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={customersPage.page >= customersPage.totalPages}
-              onClick={() => setPage(customersPage.page + 1)}
-            >
-              {tx("common.pagination.next")}
-            </Button>
-          </div>
-        </div>
-      )}
+      <ListPager
+        page={customersPage.page}
+        totalPages={customersPage.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }
@@ -208,7 +184,7 @@ export default function AdminCustomersPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={6} />
         </div>
       }

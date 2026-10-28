@@ -93,7 +93,7 @@ export function MagicLinkLoginForm() {
           <button
             type="button"
             onClick={goToEmailStep}
-            className="text-muted-foreground hover:text-foreground"
+            className="rounded-sm text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 hover:text-foreground"
           >
             {tx("auth.magicLink.changeEmail")}
           </button>
@@ -101,9 +101,11 @@ export function MagicLinkLoginForm() {
             type="button"
             disabled={cooldownSeconds > 0 || isSending}
             onClick={() => void sendLink()}
-            className="text-brand disabled:text-muted-foreground disabled:opacity-60"
+            className="rounded-sm text-brand outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:text-muted-foreground disabled:opacity-60"
           >
-            {cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : tx("auth.magicLink.resend")}
+            {cooldownSeconds > 0
+              ? tx("auth.otp.resendIn", { seconds: cooldownSeconds })
+              : tx("auth.magicLink.resend")}
           </button>
         </div>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import type { RouterOutputs } from "@repo/trpc/client";
-import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DatePicker } from "~/components/shared/date-picker";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -62,6 +62,7 @@ export function CreditNoteDeadlineTab({ deadlines }: { deadlines: CreditNoteDead
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="rounded-full"
                   onClick={() => setEditingYear(entry.financialYear)}
                 >
                   {entry.source === "default"
@@ -129,13 +130,11 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
         <Label htmlFor={inputId}>
           {tx("admin.settings.deadline.label", { year: entry.financialYear })}
         </Label>
-        <Input
+        <DatePicker
           id={inputId}
-          type="date"
           value={date}
-          aria-invalid={showError && !isDateValid}
-          onChange={(event) => {
-            setDate(event.target.value);
+          onChange={(value) => {
+            setDate(value);
             setShowError(false);
           }}
         />
@@ -147,9 +146,10 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
           })}
         </p>
       )}
-      <button
+      <Button
         type="button"
-        className="self-start text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        variant="link"
+        className="h-auto self-start p-0 text-xs text-brand"
         onClick={() => {
           setDate(defaultDate);
           setShowError(false);
@@ -158,25 +158,30 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
         {tx("admin.settings.deadline.useDefault", {
           date: formatDate(`${defaultDate}T00:00:00`, "d MMM yyyy"),
         })}
-      </button>
-      <Input
-        aria-label={tx("admin.settings.reasonLabel")}
-        placeholder={tx("admin.settings.reasonLabel")}
-        maxLength={500}
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-      />
+      </Button>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${inputId}-reason`}>{tx("admin.settings.reasonLabel")}</Label>
+        <Input
+          id={`${inputId}-reason`}
+          placeholder={tx("admin.settings.reasonPlaceholder")}
+          maxLength={500}
+          value={reason}
+          className="rounded-xl bg-muted/40"
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </div>
       <div className="flex gap-2">
         <Button
           type="submit"
           size="sm"
           disabled={isSettingCreditNoteDeadline}
-          className="bg-brand text-brand-foreground hover:bg-brand/90"
+          className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isSettingCreditNoteDeadline ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          {tx("admin.settings.deadline.save")}
+          {isSettingCreditNoteDeadline
+            ? tx("common.status.pleaseWait")
+            : tx("admin.settings.deadline.save")}
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onDone}>
+        <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={onDone}>
           {tx("common.actions.cancel")}
         </Button>
       </div>
