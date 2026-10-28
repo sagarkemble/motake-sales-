@@ -1,6 +1,6 @@
 "use client";
 
-import { PackageIcon } from "lucide-react";
+import { PackageIcon, PackageXIcon } from "lucide-react";
 
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Button } from "~/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DrawerTitle,
 } from "~/components/ui/drawer";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { useTranslate } from "~/hooks/use-translate";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductVarietyOption {
@@ -38,6 +39,7 @@ export function AddToCartDrawer({
   productImageUrl,
   varieties,
 }: AddToCartDrawerProps) {
+  const tx = useTranslate();
   const { getQuantityForVariety, setQuantityForVariety } = useCart();
 
   function handleQuantityChange(variety: ProductVarietyOption, quantity: number) {
@@ -62,7 +64,7 @@ export function AddToCartDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <DrawerHeader className="flex flex-row items-center gap-3 text-left">
           <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
             {productImageUrl ? (
@@ -82,9 +84,10 @@ export function AddToCartDrawer({
         <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
           <div className="flex flex-col gap-3 px-4 pb-2">
             {varieties.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                No sizes are set up for this product yet.
-              </p>
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+                <PackageXIcon className="size-6 text-muted-foreground" />
+                <p className="text-sm font-medium">{tx("salesman.catalog.noSizes")}</p>
+              </div>
             ) : (
               varieties.map((variety) => (
                 <div
@@ -108,7 +111,7 @@ export function AddToCartDrawer({
         <DrawerFooter>
           {selectedQuantity > 0 && (
             <div className="mb-1 flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
-              <span className="text-muted-foreground">Selected</span>
+              <span className="text-muted-foreground">{tx("salesman.catalog.selected")}</span>
               <span className="font-semibold text-brand">{selectedQuantity}</span>
             </div>
           )}
@@ -117,7 +120,7 @@ export function AddToCartDrawer({
             onClick={() => onOpenChange(false)}
             className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            Done
+            {tx("checkout.success.done")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

@@ -21,7 +21,10 @@ export function StepIndicator({ steps, currentStepNumber }: StepIndicatorProps) 
   return (
     <>
       <div className="md:hidden">
-        <StepIndicatorMobile currentStepNumber={currentStepNumber} totalStepCount={steps.length} />
+        <StepIndicatorMobile
+          currentStepNumber={currentStepNumber}
+          stepLabels={steps.map((step) => CHECKOUT_STEP_LABELS[step])}
+        />
       </div>
       <div className="hidden md:block">
         <StepIndicatorDesktop

@@ -31,7 +31,7 @@ export function SalesmanShell({ children }: { children: React.ReactNode }) {
     <CartProvider>
       <div className="bg-dairy-doodle flex min-h-dvh flex-col bg-background">
         <SalesmanNavbar />
-        <main className="flex-1 pb-20">{children}</main>
+        <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]">{children}</main>
         <SalesmanBottomTabs />
       </div>
     </CartProvider>

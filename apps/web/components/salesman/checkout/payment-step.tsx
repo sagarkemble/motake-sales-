@@ -1,7 +1,10 @@
 "use client";
 
+import { AlertTriangleIcon } from "lucide-react";
+
 import { PaymentBlock } from "~/components/shared/checkout/payment-block";
 import { RefusalAlert } from "~/components/shared/checkout/refusal-alert";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useTranslate } from "~/hooks/use-translate";
@@ -50,12 +53,21 @@ export function PaymentStep({
           onAction={() => onQuoteRefusalAction(quoteRefusal)}
         />
       ) : hasQuoteError ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border p-6 text-center">
-          <p className="text-sm text-muted-foreground">{tx("checkout.payment.loadFailed")}</p>
-          <Button type="button" variant="outline" onClick={onRetryQuote}>
-            {tx("common.actions.tryAgain")}
-          </Button>
-        </div>
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+          <AlertTriangleIcon />
+          <AlertTitle className="line-clamp-none">{tx("checkout.payment.loadFailed")}</AlertTitle>
+          <AlertDescription>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-1 rounded-full"
+              onClick={onRetryQuote}
+            >
+              {tx("common.actions.tryAgain")}
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : paymentContext ? (
         <PaymentBlock
           context={paymentContext}

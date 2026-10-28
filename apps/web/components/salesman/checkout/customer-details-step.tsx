@@ -4,9 +4,7 @@ import { useId, useState } from "react";
 
 import {
   ChevronDownIcon,
-  ChevronUpIcon,
   InfoIcon,
-  MapPinIcon,
   PhoneIcon,
   RouteIcon,
   SearchIcon,
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -25,6 +24,7 @@ import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active
 import { BalanceChip } from "~/components/shared/checkout/balance-text";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
+import { RouteTag } from "~/components/shared/route-tag";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import type {
   ActiveGatepassRoute,
@@ -110,21 +110,28 @@ export function CustomerDetailsStep({
             <p className="truncate text-sm font-semibold">{selectedCustomer.shopName}</p>
             <p className="truncate text-xs text-muted-foreground">{selectedCustomer.address}</p>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <RouteChip routeName={selectedCustomer.routeName} />
+              <RouteTag name={selectedCustomer.routeName} code={selectedCustomer.routeCode} />
               <BalanceChip balancePaise={selectedCustomer.balancePaise} />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <Button
               type="button"
-              size="sm"
+              size="icon-sm"
               variant="ghost"
+              className="self-end rounded-full text-muted-foreground"
               aria-label={tx("salesman.checkout.customer.detailTitle")}
               onClick={() => setOpenedCustomerId(selectedCustomer.id)}
             >
               <InfoIcon className="size-4" />
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={onClearSelectedCustomer}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full"
+              onClick={onClearSelectedCustomer}
+            >
               {tx("common.actions.change")}
             </Button>
           </div>
@@ -137,17 +144,19 @@ export function CustomerDetailsStep({
               value={customerSearchTerm}
               onChange={(event) => onCustomerSearchTermChange(event.target.value)}
               placeholder={tx("salesman.checkout.customer.searchPlaceholder")}
-              className="h-11 rounded-full bg-muted/40 pl-9 pr-9"
+              className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
             />
             {customerSearchTerm && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label={tx("common.actions.clearSearch")}
                 onClick={() => onCustomerSearchTermChange("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted"
+                className="absolute right-1.5 top-1/2 size-8 -translate-y-1/2 rounded-full text-muted-foreground"
               >
                 <XIcon className="size-4" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -198,12 +207,13 @@ export function CustomerDetailsStep({
                 {customerOptions.map((customer) => (
                   <div
                     key={customer.id}
-                    className="flex items-start gap-3 rounded-2xl border bg-card p-3 transition-colors hover:border-brand/40"
+                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50"
                   >
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => onSelectCustomer(customer)}
-                      className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                      className="h-auto min-w-0 flex-1 items-start justify-start gap-3 whitespace-normal rounded-xl p-0 text-left font-normal hover:bg-transparent"
                     >
                       <ShopPhotoThumbnail
                         shopPhotoUrl={customer.shopPhotoUrl}
@@ -212,12 +222,11 @@ export function CustomerDetailsStep({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold">{customer.shopName}</p>
-                        <p className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
-                          <MapPinIcon className="mt-0.5 size-3 shrink-0" />
-                          <span className="line-clamp-2">{customer.address}</span>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                          {customer.address}
                         </p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <RouteChip routeName={customer.routeName} />
+                          <RouteTag name={customer.routeName} code={customer.routeCode} />
                           <BalanceChip balancePaise={customer.balancePaise} />
                           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                             <PhoneIcon className="size-3" />
@@ -225,38 +234,42 @@ export function CustomerDetailsStep({
                           </span>
                         </div>
                       </div>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      className="shrink-0 rounded-full text-muted-foreground"
                       aria-label={tx("salesman.checkout.customer.detailTitle")}
                       onClick={() => setOpenedCustomerId(customer.id)}
-                      className="rounded-full p-1 text-muted-foreground hover:bg-muted"
                     >
                       <InfoIcon className="size-4" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </>
             )}
           </div>
 
-          <div className="rounded-2xl border bg-card">
-            <button
-              type="button"
-              onClick={() => setIsAddCustomerOpen((isOpen) => !isOpen)}
-              className="flex w-full items-center justify-between px-3 py-3 text-sm font-medium"
-            >
-              <span className="flex items-center gap-2">
-                <UserPlusIcon className="size-4 text-brand" />
-                {tx("salesman.checkout.customer.orEnterNew")}
-              </span>
-              {isAddCustomerOpen ? (
-                <ChevronUpIcon className="size-4" />
-              ) : (
-                <ChevronDownIcon className="size-4" />
-              )}
-            </button>
-            {isAddCustomerOpen && (
+          <Collapsible
+            open={isAddCustomerOpen}
+            onOpenChange={setIsAddCustomerOpen}
+            className="rounded-2xl border bg-card"
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="group h-auto w-full justify-between whitespace-normal rounded-2xl px-3 py-3 text-left text-sm font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <UserPlusIcon className="size-4 shrink-0 text-brand" />
+                  {tx("salesman.checkout.customer.orEnterNew")}
+                </span>
+                <ChevronDownIcon className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
               <div className="border-t p-3">
                 <NewCustomerFields
                   routeName={activeGatepassRoute.name}
@@ -264,8 +277,8 @@ export function CustomerDetailsStep({
                   onNewCustomerFormChange={onNewCustomerFormChange}
                 />
               </div>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </>
       )}
 
@@ -286,15 +299,6 @@ export function CustomerDetailsStep({
         onUseCustomer={handleUseCustomer}
       />
     </div>
-  );
-}
-
-function RouteChip({ routeName }: { routeName: string }) {
-  return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-deep">
-      <RouteIcon className="size-3 shrink-0" />
-      <span className="truncate">{routeName}</span>
-    </span>
   );
 }
 
@@ -355,6 +359,7 @@ function NewCustomerFields({
           placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
           value={newCustomerForm.shopName}
           onChange={(event) => onNewCustomerFormChange({ shopName: event.target.value })}
+          className="h-11 rounded-xl"
         />
       </div>
 
@@ -366,6 +371,7 @@ function NewCustomerFields({
           placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
           value={newCustomerForm.phone}
           onChange={(event) => onNewCustomerFormChange({ phone: event.target.value })}
+          className="h-11 rounded-xl"
         />
       </div>
 
@@ -376,6 +382,7 @@ function NewCustomerFields({
           placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
           value={newCustomerForm.address}
           onChange={(event) => onNewCustomerFormChange({ address: event.target.value })}
+          className="rounded-xl"
         />
       </div>
 
