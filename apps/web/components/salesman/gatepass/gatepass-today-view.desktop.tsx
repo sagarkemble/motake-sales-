@@ -2,6 +2,7 @@
 
 import type { GatepassStatus } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 
 import { GatepassInfoBanner } from "./gatepass-info-banner";
 import {
@@ -62,7 +63,14 @@ export function GatepassTodayViewDesktop({
             </div>
             <p className="text-right font-medium">{line.issuedQty}</p>
             <p className="text-right font-medium">{line.soldQty}</p>
-            <p className="text-right font-semibold text-brand">{line.sellableQty}</p>
+            <p
+              className={cn(
+                "text-right font-semibold text-brand",
+                line.sellableQty === 0 && "text-muted-foreground",
+              )}
+            >
+              {line.sellableQty}
+            </p>
             <p className="text-right font-medium">{handedOver ? line.returnedQty : "—"}</p>
           </div>
         ))}

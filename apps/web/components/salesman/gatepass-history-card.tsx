@@ -6,8 +6,10 @@ import { ChevronRightIcon } from "lucide-react";
 import { GatepassStatGrid } from "~/components/salesman/gatepass/gatepass-stat-grid";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { RouteTag } from "~/components/shared/route-tag";
+import { Button } from "~/components/ui/button";
 import { useFormatDate } from "~/hooks/use-format-date";
 import type { GatepassHistoryRow } from "~/hooks/use-gatepasses";
+import { useTranslate } from "~/hooks/use-translate";
 
 interface GatepassHistoryCardProps {
   historyRow: GatepassHistoryRow;
@@ -15,6 +17,7 @@ interface GatepassHistoryCardProps {
 }
 
 export function GatepassHistoryCard({ historyRow, onViewDetails }: GatepassHistoryCardProps) {
+  const tx = useTranslate();
   const formatDate = useFormatDate();
   const { gatepass, routeName, routeCode, totalIssuedQty, totalSoldQty, totalReturnedQty } =
     historyRow;
@@ -39,14 +42,15 @@ export function GatepassHistoryCard({ historyRow, onViewDetails }: GatepassHisto
 
       <GatepassStatGrid totals={totals} status={gatepass.status} />
 
-      <button
+      <Button
         type="button"
+        variant="link"
         onClick={() => onViewDetails(gatepass.businessDate)}
-        className="flex w-fit items-center gap-1 text-sm font-medium text-brand"
+        className="h-auto w-fit gap-1 p-0 text-brand"
       >
-        View Details
+        {tx("salesman.gatepass.viewDetails")}
         <ChevronRightIcon className="size-4" />
-      </button>
+      </Button>
     </div>
   );
 }
