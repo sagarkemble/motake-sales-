@@ -50,7 +50,7 @@ Minimum:
 Notification service (Spec K, optional — `NOTIFICATION_INTERNAL_API_KEY` switches it on, then all are required; unset skips the container and Docker):
 
 - `NOTIFICATION_INTERNAL_API_KEY`, `META_PHONE_NUMBER_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`
-- No WhatsApp access token secret (Spec J-0): the token lives in Supabase Vault and the Admin sets it in Admin Settings → WhatsApp access token (see `deployment.md` §9.1a).
+- No WhatsApp access token secret (Spec J-0): the token lives in Supabase Vault and the Admin sets it in the Fix access token dialog from the Admin banner (see `deployment.md` §9.1a).
 - `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` (hex: `openssl rand -hex 32`)
 - `NOTIFICATION_R2_ACCOUNT_ID`, `NOTIFICATION_R2_ACCESS_KEY_ID`, `NOTIFICATION_R2_SECRET_ACCESS_KEY`
 - The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (Spec L)

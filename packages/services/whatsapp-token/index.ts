@@ -62,7 +62,7 @@ const notificationUnavailable = () =>
     "The WhatsApp notification service is not answering. Try again in a minute.",
   );
 
-// Admin Settings → WhatsApp access token (Spec J-0): status, paste a new token, send held
+// The Fix access token dialog from the Admin banner (Spec J-0): status, paste a new token, send held
 // messages. Never returns, logs or audits the token; only its last 4 characters.
 class WhatsAppTokenService {
   private readonly notification: NotificationTokenGateway | null;

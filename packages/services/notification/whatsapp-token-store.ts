@@ -21,7 +21,7 @@ export interface WhatsAppTokenStoreConfig {
   secretFilePath?: string | null;
 }
 
-// What the settings screen may show; never the token.
+// What the Fix access token dialog may show; never the token.
 export interface WhatsAppTokenMetadata {
   secretId: string;
   last4: string;

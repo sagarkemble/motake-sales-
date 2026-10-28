@@ -15,7 +15,7 @@ export type UpdateWhatsAppTokenInput = z.input<typeof updateWhatsAppTokenInputSc
 // `unknown`: the notification app is not configured or did not answer.
 export type WhatsAppTokenSettingsState = WhatsAppTokenState | "unknown";
 
-// What Admin Settings shows (Spec J-0). Never the token: only its last 4 characters.
+// What the Admin banner and the Fix access token dialog show (Spec J-0). Never the token: only its last 4 characters.
 export interface WhatsAppTokenSettings {
   state: WhatsAppTokenSettingsState;
   checkedAt: Date | null;

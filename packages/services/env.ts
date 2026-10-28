@@ -34,7 +34,7 @@ const envSchema = z
       .describe(
         "Private Cloudflare R2 bucket for Bill, Note and Payment receipt PDFs. No public access; the R2 token must be allowed on it too.",
       ),
-    // Spec J-0: the notification app (typed client) and the WhatsApp access token settings. Unset
+    // Spec J-0: the notification app (typed client) and the Fix access token dialog. Unset
     // in dev without the notification app: the token status then reads `unknown`.
     NOTIFICATION_URL: z
       .url()
