@@ -30,6 +30,15 @@ export interface SendTemplateInput {
   header: TemplateHeader | null;
 }
 
+// Where the provider gets the access token on every call (Spec J-0): the secret file, re-read when
+// it changes. Null while there is no token.
+export interface WhatsAppTokenSource {
+  readWorkingToken(): Promise<string | null>;
+}
+
+// A read-only token check: `ok`, the provider refused the token, or the provider could not answer.
+export type TokenCheckResult = "ok" | "auth_error" | "unavailable";
+
 // The only code that knows provider URLs, ids, error codes and status strings sits behind this.
 export interface WhatsAppProvider {
   readonly providerName: string;
@@ -41,6 +50,9 @@ export interface WhatsAppProvider {
     filename: string;
   }): Promise<UploadMediaResult>;
   sendTemplate(input: SendTemplateInput): Promise<SendTemplateResult>;
+  // One cheap read for the configured phone number; never sends. Checks `token` when given,
+  // otherwise the working token.
+  checkToken(token?: string): Promise<TokenCheckResult>;
   // Status updates in a verified webhook body; anything else in it is ignored.
   parseStatusWebhook(payload: unknown): ProviderStatusUpdate[];
 }

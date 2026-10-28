@@ -82,7 +82,8 @@ export type NotificationRefusalReason =
   | "template_not_verified"
   | "template_values_mismatch"
   | "attachment_mismatch"
-  | "template_superseded";
+  | "template_superseded"
+  | "token_not_working";
 
 const notificationRefusalCodes: Record<NotificationRefusalReason, TRPCError["code"]> = {
   provider_not_supported: "BAD_REQUEST",
@@ -91,6 +92,7 @@ const notificationRefusalCodes: Record<NotificationRefusalReason, TRPCError["cod
   template_values_mismatch: "BAD_REQUEST",
   attachment_mismatch: "BAD_REQUEST",
   template_superseded: "BAD_REQUEST",
+  token_not_working: "CONFLICT",
 };
 
 // A refused notification instruction (Spec K); the reason reaches the main API as

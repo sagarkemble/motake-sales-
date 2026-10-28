@@ -4,8 +4,10 @@ import {
   type ProviderFailure,
   type SendTemplateInput,
   type SendTemplateResult,
+  type TokenCheckResult,
   type UploadMediaResult,
   type WhatsAppProvider,
+  type WhatsAppTokenSource,
 } from "./provider";
 
 // Pinned so a Meta default-version change cannot break sends. Changing it is a reviewed code change.
@@ -60,7 +62,8 @@ const UNSENT_NETWORK_ERROR_CODES = new Set([
 ]);
 
 export interface MetaWhatsAppProviderConfig {
-  accessToken: string;
+  // Asked on every Meta call, so a new token in the secret file is used at once (Spec J-0).
+  tokenSource: WhatsAppTokenSource;
   phoneNumberId: string;
   fetch?: typeof fetch;
   timeoutMs?: number;
@@ -146,6 +149,15 @@ function transportFailure(error: unknown): ProviderFailure {
   return { ok: false, retriable: true, category: "ambiguous", code: null, message };
 }
 
+// No token to send with: held like an expired one (Spec J-0), and Meta is never called.
+const NO_TOKEN_FAILURE: ProviderFailure = {
+  ok: false,
+  retriable: false,
+  category: "auth_error",
+  code: null,
+  message: "No WhatsApp access token in the secret file",
+};
+
 async function failureFromResponse(response: Response): Promise<ProviderFailure> {
   let body: MetaErrorBody | undefined;
   try {
@@ -164,13 +176,13 @@ export class MetaWhatsAppProvider implements WhatsAppProvider {
   public readonly providerName = "meta_whatsapp";
   public readonly mediaErrorCode = MEDIA_ERROR_CODE;
 
-  private readonly accessToken: string;
+  private readonly tokenSource: WhatsAppTokenSource;
   private readonly phoneNumberId: string;
   private readonly fetchImplementation: typeof fetch;
   private readonly timeoutMs: number;
 
   public constructor(config: MetaWhatsAppProviderConfig) {
-    this.accessToken = config.accessToken;
+    this.tokenSource = config.tokenSource;
     this.phoneNumberId = config.phoneNumberId;
     this.fetchImplementation = config.fetch ?? globalThis.fetch;
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -178,6 +190,55 @@ export class MetaWhatsAppProvider implements WhatsAppProvider {
 
   private url(path: "messages" | "media"): string {
     return `${META_GRAPH_BASE_URL}/${META_GRAPH_API_VERSION}/${this.phoneNumberId}/${path}`;
+  }
+
+  // The working token, or a failure to return instead of calling Meta. A secret file that cannot
+  // be read is transient (retried); a missing or blank one is an auth error (held).
+  private async workingToken(): Promise<{ ok: true; token: string } | ProviderFailure> {
+    let token: string | null;
+    try {
+      token = await this.tokenSource.readWorkingToken();
+    } catch (error) {
+      return {
+        ok: false,
+        retriable: true,
+        category: "provider_unavailable",
+        code: null,
+        message: `Could not read the WhatsApp access token: ${
+          (error as { code?: unknown } | null)?.code ?? "read error"
+        }`,
+      };
+    }
+    return token ? { ok: true, token } : NO_TOKEN_FAILURE;
+  }
+
+  // GET the configured phone number's id: read-only, sends nothing. Meta's auth codes (190 and
+  // the rest classified as auth_error) mean the token is refused; anything else is unavailable.
+  public async checkToken(token?: string): Promise<TokenCheckResult> {
+    let candidate: string | null;
+    try {
+      candidate = token?.trim() || (await this.tokenSource.readWorkingToken());
+    } catch {
+      return "unavailable";
+    }
+    if (!candidate) return "auth_error";
+
+    let response: Response;
+    try {
+      response = await this.fetchImplementation(
+        `${META_GRAPH_BASE_URL}/${META_GRAPH_API_VERSION}/${this.phoneNumberId}?fields=id`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${candidate}` },
+          signal: AbortSignal.timeout(this.timeoutMs),
+        },
+      );
+    } catch {
+      return "unavailable";
+    }
+    if (response.ok) return "ok";
+    const refusal = await failureFromResponse(response);
+    return refusal.category === "auth_error" ? "auth_error" : "unavailable";
   }
 
   public async uploadMedia(input: {
@@ -194,11 +255,14 @@ export class MetaWhatsAppProvider implements WhatsAppProvider {
       input.filename,
     );
 
+    const accessToken = await this.workingToken();
+    if (!accessToken.ok) return accessToken;
+
     let response: Response;
     try {
       response = await this.fetchImplementation(this.url("media"), {
         method: "POST",
-        headers: { Authorization: `Bearer ${this.accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken.token}` },
         body: form,
         signal: AbortSignal.timeout(this.timeoutMs),
       });
@@ -249,12 +313,15 @@ export class MetaWhatsAppProvider implements WhatsAppProvider {
       },
     };
 
+    const accessToken = await this.workingToken();
+    if (!accessToken.ok) return accessToken;
+
     let response: Response;
     try {
       response = await this.fetchImplementation(this.url("messages"), {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${accessToken.token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),

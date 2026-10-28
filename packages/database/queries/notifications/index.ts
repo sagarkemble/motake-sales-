@@ -239,6 +239,49 @@ export async function listUnqueuedPendingNotifications(
     .orderBy(asc(notificationsTable.updatedAt));
 }
 
+// Held (Spec J-0): `pending`, and the current run's latest attempt failed as `auth_error`. No status
+// value of its own; resuming starts a new run, so the held attempt drops out of the current run.
+const heldCondition = sql`${notificationsTable.status} = 'pending' AND EXISTS (
+  SELECT 1 FROM notification_attempts AS attempt
+  WHERE attempt.notification_id = ${notificationsTable.id}
+    AND attempt.created_at >= ${notificationsTable.updatedAt}
+    AND attempt.status = 'failed'
+    AND attempt.error LIKE 'auth_error:%'
+    AND attempt.attempt_number = (
+      SELECT max(latest.attempt_number) FROM notification_attempts AS latest
+      WHERE latest.notification_id = ${notificationsTable.id}
+    )
+)`;
+
+export async function listHeldNotifications(
+  executor: DbExecutor = db,
+): Promise<SelectNotification[]> {
+  return executor
+    .select()
+    .from(notificationsTable)
+    .where(heldCondition)
+    .orderBy(asc(notificationsTable.updatedAt), asc(notificationsTable.id));
+}
+
+export async function countHeldNotifications(executor: DbExecutor = db): Promise<number> {
+  const [row] = await executor
+    .select({ heldCount: sql<number>`count(*)::int` })
+    .from(notificationsTable)
+    .where(heldCondition);
+  return row?.heldCount ?? 0;
+}
+
+export async function isNotificationHeld(
+  notificationId: string,
+  executor: DbExecutor = db,
+): Promise<boolean> {
+  const [row] = await executor
+    .select({ id: notificationsTable.id })
+    .from(notificationsTable)
+    .where(and(eq(notificationsTable.id, notificationId), heldCondition));
+  return row !== undefined;
+}
+
 // ---- Attempts ----
 
 export async function countNotificationAttempts(

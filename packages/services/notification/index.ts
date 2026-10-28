@@ -2,6 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 import {
   checkDatabase,
+  countHeldNotifications,
   countNotificationAttempts,
   deleteCachedMedia,
   findAttemptByProviderMessageId,
@@ -14,7 +15,9 @@ import {
   hasHigherTemplateVersion,
   insertNotificationAttempt,
   insertNotificationIfNew,
+  isNotificationHeld,
   listCurrentRunAttempts,
+  listHeldNotifications,
   listNotificationStatusRowsByBusinessRefs,
   listNotificationTemplates,
   listUnqueuedPendingNotifications,
@@ -58,6 +61,7 @@ import {
   type NotificationTemplateView,
   type ProviderStatusUpdate,
   type ResendInput,
+  type ResumeHeldResult,
   type ResendResult,
   type ResolveTemplateInput,
   type SendAttemptOptions,
@@ -66,6 +70,8 @@ import {
   type SuppressResult,
   type WebhookPostResult,
   type WebhookSubscriptionInput,
+  type WhatsAppTokenState,
+  type WhatsAppTokenStatus,
 } from "./model";
 import {
   formatProviderError,
@@ -74,6 +80,7 @@ import {
   type ProviderFailure,
   type SendTemplateResult,
   type WhatsAppProvider,
+  type WhatsAppTokenSource,
 } from "./provider";
 
 // `+` then 8 to 15 digits, and never longer than the column.
@@ -104,10 +111,19 @@ const INSTRUCTION_LOCK_TIMEOUT_MS = 3_000;
 
 const SIGNATURE_PREFIX = "sha256=";
 
+// A held send asks for a token sync this long after it; held sends in between share that one sync.
+const DEFAULT_TOKEN_SYNC_DELAY_MS = 2_000;
+
 export interface NotificationWebhookSecrets {
   // Meta app secret: HMAC key for `X-Hub-Signature-256`.
   appSecret: string;
   verifyToken: string;
+}
+
+// The two copies of the access token the sync works with (WhatsAppTokenStore in the app).
+export interface NotificationTokenStore extends WhatsAppTokenSource {
+  readVaultToken(): Promise<string | null>;
+  writeWorkingToken(token: string): Promise<void>;
 }
 
 export interface NotificationServiceDependencies {
@@ -115,6 +131,15 @@ export interface NotificationServiceDependencies {
   documentReader: DocumentReader;
   dispatcher: NotificationDispatcher;
   webhook: NotificationWebhookSecrets;
+  tokenStore: NotificationTokenStore;
+  tokenSyncDelayMs?: number;
+}
+
+type TokenSyncResume = "always" | "if_replaced";
+
+interface TokenCheckOutcome {
+  state: WhatsAppTokenState;
+  replaced: boolean;
 }
 
 type MediaResult = { ok: true; mediaId: string; fromCache: boolean } | ProviderFailure;
@@ -246,12 +271,24 @@ class NotificationService {
   private readonly documentReader: DocumentReader;
   private readonly dispatcher: NotificationDispatcher;
   private readonly webhook: NotificationWebhookSecrets;
+  private readonly tokenStore: NotificationTokenStore;
+  private readonly tokenSyncDelayMs: number;
+
+  // In memory only: the app checks at start-up and every 5 minutes, so a restart re-learns it.
+  private tokenState: { state: WhatsAppTokenState; checkedAt: Date | null } = {
+    state: "unavailable",
+    checkedAt: null,
+  };
+  private tokenSyncInFlight: Promise<WhatsAppTokenStatus> | null = null;
+  private tokenSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
   public constructor(dependencies: NotificationServiceDependencies) {
     this.provider = dependencies.provider;
     this.documentReader = dependencies.documentReader;
     this.dispatcher = dependencies.dispatcher;
     this.webhook = dependencies.webhook;
+    this.tokenStore = dependencies.tokenStore;
+    this.tokenSyncDelayMs = dependencies.tokenSyncDelayMs ?? DEFAULT_TOKEN_SYNC_DELAY_MS;
   }
 
   // ---- Instructions ----
@@ -434,7 +471,7 @@ class NotificationService {
   ): Promise<SendAttemptResult> {
     const parsedNotificationId = notificationIdSchema.parse(notificationId);
     const parsedOptions = sendAttemptOptionsSchema.parse(options);
-    return runInTransaction(async (transaction) => {
+    const result = await runInTransaction(async (transaction): Promise<SendAttemptResult> => {
       const row = await lockNotificationWithTemplate(parsedNotificationId, transaction);
       if (!row || row.notification.status !== "pending") {
         return { outcome: "noop", failureCategory: null };
@@ -470,6 +507,11 @@ class NotificationService {
         },
         transaction,
       );
+      // Held, on every try and in media upload: the row stays pending and a working token resumes
+      // it as a new run (Spec J-0).
+      if (result.category === "auth_error") {
+        return { outcome: "held", failureCategory: result.category };
+      }
       if (result.retriable && !parsedOptions.isFinalTry) {
         return { outcome: "retry", failureCategory: result.category };
       }
@@ -479,6 +521,8 @@ class NotificationService {
         failureCategory: result.category,
       };
     });
+    if (result.outcome === "held") this.requestTokenSync();
+    return result;
   }
 
   // The send function gave up on a run by throwing (database or pool error on the last try), so
@@ -741,10 +785,143 @@ class NotificationService {
       (healthy) => (healthy ? ("ok" as const) : ("down" as const)),
       () => "down" as const,
     );
-    return { status: database === "ok" && inngest === "ok" ? "ok" : "degraded", database, inngest };
+    return {
+      status: database === "ok" && inngest === "ok" ? "ok" : "degraded",
+      database,
+      inngest,
+      whatsappToken: this.tokenState.state,
+    };
+  }
+
+  // ---- WhatsApp access token (Spec J-0) ----
+
+  // Checks the working token; when it is not ok, tries the Vault token and, if that one differs
+  // and works, writes it to the secret file. A working token then resumes held messages. Runs at
+  // start-up, every 5 minutes, after a held send, and when the Admin saves a token.
+  public async syncToken(): Promise<WhatsAppTokenStatus> {
+    return this.runTokenSync("always");
+  }
+
+  public async tokenStatus(): Promise<WhatsAppTokenStatus> {
+    return { ...this.tokenState, heldCount: await countHeldNotifications() };
+  }
+
+  // A new run (new run key) for every held row, like resend, only while the token works. Rows that
+  // are no longer held (suppressed, resent, already resumed) are skipped.
+  public async resumeHeld(): Promise<ResumeHeldResult> {
+    if (this.tokenState.state !== "ok") {
+      throw notificationRefused(
+        "token_not_working",
+        "WhatsApp messages are paused: the access token is not working. Save a working token first.",
+      );
+    }
+    let queued = 0;
+    for (const held of await listHeldNotifications()) {
+      let runKey: string | null;
+      try {
+        runKey = await this.withInstructionLock(async (transaction) => {
+          const row = await lockNotificationWithTemplate(held.id, transaction);
+          if (!row || !(await isNotificationHeld(held.id, transaction))) return null;
+          const updated = await updateNotification(held.id, { status: "pending" }, transaction);
+          return runKeyFor(updated);
+        });
+      } catch (error) {
+        // A send holds the row right now; the next sync or a press of the button picks it up.
+        logger.error("Could not resume a held notification", {
+          notificationId: held.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        continue;
+      }
+      if (runKey === null) continue;
+      // A lost dispatch is queued by the recovery sweep, so the row counts as queued either way.
+      await this.dispatchSafely(held.id, runKey);
+      queued += 1;
+    }
+    if (queued > 0) logger.info(`Resumed ${queued} held WhatsApp notification(s)`);
+    return { queued };
   }
 
   // ---- Helpers ----
+
+  // One sync at a time; a call during a sync gets that sync's result.
+  private runTokenSync(resume: TokenSyncResume): Promise<WhatsAppTokenStatus> {
+    if (!this.tokenSyncInFlight) {
+      this.tokenSyncInFlight = this.performTokenSync(resume).finally(() => {
+        this.tokenSyncInFlight = null;
+      });
+    }
+    return this.tokenSyncInFlight;
+  }
+
+  private async performTokenSync(resume: TokenSyncResume): Promise<WhatsAppTokenStatus> {
+    let outcome: TokenCheckOutcome;
+    try {
+      outcome = await this.checkAndRepairToken();
+    } catch (error) {
+      logger.error("WhatsApp token sync failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      outcome = { state: "unavailable", replaced: false };
+    }
+    const previous = this.tokenState;
+    this.tokenState = { state: outcome.state, checkedAt: new Date() };
+    if (outcome.replaced) logger.info("WhatsApp access token replaced from Vault");
+    if (outcome.state !== "ok" && (previous.state === "ok" || previous.checkedAt === null)) {
+      logger.error(`WhatsApp access token is ${outcome.state}; messages are held`);
+    }
+    // A held send's sync resumes only on a fresh token: a refusal the check cannot see (for
+    // example a Meta payment problem) would otherwise resume and hold again in a tight loop.
+    if (outcome.state === "ok" && (resume === "always" || outcome.replaced)) {
+      try {
+        await this.resumeHeld();
+      } catch (error) {
+        logger.error("Could not resume held notifications", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    return this.tokenStatus();
+  }
+
+  private async checkAndRepairToken(): Promise<TokenCheckOutcome> {
+    const workingToken = await this.tokenStore.readWorkingToken();
+    const workingCheck = workingToken ? await this.provider.checkToken(workingToken) : "auth_error";
+    if (workingCheck === "ok") return { state: "ok", replaced: false };
+
+    let vaultToken: string | null = null;
+    let vaultReadable = true;
+    try {
+      vaultToken = await this.tokenStore.readVaultToken();
+    } catch (error) {
+      vaultReadable = false;
+      logger.error("Could not read the WhatsApp access token from Vault", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    if (vaultToken && vaultToken !== workingToken) {
+      const vaultCheck = await this.provider.checkToken(vaultToken);
+      if (vaultCheck === "ok") {
+        await this.tokenStore.writeWorkingToken(vaultToken);
+        return { state: "ok", replaced: true };
+      }
+      if (vaultCheck === "unavailable") return { state: "unavailable", replaced: false };
+    }
+    return {
+      state: workingCheck === "unavailable" || !vaultReadable ? "unavailable" : "invalid",
+      replaced: false,
+    };
+  }
+
+  // Debounced: held sends within the delay share one sync. The timer never keeps the process up.
+  private requestTokenSync(): void {
+    if (this.tokenSyncTimer) return;
+    this.tokenSyncTimer = setTimeout(() => {
+      this.tokenSyncTimer = null;
+      void this.runTokenSync("if_replaced");
+    }, this.tokenSyncDelayMs);
+    this.tokenSyncTimer.unref?.();
+  }
 
   private async replayEnqueue(
     existing: SelectNotification,
@@ -803,12 +980,18 @@ class NotificationService {
 }
 
 export default NotificationService;
+export type { WhatsAppTokenState, WhatsAppTokenStatus, ResumeHeldResult } from "./model";
 export {
   MetaWhatsAppProvider,
   META_GRAPH_API_VERSION,
   classifyMetaError,
 } from "./meta-whatsapp-provider";
 export { R2DocumentReader, type R2DocumentReaderConfig } from "./r2-document-reader";
+export {
+  WhatsAppTokenStore,
+  type WhatsAppTokenMetadata,
+  type WhatsAppTokenStoreConfig,
+} from "./whatsapp-token-store";
 export type {
   DocumentReader,
   NotificationDispatcher,
@@ -817,8 +1000,10 @@ export type {
   SendTemplateInput,
   SendTemplateResult,
   TemplateHeader,
+  TokenCheckResult,
   UploadMediaResult,
   WhatsAppProvider,
+  WhatsAppTokenSource,
 } from "./provider";
 export type {
   ApplyStatusResult,

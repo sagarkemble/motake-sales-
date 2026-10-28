@@ -160,7 +160,9 @@ export interface NotificationTemplateView {
   createdAt: Date;
 }
 
-export type SendAttemptOutcome = "noop" | "sent" | "retry" | "terminal" | "failed";
+// `held`: the provider refused the access token; the row stays pending with the failed attempt and
+// no further try runs until a working token resumes it (Spec J-0).
+export type SendAttemptOutcome = "noop" | "sent" | "retry" | "terminal" | "failed" | "held";
 
 export interface SendAttemptResult {
   outcome: SendAttemptOutcome;
@@ -177,10 +179,27 @@ export interface ApplyStatusResult {
   status: NotificationStatus | null;
 }
 
+// The working WhatsApp access token at the last check (Spec J-0): `ok`, refused by the provider
+// (`invalid`), or not checkable (provider or Vault unreachable, or never checked yet).
+export type WhatsAppTokenState = "ok" | "invalid" | "unavailable";
+
+export interface WhatsAppTokenStatus {
+  state: WhatsAppTokenState;
+  checkedAt: Date | null;
+  // Pending rows held on a token error.
+  heldCount: number;
+}
+
+export interface ResumeHeldResult {
+  queued: number;
+}
+
 export interface HealthReport {
   status: "ok" | "degraded";
   database: "ok" | "down";
   inngest: "ok" | "down";
+  // Informational: a token problem holds messages but never makes the app unhealthy.
+  whatsappToken: WhatsAppTokenState;
 }
 
 export type WebhookPostResult =
