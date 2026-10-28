@@ -4,7 +4,7 @@ import { logger } from "@repo/logger";
 import { z } from "zod";
 
 import { env } from "../env";
-import { refusalOf, whatsAppTokenRefused } from "../errors";
+import { errorMessageOf, refusalOf, whatsAppTokenRefused } from "../errors";
 import {
   MetaWhatsAppProvider,
   WhatsAppTokenStore,
@@ -50,10 +50,6 @@ function defaultTokenChecker(): Pick<WhatsAppProvider, "checkToken"> {
 export function notificationClientConfig(): { baseUrl: string; internalApiKey: string } | null {
   if (!env.NOTIFICATION_URL || !env.NOTIFICATION_INTERNAL_API_KEY) return null;
   return { baseUrl: env.NOTIFICATION_URL, internalApiKey: env.NOTIFICATION_INTERNAL_API_KEY };
-}
-
-function errorMessageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 const notificationUnavailable = () =>

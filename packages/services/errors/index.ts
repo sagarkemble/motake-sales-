@@ -68,6 +68,11 @@ export const refused = <Reason extends string>(
   return new TRPCError({ code, message, cause: Object.assign(new Error(message), { refusal }) });
 };
 
+// An unknown thrown value as log text.
+export function errorMessageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // The refusal carried by an error, or null for any other error.
 export function refusalOf(error: unknown): Refusal | null {
   const cause = error instanceof TRPCError ? error.cause : undefined;

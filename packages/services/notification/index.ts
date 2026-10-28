@@ -33,7 +33,7 @@ import { isLockTimeout } from "@repo/database/queries/shared/pg-errors";
 import type { SelectNotification, SelectNotificationTemplate } from "@repo/database/schema";
 import { logger } from "@repo/logger";
 
-import { badRequest, conflict, notFound, notificationRefused } from "../errors";
+import { badRequest, conflict, errorMessageOf, notFound, notificationRefused } from "../errors";
 import {
   enqueueInputSchema,
   failRunInputSchema,
@@ -836,7 +836,7 @@ class NotificationService {
         // A send holds the row right now; the next sync or a press of the button picks it up.
         logger.error("Could not resume a held notification", {
           notificationId: held.id,
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessageOf(error),
         });
         continue;
       }
@@ -867,7 +867,7 @@ class NotificationService {
       outcome = await this.checkAndRepairToken();
     } catch (error) {
       logger.error("WhatsApp token sync failed", {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessageOf(error),
       });
       outcome = { state: "unavailable", replaced: false };
     }
@@ -884,7 +884,7 @@ class NotificationService {
         await this.resumeHeld();
       } catch (error) {
         logger.error("Could not resume held notifications", {
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessageOf(error),
         });
       }
     }
@@ -904,7 +904,7 @@ class NotificationService {
     } catch (error) {
       vaultReadable = false;
       logger.error("Could not read the WhatsApp access token from Vault", {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessageOf(error),
       });
     }
 
@@ -991,7 +991,7 @@ class NotificationService {
       logger.error("Notification dispatch failed; the recovery sweep will queue it", {
         notificationId,
         runKey,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessageOf(error),
       });
       return false;
     }
