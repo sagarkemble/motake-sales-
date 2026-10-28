@@ -113,6 +113,7 @@ export const auditEntityTypeEnum = pgEnum("audit_entity_type", [
   "document_number_series",
   "gst_credit_note_deadline",
   "gstr1_filing",
+  "whatsapp_token",
 ]);
 
 export const auditActionEnum = pgEnum("audit_action", [
@@ -134,4 +135,5 @@ export const auditActionEnum = pgEnum("audit_action", [
   "opening_set",
   "filed",
   "moved_route",
+  "token_updated",
 ]);
