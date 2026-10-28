@@ -3,9 +3,11 @@
 import { CalendarIcon } from "lucide-react";
 
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
+import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { RouteTag } from "~/components/shared/route-tag";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
+import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { useFormatDate } from "~/hooks/use-format-date";
 import type { DayGatepass } from "~/hooks/use-gatepasses";
@@ -43,10 +45,11 @@ export function AllotSalesmanStep({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{tx("common.fields.date")}</label>
+        <Label htmlFor="allot-business-date">{tx("common.fields.date")}</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
+              id="allot-business-date"
               type="button"
               variant="outline"
               className="h-11 justify-between rounded-xl bg-muted/40 font-normal"
@@ -68,7 +71,7 @@ export function AllotSalesmanStep({
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium">{tx("admin.gatepass.allot.selectSalesman")}</p>
         {isSalesmenLoading ? (
-          <p className="text-sm text-muted-foreground">{tx("common.status.loading")}</p>
+          <ListItemSkeleton count={3} />
         ) : (
           salesmen.map((salesman) => {
             const salesmanGatepasses = dayGatepasses.filter(
@@ -84,14 +87,14 @@ export function AllotSalesmanStep({
                 type="button"
                 onClick={() => onSelectSalesman(salesman.id)}
                 className={cn(
-                  "flex flex-col gap-2 rounded-2xl border p-3 text-left transition-colors",
-                  isSelected ? "border-brand bg-accent/50 ring-1 ring-brand" : "hover:bg-muted/40",
+                  "flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors",
+                  isSelected ? "border-brand bg-accent/50" : "hover:bg-accent/50",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold">{salesman.name}</span>
                   {hasActiveGatepass ? (
-                    <span className="text-xs text-amber-700">
+                    <span className="text-xs text-amber-600">
                       {tx("admin.gatepass.allot.hasActive")}
                     </span>
                   ) : (

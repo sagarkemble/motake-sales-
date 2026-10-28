@@ -56,9 +56,13 @@ export function SalesmanDetailsForm({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{tx("common.fields.name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Full name" {...field} />
+                  <Input
+                    placeholder={tx("admin.salesmen.form.namePlaceholder")}
+                    className="rounded-xl bg-muted/40"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -71,7 +75,7 @@ export function SalesmanDetailsForm({
           disabled={isSubmitting}
           className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isSubmitting ? "Saving" : "Save changes"}
+          {isSubmitting ? tx("common.status.pleaseWait") : tx("admin.products.saveChanges")}
         </Button>
       </form>
     </Form>

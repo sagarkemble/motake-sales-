@@ -27,6 +27,7 @@ import { RouteTag } from "~/components/shared/route-tag";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useCustomers } from "~/hooks/use-customers";
 import { useFormatDate } from "~/hooks/use-format-date";
@@ -66,16 +67,7 @@ export default function CustomerDetailPage() {
   }
 
   if (isCustomerLoading) {
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
-        <Skeleton className="h-9 w-40 rounded-full" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="h-16 rounded-2xl" />
-          <Skeleton className="h-16 rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <DetailPageSkeleton />;
   }
 
   if (!customer) {
@@ -238,12 +230,15 @@ export default function CustomerDetailPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Lifetime stats</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("admin.customers.stats.title")}
+        </h2>
         {isCustomerStatsLoading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Skeleton className="h-16 rounded-2xl" />
-            <Skeleton className="h-16 rounded-2xl" />
-            <Skeleton className="h-16 rounded-2xl sm:col-span-1 col-span-2" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="col-span-2 h-16 rounded-2xl sm:col-span-3" />
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -253,12 +248,12 @@ export default function CustomerDetailPage() {
               icon={PackageIcon}
             />
             <KpiCard
-              label="Total orders"
+              label="admin.customers.stats.totalOrders"
               value={customerStats?.totalOrderCount ?? 0}
               icon={ShoppingCartIcon}
             />
             <KpiCard
-              label="Lifetime value"
+              label="admin.customers.stats.lifetimeValue"
               value={formatPaiseCompact(customerStats?.lifetimeValuePaise ?? 0)}
               icon={IndianRupeeIcon}
             />
@@ -272,7 +267,9 @@ export default function CustomerDetailPage() {
                     ? formatDate(new Date(customerStats.lastOrderAt), "d MMM yyyy")
                     : tx("admin.customers.ordersEmpty")}
                 </p>
-                <p className="text-xs text-muted-foreground">Last order</p>
+                <p className="text-xs text-muted-foreground">
+                  {tx("admin.customers.stats.lastOrder")}
+                </p>
               </div>
             </div>
           </div>
@@ -280,7 +277,9 @@ export default function CustomerDetailPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Order history</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("admin.dashboard.orderHistory")}
+        </h2>
         <OrderList customerId={customer.id} />
       </div>
 

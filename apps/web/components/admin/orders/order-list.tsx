@@ -1,6 +1,6 @@
 "use client";
 
-import { SlidersHorizontalIcon } from "lucide-react";
+import { ChevronDownIcon, SlidersHorizontalIcon } from "lucide-react";
 import { useState } from "react";
 import type { RouterOutputs } from "@repo/trpc/client";
 
@@ -24,7 +24,9 @@ import { ListPager } from "~/components/shared/list-pager";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
+import { DatePicker } from "~/components/shared/date-picker";
 import { Badge } from "~/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -139,8 +141,8 @@ export function OrderList({ customerId }: OrderListProps) {
   return (
     <div className="flex flex-col gap-3">
       {showFilters && (
-        <details className="rounded-2xl border bg-card p-3" open>
-          <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+        <Collapsible defaultOpen className="group/filters rounded-2xl border bg-card p-3">
+          <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 rounded-lg text-left text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
             <SlidersHorizontalIcon className="size-4" />
             {tx("admin.orders.filters.title")}
             {activeCount > 0 && (
@@ -151,8 +153,9 @@ export function OrderList({ customerId }: OrderListProps) {
             <span className="ml-auto text-xs font-normal text-muted-foreground">
               {tx("admin.orders.filters.count", { count: ordersPage.totalCount })}
             </span>
-          </summary>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+            <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]/filters:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             <FilterField label={tx("admin.orders.salesman")}>
               <SalesmanFilterSelect
                 value={filters.salesmanId}
@@ -167,7 +170,7 @@ export function OrderList({ customerId }: OrderListProps) {
             </FilterField>
             <FilterField label={tx("admin.orders.filters.type")}>
               <Select value={filters.type} onValueChange={(value) => setFilter("type", value)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-full bg-muted/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,7 +185,7 @@ export function OrderList({ customerId }: OrderListProps) {
             </FilterField>
             <FilterField label={tx("admin.orders.filters.status")}>
               <Select value={filters.status} onValueChange={(value) => setFilter("status", value)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-full bg-muted/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,32 +202,35 @@ export function OrderList({ customerId }: OrderListProps) {
               <Input
                 inputMode="tel"
                 placeholder="98220…"
+                className="rounded-full bg-muted/40"
                 value={filters.customerPhone}
                 onChange={(event) => setFilter("customerPhone", event.target.value)}
               />
             </FilterField>
             <FilterField label={tx("admin.orders.filters.placedFrom")}>
-              <Input
-                type="date"
+              <DatePicker
+                clearable
                 value={filters.placedFrom}
-                onChange={(event) => setFilter("placedFrom", event.target.value)}
+                onChange={(value) => setFilter("placedFrom", value)}
+                className="[&>button:first-child]:h-9 [&>button:first-child]:rounded-full"
               />
             </FilterField>
             <FilterField label={tx("admin.orders.filters.placedTo")}>
-              <Input
-                type="date"
+              <DatePicker
+                clearable
                 value={filters.placedTo}
-                onChange={(event) => setFilter("placedTo", event.target.value)}
+                onChange={(value) => setFilter("placedTo", value)}
+                className="[&>button:first-child]:h-9 [&>button:first-child]:rounded-full"
               />
             </FilterField>
-          </div>
-        </details>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {isOrdersListLoading ? (
         <ListItemSkeleton count={5} />
       ) : ordersPage.items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed py-10 text-center text-sm text-muted-foreground">
+        <p className="py-10 text-center text-sm text-muted-foreground">
           {activeCount > 0 ? tx("admin.orders.filters.noMatch") : tx("admin.orders.empty")}
         </p>
       ) : (
@@ -407,7 +413,7 @@ function OrderCard({
     <button
       type="button"
       onClick={() => onSelect(row)}
-      className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+      className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent/50"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

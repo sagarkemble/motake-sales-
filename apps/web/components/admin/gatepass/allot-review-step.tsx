@@ -80,7 +80,7 @@ export function AllotReviewStep({
         </p>
       )}
       <div className="flex flex-wrap justify-between gap-2">
-        <Button type="button" variant="ghost" onClick={onChangeRoute}>
+        <Button type="button" variant="ghost" className="rounded-full" onClick={onChangeRoute}>
           <ChevronLeftIcon className="size-4" />
           {tx("admin.gatepass.allot.changeRoute")}
         </Button>

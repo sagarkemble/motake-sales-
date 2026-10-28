@@ -16,7 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { ListPager } from "~/components/shared/list-pager";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
@@ -62,7 +64,7 @@ function SalesmanPageContent() {
   }
 
   async function handleDelete(salesmanId: string) {
-    if (!window.confirm("Are you sure you want to soft-delete this salesman?")) return;
+    if (!window.confirm(tx("admin.salesmen.deleteConfirmPrompt"))) return;
     try {
       await deleteSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.deleteSuccess"));
@@ -73,8 +75,8 @@ function SalesmanPageContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-base font-semibold">Salesmen</h1>
+      <div className="flex items-center justify-end">
+        <h1 className="sr-only">{tx("admin.salesmen.title")}</h1>
         <Button
           asChild
           size="icon"
@@ -93,7 +95,7 @@ function SalesmanPageContent() {
             onCheckedChange={(checked) => setIncludeDeleted(checked === true)}
             className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
           />
-          Show deleted salesmen
+          {tx("admin.salesmen.showDeleted")}
         </label>
       </div>
 
@@ -119,14 +121,14 @@ function SalesmanPageContent() {
                   event.preventDefault();
                   router.push(`/admin/salesman/${salesman.id}`);
                 }}
-                className={`flex items-center gap-3 rounded-2xl border bg-card p-3.5 text-left shadow-sm transition-colors hover:border-brand/40 hover:shadow-md ${
+                className={`flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3.5 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
                   profile.deletedAt ? "opacity-60" : ""
                 }`}
               >
                 <Avatar className="size-11 shrink-0 border">
                   <AvatarImage
                     src={profile.avatarUrl ?? undefined}
-                    alt={profile.name ?? "Salesman"}
+                    alt={profile.name ?? tx("admin.nav.salesman")}
                   />
                   <AvatarFallback className="bg-brand/10 text-sm font-semibold text-brand">
                     {getNameInitials(profile.name, "S")}
@@ -134,7 +136,9 @@ function SalesmanPageContent() {
                 </Avatar>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{profile.name ?? "Unnamed"}</p>
+                  <p className="truncate text-sm font-medium">
+                    {profile.name ?? tx("admin.salesmen.unnamed")}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {salesman.salesmanCode} · {profile.phone ?? profile.email}
                   </p>
@@ -146,19 +150,10 @@ function SalesmanPageContent() {
                       variant="outline"
                       className="border-transparent bg-destructive/10 text-destructive"
                     >
-                      Deleted
+                      {tx("common.status.deleted")}
                     </Badge>
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className={
-                        profile.status === "active"
-                          ? "border-transparent bg-brand/10 text-brand"
-                          : "border-transparent bg-muted text-muted-foreground"
-                      }
-                    >
-                      {profile.status === "active" ? "Active" : "common.status.inactive"}
-                    </Badge>
+                    <StatusBadge status={profile.status === "active" ? "active" : "inactive"} />
                   )}
 
                   <DropdownMenu>
@@ -180,14 +175,14 @@ function SalesmanPageContent() {
                           disabled={isDeactivatingSalesmanAccount}
                           onSelect={() => handleDeactivate(salesman.id)}
                         >
-                          Deactivate
+                          {tx("admin.customers.deactivate")}
                         </DropdownMenuItem>
                       ) : (
                         <DropdownMenuItem
                           disabled={isReactivatingSalesmanAccount}
                           onSelect={() => handleReactivate(salesman.id)}
                         >
-                          Reactivate
+                          {tx("admin.customers.reactivate")}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem
@@ -195,7 +190,7 @@ function SalesmanPageContent() {
                         disabled={isDeletingSalesmanAccount}
                         onSelect={() => handleDelete(salesman.id)}
                       >
-                        Delete
+                        {tx("admin.products.deleteConfirm")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -206,33 +201,11 @@ function SalesmanPageContent() {
         )}
       </div>
 
-      {salesmenPage.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {salesmenPage.page} of {salesmenPage.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={salesmenPage.page <= 1}
-              onClick={() => setPage(salesmenPage.page - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              disabled={salesmenPage.page >= salesmenPage.totalPages}
-              onClick={() => setPage(salesmenPage.page + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <ListPager
+        page={salesmenPage.page}
+        totalPages={salesmenPage.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function SalesmanDetailPage() {
   }
 
   if (!salesmanEntry) {
-    return <div className="p-4 text-sm text-muted-foreground">Salesman not found</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{tx("admin.salesmen.notFound")}</div>;
   }
 
   const { salesman, profile } = salesmanEntry;
@@ -41,10 +41,13 @@ export default function SalesmanDetailPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
       <BackHeader
         href="/admin/salesman"
-        title={profile.name ?? "Salesman"}
+        title={profile.name ?? tx("admin.nav.salesman")}
         avatar={
           <Avatar className="size-9 shrink-0 border">
-            <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.name ?? "Salesman"} />
+            <AvatarImage
+              src={profile.avatarUrl ?? undefined}
+              alt={profile.name ?? tx("admin.nav.salesman")}
+            />
             <AvatarFallback className="bg-brand/10 text-xs font-semibold text-brand">
               {getNameInitials(profile.name, "S")}
             </AvatarFallback>

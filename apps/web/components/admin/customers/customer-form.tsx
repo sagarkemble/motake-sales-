@@ -280,7 +280,7 @@ export function CustomerForm({
                   <Input
                     {...field}
                     placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
-                    className="rounded-full bg-muted/40"
+                    className="rounded-xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
@@ -298,7 +298,7 @@ export function CustomerForm({
                   <Input
                     {...field}
                     placeholder={tx("admin.customers.form.contactName")}
-                    className="rounded-full bg-muted/40"
+                    className="rounded-xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
@@ -317,7 +317,7 @@ export function CustomerForm({
                     {...field}
                     type="tel"
                     placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
-                    className="rounded-full bg-muted/40"
+                    className="rounded-xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
@@ -335,7 +335,7 @@ export function CustomerForm({
                   <Textarea
                     {...field}
                     placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
-                    className="min-h-20 rounded-2xl bg-muted/40"
+                    className="min-h-20 rounded-xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
@@ -353,7 +353,7 @@ export function CustomerForm({
                   <Textarea
                     {...field}
                     placeholder={tx("admin.customers.form.notesPlaceholder")}
-                    className="min-h-20 rounded-2xl bg-muted/40"
+                    className="min-h-20 rounded-xl bg-muted/40"
                   />
                 </FormControl>
                 <FormMessage />
@@ -380,7 +380,7 @@ export function CustomerForm({
                     placeholder="27AABCS1234F1Z5"
                     autoCapitalize="characters"
                     maxLength={20}
-                    className="rounded-full bg-muted/40 font-mono uppercase"
+                    className="rounded-xl bg-muted/40 font-mono uppercase"
                   />
                 </FormControl>
                 <FormDescription>{tx("admin.customers.form.gstinHint")}</FormDescription>
@@ -400,9 +400,10 @@ export function CustomerForm({
                     {isEinvoicingSetByAdmin ? (
                       <>
                         {tx("admin.customers.form.einvoicingSetByAdmin")}{" "}
-                        <button
+                        <Button
                           type="button"
-                          className="underline"
+                          variant="link"
+                          className="h-auto p-0 text-xs text-brand"
                           onClick={() => {
                             setIsEinvoicingSetByAdmin(false);
                             form.setValue(
@@ -412,7 +413,7 @@ export function CustomerForm({
                           }}
                         >
                           {tx("admin.customers.form.einvoicingFollowGstin")}
-                        </button>
+                        </Button>
                       </>
                     ) : (
                       tx("admin.customers.form.einvoicingFollowsGstin")
@@ -445,9 +446,9 @@ export function CustomerForm({
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
         >
-          {isSubmitting ? tx("common.status.saving") : submitLabel}
+          {isSubmitting ? tx("common.status.pleaseWait") : submitLabel}
         </Button>
       </form>
     </Form>

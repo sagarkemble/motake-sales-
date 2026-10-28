@@ -1,7 +1,17 @@
 "use client";
 
 import { format, subDays } from "date-fns";
+import {
+  CalendarDaysIcon,
+  ClockIcon,
+  IndianRupeeIcon,
+  PercentIcon,
+  RotateCcwIcon,
+  ShoppingBagIcon,
+  TicketIcon,
+} from "lucide-react";
 
+import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useSalesmen } from "~/hooks/use-salesmen";
@@ -44,29 +54,36 @@ export function SalesTab({ salesmanId }: SalesTabProps) {
   const sellThroughRate = totalAllotted > 0 ? Math.round((totalSold / totalAllotted) * 100) : 0;
 
   const kpiCards = [
-    { label: "admin.salesmen.kpi.itemsSold", value: totalSold },
-    { label: "admin.salesmen.kpi.salesValue", value: formatPaiseCompact(totalSoldAmountPaise) },
-    { label: "admin.salesmen.kpi.itemsAllotted", value: totalAllotted },
-    { label: "admin.salesmen.kpi.itemsReturned", value: totalReturned },
-    { label: "admin.salesmen.kpi.preOrders", value: totalPreOrdered },
-    { label: "admin.salesmen.kpi.activeDays", value: activeDayCount },
-    { label: "admin.salesmen.kpi.sellThroughRate", value: `${sellThroughRate}%` },
+    { label: "admin.salesmen.kpi.itemsSold", value: totalSold, icon: ShoppingBagIcon },
+    {
+      label: "admin.salesmen.kpi.salesValue",
+      value: formatPaiseCompact(totalSoldAmountPaise),
+      icon: IndianRupeeIcon,
+    },
+    { label: "admin.salesmen.kpi.itemsAllotted", value: totalAllotted, icon: TicketIcon },
+    { label: "admin.salesmen.kpi.itemsReturned", value: totalReturned, icon: RotateCcwIcon },
+    { label: "admin.salesmen.kpi.preOrders", value: totalPreOrdered, icon: ClockIcon },
+    { label: "admin.salesmen.kpi.activeDays", value: activeDayCount, icon: CalendarDaysIcon },
+    {
+      label: "admin.salesmen.kpi.sellThroughRate",
+      value: `${sellThroughRate}%`,
+      icon: PercentIcon,
+    },
   ];
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-muted-foreground">Last {HISTORY_DAYS} days</p>
+      <p className="text-xs text-muted-foreground">
+        {tx("admin.salesmen.lastDays", { count: HISTORY_DAYS })}
+      </p>
 
       <div className="grid grid-cols-2 gap-3">
         {kpiCards.map((card) => (
-          <div key={card.label} className="rounded-2xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{tx(card.label)}</p>
-            <p className="text-xl font-semibold">{card.value}</p>
-          </div>
+          <KpiCard key={card.label} label={card.label} value={card.value} icon={card.icon} />
         ))}
       </div>
 
-      <OrderHistoryPanel salesmanId={salesmanId} heading="Sales history" />
+      <OrderHistoryPanel salesmanId={salesmanId} heading={tx("admin.salesmen.salesHistory")} />
     </div>
   );
 }

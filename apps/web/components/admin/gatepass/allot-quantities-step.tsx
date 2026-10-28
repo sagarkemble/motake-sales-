@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { PackageIcon, SearchIcon } from "lucide-react";
+import { PackageIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
@@ -72,8 +73,18 @@ export function AllotQuantitiesStep({
           placeholder={tx("admin.gatepass.allot.searchItems")}
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          className="rounded-full bg-muted/40 pl-9"
+          className="rounded-full bg-muted/40 pl-9 pr-9"
         />
+        {searchTerm && (
+          <button
+            type="button"
+            aria-label={tx("common.actions.clearSearch")}
+            onClick={() => setSearchTerm("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground"
+          >
+            <XIcon className="size-4" />
+          </button>
+        )}
       </div>
 
       {isCatalogLoading ? (
@@ -88,10 +99,11 @@ export function AllotQuantitiesStep({
 
           {unpricedItems.length > 0 && (
             <div className="flex flex-col gap-2">
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => setShowUnpriced((isShown) => !isShown)}
-                className="self-start text-xs text-muted-foreground underline-offset-2 hover:underline"
+                className="h-auto self-start p-0 text-xs text-brand"
               >
                 {showUnpriced
                   ? tx("admin.gatepass.allot.hideUnpriced", {
@@ -102,7 +114,7 @@ export function AllotQuantitiesStep({
                       count: unpricedItems.length,
                       route: routeName,
                     })}
-              </button>
+              </Button>
               {showUnpriced &&
                 unpricedItems.map((item) => <VarietyRow key={item.varietyId} item={item} />)}
             </div>
