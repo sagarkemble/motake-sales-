@@ -1,6 +1,7 @@
 "use client";
 
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { CheckCircle2Icon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { BackHeader } from "~/components/admin/products/back-header";
 import { GstRate } from "~/components/shared/gst-rate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
@@ -282,6 +284,7 @@ function RaiseBillPageContent() {
   const balanceText = useBalanceText();
   const { formatPaise } = useFormatMoney();
   const customerId = searchParams.get("customer");
+  const [raised, setRaised] = useState<RaisedBill | null>(null);
   const { summary, catalog, isCatalogLoading, isCatalogError, refetchCatalog } = useLedger({
     customerId: customerId ?? undefined,
     loadCatalog: true,
@@ -301,6 +304,7 @@ function RaiseBillPageContent() {
             summary ? `${summary.customer.shopName} · ${summary.customer.phone}` : undefined
           }
           onChange={(nextCustomerId) => {
+            setRaised(null);
             router.replace(`${pathname}?customer=${nextCustomerId}`, { scroll: false });
           }}
         />
@@ -314,6 +318,25 @@ function RaiseBillPageContent() {
             {balanceText(summary.footer.closing)}
           </span>
         </p>
+      )}
+      {raised && (
+        <Alert>
+          <CheckCircle2Icon />
+          <AlertTitle>{tx("admin.ledger.raiseBill.successTitle")}</AlertTitle>
+          <AlertDescription>
+            <p>
+              {tx("admin.ledger.raiseBill.success", {
+                number: raised.billNumber,
+                amount: formatPaise(raised.totalPaise),
+              })}
+            </p>
+            <Button size="sm" variant="outline" className="mt-2" asChild>
+              <Link href={`/admin/ledger/bills/${raised.billId}`}>
+                {tx("admin.ledger.raiseBill.openPaper")}
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
       {!customerId ? (
         <p className="rounded-2xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
@@ -347,19 +370,15 @@ function RaiseBillPageContent() {
           customerId={customerId}
           catalog={catalog}
           onRaised={(bill) => {
-            // The toast carries the way to the new Bill paper (it was an inline notice before).
+            setRaised(bill);
             toast.success(
               tx("admin.ledger.raiseBill.success", {
                 number: bill.billNumber,
                 amount: formatPaise(bill.totalPaise),
               }),
-              {
-                action: {
-                  label: tx("admin.ledger.raiseBill.openPaper"),
-                  onClick: () => router.push(`/admin/ledger/bills/${bill.billId}`),
-                },
-              },
             );
+            // The notice sits above the catalog; on a phone the cart is far below it.
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       )}

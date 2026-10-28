@@ -33,13 +33,12 @@ import {
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { Button } from "~/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import { ScrollArea } from "~/components/ui/scroll-area";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { useBillGst } from "~/hooks/use-gst";
 import { useBillPaper, type BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
@@ -186,32 +185,29 @@ function PaperView({ paper }: { paper: BillPaper }) {
           />
         </aside>
       </div>
-      <Dialog open={sheet != null} onOpenChange={(open) => !open && closeSheet()}>
-        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 rounded-2xl p-0 sm:max-w-md">
-          {/* Radix lays the viewport content out as a table; block keeps the content at the dialog width. */}
-          <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
-            <div className="flex flex-col gap-4 p-6">
-              <DialogHeader>
-                <DialogTitle>
-                  {sheet === "cancel"
-                    ? tx("admin.ledger.paper.cancel.title")
-                    : tx("admin.ledger.paper.note.title")}
-                </DialogTitle>
-                <DialogDescription>{paper.bill.number}</DialogDescription>
-              </DialogHeader>
-              {sheet === "cancel" && <CancelForm paper={paper} onDone={closeSheet} />}
-              {sheet === "note" && (
-                <RaiseNoteForm
-                  paper={paper}
-                  idempotencyKey={noteKey}
-                  onRaised={() => setNoteKey(crypto.randomUUID())}
-                  onDone={closeSheet}
-                />
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      <Sheet open={sheet != null} onOpenChange={(open) => !open && closeSheet()}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>
+              {sheet === "cancel"
+                ? tx("admin.ledger.paper.cancel.title")
+                : tx("admin.ledger.paper.note.title")}
+            </SheetTitle>
+            <SheetDescription>{paper.bill.number}</SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-6">
+            {sheet === "cancel" && <CancelForm paper={paper} onDone={closeSheet} />}
+            {sheet === "note" && (
+              <RaiseNoteForm
+                paper={paper}
+                idempotencyKey={noteKey}
+                onRaised={() => setNoteKey(crypto.randomUUID())}
+                onDone={closeSheet}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
       <GstDialog
         kind={gstDialog}
         gst={billGstState}
