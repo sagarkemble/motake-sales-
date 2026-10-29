@@ -28,6 +28,7 @@ import GatepassService from "../gatepass";
 import GstService from "../gst";
 import type { EnqueueInput, NotificationStatusView } from "../notification/model";
 import type { AdminBillListener, AdminBillOutcome, NoteOutcome } from "../shared/bill-events";
+import { assertCustomerActive } from "../shared/checkout";
 import type {
   CheckoutListener,
   CheckoutOutcome,
@@ -387,6 +388,8 @@ class CustomerMessageService {
     if (!ref) throw notFound(`Message ${row.notificationId} names no document`);
     const customer = await this.requireCustomer(await this.customerIdOfRef(ref));
     await this.assertMayAct(parsedActor, customer);
+    // A deactivated Customer is read-only: statuses stay readable, nothing is sent.
+    assertCustomerActive(customer, customer.id);
     if (row.status === "pending") throw messagePendingRefusal();
 
     if (row.kind === "bill") {
@@ -421,6 +424,7 @@ class CustomerMessageService {
     if (!customerId) throw notFound(`Bill ${parsedInput.billId} not found`);
     const customer = await this.requireCustomer(customerId);
     await this.assertMayAct(parsedActor, customer);
+    assertCustomerActive(customer, customer.id);
     await this.assertBillSendable(parsedInput.billId);
 
     const bill = await this.requireMessageBill(parsedInput.billId);

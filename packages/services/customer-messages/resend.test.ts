@@ -95,6 +95,33 @@ describe("resend", () => {
     expect(await moneyRowCounts()).toEqual(before);
   });
 
+  it("refuses Resend and Send latest Bill for a deactivated Customer; statuses stay readable", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await bookNow(world, 5_000);
+    const receipt = harness.gateway.rows[1]!;
+    harness.gateway.setStatus(receipt.notificationId, "delivered");
+    await db
+      .update(customersTable)
+      .set({ status: "inactive" })
+      .where(eq(customersTable.id, world.customer.id));
+
+    expect(
+      (
+        await refusalOf(
+          harness.messages.resend(admin(world), { notificationId: receipt.notificationId }),
+        )
+      ).reason,
+    ).toBe("customer_inactive");
+    expect(
+      (await refusalOf(harness.messages.sendLatestBill(admin(world), { billId: placed.billId })))
+        .reason,
+    ).toBe("customer_inactive");
+    expect(receipt.resends).toEqual([]);
+    await expect(
+      harness.messages.listForDocument(admin(world), { billId: placed.billId }),
+    ).resolves.not.toHaveLength(0);
+  });
+
   it("refuses while pending", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     await bookNow(world);
