@@ -30,6 +30,7 @@ import {
   PaperLoadFailed,
   useBalanceText,
 } from "~/components/admin/ledger/ledger-shared";
+import { PaperWhatsapp } from "~/components/admin/ledger/paper-whatsapp";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { Button } from "~/components/ui/button";
 import {
@@ -81,6 +82,31 @@ function PaperView({ paper }: { paper: BillPaper }) {
     paper,
     editing ? correctState : { ...correctState, hasChanges: false },
   );
+  // One WhatsApp entry, at the top on a phone and in the side panel on a wide screen.
+  const whatsapp = (
+    <PaperWhatsapp
+      document={{ billId: paper.bill.id }}
+      title={`${tx("whatsapp.template.bill")} ${paper.bill.number}`}
+      context={{
+        customerActive: paper.customer?.status !== "inactive",
+        billCancelled: paper.bill.cancelled,
+      }}
+      latestBill={{
+        billId: paper.bill.id,
+        number: paper.bill.number,
+        version: paper.bill.latestVersionNumber,
+        balanceText: paper.balance ? balanceText(paper.balance) : "",
+        cancelled: paper.bill.cancelled,
+        irnPending: billGstState?.irnPending ?? false,
+      }}
+      // The Bill's list also has its Notes' messages; each shows the Note's number.
+      detailOf={(row) => {
+        const [document, noteId] = row.businessRef.split("/");
+        if (document !== "note") return null;
+        return paper.notes.find((note) => note.id === noteId)?.number ?? null;
+      }}
+    />
+  );
 
   function closeSheet() {
     setSheet(null);
@@ -100,6 +126,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-3">
+          <div className="lg:hidden">{whatsapp}</div>
           <LockNotice paper={paper} />
           {editing && (
             <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
@@ -129,6 +156,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
               )}
             </div>
             <StatusBadges paper={paper} />
+            <div className="hidden lg:block">{whatsapp}</div>
             {!editing ? (
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
                 <Button
