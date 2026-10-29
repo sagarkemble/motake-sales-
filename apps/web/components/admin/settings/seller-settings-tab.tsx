@@ -32,6 +32,7 @@ import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { cn } from "~/lib/utils";
 
+import { SellerDocumentDetails } from "./seller-document-details";
 import { SellerSettingsHistory } from "./settings-history";
 
 type SellerSettings = NonNullable<RouterOutputs["settings"]["seller"]["get"]["data"]>;
@@ -157,6 +158,7 @@ export function SellerSettingsTab() {
           <SellerSummary seller={seller} />
         )}
       </section>
+      <SellerDocumentDetails seller={seller} />
       <SellerSettingsHistory />
     </div>
   );
