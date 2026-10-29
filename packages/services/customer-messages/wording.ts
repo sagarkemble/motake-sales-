@@ -1,5 +1,6 @@
-import type { SelectNote, SelectPayment } from "@repo/database/schema";
+import type { SelectNote } from "@repo/database/schema";
 
+import type { PaymentMode } from "../payments";
 import type { MessageLanguage } from "./model";
 
 // The one server-side place that writes money, dates and labels for a Customer message (Spec J).
@@ -113,13 +114,13 @@ export function balanceLine(
   return `${balancePaise >= 0 ? pending : advance}: ${formatRupees(balancePaise)}`;
 }
 
-const MODE_WORDS: Record<MessageLanguage, Record<SelectPayment["mode"], string>> = {
+const MODE_WORDS: Record<MessageLanguage, Record<PaymentMode, string>> = {
   en: { cash: "Cash", upi: "UPI", bank: "Bank" },
   mr: { cash: "रोख", upi: "UPI", bank: "बँक" },
   hi: { cash: "नकद", upi: "UPI", bank: "बैंक" },
 };
 
-export function modeWord(mode: SelectPayment["mode"], language: MessageLanguage): string {
+export function modeWord(mode: PaymentMode, language: MessageLanguage): string {
   return MODE_WORDS[language][mode];
 }
 
