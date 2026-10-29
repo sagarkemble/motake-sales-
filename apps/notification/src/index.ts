@@ -8,9 +8,9 @@ import { notificationService, tokenStore } from "./notification-service";
 async function init() {
   try {
     // Spec J-0: fill or repair the secret file from Vault before serving. An empty file takes the
-    // Vault token even when Meta is unreachable or refuses it (messages hold, the Admin banner
-    // shows). Only with no token in either place does the app refuse to start, so a broken deploy
-    // is loud.
+    // Vault token even when Meta is unreachable or refuses it (a refused token holds messages and
+    // the Admin banner shows). Only with no token in either place does the app refuse to start, so
+    // a broken deploy is loud.
     const tokenStatus = await notificationService.syncToken();
     if (!(await tokenStore.readWorkingToken())) {
       logger.error(
