@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type {
   ResumeHeldResult,
+  WhatsAppPausedReason,
   WhatsAppTokenState,
   WhatsAppTokenStatus,
 } from "../notification/model";
@@ -15,15 +16,16 @@ export type UpdateWhatsAppTokenInput = z.input<typeof updateWhatsAppTokenInputSc
 // `unknown`: the notification app is not configured or did not answer.
 export type WhatsAppTokenSettingsState = WhatsAppTokenState | "unknown";
 
-// What the Admin banner and the Fix access token dialog show (Spec J-0). Never the token: only its last 4 characters.
+// What the Admin banner and the Fix access token dialog show (Spec J-0). Never the token.
 export interface WhatsAppTokenSettings {
+  // Send waiting messages is refused only while this is `invalid`.
   state: WhatsAppTokenSettingsState;
-  checkedAt: Date | null;
-  // Null while the state is unknown.
+  // Why messages are paused (the banner shows only then); null while not paused or unknown.
+  pausedReason: WhatsAppPausedReason | null;
+  // Messages waiting (token-held plus payment-held). Null while the state is unknown.
   heldCount: number | null;
-  last4: string | null;
-  updatedAt: Date | null;
-  updatedBy: { id: string; name: string | null } | null;
+  // When Meta last accepted a send. Null if never or while the state is unknown.
+  lastWorkedAt: Date | null;
 }
 
 // The notification app's token procedures, reached through the typed notification client with the
@@ -34,4 +36,4 @@ export interface NotificationTokenGateway {
   resumeHeld(): Promise<ResumeHeldResult>;
 }
 
-export type { ResumeHeldResult, WhatsAppTokenStatus };
+export type { ResumeHeldResult, WhatsAppPausedReason, WhatsAppTokenStatus };

@@ -1,16 +1,9 @@
-import { getProfileById } from "@repo/database/queries/auth";
 import { runInTransaction } from "@repo/database/queries/shared/executor";
 import { logger } from "@repo/logger";
-import { z } from "zod";
 
 import { env } from "../env";
 import { errorMessageOf, refusalOf, whatsAppTokenRefused } from "../errors";
-import {
-  MetaWhatsAppProvider,
-  WhatsAppTokenStore,
-  type WhatsAppProvider,
-  type WhatsAppTokenMetadata,
-} from "../notification";
+import { MetaWhatsAppProvider, WhatsAppTokenStore, type WhatsAppProvider } from "../notification";
 import { recordAudit } from "../shared/audit";
 import {
   updateWhatsAppTokenInputSchema,
@@ -58,8 +51,9 @@ const notificationUnavailable = () =>
     "The WhatsApp notification service is not answering. Try again in a minute.",
   );
 
-// The Fix access token dialog from the Admin banner (Spec J-0): status, paste a new token, send held
-// messages. Never returns, logs or audits the token; only its last 4 characters.
+// The Fix access token dialog from the Admin banner (Spec J-0): why messages are paused, paste a
+// new token, send held messages. Never returns, logs or audits the token (the audit row keeps only
+// its last 4 characters).
 class WhatsAppTokenService {
   private readonly notification: NotificationTokenGateway | null;
   private readonly tokenChecker: Pick<WhatsAppProvider, "checkToken">;
@@ -72,17 +66,12 @@ class WhatsAppTokenService {
   }
 
   public async status(): Promise<WhatsAppTokenSettings> {
-    const [remote, metadata] = await Promise.all([
-      this.remoteStatus(),
-      this.tokenStore.readVaultMetadata(),
-    ]);
+    const remote = await this.remoteStatus();
     return {
       state: remote?.state ?? "unknown",
-      checkedAt: remote?.checkedAt ?? null,
+      pausedReason: remote?.pausedReason ?? null,
       heldCount: remote?.heldCount ?? null,
-      last4: metadata?.last4 ?? null,
-      updatedAt: metadata?.updatedAt ?? null,
-      updatedBy: await this.updatedByProfileOf(metadata),
+      lastWorkedAt: remote?.lastWorkedAt ?? null,
     };
   }
 
@@ -168,15 +157,6 @@ class WhatsAppTokenService {
       return null;
     }
   }
-
-  private async updatedByProfileOf(
-    metadata: WhatsAppTokenMetadata | null,
-  ): Promise<WhatsAppTokenSettings["updatedBy"]> {
-    // The description is plain text anyone with Vault access can edit; only a uuid is looked up.
-    if (!metadata?.updatedBy || !z.uuid().safeParse(metadata.updatedBy).success) return null;
-    const profile = await getProfileById(metadata.updatedBy);
-    return { id: metadata.updatedBy, name: profile?.name ?? null };
-  }
 }
 
 export default WhatsAppTokenService;
@@ -185,6 +165,7 @@ export type {
   NotificationTokenGateway,
   ResumeHeldResult,
   UpdateWhatsAppTokenInput,
+  WhatsAppPausedReason,
   WhatsAppTokenSettings,
   WhatsAppTokenSettingsState,
   WhatsAppTokenStatus,

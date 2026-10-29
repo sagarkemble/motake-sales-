@@ -263,7 +263,7 @@ const whatsappTokenRouter = router({
         protect: true,
         summary: "Get the WhatsApp access token status",
         description:
-          "Return whether the token works (unknown while the notification service does not answer), when it was last checked, how many messages are waiting, and its last 4 characters with who saved it and when.",
+          "Return whether the token works (unknown while the notification service does not answer), why WhatsApp messages are paused (token or payment, or null), how many messages are waiting and when a message last went out.",
       },
     })
     .input(zodUndefinedModel)
@@ -301,7 +301,7 @@ const whatsappTokenRouter = router({
         protect: true,
         summary: "Send waiting WhatsApp messages",
         description:
-          "Queue every message held on a token error now. Refused as token_not_working while the token does not work.",
+          "Queue every message held on a token error or a WhatsApp account payment problem now. Refused as token_not_working while the token is refused.",
       },
     })
     .input(zodUndefinedModel)

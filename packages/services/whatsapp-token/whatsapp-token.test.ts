@@ -40,35 +40,50 @@ async function tokenAuditRows() {
 }
 
 describe("status", () => {
-  it("joins the app's token state and held count with the Vault metadata, never the token", async () => {
+  it("relays why messages are paused, how many wait and when one last went out, never the token", async () => {
     const admin = await buildProfile({ name: "Asha Admin" });
     await tokenStore.saveVaultToken(SAVED_TOKEN, admin.id);
-    const checkedAt = new Date("2026-10-28T10:00:00Z");
-    gateway.status = { state: "invalid", checkedAt, heldCount: 3 };
+    const lastWorkedAt = new Date("2026-10-28T09:30:00Z");
+    gateway.status = {
+      state: "invalid",
+      checkedAt: new Date("2026-10-28T10:00:00Z"),
+      heldCount: 3,
+      tokenHeldCount: 2,
+      paymentHeldCount: 1,
+      pausedReason: "token",
+      lastWorkedAt,
+    };
 
     const status = await service.status();
 
-    expect(status).toEqual({
-      state: "invalid",
-      checkedAt,
-      heldCount: 3,
-      last4: "1111",
-      updatedAt: expect.any(Date),
-      updatedBy: { id: admin.id, name: "Asha Admin" },
-    });
+    expect(status).toEqual({ state: "invalid", pausedReason: "token", heldCount: 3, lastWorkedAt });
     expect(JSON.stringify(status)).not.toContain(SAVED_TOKEN);
   });
 
-  it("is unknown with no held count while the notification app does not answer", async () => {
+  it("relays a payment pause while the token works", async () => {
+    gateway.status = {
+      ...gateway.status,
+      state: "ok",
+      heldCount: 2,
+      paymentHeldCount: 2,
+      pausedReason: "payment",
+    };
+
+    expect(await service.status()).toMatchObject({
+      state: "ok",
+      pausedReason: "payment",
+      heldCount: 2,
+    });
+  });
+
+  it("is unknown and not paused while the notification app does not answer", async () => {
     gateway.down = true;
 
     expect(await service.status()).toEqual({
       state: "unknown",
-      checkedAt: null,
+      pausedReason: null,
       heldCount: null,
-      last4: null,
-      updatedAt: null,
-      updatedBy: null,
+      lastWorkedAt: null,
     });
   });
 
@@ -118,11 +133,7 @@ describe("update", () => {
 
     expect(await tokenStore.readVaultToken()).toBe(PASTED_TOKEN);
     expect(gateway.refreshCalls).toBe(1);
-    expect(status).toMatchObject({
-      state: "ok",
-      last4: "9876",
-      updatedBy: { id: admin.id, name: "Asha Admin" },
-    });
+    expect(status).toMatchObject({ state: "ok", pausedReason: null });
     expect(JSON.stringify(status)).not.toContain(PASTED_TOKEN);
     const auditRows = await tokenAuditRows();
     expect(auditRows).toMatchObject([
@@ -144,7 +155,7 @@ describe("update", () => {
     const status = await service.update({ token: PASTED_TOKEN }, admin.id);
 
     expect(await tokenStore.readVaultToken()).toBe(PASTED_TOKEN);
-    expect(status).toMatchObject({ state: "unknown", last4: "9876" });
+    expect(status).toMatchObject({ state: "unknown", pausedReason: null });
     expect(await tokenAuditRows()).toHaveLength(1);
   });
 });

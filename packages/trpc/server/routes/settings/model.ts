@@ -82,14 +82,12 @@ export const creditNoteDeadlineEntrySchema = z.object({
   source: z.enum(["configured", "default"]),
 });
 
-// Spec J-0. Never the token: only its last 4 characters.
+// Spec J-0. Never the token.
 export const whatsAppTokenSettingsSchema = z.object({
   state: z.enum(["ok", "invalid", "unavailable", "unknown"]),
-  checkedAt: z.date().nullable(),
+  pausedReason: z.enum(["token", "payment"]).nullable(),
   heldCount: z.number().int().nullable(),
-  last4: z.string().nullable(),
-  updatedAt: z.date().nullable(),
-  updatedBy: z.object({ id: z.string(), name: z.string().nullable() }).nullable(),
+  lastWorkedAt: z.date().nullable(),
 });
 
 export const updateWhatsAppTokenInputSchema = z.object({
