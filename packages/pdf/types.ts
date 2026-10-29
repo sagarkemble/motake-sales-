@@ -14,6 +14,15 @@ export type LayoutName = (typeof LAYOUT_NAMES)[number];
 
 export type SupplyType = "intra_state" | "inter_state";
 
+// Account name, bank, branch, account number and IFSC; each may be empty on its own.
+export interface BankValues {
+  accountName: string | null;
+  bankName: string | null;
+  branch: string | null;
+  accountNumber: string | null;
+  ifsc: string | null;
+}
+
 export interface SellerValues {
   legalName: string;
   address: string;
@@ -21,6 +30,15 @@ export interface SellerValues {
   stateName: string;
   // Two-digit GST state code.
   stateCode: string;
+  phone: string;
+  email: string | null;
+  // The paper leaves out each of these while it is empty.
+  pan: string | null;
+  bank: BankValues | null;
+  // One term per line.
+  terms: string | null;
+  // "Received At" on a receipt, "Place" on a Note.
+  place: string | null;
 }
 
 export interface BuyerValues {
@@ -54,6 +72,8 @@ export interface BillHeaderValues extends PartyBlocks {
   billDate: string;
   // Printed as "Version n" only when n > 1.
   versionNumber: number;
+  // Dispatched through: the salesman of a field Bill; null prints "Office".
+  salesmanName: string | null;
 }
 
 export interface TaxInvoiceLine {
@@ -125,6 +145,8 @@ export interface GstNoteLine {
   unit: string;
   hsn: string;
   quantity: number;
+  // The Bill line's rate; the GST summary groups by it.
+  gstRateBps: number;
   taxablePaise: number;
   cgstPaise: number;
   sgstPaise: number;
@@ -158,7 +180,7 @@ export type PaymentModeValue = "cash" | "bank" | "upi";
 
 export interface PaymentReceiptValues {
   seller: SellerValues;
-  customer: { shopName: string; phone: string };
+  customer: { shopName: string; phone: string; address: string };
   route: RouteValues;
   receiptNumber: string;
   paidOn: string;
@@ -170,7 +192,8 @@ export interface PaymentReceiptValues {
   keptPaise: number;
   // Printed only when above ₹0.
   returnedPaise: number;
-  // Signed: above zero Pending, below zero Advance, zero Settled.
+  // Signed: above zero Pending, below zero Advance, zero Settled. The balance before is this plus
+  // the kept amount.
   balanceAfterPaise: number;
 }
 

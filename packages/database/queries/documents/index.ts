@@ -4,10 +4,14 @@ import { db } from "../../index";
 import {
   billsTable,
   billVersionsTable,
+  gatepassesTable,
   noteLinesTable,
   notesTable,
+  ordersTable,
   paymentEventsTable,
   paymentsTable,
+  profilesTable,
+  salesmenTable,
   type SelectBill,
   type SelectBillVersion,
   type SelectNote,
@@ -142,10 +146,13 @@ export type BillDocumentState = Pick<
   // Through the Ledger Bill debit; null only for a ₹0 Bill with no order.
   customerId: string | null;
   cancelled: boolean;
+  // The salesman of the GatePass the order left on (name, else salesman code); null for a Bill
+  // with no GatePass: Admin Raise Bill and Admin fulfil.
+  salesmanName: string | null;
 };
 
-// The live Bill fields a Document needs: the IRN block, legal type and the Customer for the
-// e-invoicing rule.
+// The live Bill fields a Document needs: the IRN block, legal type, the Customer for the
+// e-invoicing rule and who dispatched it.
 export async function getBillDocumentState(
   billId: string,
   executor: DbExecutor = db,
@@ -163,8 +170,15 @@ export async function getBillDocumentState(
       irnRecordedAt: billsTable.irnRecordedAt,
       customerId: billCustomerId,
       cancelled: sql<boolean>`${billIsCancelled()}`,
+      salesmanName: sql<
+        string | null
+      >`coalesce(${profilesTable.name}, ${salesmenTable.salesmanCode})`,
     })
     .from(billsTable)
+    .leftJoin(ordersTable, eq(billsTable.orderId, ordersTable.id))
+    .leftJoin(gatepassesTable, eq(ordersTable.gatepassId, gatepassesTable.id))
+    .leftJoin(salesmenTable, eq(gatepassesTable.salesmanId, salesmenTable.id))
+    .leftJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
     .where(eq(billsTable.id, billId));
   return row;
 }
