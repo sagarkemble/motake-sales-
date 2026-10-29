@@ -23,6 +23,7 @@ import {
   updateGstr1Filing,
   type BillGstFacts,
 } from "@repo/database/queries/gst";
+import { getStoredBalance } from "@repo/database/queries/ledger";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
@@ -431,6 +432,7 @@ class GstService {
             customerId,
             versionNumber: await this.latestVersionNumber(bill.id, transaction),
             irnRecordedAt,
+            balanceAfterPaise: await this.balanceOf(customerId, transaction),
           },
         };
       });
@@ -505,6 +507,7 @@ class GstService {
             customerId,
             versionNumber: await this.latestVersionNumber(bill.id, transaction),
             irnRecordedAt,
+            balanceAfterPaise: await this.balanceOf(customerId, transaction),
             reason: parsedInput.reason,
           },
         };
@@ -755,7 +758,13 @@ class GstService {
     return key;
   }
 
-  private async latestVersionNumber(billId: string, executor: DbExecutor): Promise<number> {
+  private async balanceOf(customerId: string, executor: DbExecutor): Promise<number> {
+    const balancePaise = await getStoredBalance(customerId, executor);
+    if (balancePaise === undefined) throw internalError(`Customer ${customerId} not found`);
+    return balancePaise;
+  }
+
+    private async latestVersionNumber(billId: string, executor: DbExecutor): Promise<number> {
     const latest = await getLatestBillVersion(billId, executor);
     if (!latest) throw internalError(`Bill ${billId} has no version`);
     return latest.versionNumber;

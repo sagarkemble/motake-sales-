@@ -828,6 +828,7 @@ class OrderService {
               postedEventId: posted.postedEventId,
               paymentNumber: posted.payment.number,
               customerId: customer.id,
+              mode: posted.payment.mode,
               keptPaise: split.keptPaise,
               returnedPaise: split.returnedPaise,
               balanceAfterPaise: posted.balanceAfterPaise,
