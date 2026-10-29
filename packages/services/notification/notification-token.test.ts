@@ -17,8 +17,8 @@ import {
 } from "../test/notification-fakes";
 import { WhatsAppTokenStore, type EnqueueInput, type ProviderFailure } from "./index";
 
-// Spec J-0: a token error holds the message; a sync puts a working token in the secret file; a
-// working token resumes held messages. Real Vault (a test-only secret name) and a real temp file.
+// Spec J-0: a token error or a WhatsApp account payment problem holds the message; a sync puts a
+// working token in the secret file; a working token resumes held messages. Real Vault (a test-only secret name) and a real temp file.
 const TEST_VAULT_SECRET_NAME = "motake_whatsapp_access_token_engine_test";
 const WORKING_TOKEN = "EAAG-working-token-1111";
 const EXPIRED_TOKEN = "EAAG-expired-token-2222";
@@ -80,6 +80,14 @@ const authError: ProviderFailure = {
   message: "Error validating access token: Session has expired",
 };
 
+const paymentError: ProviderFailure = {
+  ok: false,
+  retriable: false,
+  category: "payment_error",
+  code: 131042,
+  message: "Business eligibility payment issue",
+};
+
 async function notificationRow(notificationId: string) {
   const [row] = await db
     .select()
@@ -96,10 +104,10 @@ async function attemptRows(notificationId: string) {
     .orderBy(asc(notificationAttemptsTable.attemptNumber));
 }
 
-// A plain Bill whose send hit a token error on its first try.
-async function heldBill(): Promise<string> {
+// A plain Bill whose send hit a token error (or `failure`) on its first try.
+async function heldBill(failure: ProviderFailure = authError): Promise<string> {
   const { notificationId } = await harness.service.enqueue(instruction());
-  harness.provider.scriptSends(authError);
+  harness.provider.scriptSends(failure);
   const result = await harness.service.sendAttempt(notificationId, firstTry);
   expect(result.outcome).toBe("held");
   return notificationId;
@@ -155,6 +163,19 @@ describe("hold on a token error", () => {
     expect(await attemptRows(notificationId)).toHaveLength(1);
   });
 
+  it("holds a WhatsApp account payment problem like a token error", async () => {
+    const { notificationId } = await harness.service.enqueue(instruction());
+    harness.provider.scriptSends(paymentError);
+
+    const result = await harness.service.sendAttempt(notificationId, finalTry);
+
+    expect(result).toEqual({ outcome: "held", failureCategory: "payment_error" });
+    expect((await notificationRow(notificationId)).status).toBe("pending");
+    const attempts = await attemptRows(notificationId);
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]!.error).toMatch(/^payment_error: /);
+  });
+
   it("still fails other terminal errors at once", async () => {
     const { notificationId } = await harness.service.enqueue(instruction());
     harness.provider.scriptSends({
@@ -180,6 +201,69 @@ describe("hold on a token error", () => {
     expect(refused).toMatchObject({ code: "CONFLICT" });
     expect((await harness.service.tokenStatus()).heldCount).toBe(2);
     expect((await harness.service.getStatus(notificationId)).status).toBe("pending");
+  });
+});
+
+describe("tokenStatus", () => {
+  beforeEach(async () => {
+    await buildNotificationTemplate({ templateId: "motake_bill" });
+  });
+
+  it("counts token-held and payment-held messages separately", async () => {
+    await heldBill();
+    await heldBill(paymentError);
+    await heldBill(paymentError);
+
+    expect(await harness.service.tokenStatus()).toMatchObject({
+      heldCount: 3,
+      tokenHeldCount: 1,
+      paymentHeldCount: 2,
+    });
+  });
+
+  it("is paused for the token while the token is invalid, even with payment-held messages", async () => {
+    await writeFile(secretFilePath, EXPIRED_TOKEN);
+    await heldBill(paymentError);
+    await harness.service.syncToken();
+
+    expect(await harness.service.tokenStatus()).toMatchObject({
+      state: "invalid",
+      pausedReason: "token",
+    });
+  });
+
+  it("is paused for payment while the token works and a payment-held message waits", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    await harness.service.syncToken();
+    await heldBill(paymentError);
+
+    expect(await harness.service.tokenStatus()).toMatchObject({
+      state: "ok",
+      pausedReason: "payment",
+      paymentHeldCount: 1,
+    });
+  });
+
+  it("is not paused while the token works and nothing is held, or while Meta cannot answer", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    expect((await harness.service.syncToken()).pausedReason).toBeNull();
+
+    harness.provider.tokenCheckUnavailable = true;
+    expect(await harness.service.syncToken()).toMatchObject({
+      state: "unavailable",
+      pausedReason: null,
+    });
+  });
+
+  it("says when Meta last accepted a send, ignoring later failures", async () => {
+    expect((await harness.service.tokenStatus()).lastWorkedAt).toBeNull();
+
+    const { notificationId } = await harness.service.enqueue(instruction());
+    await harness.service.sendAttempt(notificationId, firstTry);
+    const [sentAttempt] = await attemptRows(notificationId);
+    await heldBill();
+
+    expect((await harness.service.tokenStatus()).lastWorkedAt).toEqual(sentAttempt!.createdAt);
   });
 });
 
@@ -339,6 +423,40 @@ describe("resumeHeld", () => {
     expect((await notificationRow(suppressedId)).status).toBe("skipped");
   });
 
+  it("resumes payment-held rows while the token works", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    await harness.service.syncToken();
+    const notificationId = await heldBill(paymentError);
+    harness.dispatcher.dispatched.length = 0;
+
+    expect(await harness.service.resumeHeld()).toEqual({ queued: 1 });
+    expect(harness.dispatcher.dispatched).toEqual([
+      { notificationId, runKey: await currentRunKey(notificationId) },
+    ]);
+    expect((await harness.service.tokenStatus()).paymentHeldCount).toBe(0);
+  });
+
+  it("is allowed while Meta cannot answer: only a refused token blocks it", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    await heldBill(paymentError);
+    harness.provider.tokenCheckUnavailable = true;
+    await harness.service.syncToken();
+
+    expect(await harness.service.resumeHeld()).toEqual({ queued: 1 });
+  });
+
+  it("resumes token-held and payment-held rows on a sync that finds a working token", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    await heldBill();
+    await heldBill(paymentError);
+
+    expect(await harness.service.syncToken()).toMatchObject({
+      state: "ok",
+      heldCount: 0,
+      pausedReason: null,
+    });
+  });
+
   it("resumes held rows when a sync pulls a working token from Vault", async () => {
     await writeFile(secretFilePath, EXPIRED_TOKEN);
     const notificationId = await heldBill();
@@ -377,14 +495,39 @@ describe("sync after a held send", () => {
     });
   });
 
-  it("does not resume by itself when the token still checks ok, so it cannot loop", async () => {
+  it("resumes token-held rows at once even when the token was not replaced", async () => {
     await writeFile(secretFilePath, WORKING_TOKEN);
 
-    await heldBill();
-    await waitFor(async () => (await harness.service.tokenStatus()).checkedAt !== null);
+    const notificationId = await heldBill();
+    await waitFor(async () => (await harness.service.tokenStatus()).tokenHeldCount === 0);
 
-    expect(await harness.service.tokenStatus()).toMatchObject({ state: "ok", heldCount: 1 });
-    // The 5-minute sync (or Send waiting messages) resumes it.
-    expect((await harness.service.syncToken()).heldCount).toBe(0);
+    expect((await harness.service.tokenStatus()).state).toBe("ok");
+    expect(harness.dispatcher.dispatched.at(-1)).toEqual({
+      notificationId,
+      runKey: await currentRunKey(notificationId),
+    });
+  });
+
+  it("leaves payment-held rows for the 5-minute sync, so a payment problem cannot loop", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+    await heldBill(paymentError);
+
+    await heldBill();
+    await waitFor(async () => (await harness.service.tokenStatus()).tokenHeldCount === 0);
+
+    expect(await harness.service.tokenStatus()).toMatchObject({
+      paymentHeldCount: 1,
+      pausedReason: "payment",
+    });
+    expect((await harness.service.syncToken()).paymentHeldCount).toBe(0);
+  });
+
+  it("does not check the token after a payment problem", async () => {
+    await writeFile(secretFilePath, WORKING_TOKEN);
+
+    await heldBill(paymentError);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect((await harness.service.tokenStatus()).checkedAt).toBeNull();
   });
 });

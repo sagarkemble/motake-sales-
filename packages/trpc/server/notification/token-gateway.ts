@@ -9,18 +9,25 @@ import { TRPC_ERROR_CODES_BY_KEY, type TRPC_ERROR_CODE_KEY } from "@trpc/server/
 
 import { createNotificationClient, type NotificationClientConfig } from "./client";
 
-interface WireTokenStatus {
-  state: WhatsAppTokenStatus["state"];
+type WireTokenStatus = Omit<WhatsAppTokenStatus, "checkedAt" | "lastWorkedAt"> & {
   checkedAt: Date | string | null;
-  heldCount: number;
+  lastWorkedAt: Date | string | null;
+};
+
+function toDate(value: Date | string | null): Date | null {
+  return value === null ? null : new Date(value);
 }
 
 // No transformer on the client link, so dates arrive as ISO strings.
 function toTokenStatus(status: WireTokenStatus): WhatsAppTokenStatus {
   return {
     state: status.state,
-    checkedAt: status.checkedAt === null ? null : new Date(status.checkedAt),
+    checkedAt: toDate(status.checkedAt),
     heldCount: status.heldCount,
+    tokenHeldCount: status.tokenHeldCount,
+    paymentHeldCount: status.paymentHeldCount,
+    pausedReason: status.pausedReason,
+    lastWorkedAt: toDate(status.lastWorkedAt),
   };
 }
 

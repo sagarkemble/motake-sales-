@@ -17,6 +17,7 @@ const failureCategorySchema = z.enum([
   "template_error",
   "media_error",
   "auth_error",
+  "payment_error",
   "opted_out_or_blocked",
   "rate_limited",
   "provider_unavailable",
@@ -103,6 +104,10 @@ export const whatsAppTokenStatusSchema = z.object({
   state: whatsAppTokenStateSchema,
   checkedAt: z.date().nullable(),
   heldCount: z.number().int(),
+  tokenHeldCount: z.number().int(),
+  paymentHeldCount: z.number().int(),
+  pausedReason: z.enum(["token", "payment"]).nullable(),
+  lastWorkedAt: z.date().nullable(),
 });
 
 export const resumeHeldResultSchema = z.object({ queued: z.number().int() });

@@ -245,52 +245,84 @@ export function attemptErrorPrefix(category: string): string {
   return `${category}:`;
 }
 
-const HELD_ATTEMPT_ERROR_PREFIX = attemptErrorPrefix("auth_error");
+// Why a message is held (Spec J-0): the provider refused the access token (`auth_error`), or the
+// WhatsApp account has a payment problem (`payment_error`).
+export type HeldReason = "token" | "payment";
 
-// Held (Spec J-0): `pending`, and the current run's latest attempt failed as `auth_error`. No status
-// value of its own; resuming starts a new run, so the held attempt drops out of the current run.
-const heldCondition = sql`${notificationsTable.status} = 'pending' AND EXISTS (
+export const heldReasons: readonly HeldReason[] = ["token", "payment"];
+
+const HELD_ATTEMPT_ERROR_PREFIXES: Record<HeldReason, string> = {
+  token: attemptErrorPrefix("auth_error"),
+  payment: attemptErrorPrefix("payment_error"),
+};
+
+// Held (Spec J-0): `pending`, and the current run's latest attempt failed as one of the reasons'
+// categories. No status value of its own; resuming starts a new run, so the held attempt drops out
+// of the current run.
+function heldCondition(reasons: readonly HeldReason[]) {
+  const prefixMatches = sql.join(
+    reasons.map(
+      (reason) => sql`starts_with(attempt.error, ${HELD_ATTEMPT_ERROR_PREFIXES[reason]})`,
+    ),
+    sql` OR `,
+  );
+  return sql`${notificationsTable.status} = 'pending' AND EXISTS (
   SELECT 1 FROM notification_attempts AS attempt
   WHERE attempt.notification_id = ${notificationsTable.id}
     AND attempt.created_at >= ${notificationsTable.updatedAt}
     AND attempt.status = 'failed'
-    AND starts_with(attempt.error, ${HELD_ATTEMPT_ERROR_PREFIX})
+    AND (${prefixMatches})
     AND attempt.attempt_number = (
       SELECT max(latest.attempt_number) FROM notification_attempts AS latest
       WHERE latest.notification_id = ${notificationsTable.id}
     )
 )`;
+}
 
 export async function listHeldNotifications(
+  reasons: readonly HeldReason[],
   executor: DbExecutor = db,
 ): Promise<SelectNotification[]> {
   return executor
     .select()
     .from(notificationsTable)
-    .where(heldCondition)
+    .where(heldCondition(reasons))
     .orderBy(asc(notificationsTable.updatedAt), asc(notificationsTable.id));
 }
 
-export async function countHeldNotifications(executor: DbExecutor = db): Promise<number> {
+export async function countHeldNotifications(
+  reason: HeldReason,
+  executor: DbExecutor = db,
+): Promise<number> {
   const [row] = await executor
     .select({ heldCount: sql<number>`count(*)::int` })
     .from(notificationsTable)
-    .where(heldCondition);
+    .where(heldCondition([reason]));
   return row?.heldCount ?? 0;
 }
 
 export async function isNotificationHeld(
   notificationId: string,
+  reasons: readonly HeldReason[],
   executor: DbExecutor = db,
 ): Promise<boolean> {
   const [row] = await executor
     .select({ id: notificationsTable.id })
     .from(notificationsTable)
-    .where(and(eq(notificationsTable.id, notificationId), heldCondition));
+    .where(and(eq(notificationsTable.id, notificationId), heldCondition(reasons)));
   return row !== undefined;
 }
 
 // ---- Attempts ----
+
+// When the provider last accepted a send (the newest attempt still `sent`), or null if never.
+export async function getLatestSentAttemptAt(executor: DbExecutor = db): Promise<Date | null> {
+  const [row] = await executor
+    .select({ latestSentAt: max(notificationAttemptsTable.createdAt) })
+    .from(notificationAttemptsTable)
+    .where(eq(notificationAttemptsTable.status, "sent"));
+  return row?.latestSentAt ?? null;
+}
 
 export async function countNotificationAttempts(
   notificationId: string,

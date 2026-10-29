@@ -41,7 +41,8 @@ const TERMINAL_CODES: Record<number, FailureCategory> = {
   131009: "template_error",
   131026: "invalid_recipient",
   131030: "invalid_recipient",
-  131042: "auth_error",
+  // Business eligibility payment issue: the WhatsApp account cannot pay. Held, not failed (Spec J-0).
+  131042: "payment_error",
   131045: "auth_error",
   // Ecosystem limit: wait 24 hours; an Admin can resend later.
   131049: "rate_limited",

@@ -195,7 +195,15 @@ export async function currentRunKey(notificationId: string): Promise<string> {
 
 // The notification app as the main API sees it (Spec J-0): token status, refresh and resume.
 export class FakeNotificationTokenGateway implements NotificationTokenGateway {
-  public status: WhatsAppTokenStatus = { state: "ok", checkedAt: new Date(), heldCount: 0 };
+  public status: WhatsAppTokenStatus = {
+    state: "ok",
+    checkedAt: new Date(),
+    heldCount: 0,
+    tokenHeldCount: 0,
+    paymentHeldCount: 0,
+    pausedReason: null,
+    lastWorkedAt: null,
+  };
   public queued = 0;
   // `down` plays an unreachable notification app; `refuseResume` a token that does not work.
   public down = false;

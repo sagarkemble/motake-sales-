@@ -8,6 +8,7 @@ import {
   findAttemptByProviderMessageId,
   getCachedMedia,
   getHighestTemplateVersion,
+  getLatestSentAttemptAt,
   getLatestAttemptNumber,
   getNotificationByIdempotencyKey,
   getNotificationStatusRow,
@@ -24,8 +25,10 @@ import {
   lockNotificationWithTemplate,
   markAttemptFailed,
   setLockTimeout,
+  heldReasons,
   updateNotification,
   upsertCachedMedia,
+  type HeldReason,
   type NotificationStatusRow,
 } from "@repo/database/queries/notifications";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
@@ -135,8 +138,6 @@ export interface NotificationServiceDependencies {
   tokenStore: NotificationTokenStore;
   tokenSyncDelayMs?: number;
 }
-
-type TokenSyncResume = "always" | "if_replaced";
 
 interface TokenCheckOutcome {
   state: WhatsAppTokenState;
@@ -513,9 +514,10 @@ class NotificationService {
         },
         transaction,
       );
-      // Held, on every try and in media upload: the row stays pending and a working token resumes
-      // it as a new run (Spec J-0).
-      if (result.category === "auth_error") {
+      // Held, on every try and in media upload: the row stays pending and a resume runs it again
+      // as a new run (Spec J-0). A token error is resumed once a working token is in place; a
+      // payment problem by Send waiting messages or the 5-minute sync.
+      if (result.category === "auth_error" || result.category === "payment_error") {
         return { outcome: "held", failureCategory: result.category };
       }
       if (result.retriable && !parsedOptions.isFinalTry) {
@@ -527,7 +529,7 @@ class NotificationService {
         failureCategory: result.category,
       };
     });
-    if (result.outcome === "held") this.requestTokenSync();
+    if (result.failureCategory === "auth_error") this.requestTokenSync();
     return result;
   }
 
@@ -803,32 +805,53 @@ class NotificationService {
 
   // Vault is the master: a different Vault token that works is written to the secret file (even
   // over a file token that still works); otherwise the file token is checked. A working token then
-  // resumes held messages. Runs at start-up, every 5 minutes, after a held send, and when the
-  // Admin saves a token.
+  // resumes every held message. Runs at start-up, every 5 minutes, and when the Admin saves a
+  // token; the sync right after a held send resumes token-held messages only.
   public async syncToken(): Promise<WhatsAppTokenStatus> {
-    return this.runTokenSync("always");
+    return this.runTokenSync(heldReasons);
   }
 
   public async tokenStatus(): Promise<WhatsAppTokenStatus> {
-    return { ...this.tokenState, heldCount: await countHeldNotifications() };
+    const [tokenHeldCount, paymentHeldCount, lastWorkedAt] = await Promise.all([
+      countHeldNotifications("token"),
+      countHeldNotifications("payment"),
+      getLatestSentAttemptAt(),
+    ]);
+    return {
+      ...this.tokenState,
+      heldCount: tokenHeldCount + paymentHeldCount,
+      tokenHeldCount,
+      paymentHeldCount,
+      pausedReason:
+        this.tokenState.state === "invalid" ? "token" : paymentHeldCount > 0 ? "payment" : null,
+      lastWorkedAt,
+    };
   }
 
-  // A new run (new run key) for every held row, like resend, only while the token works. Rows that
-  // are no longer held (suppressed, resent, already resumed) are skipped.
+  // Send waiting messages: every held row (token or payment), refused only while the token is
+  // refused. The Admin presses it after fixing a payment problem, which no check can see.
   public async resumeHeld(): Promise<ResumeHeldResult> {
-    if (this.tokenState.state !== "ok") {
+    if (this.tokenState.state === "invalid") {
       throw notificationRefused(
         "token_not_working",
         "WhatsApp messages are paused: the access token is not working. Save a working token first.",
       );
     }
+    return this.resumeHeldFor(heldReasons);
+  }
+
+  // ---- Helpers ----
+
+  // A new run (new run key) for every row held for one of `reasons`, like resend. Rows that are no
+  // longer held (suppressed, resent, already resumed) are skipped.
+  private async resumeHeldFor(reasons: readonly HeldReason[]): Promise<ResumeHeldResult> {
     let queued = 0;
-    for (const held of await listHeldNotifications()) {
+    for (const held of await listHeldNotifications(reasons)) {
       let runKey: string | null;
       try {
         runKey = await this.withInstructionLock(async (transaction) => {
           const row = await lockNotificationWithTemplate(held.id, transaction);
-          if (!row || !(await isNotificationHeld(held.id, transaction))) return null;
+          if (!row || !(await isNotificationHeld(held.id, reasons, transaction))) return null;
           const updated = await updateNotification(held.id, { status: "pending" }, transaction);
           return runKeyFor(updated);
         });
@@ -849,19 +872,20 @@ class NotificationService {
     return { queued };
   }
 
-  // ---- Helpers ----
-
   // One sync at a time; a call during a sync gets that sync's result.
-  private runTokenSync(resume: TokenSyncResume): Promise<WhatsAppTokenStatus> {
+  private runTokenSync(resumeReasons: readonly HeldReason[]): Promise<WhatsAppTokenStatus> {
     if (!this.tokenSyncInFlight) {
-      this.tokenSyncInFlight = this.performTokenSync(resume).finally(() => {
+      this.tokenSyncInFlight = this.performTokenSync(resumeReasons).finally(() => {
         this.tokenSyncInFlight = null;
       });
     }
     return this.tokenSyncInFlight;
   }
 
-  private async performTokenSync(resume: TokenSyncResume): Promise<WhatsAppTokenStatus> {
+  // A working token resumes the rows held for `resumeReasons` at once.
+  private async performTokenSync(
+    resumeReasons: readonly HeldReason[],
+  ): Promise<WhatsAppTokenStatus> {
     let outcome: TokenCheckOutcome;
     try {
       outcome = await this.checkAndRepairToken();
@@ -877,11 +901,9 @@ class NotificationService {
     if (outcome.state !== "ok" && (previous.state === "ok" || previous.checkedAt === null)) {
       logger.error(`WhatsApp access token is ${outcome.state}; messages are held`);
     }
-    // A held send's sync resumes only on a fresh token: a refusal the check cannot see (for
-    // example a Meta payment problem) would otherwise resume and hold again in a tight loop.
-    if (outcome.state === "ok" && (resume === "always" || outcome.replaced)) {
+    if (outcome.state === "ok") {
       try {
-        await this.resumeHeld();
+        await this.resumeHeldFor(resumeReasons);
       } catch (error) {
         logger.error("Could not resume held notifications", {
           error: errorMessageOf(error),
@@ -932,12 +954,14 @@ class NotificationService {
     return { state: uncheckable ? "unavailable" : "invalid", replaced: false };
   }
 
-  // Debounced: held sends within the delay share one sync. The timer never keeps the process up.
+  // After a token error. Debounced: held sends within the delay share one sync. Resumes token-held
+  // rows only: payment-held rows wait for the 5-minute sync or Send waiting messages, so a payment
+  // problem that is still there cannot loop. The timer never keeps the process up.
   private requestTokenSync(): void {
     if (this.tokenSyncTimer) return;
     this.tokenSyncTimer = setTimeout(() => {
       this.tokenSyncTimer = null;
-      void this.runTokenSync("if_replaced");
+      void this.runTokenSync(["token"]);
     }, this.tokenSyncDelayMs);
     this.tokenSyncTimer.unref?.();
   }
@@ -999,7 +1023,12 @@ class NotificationService {
 }
 
 export default NotificationService;
-export type { WhatsAppTokenState, WhatsAppTokenStatus, ResumeHeldResult } from "./model";
+export type {
+  WhatsAppPausedReason,
+  WhatsAppTokenState,
+  WhatsAppTokenStatus,
+  ResumeHeldResult,
+} from "./model";
 export {
   MetaWhatsAppProvider,
   META_GRAPH_API_VERSION,
