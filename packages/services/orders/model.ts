@@ -94,6 +94,8 @@ export interface ShortLine {
 }
 
 export interface CheckoutPaymentResult {
+  // For the Receipt's WhatsApp status on the checkout result (Spec J).
+  paymentId: string;
   number: string;
   keptPaise: number;
   returnedPaise: number;
