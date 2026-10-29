@@ -269,7 +269,7 @@ describe("DocumentService.ensureBillVersionDocument", () => {
 
     expect(result.key).toBe(`documents/bills/${bill.id}/v1.pdf`);
     const text = await printedText(result.bytes!);
-    expect(text).toContain("Bill of Supply");
+    expect(text).toContain("BILL OF SUPPLY");
     expect(text).toContain("Exempt supply. No tax charged.");
   });
 
@@ -629,10 +629,13 @@ describe("DocumentService.drawPaymentReceipt", () => {
 describe("DocumentService.drawDraftBill", () => {
   it("returns draft bytes marked on every page, with no put and no pdf_key", async () => {
     const { admin, customer } = await setup({ einvoicingRequired: true });
-    const lines: LineInput[] = [];
-    for (let index = 0; index < 45; index += 1) {
-      lines.push({ variety: await buildVariety(), quantity: index + 1, routePricePaise: 9_000 });
-    }
+    // Built side by side: one at a time takes most of the test timeout on a remote database.
+    const varieties = await Promise.all(Array.from({ length: 45 }, () => buildVariety()));
+    const lines: LineInput[] = varieties.map((variety, index) => ({
+      variety,
+      quantity: index + 1,
+      routePricePaise: 9_000,
+    }));
     const { bill } = await buildBill({ customer, actorId: admin.id, lines });
     const [version] = await versionsOf(bill.id);
     const store = new MemoryDocumentStore();
