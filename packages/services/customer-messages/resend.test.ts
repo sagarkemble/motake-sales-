@@ -292,7 +292,9 @@ describe("sendLatestBill", () => {
     expect(harness.gateway.rows).toHaveLength(2);
     expect(await moneyRowCounts()).toEqual(before);
 
-    const statuses = await harness.messages.listForDocument({ billId: placed.billId });
+    const statuses = await harness.messages.listForDocument(admin(world), {
+      billId: placed.billId,
+    });
     expect(statuses.map((status) => [status.notificationId, status.latestBill]).sort()).toEqual(
       [
         [original.notificationId, true],
@@ -316,7 +318,9 @@ describe("status reads", () => {
       reason: "Wrong shop",
     });
 
-    const statuses = await harness.messages.listForDocument({ billId: placed.billId });
+    const statuses = await harness.messages.listForDocument(admin(world), {
+      billId: placed.billId,
+    });
 
     expect(statuses.map((status) => [status.kind, status.businessRef, status.latestBill])).toEqual([
       ["cancellation", `bill/${placed.billId}/cancel`, false],
@@ -327,8 +331,45 @@ describe("status reads", () => {
     expect(statuses[0]).not.toHaveProperty("idempotencyKey");
 
     const [payment] = await db.select().from(paymentsTable);
-    const receipts = await harness.messages.listForDocument({ paymentId: payment!.id });
+    const receipts = await harness.messages.listForDocument(admin(world), {
+      paymentId: payment!.id,
+    });
     expect(receipts.map((status) => status.kind)).toEqual(["receipt"]);
+  });
+
+  it("a salesman reads a paper's messages only with an Active GatePass on the Customer's current Route", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await bookNow(world);
+
+    const statuses = await harness.messages.listForDocument(salesman(world.salesman.id), {
+      billId: placed.billId,
+    });
+    expect(statuses.map((status) => status.kind)).toEqual(["bill"]);
+
+    const { profile: offRoute } = await buildSalesman();
+    await buildGatepass({
+      salesmanId: offRoute.id,
+      issuedBy: world.admin.id,
+      routeId: (await buildRoute()).id,
+      businessDate: today,
+      lines: [],
+    });
+    const { profile: noGatepass } = await buildSalesman();
+
+    expect(
+      (
+        await refusalOf(
+          harness.messages.listForDocument(salesman(offRoute.id), { billId: placed.billId }),
+        )
+      ).reason,
+    ).toBe("customer_not_on_route");
+    expect(
+      (
+        await refusalOf(
+          harness.messages.listForDocument(salesman(noGatepass.id), { billId: placed.billId }),
+        )
+      ).reason,
+    ).toBe("no_active_gatepass");
   });
 
   it("lists a Customer's history across Bills, Payments and Refunds, asking K 200 refs at a time", async () => {

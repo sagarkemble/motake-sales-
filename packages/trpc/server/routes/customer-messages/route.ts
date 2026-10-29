@@ -26,12 +26,12 @@ export const customerMessagesRouter = router({
         protect: true,
         summary: "List WhatsApp messages for a paper",
         description:
-          "Return the WhatsApp messages about one Bill (every version, its account updates, cancellation and Notes), Note, Payment or Refund, newest first, with status and skip reason.",
+          "Return the WhatsApp messages about one Bill (every version, its account updates, cancellation and Notes), Note, Payment or Refund, newest first, with status and skip reason. A salesman needs an Active GatePass on the Customer's Route.",
       },
     })
     .input(listForDocumentInputSchema)
     .output(apiResponseSchema(z.array(customerMessageStatusSchema)))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const target = input.billId
         ? { billId: input.billId }
         : input.noteId
@@ -39,7 +39,12 @@ export const customerMessagesRouter = router({
           : input.paymentId
             ? { paymentId: input.paymentId }
             : { refundId: input.refundId! };
-      return apiResponse(await customerMessageService.listForDocument(target));
+      return apiResponse(
+        await customerMessageService.listForDocument(
+          { profileId: ctx.user.id, role: ctx.user.role },
+          target,
+        ),
+      );
     }),
 
   listForCustomer: adminProcedure

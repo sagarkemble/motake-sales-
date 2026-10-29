@@ -126,6 +126,13 @@ function parseRef(businessRef: string): ParsedRef | null {
   return null;
 }
 
+function documentRefOf(input: ListForDocumentInput): ParsedRef {
+  if ("billId" in input) return { kind: "bill", billId: input.billId, versionNumber: null };
+  if ("noteId" in input) return { kind: "note", noteId: input.noteId };
+  if ("paymentId" in input) return { kind: "payment", paymentId: input.paymentId };
+  return { kind: "refund", refundId: input.refundId };
+}
+
 function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let start = 0; start < items.length; start += size) {
@@ -460,9 +467,18 @@ class CustomerMessageService {
   // --- Status reads.
 
   // Every message about one paper: a Bill (all versions, its account updates, cancellation and
-  // Notes), a Note, a Payment (all events) or a Refund (all events). Newest first.
-  public async listForDocument(input: ListForDocumentInput): Promise<CustomerMessageStatus[]> {
+  // Notes), a Note, a Payment (all events) or a Refund (all events). Newest first. A salesman
+  // reads only papers of Customers on his Active GatePass Route, as for Resend.
+  public async listForDocument(
+    actor: MessageActor,
+    input: ListForDocumentInput,
+  ): Promise<CustomerMessageStatus[]> {
+    const parsedActor = messageActorSchema.parse(actor);
     const parsedInput = listForDocumentInputSchema.parse(input);
+    const customer = await this.requireCustomer(
+      await this.customerIdOfRef(documentRefOf(parsedInput)),
+    );
+    await this.assertMayAct(parsedActor, customer);
     let businessRefs: string[];
     let bills: MessageBill[] = [];
 
@@ -898,7 +914,7 @@ class CustomerMessageService {
     if (!activeGatepass) {
       throw customerMessageRefused(
         "no_active_gatepass",
-        "You have no Active GatePass today, so you cannot resend WhatsApp messages.",
+        "You have no Active GatePass today, so you cannot see or resend WhatsApp messages.",
       );
     }
     if (activeGatepass.route.id !== customer.routeId) {
