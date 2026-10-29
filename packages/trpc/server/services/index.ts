@@ -29,11 +29,11 @@ export const documentService = new DocumentService();
 // Spec J: hands each committed money event's WhatsApp messages to the notification app with the
 // internal key; null gateway (no NOTIFICATION_URL) logs and skips them. Its GST reads use a
 // GstService with no listeners.
-export const customerMessageService = new CustomerMessageService({
-  notification: createCustomerMessageGateway(notificationClientConfig()),
-  documents: documentService,
-  gst: new GstService(documentService),
-});
+export const customerMessageService = new CustomerMessageService(
+  createCustomerMessageGateway(notificationClientConfig()),
+  documentService,
+  new GstService(documentService),
+);
 // Spec G's Correct and Cancel take Spec I's month and IRN lock hook by default.
 export const adminBillService = new AdminBillService(customerMessageService.adminBillListener);
 export const gstService = new GstService(

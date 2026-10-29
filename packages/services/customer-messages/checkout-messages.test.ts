@@ -354,10 +354,7 @@ describe("delegation", () => {
 
   it("without the notification app, messages are skipped and the sale commits", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const messages = new CustomerMessageService({
-      notification: null,
-      documents: harness.documents,
-    });
+    const messages = new CustomerMessageService(null, harness.documents);
 
     await messages.checkoutListener({
       bill: null,

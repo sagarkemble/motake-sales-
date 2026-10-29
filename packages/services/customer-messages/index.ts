@@ -166,15 +166,6 @@ interface BillPaper {
   header: BillVersionHeader;
 }
 
-export interface CustomerMessageServiceDependencies {
-  // Null when the notification app is not configured (no NOTIFICATION_URL): messages are logged
-  // and skipped.
-  notification?: NotificationMessageGateway | null;
-  documents?: MessageDocuments;
-  gst?: MessageGstState;
-  retry?: DeliveryRetry;
-}
-
 // WhatsApp messages per money event (Spec J). Turns each committed Bill, Payment, Note, Refund and
 // IRN outcome into an ordered list of template instructions and hands them, after commit, to the
 // notification app (Spec K). Never writes a money row, a notification row or a pdf_key: PDFs are
@@ -182,17 +173,14 @@ export interface CustomerMessageServiceDependencies {
 // already returned.
 class CustomerMessageService {
   private readonly gatepassService = new GatepassService();
-  private readonly notification: NotificationMessageGateway | null;
-  private readonly documents: MessageDocuments;
-  private readonly gst: MessageGstState;
-  private readonly retry: DeliveryRetry;
 
-  public constructor(dependencies: CustomerMessageServiceDependencies = {}) {
-    this.notification = dependencies.notification ?? null;
-    this.documents = dependencies.documents ?? new DocumentService();
-    this.gst = dependencies.gst ?? new GstService();
-    this.retry = dependencies.retry ?? DEFAULT_RETRY;
-  }
+  // `notification` is null when the notification app is not configured (no NOTIFICATION_URL).
+  public constructor(
+    private readonly notification: NotificationMessageGateway | null = null,
+    private readonly documents: MessageDocuments = new DocumentService(),
+    private readonly gst: MessageGstState = new GstService(),
+    private readonly retry: DeliveryRetry = DEFAULT_RETRY,
+  ) {}
 
   // --- After-commit listeners (Specs F, G, H, I). Each runs once per commit.
 

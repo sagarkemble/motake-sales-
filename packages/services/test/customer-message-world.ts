@@ -292,11 +292,9 @@ export function buildMessageHarness(): MessageHarness {
   const gateway = new RecordingNotificationGateway();
   const documents = new FakeMessageDocuments();
   const documentService = new DocumentService(new MemoryDocumentStore());
-  const messages = new CustomerMessageService({
-    notification: gateway,
-    documents,
-    gst: new GstService(documentService),
-    retry: { attempts: 3, backoffMs: [0, 0] },
+  const messages = new CustomerMessageService(gateway, documents, new GstService(documentService), {
+    attempts: 3,
+    backoffMs: [0, 0],
   });
   return {
     gateway,
