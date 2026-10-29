@@ -43,12 +43,12 @@ const sellerFieldsSchema = z.object({
   phone: z.string().min(1).max(20),
   email: z.string().max(255).nullable().optional(),
   // Printed on Documents only; a blank value clears the field.
-  pan: z.string().max(20).nullable().optional(),
+  pan: z.string().max(10).nullable().optional(),
   bankAccountName: z.string().max(200).nullable().optional(),
   bankName: z.string().max(120).nullable().optional(),
   bankBranch: z.string().max(120).nullable().optional(),
-  bankAccountNumber: z.string().max(40).nullable().optional(),
-  bankIfsc: z.string().max(20).nullable().optional(),
+  bankAccountNumber: z.string().max(34).nullable().optional(),
+  bankIfsc: z.string().max(11).nullable().optional(),
   terms: z.string().max(2000).nullable().optional(),
   place: z.string().max(120).nullable().optional(),
 });
