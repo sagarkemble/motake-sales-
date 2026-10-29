@@ -20,7 +20,7 @@ import {
 } from "../test/builders";
 import { buildMessageHarness, type MessageHarness } from "../test/customer-message-world";
 import { wipeApplicationTables } from "../test/database";
-import { buildEinvoicingWorld } from "../test/gst-world";
+import { withCustomer } from "../test/gst-world";
 
 // Spec J's Resend, Send latest Bill and status reads. No money row is ever written.
 
@@ -216,7 +216,8 @@ describe("sendLatestBill", () => {
       expectedVersionNumber: 1,
       reason: "Wrong shop",
     });
-    const einvoiced = await buildEinvoicingWorld({ businessDate: today });
+    // Another Customer on the same Route (one Seller master per database), e-invoiced.
+    const einvoiced = await withCustomer(world, { einvoicing: true });
     const pending = await bookNow(einvoiced);
 
     expect(
