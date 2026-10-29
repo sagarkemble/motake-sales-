@@ -45,8 +45,8 @@ function errorCodeOf(data: WireErrorData | null): TRPC_ERROR_CODE_KEY {
 }
 
 // A refused call keeps its machine reason (`data.refusal`) and its tRPC code so
-// WhatsAppTokenService can branch on it.
-function rethrowWithRefusal(error: unknown): never {
+// WhatsAppTokenService and CustomerMessageService can branch on it.
+export function rethrowWithRefusal(error: unknown): never {
   if (error instanceof TRPCClientError) {
     const data = error.data as WireErrorData | null;
     const refusal = data?.refusal;
