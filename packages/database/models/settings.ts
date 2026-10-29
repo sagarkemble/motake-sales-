@@ -31,6 +31,22 @@ export const sellerSettingsTable = pgTable("seller_settings", {
 
   email: varchar("email", { length: 255 }),
 
+  // Printed on Documents only (db-decisions/0017); a paper leaves out a block whose fields are
+  // empty. Read when the PDF is drawn, not stamped on Bills or Notes.
+  pan: varchar("pan", { length: 10 }),
+
+  bankAccountName: varchar("bank_account_name", { length: 200 }),
+  bankName: varchar("bank_name", { length: 120 }),
+  bankBranch: varchar("bank_branch", { length: 120 }),
+  bankAccountNumber: varchar("bank_account_number", { length: 34 }),
+  bankIfsc: varchar("bank_ifsc", { length: 11 }),
+
+  // Terms and Conditions, one per line.
+  terms: text("terms"),
+
+  // "Received At" on a receipt, "Place" on a Note.
+  place: varchar("place", { length: 120 }),
+
   einvoicingRequired: boolean("einvoicing_required").notNull().default(true),
 
   updatedBy: uuid("updated_by")
