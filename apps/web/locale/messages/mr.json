@@ -692,7 +692,15 @@
         "email": "ईमेल",
         "prefix": "प्रीफिक्स",
         "deadlineDate": "अंतिम तारीख",
-        "defaultDate": "डीफॉल्ट अंतिम तारीख"
+        "defaultDate": "डीफॉल्ट अंतिम तारीख",
+        "pan": "PAN",
+        "bankAccountName": "खातेदाराचे नाव",
+        "bankName": "बँक",
+        "bankBranch": "शाखा",
+        "bankAccountNumber": "खाते क्रमांक",
+        "bankIfsc": "IFSC",
+        "terms": "अटी व शर्ती",
+        "place": "ठिकाण (Received At)"
       },
       "history": {
         "title": "इतिहास",
@@ -728,6 +736,34 @@
           "gstinState": "GSTIN {code} ने सुरू होतो पण {state} चा कोड {stateCode} आहे.",
           "phone": "फोन नंबर टाका (जास्तीत जास्त 20 अक्षरे).",
           "email": "ईमेल योग्य नाही."
+        }
+      },
+      "documents": {
+        "taxTitle": "कर आणि कागदपत्रे",
+        "taxEmpty": "सेट केलेले नाही. PDF वर PAN, Received At आणि अटी छापल्या जात नाहीत.",
+        "bankTitle": "बँक तपशील",
+        "bankEmpty": "सेट केलेले नाही. PDF वर बँक तपशील छापले जात नाहीत.",
+        "add": "जोडा",
+        "dialogDescription": "ऐच्छिक. रिकामे ठेवलेली ओळ PDF वर छापली जात नाही.",
+        "gstinOnFile": "नोंदवलेला GSTIN:",
+        "panHint": "प्रत्येक PDF वर GSTIN खाली छापला जातो. GSTIN शी जुळला पाहिजे.",
+        "useFromGstin": "GSTIN मधील {pan} वापरा",
+        "placeHint": "पावत्यांवर Received At म्हणून दिसते.",
+        "placePlaceholder": "जांभळी, महाराष्ट्र",
+        "termsHint": "प्रत्येक ओळीत एक अट; PDF वर प्रत्येक अट स्वतंत्र ओळीत छापली जाते. {count}/{max}",
+        "termsPlaceholder": "डिलिव्हरीच्या वेळी प्रमाण तपासा.\nगळती लगेच कळवा.",
+        "printsAs": "असे छापले जाईल",
+        "accountNamePlaceholder": "खात्यावरील नाव",
+        "bankPartial": "बँक तपशील अर्धवट भरलेले आहेत ({missing} बाकी). PDF वर फक्त भरलेले तपशील छापले जातात.",
+        "appliesNote": "बदल फक्त जतन केल्यानंतर तयार होणाऱ्या PDF ना लागू होतात. आधी तयार झालेल्या PDF मध्ये जुने तपशील राहतात.",
+        "updateSuccess": "कागदपत्र तपशील जतन झाले",
+        "updateFailed": "कागदपत्र तपशील जतन करता आले नाहीत. पुन्हा प्रयत्न करा.",
+        "validation": {
+          "pan": "PAN 10 अक्षरांचा असतो: 5 अक्षरे, 4 अंक, 1 अक्षर (उदा. ABCDE1234F).",
+          "panGstin": "PAN हा GSTIN मधील 3–12 अक्षरांशी जुळला पाहिजे ({pan}).",
+          "ifsc": "IFSC 11 अक्षरांचा असतो: 4 अक्षरे, शून्य, मग 6 अक्षरे किंवा अंक (उदा. BKID0000919).",
+          "accountNumber": "फक्त अंक, 6 ते 18.",
+          "tooLong": "जास्तीत जास्त {max} अक्षरे."
         }
       },
       "prefixes": {

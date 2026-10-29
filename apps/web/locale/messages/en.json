@@ -692,7 +692,15 @@
         "email": "Email",
         "prefix": "Prefix",
         "deadlineDate": "Deadline",
-        "defaultDate": "Default deadline"
+        "defaultDate": "Default deadline",
+        "pan": "PAN",
+        "bankAccountName": "Account name",
+        "bankName": "Bank",
+        "bankBranch": "Branch",
+        "bankAccountNumber": "Account number",
+        "bankIfsc": "IFSC",
+        "terms": "Terms and Conditions",
+        "place": "Place (Received At)"
       },
       "history": {
         "title": "History",
@@ -728,6 +736,34 @@
           "gstinState": "GSTIN starts with {code} but {state} is {stateCode}.",
           "phone": "Enter the phone number (up to 20 characters).",
           "email": "Email is not valid."
+        }
+      },
+      "documents": {
+        "taxTitle": "Tax and Documents",
+        "taxEmpty": "Not set. PDFs print without PAN, Received At and Terms.",
+        "bankTitle": "Bank details",
+        "bankEmpty": "Not set. PDFs print without bank details.",
+        "add": "Add",
+        "dialogDescription": "Optional. A blank field leaves that line off the PDF.",
+        "gstinOnFile": "GSTIN on file:",
+        "panHint": "Printed under the GSTIN on every PDF. Must match the GSTIN.",
+        "useFromGstin": "Use {pan} from the GSTIN",
+        "placeHint": "Shown as Received At on Receipts.",
+        "placePlaceholder": "Jambhali, Maharashtra",
+        "termsHint": "One term per line; the PDF prints each on its own line. {count}/{max}",
+        "termsPlaceholder": "Please verify quantities at delivery.\nReport leakage promptly.",
+        "printsAs": "Prints as",
+        "accountNamePlaceholder": "Name on the account",
+        "bankPartial": "Bank details are partly filled (missing {missing}). The PDF prints only what is filled.",
+        "appliesNote": "Changes apply only to PDFs drawn after you save. PDFs already drawn keep the old details.",
+        "updateSuccess": "Document details saved",
+        "updateFailed": "Could not save the document details. Try again.",
+        "validation": {
+          "pan": "PAN is 10 characters: 5 letters, 4 digits, 1 letter (like ABCDE1234F).",
+          "panGstin": "PAN must match characters 3–12 of the GSTIN ({pan}).",
+          "ifsc": "IFSC is 11 characters: 4 letters, a zero, then 6 letters or digits (like BKID0000919).",
+          "accountNumber": "Digits only, 6 to 18 of them.",
+          "tooLong": "At most {max} characters."
         }
       },
       "prefixes": {
