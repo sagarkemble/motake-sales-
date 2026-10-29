@@ -4,18 +4,26 @@ on:
   push:
   pull_request:
 
-# Every run wipes the test database (motake-testing, the root .env.testing), so only one may run at
-# a time. Production is never reachable from here: this job only has the testing environment.
-concurrency:
-  group: test-database
-  cancel-in-progress: false
-
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    # DATABASE_URL is the testing environment's secret (the .env.testing database), never production.
-    environment: testing
+    # Each run gets its own throwaway Postgres, so runs never share or wipe a real database. The
+    # wipe guard only allows a local host, never production or motake-testing over the network.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: motake_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,10 +40,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The suite truncates every app table at DATABASE_URL; the wipe guard refuses anything but a
-      # test database.
+      # The suite truncates every app table at DATABASE_URL and applies the migrations first.
       - name: Run tests
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/motake_test
           ALLOW_DB_WIPE: "true"
         run: pnpm test
