@@ -13,8 +13,10 @@ import {
   resendInputSchema,
   resendResultSchema,
   resolveTemplateInputSchema,
+  resumeHeldResultSchema,
   suppressInputSchema,
   suppressResultSchema,
+  whatsAppTokenStatusSchema,
 } from "./model";
 
 // Mounted only on apps/notification; never on serverRouter or the web client (ADR-0001). These
@@ -69,6 +71,34 @@ export const notificationRouter = router({
     .query(async ({ ctx }) => {
       const health = await ctx.notificationService.health();
       return apiResponse(health);
+    }),
+
+  // Spec J-0: the working token's state at the last check and how many messages are held.
+  tokenStatus: internalProcedure
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(whatsAppTokenStatusSchema))
+    .query(async ({ ctx }) => {
+      const status = await ctx.notificationService.tokenStatus();
+      return apiResponse(status);
+    }),
+
+  // Checks the token now (refilling the secret file from Vault if needed) and returns the new
+  // status; the main API calls it right after an Admin saves a token.
+  refreshToken: internalProcedure
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(whatsAppTokenStatusSchema))
+    .mutation(async ({ ctx }) => {
+      const status = await ctx.notificationService.syncToken();
+      return apiResponse(status);
+    }),
+
+  // Sends every held message now; refused as token_not_working while the token does not work.
+  resumeHeld: internalProcedure
+    .input(zodUndefinedModel)
+    .output(apiResponseSchema(resumeHeldResultSchema))
+    .mutation(async ({ ctx }) => {
+      const result = await ctx.notificationService.resumeHeld();
+      return apiResponse(result);
     }),
 
   // Read-only: template rows are inserted by hand.

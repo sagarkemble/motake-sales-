@@ -68,6 +68,11 @@ export const refused = <Reason extends string>(
   return new TRPCError({ code, message, cause: Object.assign(new Error(message), { refusal }) });
 };
 
+// An unknown thrown value as log text.
+export function errorMessageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // The refusal carried by an error, or null for any other error.
 export function refusalOf(error: unknown): Refusal | null {
   const cause = error instanceof TRPCError ? error.cause : undefined;
@@ -82,7 +87,8 @@ export type NotificationRefusalReason =
   | "template_not_verified"
   | "template_values_mismatch"
   | "attachment_mismatch"
-  | "template_superseded";
+  | "template_superseded"
+  | "token_not_working";
 
 const notificationRefusalCodes: Record<NotificationRefusalReason, TRPCError["code"]> = {
   provider_not_supported: "BAD_REQUEST",
@@ -91,6 +97,7 @@ const notificationRefusalCodes: Record<NotificationRefusalReason, TRPCError["cod
   template_values_mismatch: "BAD_REQUEST",
   attachment_mismatch: "BAD_REQUEST",
   template_superseded: "BAD_REQUEST",
+  token_not_working: "CONFLICT",
 };
 
 // A refused notification instruction (Spec K); the reason reaches the main API as
@@ -100,6 +107,27 @@ export const notificationRefused = (
   message: string,
   details: Record<string, unknown> | null = null,
 ) => refused(notificationRefusalCodes[reason], reason, message, details);
+
+// Why an Admin WhatsApp access token call was refused (Spec J-0). The message is for the Admin and
+// never carries the token.
+export type WhatsAppTokenRefusalReason =
+  | "token_invalid"
+  | "token_check_unavailable"
+  | "token_not_working"
+  | "notification_unavailable";
+
+const whatsAppTokenRefusalCodes: Record<WhatsAppTokenRefusalReason, TRPCError["code"]> = {
+  token_invalid: "BAD_REQUEST",
+  token_check_unavailable: "SERVICE_UNAVAILABLE",
+  token_not_working: "CONFLICT",
+  notification_unavailable: "SERVICE_UNAVAILABLE",
+};
+
+export const whatsAppTokenRefused = (
+  reason: WhatsAppTokenRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(whatsAppTokenRefusalCodes[reason], reason, message, details);
 
 // Why a Document call was refused, for callers that branch on it (Specs G, I, J).
 export type DocumentRefusalReason =

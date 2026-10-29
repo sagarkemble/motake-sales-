@@ -736,12 +736,15 @@ describe("health", () => {
       status: "ok",
       database: "ok",
       inngest: "ok",
+      // Not checked yet: the app syncs the token at start-up.
+      whatsappToken: "unavailable",
     });
     harness.dispatcher.healthy = false;
     expect(await harness.service.health()).toEqual({
       status: "degraded",
       database: "ok",
       inngest: "down",
+      whatsappToken: "unavailable",
     });
   });
 });

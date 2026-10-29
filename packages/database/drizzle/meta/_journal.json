@@ -36,6 +36,13 @@
       "when": 1793107349171,
       "tag": "0004_raise_idempotency_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793189368696,
+      "tag": "0005_whatsapp_token_audit",
+      "breakpoints": true
     }
   ]
 }

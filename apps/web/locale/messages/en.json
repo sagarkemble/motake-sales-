@@ -1446,6 +1446,59 @@
         }
       },
       "back": "GST · IRN pending"
+    },
+    "whatsappToken": {
+      "banner": {
+        "pausedTitle": "WhatsApp messages are paused",
+        "tokenBody": "The access token has expired or was replaced. Shop owners are not getting Bills, Receipts or Notes until it is fixed.",
+        "paymentBody": "The WhatsApp account has a payment problem. Shop owners are not getting Bills, Receipts or Notes until it is fixed in Meta Business.",
+        "waitingOne": "1 message waiting",
+        "waitingOther": "{count} messages waiting",
+        "fix": "Fix access token",
+        "openPayment": "Send waiting messages"
+      },
+      "dialog": {
+        "title": "WhatsApp messages",
+        "description": "Paste the new System User token from Meta Business."
+      },
+      "summary": {
+        "pausedToken": "WhatsApp messages are paused because the access token has expired or was replaced.",
+        "pausedPayment": "WhatsApp messages are paused because the WhatsApp account has a payment problem.",
+        "working": "WhatsApp messages are being sent.",
+        "lastWorked": "Last worked: {date}"
+      },
+      "form": {
+        "label": "New access token",
+        "placeholder": "Paste the token from Meta Business",
+        "save": "Save token",
+        "checking": "Checking with Meta…",
+        "hint": "Motake checks it with Meta first. A refused token never replaces the current one.",
+        "refusedTitle": "Token not saved",
+        "savedTitle": "Token saved",
+        "saved": "Meta accepted it. New messages go out again.",
+        "savedWaiting": "Meta accepted it. {count} messages are still waiting; send them with the button below."
+      },
+      "send": {
+        "button": "Send waiting messages",
+        "buttonCount": "Send waiting messages ({count})",
+        "sending": "Sending…",
+        "blockedInvalid": "Fix the access token first. Meta refuses the current one, so nothing can be sent.",
+        "blockedNone": "No messages are waiting.",
+        "queuedOne": "1 message queued. It goes out once.",
+        "queuedOther": "{count} messages queued. Each goes out once.",
+        "confirmTitleOne": "Send 1 waiting message now?",
+        "confirmTitleOther": "Send {count} waiting messages now?",
+        "confirmBody": "They go to shop owners with the same figures and PDFs they had when they were created. Each goes out once; anything already sent or replaced by a newer Bill is skipped.",
+        "confirmSubmitOne": "Send 1 message",
+        "confirmSubmitOther": "Send {count} messages"
+      },
+      "refusals": {
+        "token_invalid": "Meta says this token is invalid or expired. The current token is unchanged. Copy a fresh token and try again.",
+        "token_check_unavailable": "Couldn't reach Meta to check the token. Try again.",
+        "token_not_working": "WhatsApp messages are paused because the access token is not working. Save a working token first.",
+        "notification_unavailable": "Couldn't do that right now. Try again in a minute.",
+        "generic": "Something went wrong. Try again."
+      }
     }
   },
   "salesman": {

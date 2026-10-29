@@ -117,5 +117,16 @@ export function createNotificationFunctions(notificationService: NotificationSer
       }),
   );
 
-  return [sendNotification, applyWhatsAppStatus, recoverUnqueued];
+  // Spec J-0: checks the working token, refills the secret file from Vault when it stopped working,
+  // and resumes held messages once a token works.
+  const syncWhatsAppToken = inngest.createFunction(
+    { id: "sync-whatsapp-token", triggers: [{ cron: "*/5 * * * *" }] },
+    async ({ step }) =>
+      step.run("sync-token", async () => {
+        const status = await notificationService.syncToken();
+        return { state: status.state, heldCount: status.heldCount };
+      }),
+  );
+
+  return [sendNotification, applyWhatsAppStatus, recoverUnqueued, syncWhatsAppToken];
 }

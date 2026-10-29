@@ -29,7 +29,8 @@
     "./salesman": "./salesman/index.ts",
     "./settings": "./settings/index.ts",
     "./uploads": "./uploads/r2-client.ts",
-    "./variety-tax-periods": "./variety-tax-periods/index.ts"
+    "./variety-tax-periods": "./variety-tax-periods/index.ts",
+    "./whatsapp-token": "./whatsapp-token/index.ts"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

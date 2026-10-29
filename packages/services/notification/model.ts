@@ -109,6 +109,8 @@ export const failureCategories = [
   "template_error",
   "media_error",
   "auth_error",
+  // The WhatsApp account has a payment problem (Meta 131042); held like auth_error (Spec J-0).
+  "payment_error",
   "opted_out_or_blocked",
   "rate_limited",
   "provider_unavailable",
@@ -160,7 +162,10 @@ export interface NotificationTemplateView {
   createdAt: Date;
 }
 
-export type SendAttemptOutcome = "noop" | "sent" | "retry" | "terminal" | "failed";
+// `held`: the provider refused the access token (`auth_error`) or the WhatsApp account has a
+// payment problem (`payment_error`); the row stays pending with the failed attempt and no further
+// try runs until it is resumed (Spec J-0).
+export type SendAttemptOutcome = "noop" | "sent" | "retry" | "terminal" | "failed" | "held";
 
 export interface SendAttemptResult {
   outcome: SendAttemptOutcome;
@@ -177,10 +182,38 @@ export interface ApplyStatusResult {
   status: NotificationStatus | null;
 }
 
+// The working WhatsApp access token at the last check (Spec J-0): `ok`, refused by the provider
+// (`invalid`), or not checkable (provider or Vault unreachable, or never checked yet).
+export type WhatsAppTokenState = "ok" | "invalid" | "unavailable";
+
+// Why WhatsApp messages are paused, for the Admin banner: the token is refused (`token`), or
+// messages are held on a WhatsApp account payment problem (`payment`).
+export type WhatsAppPausedReason = "token" | "payment";
+
+export interface WhatsAppTokenStatus {
+  state: WhatsAppTokenState;
+  checkedAt: Date | null;
+  // Pending rows held on a token error plus those held on a payment problem.
+  heldCount: number;
+  tokenHeldCount: number;
+  paymentHeldCount: number;
+  // `token` while the token is invalid; otherwise `payment` while any row is held on a payment
+  // problem; otherwise null.
+  pausedReason: WhatsAppPausedReason | null;
+  // When Meta last accepted a send (the newest `sent` attempt); null if never.
+  lastWorkedAt: Date | null;
+}
+
+export interface ResumeHeldResult {
+  queued: number;
+}
+
 export interface HealthReport {
   status: "ok" | "degraded";
   database: "ok" | "down";
   inngest: "ok" | "down";
+  // Informational: a token problem holds messages but never makes the app unhealthy.
+  whatsappToken: WhatsAppTokenState;
 }
 
 export type WebhookPostResult =

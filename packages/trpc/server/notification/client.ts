@@ -20,6 +20,10 @@ export function createNotificationClient(config: NotificationClientConfig) {
         url: `${config.baseUrl.replace(/\/+$/, "")}/trpc`,
         methodOverride: "POST",
         headers: () => ({ Authorization: `Bearer ${config.internalApiKey}` }),
+        // A no-input POST goes with an empty body, which the server can't parse as JSON. Send
+        // `{}` instead: zodUndefinedModel reads it as no input (Spec J-0 tokenStatus etc.).
+        fetch: (url, init) =>
+          fetch(url, init?.method === "POST" && init.body == null ? { ...init, body: "{}" } : init),
       }),
     ],
   });
