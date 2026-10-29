@@ -142,10 +142,7 @@ export function TaxInvoicePaper(props: { values: TaxInvoiceValues; qrDataUrl: st
             {DRAFT_MARK}
           </Text>
         ) : null}
-        <HeaderBox
-          seller={values.seller}
-          rows={[...invoiceRows(values), ["Reverse Charge", "No"]]}
-        />
+        <HeaderBox seller={values.seller} rows={invoiceRows(values)} />
         <BuyerBox values={values} />
         <LinesTable columns={taxInvoiceColumns} rows={rows} />
         <TotalsBox

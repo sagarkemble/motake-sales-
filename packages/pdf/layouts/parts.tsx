@@ -267,10 +267,6 @@ export function stateWithCode(state: { stateName: string; stateCode: string }): 
   return `${state.stateName} (${state.stateCode})`;
 }
 
-export function supplyTypeLabel(supplyType: SupplyType): string {
-  return supplyType === "intra_state" ? "Intra-state" : "Inter-state";
-}
-
 export interface Column {
   header: string;
   width: number;
@@ -444,9 +440,7 @@ export function GstSummary(props: { supplyType: SupplyType; lines: TaxedLine[] }
   );
   return (
     <View wrap={false}>
-      <Text style={[styles.heading, { marginBottom: 2 }]}>
-        GST Summary ({supplyTypeLabel(props.supplyType)})
-      </Text>
+      <Text style={[styles.heading, { marginBottom: 2 }]}>GST Summary</Text>
       <LinesTable
         columns={gstSummaryColumns}
         rows={groups.map((group) =>

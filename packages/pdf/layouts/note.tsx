@@ -22,7 +22,6 @@ import {
   joined,
   stateWithCode,
   styles,
-  supplyTypeLabel,
   termLines,
   totalQuantityText,
   type Column,
@@ -38,7 +37,7 @@ function noteRows(values: NoteHeaderValues): KeyRow[] {
   return rows;
 }
 
-function CustomerBox(props: { values: NoteHeaderValues; supplyFacts: KeyRow[] }) {
+function CustomerBox(props: { values: NoteHeaderValues }) {
   const { buyer, placeOfSupply, route } = props.values;
   return (
     <PartyBox
@@ -51,7 +50,6 @@ function CustomerBox(props: { values: NoteHeaderValues; supplyFacts: KeyRow[] })
       rows={[
         ["Place of Supply", stateWithCode(placeOfSupply)],
         ["Route", route.name],
-        ...props.supplyFacts,
       ]}
     />
   );
@@ -74,9 +72,6 @@ function OriginalInvoiceBox(props: { values: NoteHeaderValues; paperName: string
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         <Fact label="Original Invoice No." value={values.originalBill.number} />
         <Fact label="Original Invoice Date" value={formatDate(values.originalBill.date)} />
-        {values.returnOrDamageOn ? (
-          <Fact label="Return / damage date" value={formatDate(values.returnOrDamageOn)} />
-        ) : null}
       </View>
       <View style={{ flexDirection: "row", paddingTop: 2 }}>
         <Text style={[styles.bold, { width: 118 }]}>Reason for {props.paperName}</Text>
@@ -135,13 +130,7 @@ export function GstNotePaper(props: { values: GstNoteValues; kind: "credit" | "d
     <PaperDocument title={`${title} ${values.noteNumber}`} seller={values.seller}>
       <PaperPage paperName={title} documentNumber={values.noteNumber}>
         <HeaderBox seller={values.seller} rows={noteRows(values)} />
-        <CustomerBox
-          values={values}
-          supplyFacts={[
-            ["Supply", supplyTypeLabel(values.supplyType)],
-            ["Reverse Charge", "No"],
-          ]}
-        />
+        <CustomerBox values={values} />
         <OriginalInvoiceBox values={values} paperName={title} />
         <LinesTable columns={gstNoteColumns} rows={rows} />
         <TotalsBox
@@ -180,7 +169,7 @@ export function CommercialCreditNotePaper({ values }: { values: CommercialCredit
     <PaperDocument title={`Credit Note ${values.noteNumber}`} seller={values.seller}>
       <PaperPage paperName="Credit Note (Commercial)" documentNumber={values.noteNumber}>
         <HeaderBox seller={values.seller} rows={noteRows(values)} />
-        <CustomerBox values={values} supplyFacts={[]} />
+        <CustomerBox values={values} />
         <OriginalInvoiceBox values={values} paperName="Credit Note" />
         <LinesTable columns={commercialColumns} rows={rows} />
         <TotalsBox

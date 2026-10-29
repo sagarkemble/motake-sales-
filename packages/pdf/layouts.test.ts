@@ -137,7 +137,7 @@ describe("tax_invoice", () => {
     expect(text).toContain("Dated 25/10/2026");
     expect(text).toContain("Dispatched through Salesman: Rahul Patil");
     expect(text).toContain("Destination / Route Kolhapur City");
-    expect(text).toContain("Reverse Charge No");
+    expect(text).not.toContain("Reverse Charge");
     expect(text).toContain("Laxmi Dairy");
     expect(text).toContain("GSTIN/UIN: 27ABCDE1234F1Z5");
     expect(text).toContain("State Name: Maharashtra, Code: 27 | Mobile: 9823012345");
@@ -168,7 +168,7 @@ describe("tax_invoice", () => {
 
     const text = await printed(await renderDocument("tax_invoice", values));
 
-    expect(text).toContain("GST SUMMARY (INTRA-STATE)");
+    expect(text).toContain("GST SUMMARY Taxable Value");
     expect(text).toContain("Taxable Value GST Rate IGST CGST SGST Total Tax");
     expect(text).toContain("₹3,240.00 0% — ₹0.00 ₹0.00 ₹0.00");
     expect(text).toContain("₹900.00 5% — ₹22.50 ₹22.50 ₹45.00");
@@ -195,7 +195,7 @@ describe("tax_invoice", () => {
 
     const text = await printed(await renderDocument("tax_invoice", values));
 
-    expect(text).toContain("GST SUMMARY (INTER-STATE)");
+    expect(text).toContain("GST SUMMARY Taxable Value");
     expect(text).toContain("₹900.00 5% ₹45.00 — — ₹45.00");
     expect(text).toContain("Place of Supply Karnataka (29)");
     expect(text).toContain("State Name: Karnataka, Code: 29");
@@ -437,7 +437,7 @@ function gstNote(overrides: Partial<GstNoteValues> = {}): GstNoteValues {
 }
 
 describe("gst_credit_note and debit_note", () => {
-  it("prints the original Bill, the reason, the return date, the lines and the tax reversed", async () => {
+  it("prints the original Bill, the reason, the lines and the tax reversed, without a return date", async () => {
     const text = await printed(await renderDocument("gst_credit_note", gstNote()));
 
     expect(text).toContain("CREDIT NOTE");
@@ -448,7 +448,7 @@ describe("gst_credit_note and debit_note", () => {
     expect(text).toContain("Place of Supply Maharashtra (27)");
     expect(text).toContain("Original Invoice No. MB/26-27/000123");
     expect(text).toContain("Original Invoice Date 25/10/2026");
-    expect(text).toContain("Return / damage date 27/10/2026");
+    expect(text).not.toContain("Return / damage date");
     expect(text).toContain("Reason for Credit Note Paneer returned: seal broken");
     expect(text).toContain("1 Fresh Paneer 200 g 0406 ₹90.00 5% 4 pack ₹360.00 ₹378.00");
     expect(text).toContain("₹360.00 5% — ₹9.00 ₹9.00 ₹18.00");
@@ -534,7 +534,7 @@ describe("payment_receipt", () => {
     expect(text).toContain("Receipt Date 25/10/2026");
     expect(text).toContain("Received At Jambhali, Maharashtra");
     expect(text).toContain("RECEIVED FROM Laxmi Dairy Rajarampuri, Kolhapur Mobile: 9823012345");
-    expect(text).toContain("Route: Kolhapur City");
+    expect(text).not.toContain("Route: Kolhapur City");
     expect(text).toContain("Mode Cash");
     expect(text).toContain("Payment Date 25/10/2026 18:42");
     expect(text).not.toContain("Reference");
@@ -544,7 +544,7 @@ describe("payment_receipt", () => {
     expect(text).toContain("Less: Payment received ₹4,435.00");
     expect(text).toContain("Outstanding balance after receipt ₹1,250.50");
     expect(text).toContain("₹5,000.00 handed over; ₹565.00 cash returned as change.");
-    expect(text).toContain("This is not a tax invoice.");
+    expect(text).not.toContain("This is not a tax invoice.");
     expect(text).toContain("Company Bank Details");
   });
 

@@ -78,7 +78,6 @@ describe("GstService.enterIrn", () => {
       signedQrText: "signed-qr-1",
       hasSignedQrImage: false,
       irnRecordedAt: recordedAt,
-      balanceAfterPaise: placed.balancePaise,
       irnRecordedBy: world.admin.id,
       irnCorrectReason: null,
     });
@@ -115,6 +114,7 @@ describe("GstService.enterIrn", () => {
         customerId: world.customer.id,
         versionNumber: 1,
         irnRecordedAt: recordedAt,
+        balanceAfterPaise: placed.balancePaise,
       },
     ]);
   });
@@ -456,7 +456,6 @@ describe("GstService.correctIrn", () => {
       signedQrText: "signed-qr-2",
       hasSignedQrImage: false,
       irnRecordedAt: correctedAt,
-      balanceAfterPaise: placed.balancePaise,
       irnCorrectReason: "Copied the wrong IRN",
     });
     expect((await billRow(placed.billId)).signedQrImageKey).toBeNull();
@@ -483,6 +482,7 @@ describe("GstService.correctIrn", () => {
         customerId: world.customer.id,
         versionNumber: 1,
         irnRecordedAt: correctedAt,
+        balanceAfterPaise: placed.balancePaise,
         reason: "Copied the wrong IRN",
       },
     ]);

@@ -18,8 +18,7 @@ const MODE_LABELS: Record<PaymentModeValue, string> = { cash: "Cash", bank: "Ban
 
 const RECEIPT_NOTES = [
   "1. This receipt acknowledges the payment received.",
-  "2. The amount is credited to the customer's running balance; it is not applied to a specific Bill.",
-  "3. This is not a tax invoice.",
+  "2. The amount is credited to the customer's running balance.",
 ];
 
 // Above zero the Customer owes Motake (Outstanding); below zero Motake holds an Advance.
@@ -68,7 +67,6 @@ export function PaymentReceiptPaper({ values }: { values: PaymentReceiptValues }
           details={[
             values.customer.address,
             `Mobile: ${values.customer.phone}`,
-            `Route: ${values.route.name}`,
           ]}
           rows={paymentRows}
         />
