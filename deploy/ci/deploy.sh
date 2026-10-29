@@ -20,8 +20,8 @@ Non-interactive VPS deployment (PM2 + notification container + Caddy).
 
 Required environment variables:
   MOTAKE_ROUTING_MODE          separate|single
-  MOTAKE_FRONTEND_DOMAIN       e.g. motake-front.lunarstudio.dev
-  MOTAKE_API_DOMAIN            e.g. motake-back.lunarstudio.dev
+  MOTAKE_FRONTEND_DOMAIN       e.g. sales.motakedairy.com
+  MOTAKE_API_DOMAIN            e.g. sales-api.motakedairy.com
   MOTAKE_FRONTEND_PORT         default: 3000
   MOTAKE_API_PORT              default: 8000
   MOTAKE_NOTIFICATION_PORT     default: 8100 (published on 127.0.0.1 only)
@@ -88,8 +88,9 @@ run_db_migrate() {
     CI=true NODE_ENV=development pnpm install --frozen-lockfile --filter @repo/database...
     pnpm --filter @repo/database db:migrate
   ); then
-    echo "  warn: db:migrate failed — check DATABASE_URL and drizzle-kit install" >&2
-    return 1
+    echo "error: db:migrate failed — deploy stopped before restarting the apps." >&2
+    echo "  Check DATABASE_URL (use the Supabase pooler host) and the drizzle-kit install." >&2
+    exit 1
   fi
 }
 

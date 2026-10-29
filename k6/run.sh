@@ -41,7 +41,7 @@ echo "K6 API target: ${API_TARGET}"
 if [[ "${API_TARGET}" == *"localhost"* || "${API_TARGET}" == *"127.0.0.1"* ]]; then
   echo "warning: load test is pointed at a local API (${API_TARGET})." >&2
   echo "  If the API is not running locally, set in .env:" >&2
-  echo "    K6_API_BASE_URL=https://motake-back.lunarstudio.dev" >&2
+  echo "    K6_API_BASE_URL=https://sales-api.motakedairy.com" >&2
 fi
 
 export K6_API_BASE_URL="${K6_API_BASE_URL:-${API_TARGET}}"

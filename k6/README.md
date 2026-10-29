@@ -20,7 +20,7 @@ Loaded via root `.env` when using `pnpm loadtest`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `K6_API_BASE_URL` | `BASE_URL` | API origin, e.g. `https://motake-back.lunarstudio.dev` |
+| `K6_API_BASE_URL` | `BASE_URL` | API origin, e.g. `https://sales-api.motakedairy.com` |
 | `K6_SALESMAN_VUS` | `10` | Concurrent salesman virtual users |
 | `K6_ADMIN_VUS` | `2` | Concurrent admin virtual users |
 | `K6_RAMP_UP` | `2m` | Ramp-up duration |

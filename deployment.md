@@ -35,13 +35,13 @@ This document is the end-to-end implementation plan for automated **full-stack**
 │                                                                         │
 │   User browser                                                          │
 │        │                                                                │
-│        ├──► https://motake-front.lunarstudio.dev                        │
+│        ├──► https://sales.motakedairy.com                        │
 │        │         Caddy TLS → PM2 → motake-web (Next.js) :3000          │
 │        │                                                                │
-│        └──► https://motake-back.lunarstudio.dev/trpc                    │
+│        └──► https://sales-api.motakedairy.com/trpc                    │
 │                  Caddy TLS → PM2 → motake-api (Express + tRPC) :8000    │
 │                                                                         │
-│   Hostinger VPS  187.127.220.211  (srv1892671.hstgr.cloud)             │
+│   Hostinger VPS  179.197.249.115                                      │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 
@@ -60,15 +60,14 @@ This document is the end-to-end implementation plan for automated **full-stack**
 | **Database** | Supabase PostgreSQL | `DATABASE_URL` in GitHub Secrets |
 | **Auth** | Supabase | Browser client (web) + service role (API) |
 | **TLS** | Caddy on VPS | Both subdomains |
-| **Reverse proxy** | Caddy | `motake-front` → :3000, `motake-back` → :8000 |
+| **Reverse proxy** | Caddy | `sales` → :3000, `sales-api` → :8000 |
 
 **Target VPS (Hostinger):**
 
 | Field | Value |
 |-------|--------|
 | VPS ID | `1892671` |
-| Hostname | `srv1892671.hstgr.cloud` |
-| IPv4 | `187.127.220.211` |
+| IPv4 | `179.197.249.115` |
 | OS | Ubuntu 22.04 LTS |
 
 ---
@@ -160,17 +159,17 @@ Optional manual production-like deploy on a server:
 
 ## 4. DNS & Domains
 
-Configured in **Cloudflare** (zone: `lunarstudio.dev`):
+Configured in **Cloudflare** (zone: `motakedairy.com`):
 
 | Record | Type | Target | Serves |
 |--------|------|--------|--------|
-| `motake-front.lunarstudio.dev` | A | `187.127.220.211` | Frontend (Caddy → PM2 web) |
-| `motake-back.lunarstudio.dev` | A | `187.127.220.211` | API (Caddy → PM2 api) |
+| `sales.motakedairy.com` | A | `179.197.249.115` | Frontend (Caddy → PM2 web) |
+| `sales-api.motakedairy.com` | A | `179.197.249.115` | API (Caddy → PM2 api) |
 
 **Verified state (Aug 2026):**
 
-- `motake-front.lunarstudio.dev` → `187.127.220.211` ✅
-- `motake-back.lunarstudio.dev` → `187.127.220.211` ✅
+- `sales.motakedairy.com` → `179.197.249.115` (to set)
+- `sales-api.motakedairy.com` → `179.197.249.115` (to set)
 - Both records: DNS only (not Cloudflare-proxied) — Caddy handles TLS on VPS
 
 **No Vercel DNS changes needed.** Both subdomains stay on the VPS IP.
@@ -189,7 +188,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 | Secret | Example / description |
 |--------|------------------------|
-| `VPS_HOST` | `187.127.220.211` or `srv1892671.hstgr.cloud` |
+| `VPS_HOST` | `179.197.249.115` |
 | `VPS_USER` | `deploy` (recommended) or `root` |
 | `VPS_SSH_KEY` | Private key (full PEM content) |
 | `VPS_APP_PATH` | `/var/www/motake` |
@@ -213,7 +212,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 | Secret | Maps to `.env` key |
 |--------|---------------------|
-| `NEXT_PUBLIC_API_URL` | `https://motake-back.lunarstudio.dev/trpc` |
+| `NEXT_PUBLIC_API_URL` | `https://sales-api.motakedairy.com/trpc` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 
@@ -221,8 +220,8 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 | Secret | Maps to `.env` key |
 |--------|---------------------|
-| `BASE_URL` | `https://motake-back.lunarstudio.dev` |
-| `CORS_ALLOWED_ORIGIN` | `https://motake-front.lunarstudio.dev` |
+| `BASE_URL` | `https://sales-api.motakedairy.com` |
+| `CORS_ALLOWED_ORIGIN` | `https://sales.motakedairy.com` |
 
 > **Important:** `NEXT_PUBLIC_*` must be available in the **build job** so Next.js bakes them into the production bundle. They are also written to `.env` on the VPS for consistency.
 
@@ -247,8 +246,8 @@ Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNA
 
 | Variable | Value |
 |----------|--------|
-| `MOTAKE_FRONTEND_DOMAIN` | `motake-front.lunarstudio.dev` |
-| `MOTAKE_API_DOMAIN` | `motake-back.lunarstudio.dev` |
+| `MOTAKE_FRONTEND_DOMAIN` | `sales.motakedairy.com` |
+| `MOTAKE_API_DOMAIN` | `sales-api.motakedairy.com` |
 | `MOTAKE_ROUTING_MODE` | `separate` |
 | `MOTAKE_WEB_PORT` | `3000` |
 | `MOTAKE_API_PORT` | `8000` |
@@ -269,7 +268,7 @@ For extra protection (required reviewers, environment-specific secrets):
 
 ## 6. VPS One-Time Bootstrap
 
-Run **once** on `187.127.220.211` before the first GitHub Actions deploy.
+Run **once** on `179.197.249.115` before the first GitHub Actions deploy.
 
 ### 6.1 System packages
 
@@ -474,17 +473,17 @@ Example output:
 ```env
 PORT=8000
 NODE_ENV=production
-BASE_URL=https://motake-back.lunarstudio.dev
+BASE_URL=https://sales-api.motakedairy.com
 DATABASE_URL=...
 JWT_SECRET=...
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 R2_*=...
 LOGGER_LEVEL=error
-NEXT_PUBLIC_API_URL=https://motake-back.lunarstudio.dev/trpc
+NEXT_PUBLIC_API_URL=https://sales-api.motakedairy.com/trpc
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-CORS_ALLOWED_ORIGIN=https://motake-front.lunarstudio.dev
+CORS_ALLOWED_ORIGIN=https://sales.motakedairy.com
 ```
 
 Also creates symlinks (same as `deploy/local/env-setup.sh`):
@@ -518,8 +517,8 @@ Environment variables (no prompts):
 
 ```bash
 MOTAKE_ROUTING_MODE=separate
-MOTAKE_FRONTEND_DOMAIN=motake-front.lunarstudio.dev
-MOTAKE_API_DOMAIN=motake-back.lunarstudio.dev
+MOTAKE_FRONTEND_DOMAIN=sales.motakedairy.com
+MOTAKE_API_DOMAIN=sales-api.motakedairy.com
 MOTAKE_FRONTEND_PORT=3000
 MOTAKE_API_PORT=8000
 MOTAKE_INSTALL_TARGET=system
@@ -580,14 +579,14 @@ Caddy on VPS terminates TLS for **both** subdomains. Uses `deploy/vps/caddy-setu
 
 ```caddy
 # motake — managed by caddy-setup.sh
-# motake-domains: motake-front.lunarstudio.dev motake-back.lunarstudio.dev
+# motake-domains: sales.motakedairy.com sales-api.motakedairy.com
 
-motake-front.lunarstudio.dev {
+sales.motakedairy.com {
 	encode gzip zstd
 	reverse_proxy localhost:3000
 }
 
-motake-back.lunarstudio.dev {
+sales-api.motakedairy.com {
 	encode gzip zstd
 
 	# Meta WhatsApp webhook -> notification container (Spec K). Its /trpc and
@@ -622,8 +621,8 @@ Check: `curl -sf http://127.0.0.1:8100/health` on the VPS (200 when the database
 
 ```bash
 MOTAKE_ROUTING_MODE=separate \
-MOTAKE_FRONTEND_DOMAIN=motake-front.lunarstudio.dev \
-MOTAKE_API_DOMAIN=motake-back.lunarstudio.dev \
+MOTAKE_FRONTEND_DOMAIN=sales.motakedairy.com \
+MOTAKE_API_DOMAIN=sales-api.motakedairy.com \
 MOTAKE_FRONTEND_PORT=3000 \
 MOTAKE_API_PORT=8000 \
 MOTAKE_INSTALL_TARGET=system \
@@ -641,7 +640,7 @@ MOTAKE_UPDATE_ENV=no \
 ### 10.1 Production CORS (critical)
 
 **Problem:** `apps/api/src/server.ts` only enables CORS when `NODE_ENV !== "production"`.  
-Frontend and API are on **different subdomains** (`motake-front` vs `motake-back`) — cross-origin CORS **must** work in production.
+Frontend and API are on **different subdomains** (`sales` vs `sales-api`) — cross-origin CORS **must** work in production.
 
 **Change:** Enable CORS in production with explicit frontend origin:
 
@@ -655,7 +654,7 @@ if (env.NODE_ENV === "production" && allowedOrigin) {
 }
 ```
 
-Add `CORS_ALLOWED_ORIGIN=https://motake-front.lunarstudio.dev` to GitHub Secrets and VPS `.env`.
+Add `CORS_ALLOWED_ORIGIN=https://sales.motakedairy.com` to GitHub Secrets and VPS `.env`.
 
 ### 10.2 Cross-origin cookies / auth
 
@@ -663,7 +662,7 @@ The tRPC client uses `credentials: "include"`. Separate subdomains require:
 
 - API cookies: `SameSite=None; Secure`
 - CORS `credentials: true`
-- `NEXT_PUBLIC_API_URL=https://motake-back.lunarstudio.dev/trpc`
+- `NEXT_PUBLIC_API_URL=https://sales-api.motakedairy.com/trpc`
 
 Review `packages/services/auth` session cookie settings before go-live.
 
@@ -677,17 +676,17 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 
 | Variable | Local dev (`.env`) | VPS production (`.env` from Secrets) |
 |----------|-------------------|--------------------------------------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/trpc` | `https://motake-back.lunarstudio.dev/trpc` |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/trpc` | `https://sales-api.motakedairy.com/trpc` |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | ✅ |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | ✅ |
-| `BASE_URL` | `http://localhost:8000` | `https://motake-back.lunarstudio.dev` |
+| `BASE_URL` | `http://localhost:8000` | `https://sales-api.motakedairy.com` |
 | `PORT` | `8000` | `8000` |
 | `NODE_ENV` | `development` | `production` |
 | `DATABASE_URL` | ✅ | ✅ (secret) |
 | `JWT_SECRET` | ✅ | ✅ (secret) |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | ✅ (secret) |
 | `R2_*` | ✅ | ✅ (secret) |
-| `CORS_ALLOWED_ORIGIN` | optional | `https://motake-front.lunarstudio.dev` |
+| `CORS_ALLOWED_ORIGIN` | optional | `https://sales.motakedairy.com` |
 
 **Rules:**
 
@@ -701,7 +700,7 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 
 ### Phase 1 — Prerequisites (you)
 
-- [ ] Cloudflare: `motake-front` + `motake-back` → `187.127.220.211`
+- [ ] Cloudflare: `sales` + `sales-api` → `179.197.249.115`
 - [ ] VPS bootstrapped (Node 22, pnpm, PM2, Caddy, firewall 80/443)
 - [ ] GitHub Secrets & Variables added (full list in §5)
 - [ ] SSH key for `deploy` user in `VPS_SSH_KEY`
@@ -720,13 +719,13 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 - [x] Create `.github/workflows/deploy.yml`
 - [ ] Test with `workflow_dispatch` (manual trigger)
 - [ ] Verify:
-  - `https://motake-back.lunarstudio.dev/health`
-  - `https://motake-front.lunarstudio.dev`
+  - `https://sales-api.motakedairy.com/health`
+  - `https://sales.motakedairy.com`
 
 ### Phase 4 — End-to-end verification
 
-- [ ] Frontend loads at `https://motake-front.lunarstudio.dev`
-- [ ] API health at `https://motake-back.lunarstudio.dev/health`
+- [ ] Frontend loads at `https://sales.motakedairy.com`
+- [ ] API health at `https://sales-api.motakedairy.com/health`
 - [ ] Login flow works (Supabase + API session)
 - [ ] tRPC calls succeed (no CORS errors)
 - [ ] Push to `main` auto-deploys without manual steps
@@ -738,23 +737,23 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 ### After deploy (GitHub Actions)
 
 ```bash
-curl -sf https://motake-back.lunarstudio.dev/health
+curl -sf https://sales-api.motakedairy.com/health
 # Expected: {"message":"tRPC server is healthy","healthy":true}
 
-curl -sI https://motake-front.lunarstudio.dev | head -5
+curl -sI https://sales.motakedairy.com | head -5
 # Expected: HTTP/2 200
 
-ssh deploy@187.127.220.211 'pm2 status'
+ssh deploy@179.197.249.115 'pm2 status'
 # Expected: motake-api + motake-web online
 
-ssh deploy@187.127.220.211 'sudo systemctl status caddy'
+ssh deploy@179.197.249.115 'sudo systemctl status caddy'
 # Expected: active
 ```
 
 ### Browser checks
 
-- Open `https://motake-front.lunarstudio.dev` — app loads
-- DevTools → Network — tRPC calls go to `motake-back.lunarstudio.dev/trpc`
+- Open `https://sales.motakedairy.com` — app loads
+- DevTools → Network — tRPC calls go to `sales-api.motakedairy.com/trpc`
 - No CORS errors on login
 
 ---
