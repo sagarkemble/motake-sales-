@@ -890,10 +890,7 @@ class CustomerMessageService {
   }
 
   // Admin: any Customer. Salesman: only with an Active GatePass on the Customer's current Route.
-  private async assertMayAct(
-    actor: { profileId: string; role: "admin" | "salesman" },
-    customer: CustomerWithRoute,
-  ): Promise<void> {
+  private async assertMayAct(actor: MessageActor, customer: CustomerWithRoute): Promise<void> {
     const profile = await getProfileById(actor.profileId);
     if (!profile || profile.role !== actor.role) throw forbidden();
     if (actor.role === "admin") return;
