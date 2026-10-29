@@ -27,8 +27,9 @@ export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();
 // Spec J: hands each committed money event's WhatsApp messages to the notification app with the
-// internal key; null gateway (no NOTIFICATION_URL) logs and skips them. Its GST reads use a
-// GstService with no listeners.
+// internal key; null gateway (no NOTIFICATION_URL) logs and skips them. Its GST reads use their
+// own GstService with no listeners: gstService below is built with this service's listeners, so it
+// does not exist yet here.
 export const customerMessageService = new CustomerMessageService(
   createCustomerMessageGateway(notificationClientConfig()),
   documentService,
