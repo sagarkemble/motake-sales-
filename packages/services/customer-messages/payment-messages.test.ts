@@ -12,6 +12,10 @@ import { wipeApplicationTables } from "../test/database";
 // Spec J, Spec H's outcomes: Admin Add Payment, Payment Correct, Add Refund and Refund Correct.
 
 const today = "2026-10-25";
+// Each case writes a Bill or Payment through the real services and then its messages; against a
+// remote test database that is well past the 30 s default.
+vi.setConfig({ testTimeout: 180_000 });
+
 let harness: MessageHarness;
 
 beforeEach(async () => {

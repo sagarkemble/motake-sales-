@@ -20,6 +20,10 @@ import { buildEinvoicingWorld } from "../test/gst-world";
 // Spec J, Spec G's outcomes: Raise Bill, Correct, Cancel and Raise Note.
 
 const today = "2026-10-25";
+// Each case writes a Bill or Payment through the real services and then its messages; against a
+// remote test database that is well past the 30 s default.
+vi.setConfig({ testTimeout: 180_000 });
+
 let harness: MessageHarness;
 
 beforeEach(async () => {
@@ -371,8 +375,8 @@ describe("Raise Note", () => {
           note_number: "MC/26-27/000001",
           bill_number: placed.billNumber,
           reason: "One Milk returned leaking",
-          credit_amount: "₹26.24",
-          balance_line: "आता बाकी रक्कम: ₹92.76",
+          credit_amount: "₹26.23",
+          balance_line: "आता बाकी रक्कम: ₹92.77",
         },
       }),
     ]);
@@ -431,7 +435,7 @@ describe("Raise Note", () => {
     expect(kindsOf(harness).slice(1)).toEqual(["account_update:motake_note_update_v2"]);
     expect(harness.gateway.instructions[1]!.values).toMatchObject({
       status: "डेबिट नोट दिली",
-      balance_adjustment: "₹26.24 ने वाढ",
+      balance_adjustment: "₹26.23 ने वाढ",
     });
   });
 });

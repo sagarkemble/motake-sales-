@@ -25,6 +25,10 @@ import { buildEinvoicingWorld } from "../test/gst-world";
 // Spec J's Resend, Send latest Bill and status reads. No money row is ever written.
 
 const today = "2026-10-25";
+// Each case writes a Bill or Payment through the real services and then its messages; against a
+// remote test database that is well past the 30 s default.
+vi.setConfig({ testTimeout: 180_000 });
+
 let harness: MessageHarness;
 
 beforeEach(async () => {

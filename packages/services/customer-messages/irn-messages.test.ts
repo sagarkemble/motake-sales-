@@ -11,6 +11,10 @@ import { buildEinvoicingWorld, irnFields, setBusinessDay } from "../test/gst-wor
 // Spec J, Spec I's outcomes: an e-invoiced Bill is withheld until Enter IRN, sent again after
 // Correct IRN, and a portal cancellation reaches J as Spec G's Bill cancelled outcome.
 
+// Each case writes a Bill or Payment through the real services and then its messages; against a
+// remote test database that is well past the 30 s default.
+vi.setConfig({ testTimeout: 180_000 });
+
 let harness: MessageHarness;
 
 beforeEach(async () => {
