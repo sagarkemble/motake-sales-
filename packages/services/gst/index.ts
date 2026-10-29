@@ -764,7 +764,7 @@ class GstService {
     return balancePaise;
   }
 
-    private async latestVersionNumber(billId: string, executor: DbExecutor): Promise<number> {
+  private async latestVersionNumber(billId: string, executor: DbExecutor): Promise<number> {
     const latest = await getLatestBillVersion(billId, executor);
     if (!latest) throw internalError(`Bill ${billId} has no version`);
     return latest.versionNumber;
