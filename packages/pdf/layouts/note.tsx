@@ -7,22 +7,19 @@ import type {
   GstNoteLine,
   GstNoteValues,
   NoteHeaderValues,
-  SellerValues,
 } from "../types";
 import {
-  BankDetails,
   GstSummary,
   HeaderBox,
   LinesTable,
   PaperDocument,
   PaperPage,
   PartyBox,
-  TermsAndSignatory,
+  TermsFooter,
   TotalsBox,
   joined,
   stateWithCode,
   styles,
-  termLines,
   totalQuantityText,
   type Column,
   type KeyRow,
@@ -81,19 +78,6 @@ function OriginalInvoiceBox(props: { values: NoteHeaderValues; paperName: string
   );
 }
 
-function NoteFooter({ seller }: { seller: SellerValues }) {
-  return (
-    <>
-      <BankDetails bank={seller.bank} />
-      <TermsAndSignatory
-        seller={seller}
-        title="Terms and Conditions"
-        lines={termLines(seller.terms)}
-      />
-    </>
-  );
-}
-
 // The Note line's own value per unit, to the paisa (a rate difference is not the Bill's rate).
 function rateOf(line: GstNoteLine): number {
   return Math.round(line.taxablePaise / line.quantity);
@@ -141,7 +125,7 @@ export function GstNotePaper(props: { values: GstNoteValues; kind: "credit" | "d
           wordsLabel="Amount in words"
         />
         <GstSummary supplyType={values.supplyType} lines={values.lines} />
-        <NoteFooter seller={values.seller} />
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );
@@ -182,7 +166,7 @@ export function CommercialCreditNotePaper({ values }: { values: CommercialCredit
         <Text style={styles.notice}>
           This Credit Note does not reduce GST. Not a GST Credit Note.
         </Text>
-        <NoteFooter seller={values.seller} />
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );

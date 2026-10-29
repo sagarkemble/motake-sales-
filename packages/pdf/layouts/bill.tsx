@@ -6,24 +6,21 @@ import type {
   BillHeaderValues,
   BillOfSupplyValues,
   IrnValues,
-  SellerValues,
   TaxInvoiceLine,
   TaxInvoiceValues,
 } from "../types";
 import {
-  BankDetails,
   GstSummary,
   HeaderBox,
   LinesTable,
   PaperDocument,
   PaperPage,
   PartyBox,
-  TermsAndSignatory,
+  TermsFooter,
   TotalsBox,
   joined,
   stateWithCode,
   styles,
-  termLines,
   totalQuantityText,
   type Column,
   type KeyRow,
@@ -63,19 +60,6 @@ function BuyerBox({ values }: { values: BillHeaderValues }) {
         ["Delivery Note Date", formatDate(values.billDate)],
       ]}
     />
-  );
-}
-
-function BillFooter({ seller }: { seller: SellerValues }) {
-  return (
-    <>
-      <BankDetails bank={seller.bank} />
-      <TermsAndSignatory
-        seller={seller}
-        title="Terms and Conditions"
-        lines={termLines(seller.terms)}
-      />
-    </>
   );
 }
 
@@ -155,7 +139,7 @@ export function TaxInvoicePaper(props: { values: TaxInvoiceValues; qrDataUrl: st
         {values.irn && props.qrDataUrl ? (
           <IrnBlock irn={values.irn} qrDataUrl={props.qrDataUrl} />
         ) : null}
-        <BillFooter seller={values.seller} />
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );
@@ -194,7 +178,7 @@ export function BillOfSupplyPaper({ values }: { values: BillOfSupplyValues }) {
           quantityText={totalQuantityText(values.lines)}
         />
         <Text style={styles.notice}>Exempt supply. No tax charged.</Text>
-        <BillFooter seller={values.seller} />
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );

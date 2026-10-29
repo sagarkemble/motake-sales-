@@ -519,3 +519,18 @@ export function TermsAndSignatory(props: { seller: SellerValues; title: string; 
 export function termLines(terms: string | null): string[] {
   return terms ? terms.split("\n").filter((line) => line.trim() !== "") : [];
 }
+
+// A Bill's and a Note's footer: the bank block, then the seller's Terms and Conditions and the
+// signatory.
+export function TermsFooter({ seller }: { seller: SellerValues }) {
+  return (
+    <>
+      <BankDetails bank={seller.bank} />
+      <TermsAndSignatory
+        seller={seller}
+        title="Terms and Conditions"
+        lines={termLines(seller.terms)}
+      />
+    </>
+  );
+}
