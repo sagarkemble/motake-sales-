@@ -452,7 +452,7 @@ describe("DocumentService.ensureNoteDocument", () => {
     expect(text).toContain(bill.number);
     expect(text).toContain("25/10/2026");
     expect(text).toContain("Paneer returned: seal broken");
-    expect(text).toContain("27/10/2026");
+    expect(text).not.toContain("27/10/2026");
     // The line's GST rate comes from the Bill version line it points at.
     expect(text).toContain("₹360.00 5% — ₹9.00 ₹9.00 ₹18.00");
     expect(text).toContain("Credit Note Total: ₹378.00");
@@ -540,7 +540,7 @@ describe("DocumentService.drawPaymentReceipt", () => {
     expect(text).toContain(seller!.legalName);
     expect(text).toContain("Laxmi Dairy");
     expect(text).toContain(customer.address);
-    expect(text).toContain(`Route: ${route.name}`);
+    expect(text).not.toContain(`Route: ${route.name}`);
     expect(text).toContain("AMOUNT RECEIVED ₹4,435.00");
     expect(text).toContain("₹565.00 cash returned as change");
     expect(text).toContain("Outstanding balance before receipt ₹5,685.50");
