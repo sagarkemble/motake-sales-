@@ -419,7 +419,8 @@ deploy_notification_container() {
   docker_cmd rm -f "$NOTIFICATION_CONTAINER_NAME" >/dev/null 2>&1 || true
   docker_cmd volume create "$NOTIFICATION_VOLUME" >/dev/null || return 1
   # Published on localhost only; Caddy forwards just the webhook path. The Inngest dashboard
-  # port is not published.
+  # port is not published. The WhatsApp token file is only a working copy, refilled from
+  # Supabase Vault at start-up (Spec J-0), so it lives inside the container.
   docker_cmd run -d \
     --name "$NOTIFICATION_CONTAINER_NAME" \
     --restart unless-stopped \
@@ -427,6 +428,7 @@ deploy_notification_container() {
     --env-file "$NOTIFICATION_ENV_FILE" \
     -e HOST=0.0.0.0 \
     -e PORT="$port" \
+    -e WHATSAPP_TOKEN_FILE=/tmp/motake/whatsapp-token \
     -p "127.0.0.1:${port}:${port}" \
     -v "${NOTIFICATION_VOLUME}:/var/lib/inngest" \
     "$NOTIFICATION_IMAGE" >/dev/null || return 1
