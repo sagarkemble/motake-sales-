@@ -43,6 +43,13 @@
       "when": 1793189368696,
       "tag": "0005_whatsapp_token_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793250219733,
+      "tag": "0006_seller_document_details",
+      "breakpoints": true
     }
   ]
 }

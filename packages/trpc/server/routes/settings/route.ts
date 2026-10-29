@@ -87,7 +87,7 @@ const sellerRouter = router({
         protect: true,
         summary: "Update the Seller master",
         description:
-          "Change seller details. Applies to Bills and Notes issued after the save; saving no change records nothing.",
+          "Change seller details. Applies to Bills and Notes issued after the save; the PAN, bank details, terms and place apply to Documents drawn after it. Saving no change records nothing.",
       },
     })
     .input(updateSellerSettingsInputSchema)
