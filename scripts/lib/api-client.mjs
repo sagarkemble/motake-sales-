@@ -7,7 +7,7 @@ export function getApiBaseUrl() {
   return (
     process.env.SEED_API_BASE_URL ||
     process.env.K6_API_BASE_URL ||
-    "https://motake-back.lunarstudio.dev"
+    "https://sales-api.motakedairy.com"
   ).replace(/\/$/, "");
 }
 
