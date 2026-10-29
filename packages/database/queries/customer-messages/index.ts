@@ -132,33 +132,3 @@ export async function listCustomerMessageDocuments(
   ]);
   return { bills, noteIds, paymentEvents, refundEvents };
 }
-
-export async function getNoteMessageFacts(noteId: string, executor: DbExecutor = db) {
-  const [note] = await executor
-    .select({ id: notesTable.id, billId: notesTable.billId })
-    .from(notesTable)
-    .where(eq(notesTable.id, noteId));
-  return note;
-}
-
-export async function getPaymentCustomerId(
-  paymentId: string,
-  executor: DbExecutor = db,
-): Promise<string | undefined> {
-  const [row] = await executor
-    .select({ customerId: paymentsTable.customerId })
-    .from(paymentsTable)
-    .where(eq(paymentsTable.id, paymentId));
-  return row?.customerId;
-}
-
-export async function getRefundCustomerId(
-  refundId: string,
-  executor: DbExecutor = db,
-): Promise<string | undefined> {
-  const [row] = await executor
-    .select({ customerId: refundsTable.customerId })
-    .from(refundsTable)
-    .where(eq(refundsTable.id, refundId));
-  return row?.customerId;
-}

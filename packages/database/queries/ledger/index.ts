@@ -279,6 +279,18 @@ export async function listNotesForBill(
     .orderBy(asc(notesTable.createdAt), asc(notesTable.number));
 }
 
+// The Bill a Note was raised on.
+export async function getNoteBillId(
+  noteId: string,
+  executor: DbExecutor = db,
+): Promise<string | null> {
+  const [row] = await executor
+    .select({ billId: notesTable.billId })
+    .from(notesTable)
+    .where(eq(notesTable.id, noteId));
+  return row?.billId ?? null;
+}
+
 export async function listNoteLinesForNotes(
   noteIds: string[],
   executor: DbExecutor = db,

@@ -2,9 +2,6 @@ import { getProfileById } from "@repo/database/queries/auth";
 import { getBillCustomerId, getBillVersionByNumber } from "@repo/database/queries/bills";
 import {
   getMessageBill,
-  getNoteMessageFacts,
-  getPaymentCustomerId,
-  getRefundCustomerId,
   listCustomerMessageDocuments,
   listNoteIdsForBills,
   listPaymentMessageEvents,
@@ -13,6 +10,9 @@ import {
 } from "@repo/database/queries/customer-messages";
 import { getCustomerWithRouteById, type CustomerWithRoute } from "@repo/database/queries/customers";
 import type { BillVersionHeader } from "@repo/database/queries/documents";
+import { getNoteBillId } from "@repo/database/queries/ledger";
+import { getPaymentCustomerId } from "@repo/database/queries/payments";
+import { getRefundCustomerId } from "@repo/database/queries/refunds";
 import { logger } from "@repo/logger";
 
 import DocumentService, { type DocumentResult } from "../documents";
@@ -883,14 +883,14 @@ class CustomerMessageService {
   }
 
   private async customerIdOfRef(ref: ParsedRef): Promise<string> {
-    let customerId: string | null | undefined;
+    let customerId: string | null;
     switch (ref.kind) {
       case "bill":
         customerId = await getBillCustomerId(ref.billId);
         break;
       case "note": {
-        const note = await getNoteMessageFacts(ref.noteId);
-        customerId = note ? await getBillCustomerId(note.billId) : null;
+        const billId = await getNoteBillId(ref.noteId);
+        customerId = billId ? await getBillCustomerId(billId) : null;
         break;
       }
       case "payment":
