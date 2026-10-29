@@ -989,7 +989,14 @@
         "irn_missing": "This Bill has no IRN yet, so its PDF cannot be drawn.",
         "not_found": "Not found. It may have been removed.",
         "pre_order_cancelled": "This Pre-order was cancelled.",
-        "generic": "Something went wrong. Try again."
+        "generic": "Something went wrong. Try again.",
+        "message_pending": "This WhatsApp is still being sent. Resend it once it has an outcome.",
+        "not_latest_bill": "This is an older version of the Bill and cannot be resent. Use Send latest Bill.",
+        "phone_unusable": "The Customer's phone is not a valid Indian mobile. Fix the phone first.",
+        "no_active_gatepass": "You have no Active GatePass today, so you cannot see or resend WhatsApp messages.",
+        "customer_not_on_route": "This Customer is not on your Active GatePass Route.",
+        "notification_unavailable": "WhatsApp messages are not set up on this server.",
+        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded."
       },
       "paper": {
         "back": "{shopName} Ledger",
@@ -2002,6 +2009,117 @@
         "message": "This checkout was already sent with different items or payment. Start the checkout again.",
         "action": "Start again"
       }
+    }
+  },
+  "whatsapp": {
+    "entry": {
+      "label": "WhatsApp · {status} · {count}",
+      "none": "WhatsApp · None",
+      "loading": "WhatsApp · …",
+      "error": "WhatsApp · Not loaded"
+    },
+    "dialog": {
+      "title": "WhatsApp · {paper}",
+      "description": "Newest first. Resend sends the same message and PDF again; money never changes.",
+      "empty": "No WhatsApp messages for this paper.",
+      "loadError": "Could not load WhatsApp status. The paper is fine.",
+      "retry": "Try again"
+    },
+    "status": {
+      "waiting": "Waiting",
+      "sent": "Sent",
+      "held": "Held",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Failed",
+      "superseded": "Superseded",
+      "skipped": "Not sent",
+      "sending": "Sending"
+    },
+    "hint": {
+      "waiting": "Queued. WhatsApp has not taken it yet.",
+      "sent": "WhatsApp took it. No delivery tick yet.",
+      "held": "Paused until WhatsApp is fixed. Goes out by itself after.",
+      "delivered": "Reached the shop's phone.",
+      "read": "The shop opened it.",
+      "failed": "WhatsApp could not deliver it.",
+      "superseded": "Dropped before it went out.",
+      "skipped": "Never sent."
+    },
+    "template": {
+      "bill": "Bill",
+      "billVersion": "Bill v{version}",
+      "receipt": "Receipt",
+      "bill_corrected": "Bill corrected",
+      "payment_corrected": "Payment corrected",
+      "refund": "Refund",
+      "cancellation": "Cancellation",
+      "gst_credit_note": "GST Credit Note",
+      "gst_debit_note": "GST Debit Note",
+      "note_update": "Note update"
+    },
+    "withPdf": "with PDF",
+    "tries": "{count} tries",
+    "reason": {
+      "supersededCancelled": "Dropped: the Bill was cancelled before this went out.",
+      "supersededNewer": "Dropped: a newer Bill version was made before this went out.",
+      "missingPhone": "No phone number saved for this Customer.",
+      "invalidPhone": "The saved phone is not a valid Indian mobile.",
+      "failure": {
+        "invalid_recipient": "This number is not on WhatsApp, or it is wrong.",
+        "window_closed": "WhatsApp did not allow this message right now.",
+        "template_error": "WhatsApp refused the message wording. Tell the developer.",
+        "media_error": "The PDF could not be attached.",
+        "auth_error": "WhatsApp is paused: the access token stopped working.",
+        "payment_error": "WhatsApp is paused: payment problem on the WhatsApp account.",
+        "opted_out_or_blocked": "The shop blocked Motake on WhatsApp or turned off business messages.",
+        "rate_limited": "Too many messages at once. WhatsApp will try again.",
+        "provider_unavailable": "WhatsApp could not be reached.",
+        "ambiguous": "WhatsApp did not confirm whether it went out.",
+        "unknown": "WhatsApp did not say why."
+      }
+    },
+    "block": {
+      "inactive": "Customer is deactivated.",
+      "pending": "Still being sent.",
+      "held": "Goes out by itself once WhatsApp is fixed.",
+      "billCancelled": "The Bill is cancelled. Its Bill messages are not sent again.",
+      "olderBill": "Older Bill version. Use Send latest Bill.",
+      "latestCancelled": "This Bill is cancelled. Nothing more is sent for it.",
+      "latestIrnPending": "IRN pending. The Bill goes out by itself once the IRN is entered."
+    },
+    "resend": {
+      "button": "Resend",
+      "confirmTitle": "Resend {message}?",
+      "confirmBody": "Sends the same WhatsApp again to the Customer's phone. Nothing is billed or recorded again; the figures stay as they were when it was first sent.",
+      "confirmBodyPdf": "Sends the same WhatsApp and PDF again to the Customer's phone. Nothing is billed or recorded again; the figures stay as they were when it was first sent.",
+      "done": "{message} is going again. Same message; money unchanged.",
+      "refused": "Not resent"
+    },
+    "latest": {
+      "button": "Send latest Bill",
+      "hint": "v{version} with its PDF and today's Balance.",
+      "confirmTitle": "Send latest Bill?",
+      "confirmBody": "Sends {number} v{version} with its PDF. The message shows today's Balance ({balance}). Older Bill messages that have not gone out are dropped. Nothing is billed again.",
+      "confirm": "Send",
+      "done": "Sent the latest Bill with its PDF and today's Balance.",
+      "refused": "Not sent"
+    },
+    "checkout": {
+      "pill": "WhatsApp: {text}",
+      "checking": "Checking WhatsApp…",
+      "unknown": "WhatsApp status unknown",
+      "none": "No WhatsApp yet",
+      "billPart": "Bill {status}",
+      "receiptPart": "Receipt {status}",
+      "title": "WhatsApp to {shop}",
+      "description": "Bill first, then Receipt. Resend sends the same message and PDF again.",
+      "billPdf": "Bill (PDF)",
+      "receiptPdf": "Receipt (PDF)",
+      "loadError": "Could not check WhatsApp. The sale is saved.",
+      "retry": "Retry",
+      "noReceipt": "No Receipt: nothing was kept.",
+      "empty": "Nothing has gone out yet. This updates by itself."
     }
   }
 }
