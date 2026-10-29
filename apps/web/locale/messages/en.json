@@ -1458,7 +1458,7 @@
         "openPayment": "Send waiting messages"
       },
       "dialog": {
-        "title": "WhatsApp access token",
+        "title": "WhatsApp messages",
         "description": "Paste the new System User token from Meta Business."
       },
       "summary": {
