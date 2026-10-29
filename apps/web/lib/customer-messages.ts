@@ -107,7 +107,9 @@ export function needsFastRefresh(rows: MessageStatusFields[], live: boolean): bo
   });
 }
 
-export function templateOf(row: Pick<MessageStatusFields, "kind" | "businessRef">): MessageTemplate {
+export function templateOf(
+  row: Pick<MessageStatusFields, "kind" | "businessRef">,
+): MessageTemplate {
   const document = row.businessRef.split("/")[0];
   switch (row.kind) {
     case "bill":

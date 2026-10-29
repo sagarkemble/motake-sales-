@@ -41,11 +41,7 @@ import {
   type MessageDocument,
 } from "~/hooks/use-customer-messages";
 import { useTranslate } from "~/hooks/use-translate";
-import {
-  sendLatestBlockKey,
-  worstStatus,
-  type ResendContext,
-} from "~/lib/customer-messages";
+import { sendLatestBlockKey, worstStatus, type ResendContext } from "~/lib/customer-messages";
 import { refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 

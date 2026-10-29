@@ -3,8 +3,7 @@ import type { RouterInputs, RouterOutputs } from "@repo/trpc/client";
 import { needsFastRefresh } from "~/lib/customer-messages";
 import { trpc } from "~/trpc/client";
 
-export type CustomerMessage =
-  RouterOutputs["customerMessages"]["listForDocument"]["data"][number];
+export type CustomerMessage = RouterOutputs["customerMessages"]["listForDocument"]["data"][number];
 export type MessageDocument = RouterInputs["customerMessages"]["listForDocument"];
 
 // While a message is still going out (or, on the checkout result, before it is made) the status
