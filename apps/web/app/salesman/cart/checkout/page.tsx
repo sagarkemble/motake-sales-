@@ -26,6 +26,7 @@ export default function SalesmanCheckoutPage() {
     return (
       <CheckoutSuccess
         input={wizard.result}
+        whatsapp
         actions={[
           {
             label: tx("salesman.checkout.success.viewOrders"),

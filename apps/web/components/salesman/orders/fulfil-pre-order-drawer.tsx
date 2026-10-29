@@ -46,6 +46,7 @@ export function FulfilPreOrderDrawer({ target, onClose }: FulfilPreOrderDrawerPr
               </DrawerHeader>
               <CheckoutSuccess
                 input={fulfil.result}
+                whatsapp
                 actions={[{ label: tx("checkout.success.done"), primary: true, onClick: onClose }]}
               />
             </ScrollArea>

@@ -4,6 +4,7 @@ import type { RouterOutputs } from "@repo/trpc/client";
 import { AlertTriangleIcon, CalendarCheckIcon, CheckIcon, WalletIcon } from "lucide-react";
 
 import { BalanceText } from "~/components/shared/checkout/balance-text";
+import { CheckoutWhatsapp } from "~/components/shared/whatsapp/checkout-whatsapp";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
@@ -44,13 +45,18 @@ interface FactRow {
   highlight?: boolean;
 }
 
-/** Tick + fact rows after a Book Now, fulfil, Pre-order or field Payment. */
+/**
+ * Tick + fact rows after a Book Now, fulfil, Pre-order or field Payment. With `whatsapp` (the
+ * salesman's result), a pill under the tick shows the Bill and Receipt WhatsApp status.
+ */
 export function CheckoutSuccess({
   input,
   actions,
+  whatsapp = false,
 }: {
   input: CheckoutSuccessInput;
   actions: { label: string; onClick: () => void; primary?: boolean }[];
+  whatsapp?: boolean;
 }) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
@@ -159,6 +165,13 @@ export function CheckoutSuccess({
 
   const Icon =
     input.kind === "preorder" ? CalendarCheckIcon : input.kind === "field" ? WalletIcon : CheckIcon;
+  // A Pre-order sends nothing until it is fulfilled.
+  const messages =
+    input.kind === "billed"
+      ? { billId: input.result.billId, paymentId: input.result.payment?.paymentId ?? null }
+      : input.kind === "field"
+        ? { billId: null, paymentId: input.result.paymentId }
+        : null;
 
   return (
     <div className="flex flex-col items-center gap-6 px-4 py-10 text-center">
@@ -170,6 +183,8 @@ export function CheckoutSuccess({
         <p className="text-lg font-semibold">{title}</p>
         <p className="text-sm text-muted-foreground">{input.shopName}</p>
       </div>
+
+      {whatsapp && messages && <CheckoutWhatsapp shopName={input.shopName} {...messages} />}
 
       {returnedChange && (
         <Alert className="max-w-sm border-amber-500/40 bg-amber-500/5 text-left">
