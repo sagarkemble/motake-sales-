@@ -1,4 +1,5 @@
 import { logger } from "@repo/logger";
+import type { SelectPayment } from "@repo/database/schema";
 
 import { internalError } from "../errors";
 
@@ -52,6 +53,7 @@ export interface PaymentPostedEvent {
   postedEventId: string;
   paymentNumber: string;
   customerId: string;
+  mode: SelectPayment["mode"];
   keptPaise: number;
   returnedPaise: number;
   balanceAfterPaise: number;

@@ -3,6 +3,7 @@ import { router } from "./trpc";
 import { adminRouter } from "./routes/admin/route";
 import { authRouter } from "./routes/auth/route";
 import { billsRouter } from "./routes/bills/route";
+import { customerMessagesRouter } from "./routes/customer-messages/route";
 import { customersRouter } from "./routes/customers/route";
 import { documentsRouter } from "./routes/documents/route";
 import { gatepassRouter } from "./routes/gatepass/route";
@@ -22,6 +23,7 @@ export const serverRouter = router({
   auth: authRouter,
   bills: billsRouter,
   admin: adminRouter,
+  customerMessages: customerMessagesRouter,
   customers: customersRouter,
   documents: documentsRouter,
   gatepasses: gatepassRouter,

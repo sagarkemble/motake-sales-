@@ -12,6 +12,8 @@ interface IrnOutcomeCommon {
   versionNumber: number;
   // J's Bill ref depends on it; Correct IRN always moves it.
   irnRecordedAt: Date;
+  // The Customer's Balance at this commit (no money moves here): the late Bill's Balance.
+  balanceAfterPaise: number;
 }
 
 export interface IrnRecordedOutcome extends IrnOutcomeCommon {

@@ -78,6 +78,7 @@ describe("GstService.enterIrn", () => {
       signedQrText: "signed-qr-1",
       hasSignedQrImage: false,
       irnRecordedAt: recordedAt,
+      balanceAfterPaise: placed.balancePaise,
       irnRecordedBy: world.admin.id,
       irnCorrectReason: null,
     });
@@ -455,6 +456,7 @@ describe("GstService.correctIrn", () => {
       signedQrText: "signed-qr-2",
       hasSignedQrImage: false,
       irnRecordedAt: correctedAt,
+      balanceAfterPaise: placed.balancePaise,
       irnCorrectReason: "Copied the wrong IRN",
     });
     expect((await billRow(placed.billId)).signedQrImageKey).toBeNull();

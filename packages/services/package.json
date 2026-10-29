@@ -9,6 +9,7 @@
     "./business-date": "./business-date/index.ts",
     "./clients": "./clients/index.ts",
     "./customer-ledger": "./customer-ledger/index.ts",
+    "./customer-messages": "./customer-messages/index.ts",
     "./customers": "./customers/index.ts",
     "./document-numbers": "./document-numbers/index.ts",
     "./documents": "./documents/index.ts",
