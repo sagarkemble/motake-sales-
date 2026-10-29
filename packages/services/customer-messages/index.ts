@@ -318,8 +318,7 @@ class CustomerMessageService {
         const businessRef = refs.payment(outcome.paymentId, outcome.adjustedEventId);
         plan = {
           instruction: this.instruction("paymentCorrected", businessRef, recipient, {
-            customer: customerLine(customer.shopName, customer.routeName),
-            route_name: customer.routeName,
+            ...customerValues(customer.shopName, customer.routeName),
             receipt_number: outcome.paymentNumber,
             previous_amount: formatRupees(outcome.keptBeforePaise),
             corrected_amount: formatRupees(outcome.keptAfterPaise),
@@ -342,8 +341,7 @@ class CustomerMessageService {
             refs.refund(outcome.refundId, eventId),
             recipient,
             {
-              customer: customerLine(customer.shopName, customer.routeName),
-              route_name: customer.routeName,
+              ...customerValues(customer.shopName, customer.routeName),
               refund_number: outcome.refundNumber,
               refund_amount: formatRupees(amountPaise),
               refund_mode: modeWord(outcome.mode, recipient.language),
@@ -557,8 +555,7 @@ class CustomerMessageService {
         refs.payment(payment.paymentId, payment.postedEventId),
         recipient,
         {
-          customer: customerLine(customer.shopName, customer.routeName),
-          route_name: customer.routeName,
+          ...customerValues(customer.shopName, customer.routeName),
           receipt_number: payment.paymentNumber,
           amount_received: formatRupees(payment.keptPaise),
           payment_mode: modeWord(payment.mode, recipient.language),
@@ -967,9 +964,14 @@ function customerLine(shopName: string, routeName: string): string {
   return oneLine(`${shopName}, ${routeName}`);
 }
 
+// The `customer` and `route_name` values, each on one line.
+function customerValues(shopName: string, routeName: string) {
+  return { customer: customerLine(shopName, routeName), route_name: oneLine(routeName) };
+}
+
 function letterheadValues(header: BillVersionHeader) {
   const { buyer, route } = header.letterhead;
-  return { customer: customerLine(buyer.shop_name, route.name), route_name: oneLine(route.name) };
+  return customerValues(buyer.shop_name, route.name);
 }
 
 function pdfAttachment(document: DocumentResult): NonNullable<EnqueueInput["attachment"]> {
