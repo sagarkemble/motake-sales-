@@ -6,11 +6,11 @@ export type WhatsAppTokenSettings = RouterOutputs["settings"]["whatsappToken"]["
 export type WhatsAppTokenState = WhatsAppTokenSettings["state"];
 
 // Re-checked every minute and on window focus, so the Admin banner clears by itself once the
-// notification app reports the token working again.
+// notification app reports messages going out again.
 const STATUS_REFETCH_INTERVAL_MS = 60_000;
 
 // The WhatsApp access token (Spec J-0): status for the Admin banner, paste a new token, and send
-// the messages held while it was not working. Never holds the token: only its last 4 characters.
+// the messages held while they were paused. Never holds the token.
 export function useWhatsAppToken() {
   const utils = trpc.useUtils();
 

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  AlertCircleIcon,
-  CheckCircle2Icon,
-  CircleHelpIcon,
-  KeyRoundIcon,
-  MessageCircleIcon,
-  SendIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { AlertCircleIcon, CheckCircle2Icon, MessageCircleIcon, SendIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -22,7 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -60,100 +51,34 @@ function tokenRefusalMessage(tx: Tx, error: unknown): string {
   return getErrorMessage(error, tx("admin.whatsappToken.refusals.generic"));
 }
 
-function waitingLabel(tx: Tx, count: number) {
-  return count === 1
-    ? tx("admin.whatsappToken.facts.waitingOne")
-    : tx("admin.whatsappToken.facts.waitingOther", { count });
-}
-
-function StatusBadge({ state }: { state: WhatsAppTokenSettings["state"] }) {
-  const tx = useTranslate();
-  if (state === "ok") {
-    return (
-      <Badge className="border-transparent bg-brand/10 text-brand">
-        <CheckCircle2Icon /> {tx("admin.whatsappToken.status.ok")}
-      </Badge>
-    );
-  }
-  if (state === "invalid") {
-    return (
-      <Badge variant="destructive">
-        <XCircleIcon /> {tx("admin.whatsappToken.status.invalid")}
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="text-muted-foreground">
-      <CircleHelpIcon />
-      {state === "unavailable"
-        ? tx("admin.whatsappToken.status.unavailable")
-        : tx("admin.whatsappToken.status.unknown")}
-    </Badge>
-  );
-}
-
-function TokenFacts({ status }: { status: WhatsAppTokenSettings }) {
+// One plain line of what is happening, and when a message last went out.
+function PauseSummary({ status }: { status: WhatsAppTokenSettings }) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
-  const held = status.heldCount;
+  const summary =
+    status.pausedReason === "token"
+      ? tx("admin.whatsappToken.summary.pausedToken")
+      : status.pausedReason === "payment"
+        ? tx("admin.whatsappToken.summary.pausedPayment")
+        : status.state === "ok"
+          ? tx("admin.whatsappToken.summary.working")
+          : null;
+  if (!summary && !status.lastWorkedAt) return null;
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
-      <dt className="text-muted-foreground">{tx("admin.whatsappToken.facts.status")}</dt>
-      <dd className="min-w-0">
-        <StatusBadge state={status.state} />
-      </dd>
-      <dt className="text-muted-foreground">{tx("admin.whatsappToken.facts.checkedAt")}</dt>
-      <dd className="min-w-0 break-words">
-        {status.checkedAt ? (
-          formatDate(status.checkedAt, DATE_TIME_PATTERN)
-        ) : (
-          <span className="text-muted-foreground">
-            {tx("admin.whatsappToken.facts.notChecked")}
-          </span>
-        )}
-      </dd>
-      <dt className="text-muted-foreground">{tx("admin.whatsappToken.facts.token")}</dt>
-      <dd className="min-w-0">
-        {status.last4 ? (
-          <span className="inline-flex items-center gap-1.5 font-mono text-sm">
-            <KeyRoundIcon className="size-3.5 text-muted-foreground" />
-            <span aria-label={tx("admin.whatsappToken.facts.tokenEnding", { last4: status.last4 })}>
-              •••• •••• {status.last4}
-            </span>
-          </span>
-        ) : (
-          <span className="text-muted-foreground">{tx("admin.whatsappToken.facts.noToken")}</span>
-        )}
-      </dd>
-      <dt className="text-muted-foreground">{tx("admin.whatsappToken.facts.updated")}</dt>
-      <dd className="min-w-0 break-words">
-        {status.updatedAt ? (
-          <>
-            {formatDate(status.updatedAt, DATE_TIME_PATTERN)}
-            <span className="text-muted-foreground">
-              {" · "}
-              {tx("admin.whatsappToken.facts.updatedBy", {
-                name: status.updatedBy?.name ?? "—",
-              })}
-            </span>
-          </>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </dd>
-      <dt className="text-muted-foreground">{tx("admin.whatsappToken.facts.waiting")}</dt>
-      <dd className="min-w-0">
-        {held === null ? (
-          <span className="text-muted-foreground">
-            {tx("admin.whatsappToken.facts.waitingUnknown")}
-          </span>
-        ) : (
-          <span className={cn(held > 0 && "font-medium text-destructive")}>
-            {waitingLabel(tx, held)}
-          </span>
-        )}
-      </dd>
-    </dl>
+    <div className="flex flex-col gap-1 text-sm">
+      {summary && (
+        <p className={cn(status.pausedReason ? "font-medium text-destructive" : "text-brand")}>
+          {summary}
+        </p>
+      )}
+      {status.lastWorkedAt && (
+        <p className="text-muted-foreground">
+          {tx("admin.whatsappToken.summary.lastWorked", {
+            date: formatDate(status.lastWorkedAt, DATE_TIME_PATTERN),
+          })}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -244,11 +169,9 @@ function PasteTokenForm({
           <CheckCircle2Icon className="text-brand" />
           <AlertTitle>{tx("admin.whatsappToken.form.savedTitle")}</AlertTitle>
           <AlertDescription>
-            {status.state === "ok"
-              ? held > 0
-                ? tx("admin.whatsappToken.form.savedWaiting", { count: held })
-                : tx("admin.whatsappToken.form.saved")
-              : tx("admin.whatsappToken.form.savedAppNotAnswering")}
+            {held > 0
+              ? tx("admin.whatsappToken.form.savedWaiting", { count: held })
+              : tx("admin.whatsappToken.form.saved")}
           </AlertDescription>
         </Alert>
       )}
@@ -256,12 +179,13 @@ function PasteTokenForm({
   );
 }
 
-// Disabled whenever the token is not working (every state but `ok`), with the reason shown.
-function sendBlockedReason(tx: Tx, status: WhatsAppTokenSettings): string | null {
-  if (status.state === "invalid") return tx("admin.whatsappToken.send.blockedInvalid");
-  if (status.state === "unavailable") return tx("admin.whatsappToken.send.blockedUnavailable");
-  if (status.state === "unknown") return tx("admin.whatsappToken.send.blockedUnknown");
-  if (!status.heldCount) return tx("admin.whatsappToken.send.blockedNone");
+// Disabled only while the token is refused or nothing is waiting (also during a payment pause it
+// works: the Admin presses it after fixing the payment). While the count is unknown it is disabled
+// with no reason line.
+function sendBlocked(tx: Tx, status: WhatsAppTokenSettings): { reason: string | null } | null {
+  if (status.state === "invalid") return { reason: tx("admin.whatsappToken.send.blockedInvalid") };
+  if (status.heldCount === null) return { reason: null };
+  if (status.heldCount === 0) return { reason: tx("admin.whatsappToken.send.blockedNone") };
   return null;
 }
 
@@ -272,7 +196,7 @@ function SendWaiting({ status }: { status: WhatsAppTokenSettings }) {
   const [confirming, setConfirming] = useState(false);
   const [queued, setQueued] = useState<number | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
-  const blocked = sendBlockedReason(tx, status);
+  const blocked = sendBlocked(tx, status);
   const count = status.heldCount ?? 0;
 
   async function handleSend() {
@@ -319,7 +243,8 @@ function SendWaiting({ status }: { status: WhatsAppTokenSettings }) {
       ) : refusal ? (
         <p className="text-xs text-destructive">{refusal}</p>
       ) : (
-        blocked && !isSendingWaiting && <p className="text-xs text-muted-foreground">{blocked}</p>
+        blocked?.reason &&
+        !isSendingWaiting && <p className="text-xs text-muted-foreground">{blocked.reason}</p>
       )}
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
@@ -360,17 +285,17 @@ function DialogBody({ onBusyChange }: { onBusyChange: (busy: boolean) => void })
   if (!status || isStatusLoading) {
     return (
       <div className="flex flex-col gap-3">
+        <Skeleton className="h-5 w-3/4 rounded-md" />
         <Skeleton className="h-9 w-full rounded-md" />
         <Skeleton className="h-9 w-full rounded-full" />
-        <Skeleton className="h-28 w-full rounded-xl" />
+        <Skeleton className="h-9 w-full rounded-full" />
       </div>
     );
   }
   return (
     <>
+      <PauseSummary status={status} />
       <PasteTokenForm status={status} onBusyChange={onBusyChange} />
-      <Separator />
-      <TokenFacts status={status} />
       <Separator />
       <SendWaiting status={status} />
     </>
@@ -378,8 +303,8 @@ function DialogBody({ onBusyChange }: { onBusyChange: (busy: boolean) => void })
 }
 
 /**
- * The WhatsApp access token dialog (Spec J-0), opened in place from the Admin banner: paste a new
- * token, the current status, and send the messages held while it was not working.
+ * The WhatsApp access token dialog (Spec J-0), opened in place from the Admin banner: what is
+ * happening and when a message last went out, paste a new token, and send the waiting messages.
  */
 export function WhatsAppTokenDialog({
   open,
