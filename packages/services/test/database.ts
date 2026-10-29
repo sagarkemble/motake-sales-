@@ -1,11 +1,37 @@
 import { db, sql } from "@repo/database";
 
-// Tests wipe the database at DATABASE_URL, so a run must opt in explicitly. CI sets it on the test
-// job only; deploy never does.
+// Supabase projects the tests may wipe: motake-testing (root .env.testing). The root .env is
+// production and is never on this list.
+const TEST_SUPABASE_PROJECT_REFS = ["osugflntfiggupnstyfo"];
+const LOCAL_DATABASE_HOSTS = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres"];
+
+// True when the URL is a test database: a local Postgres, or a listed Supabase project through
+// its pooler (user postgres.<ref>) or direct host (db.<ref>.supabase.co).
+export function isTestDatabaseUrl(databaseUrl: string | undefined): boolean {
+  if (!databaseUrl) return false;
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch {
+    return false;
+  }
+  if (LOCAL_DATABASE_HOSTS.includes(url.hostname)) return true;
+  return TEST_SUPABASE_PROJECT_REFS.some(
+    (ref) => url.username === `postgres.${ref}` || url.hostname === `db.${ref}.supabase.co`,
+  );
+}
+
+// Tests wipe the database at DATABASE_URL, so a run must opt in explicitly and point at a test
+// database. CI sets ALLOW_DB_WIPE on the test job only; deploy never does.
 export function assertDatabaseWipeAllowed(environment: NodeJS.ProcessEnv): void {
   if (environment.ALLOW_DB_WIPE !== "true") {
     throw new Error(
       "Refusing to run tests: they wipe every table at DATABASE_URL. Set ALLOW_DB_WIPE=true to allow it.",
+    );
+  }
+  if (!isTestDatabaseUrl(environment.DATABASE_URL)) {
+    throw new Error(
+      "Refusing to run tests: DATABASE_URL is not a test database. Tests only run against .env.testing.",
     );
   }
 }

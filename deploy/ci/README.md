@@ -59,8 +59,8 @@ They go to `deploy/generated/notification.env` for the Docker container, not to 
 
 ## Required GitHub Variables
 
-- `MOTAKE_FRONTEND_DOMAIN` — e.g. `motake-front.lunarstudio.dev`
-- `MOTAKE_API_DOMAIN` — e.g. `motake-back.lunarstudio.dev`
+- `MOTAKE_FRONTEND_DOMAIN` — e.g. `sales.motakedairy.com`
+- `MOTAKE_API_DOMAIN` — e.g. `sales-api.motakedairy.com`
 - `MOTAKE_ROUTING_MODE` — `separate`
 - `MOTAKE_WEB_PORT` — `3000`
 - `MOTAKE_NOTIFICATION_PORT` — `8100` (optional)
@@ -72,8 +72,8 @@ If you have all env vars exported:
 
 ```bash
 export MOTAKE_ROUTING_MODE=separate
-export MOTAKE_FRONTEND_DOMAIN=motake-front.lunarstudio.dev
-export MOTAKE_API_DOMAIN=motake-back.lunarstudio.dev
+export MOTAKE_FRONTEND_DOMAIN=sales.motakedairy.com
+export MOTAKE_API_DOMAIN=sales-api.motakedairy.com
 # ... plus all write-env.sh vars
 
 ./deploy/ci/write-env.sh

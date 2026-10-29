@@ -9,7 +9,7 @@
  * All other operations go through the backend.
  *
  * Usage:
- *   SEED_API_BASE_URL=https://motake-back.lunarstudio.dev \
+ *   SEED_API_BASE_URL=https://sales-api.motakedairy.com \
  *   dotenv -- node scripts/seed-k6-users.mjs
  */
 

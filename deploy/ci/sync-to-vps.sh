@@ -156,9 +156,11 @@ chmod +x apps/notification/docker/start.sh
 export VPS_APP_PATH="${VPS_APP_PATH:-/var/www/motake}"
 export DEPLOY_USER="${VPS_USER:-deploy}"
 
-./deploy/ci/ensure-production.sh --quiet
-./deploy/ci/write-env.sh
-./deploy/ci/deploy.sh --skip-build
+# This script reaches bash on stdin, so a child that reads stdin (apt-get, dpkg, docker) would
+# swallow the lines after it and the deploy would end early with success. </dev/null stops that.
+./deploy/ci/ensure-production.sh --quiet </dev/null
+./deploy/ci/write-env.sh </dev/null
+./deploy/ci/deploy.sh --skip-build </dev/null
 REMOTE_SCRIPT
 
 echo "Remote deploy finished."

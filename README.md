@@ -104,7 +104,7 @@ Load tests simulate concurrent salesmen and admins against the API. They talk to
 In `.env`:
 
 ```bash
-K6_API_BASE_URL=https://motake-back.lunarstudio.dev   # or http://localhost:8000
+K6_API_BASE_URL=https://sales-api.motakedairy.com   # or http://localhost:8000
 K6_SALESMAN_VUS=10    # concurrent salesman virtual users
 K6_ADMIN_VUS=2        # concurrent admin virtual users
 ```
@@ -168,6 +168,6 @@ Pushes to `main` that touch `apps/**`, `packages/**`, or `deploy/**` trigger the
 [Deploy to VPS](.github/workflows/deploy.yml) workflow (build on GitHub Actions,
 rsync artifacts to the VPS, PM2 + Caddy). Documentation-only changes do not deploy.
 
-- Frontend: [https://motake-front.lunarstudio.dev](https://motake-front.lunarstudio.dev)
-- API: [https://motake-back.lunarstudio.dev](https://motake-back.lunarstudio.dev)
+- Frontend: [https://sales.motakedairy.com](https://sales.motakedairy.com)
+- API: [https://sales-api.motakedairy.com](https://sales-api.motakedairy.com)
 
