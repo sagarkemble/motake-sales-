@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     # Each run gets its own throwaway Postgres, so runs never share or wipe a real database. The
     # wipe guard only allows a local host, never production or motake-testing over the network.
+    # Supabase's own Postgres image, so Supabase Vault (the WhatsApp token, Spec J-0) exists.
     services:
       postgres:
-        image: postgres:17
+        image: supabase/postgres:15.8.1.085
         env:
-          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: motake_test
         ports:
@@ -23,7 +23,7 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +43,7 @@ jobs:
       # The suite truncates every app table at DATABASE_URL and applies the migrations first.
       - name: Run tests
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/motake_test
+          # supabase_admin owns motake_test in this image; postgres may not create schemas there.
+          DATABASE_URL: postgres://supabase_admin:postgres@localhost:5432/motake_test
           ALLOW_DB_WIPE: "true"
         run: pnpm test
