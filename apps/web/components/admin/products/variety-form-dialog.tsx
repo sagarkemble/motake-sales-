@@ -60,11 +60,10 @@ export type VarietyFormValues = {
 
 type VarietyDialogFormValues = { name: string; unit: string } & TaxRateFieldValues;
 
-// No HSN, not exempt and the rate untouched (still the default, or cleared) means "no GST yet";
-// only a Variety without GST can leave it so. Typing an HSN or another rate asks for both.
+// No HSN, not exempt and the rate cleared means "no GST yet"; only a Variety without GST can leave
+// it so. A GST rate, the default included, asks for an HSN.
 function isTaxLeftEmpty(values: TaxRateFieldValues) {
-  const rate = values.ratePercent.trim();
-  return values.hsn === "" && !values.exempt && (rate === "" || rate === DEFAULT_GST_RATE_PERCENT);
+  return values.hsn === "" && !values.exempt && values.ratePercent.trim() === "";
 }
 
 function toTaxFieldValues(tax: VarietyTax | null): TaxRateFieldValues {
@@ -127,7 +126,10 @@ export function VarietyFormDialog({
             context.addIssue({
               code: "custom",
               path: ["hsn"],
-              message: tx("admin.varietyTax.validation.hsnDigits"),
+              message:
+                values.hsn === ""
+                  ? tx("admin.varietyTax.validation.hsnRequired")
+                  : tx("admin.varietyTax.validation.hsnDigits"),
             });
           }
           const gstRateBps = percentToBps(values.ratePercent);

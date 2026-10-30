@@ -96,6 +96,15 @@ export function VarietyTaxRateFields() {
                 className="rounded-xl bg-muted/40"
                 {...field}
                 value={exempt ? "0" : field.value}
+                onBlur={() => {
+                  field.onBlur();
+                  // A 0% rate is Exempt: switch it on (switching off again starts from the default).
+                  if (field.value.trim() !== "" && Number(field.value) === 0) {
+                    form.setValue("exempt", true);
+                    form.setValue("ratePercent", DEFAULT_GST_RATE_PERCENT);
+                    form.clearErrors("ratePercent");
+                  }
+                }}
               />
             </FormControl>
             <FormMessage />

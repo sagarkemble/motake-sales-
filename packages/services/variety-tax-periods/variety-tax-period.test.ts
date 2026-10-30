@@ -339,9 +339,9 @@ describe("upsert", () => {
     });
   });
 
-  it("refuses a bad HSN", async () => {
+  it("refuses a missing or bad HSN", async () => {
     const { admin, variety } = await setup();
-    for (const hsn of ["040", "040123456", "04A1"]) {
+    for (const hsn of ["", "040", "040123456", "04A1"]) {
       await expect(
         taxPeriods.upsert({ ...taxable(variety.id, "2026-04-01"), hsn }, admin.id),
       ).rejects.toMatchObject({ name: "ZodError" });
