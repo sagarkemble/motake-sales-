@@ -77,7 +77,13 @@
       "updatePhone": "Update phone number"
     },
     "errors": {
-      "logoutFailed": "Could not log out. Try again."
+      "logoutFailed": "Could not log out. Try again.",
+      "network": "Can't reach the server. Check your internet connection and try again.",
+      "sessionEnded": "Your session has ended. Please sign in again.",
+      "forbidden": "You don't have permission to do this.",
+      "notFound": "This record no longer exists. Refresh the page.",
+      "invalidInput": "Some details are missing or not valid. Check the form and try again.",
+      "tooManyRequests": "Too many tries. Wait a moment and try again."
     },
     "pagination": {
       "pageOf": "Page {page} of {total}",

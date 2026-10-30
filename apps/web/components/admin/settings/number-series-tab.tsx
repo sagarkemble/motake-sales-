@@ -55,7 +55,7 @@ export function NumberSeriesTab({
       await prepareYearAsync({ financialYear: nextFinancialYear });
       toast.success(tx("admin.settings.prefixes.prepareSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.prefixes.prepareFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.prefixes.prepareFailed")));
     }
   }
 
@@ -251,7 +251,7 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
       toast.success(tx("admin.settings.prefixes.saveSuccess"));
       onDone();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.prefixes.saveFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.prefixes.saveFailed")));
     }
   }
 

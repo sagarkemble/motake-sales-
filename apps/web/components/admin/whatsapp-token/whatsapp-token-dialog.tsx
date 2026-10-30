@@ -48,7 +48,7 @@ function tokenRefusalMessage(tx: Tx, error: unknown): string {
     const message = tx(key);
     if (message !== key) return message;
   }
-  return getErrorMessage(error, tx("admin.whatsappToken.refusals.generic"));
+  return getErrorMessage(tx, error, tx("admin.whatsappToken.refusals.generic"));
 }
 
 // One plain line of what is happening, and when a message last went out.

@@ -50,7 +50,7 @@ function SalesmanPageContent() {
       await deactivateSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.deactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.deactivateFailed")));
     }
   }
 
@@ -59,7 +59,7 @@ function SalesmanPageContent() {
       await reactivateSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.reactivateFailed")));
     }
   }
 
@@ -69,7 +69,7 @@ function SalesmanPageContent() {
       await deleteSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.deleteSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.deleteFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.deleteFailed")));
     }
   }
 

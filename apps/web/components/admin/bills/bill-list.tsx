@@ -82,7 +82,7 @@ export function BillList() {
       setLookupError(
         error instanceof TRPCClientError && error.data?.code === "NOT_FOUND"
           ? tx("admin.bills.lookupMiss", { number })
-          : getErrorMessage(error, tx("admin.bills.lookupFailed")),
+          : getErrorMessage(tx, error, tx("admin.bills.lookupFailed")),
       );
     } finally {
       setIsLookingUp(false);

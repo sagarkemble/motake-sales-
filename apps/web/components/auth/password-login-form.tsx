@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
+import { isNetworkError } from "~/lib/get-error-message";
 import { usePasswordLoginStore } from "~/lib/login-store";
 
 const minPasswordLength = 8;
@@ -65,8 +66,12 @@ export function PasswordLoginForm() {
       await signInWithEmailAndPassword(parsedForm.data);
       toast.success(tx("auth.login.success"));
       router.push("/");
-    } catch {
-      setFormError(tx("auth.login.error.wrongCredentials"));
+    } catch (error) {
+      setFormError(
+        isNetworkError(error)
+          ? tx("common.errors.network")
+          : tx("auth.login.error.wrongCredentials"),
+      );
       setPassword("");
     } finally {
       setIsSubmitting(false);

@@ -48,7 +48,7 @@ export function useCheckoutAttempt(defaultAttemptId: string) {
       const checkoutRefusal = checkoutRefusalOf(attemptError);
       if (!checkoutRefusal) {
         if (isOutcomeUnknown(attemptError)) setIsOutcomeUnknown(true);
-        toast.error(getErrorMessage(attemptError, tx(options.fallbackErrorKey)));
+        toast.error(getErrorMessage(tx, attemptError, tx(options.fallbackErrorKey)));
         return null;
       }
       setIsOutcomeUnknown(false);

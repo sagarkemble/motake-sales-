@@ -39,7 +39,7 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
       const response = await createRouteAsync({ name, deliveryState });
       onCreated(response.data.id);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, tx("admin.routes.createFailed")));
+      setErrorMessage(getErrorMessage(tx, error, tx("admin.routes.createFailed")));
     }
   }
 

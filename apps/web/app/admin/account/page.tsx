@@ -48,7 +48,7 @@ export default function AdminAccountPage() {
       await updateMyProfileAsync({ name: trimmedName });
       toast.success(tx("account.profile.nameUpdated"));
     } catch (updateError) {
-      toast.error(getErrorMessage(updateError, tx("account.profile.nameSaveFailed")));
+      toast.error(getErrorMessage(tx, updateError, tx("account.profile.nameSaveFailed")));
     }
   }
 

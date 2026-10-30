@@ -61,7 +61,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
       await setRoutePriceAsync({ routeId, varietyId: variety.varietyId, pricePaise });
       setIsWaitingForPrice(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.prices.saveFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.prices.saveFailed")));
       setPriceText(savedPaise == null ? "" : paiseToRupeeInput(savedPaise));
     } finally {
       setIsSaving(false);
@@ -73,7 +73,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
     try {
       await clearRoutePriceAsync({ routeId, varietyId: variety.varietyId });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.prices.clearFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.prices.clearFailed")));
     } finally {
       setIsSaving(false);
     }

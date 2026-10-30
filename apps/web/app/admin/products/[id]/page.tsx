@@ -51,7 +51,7 @@ export default function EditProductPage() {
       await updateProductAsync({ id: productId, ...values });
       toast.success(tx("admin.products.updateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.products.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.products.updateFailed")));
     }
   }
 
@@ -60,7 +60,7 @@ export default function EditProductPage() {
       await deactivateProductAsync({ id: productId });
       toast.success(tx("admin.products.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.products.deactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.products.deactivateFailed")));
     } finally {
       setIsDeactivateConfirmOpen(false);
     }
@@ -71,7 +71,7 @@ export default function EditProductPage() {
       await reactivateProductAsync({ id: productId });
       toast.success(tx("admin.products.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.products.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.products.reactivateFailed")));
     }
   }
 
@@ -81,7 +81,7 @@ export default function EditProductPage() {
       toast.success(tx("admin.products.deleteSuccess"));
       router.push("/admin/products");
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.products.deleteFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.products.deleteFailed")));
     } finally {
       setIsDeleteConfirmOpen(false);
     }

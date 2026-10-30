@@ -187,7 +187,7 @@ function GatepassPageContent() {
         reviewItems,
       });
     } catch (error) {
-      setRefusal(getErrorMessage(error, tx("admin.gatepass.allot.failed")));
+      setRefusal(getErrorMessage(tx, error, tx("admin.gatepass.allot.failed")));
     }
   }
 

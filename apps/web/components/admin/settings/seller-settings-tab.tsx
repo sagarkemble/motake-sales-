@@ -73,7 +73,7 @@ export function SellerSettingsTab() {
       await setUpSellerAsync(toSellerInput(values));
       toast.success(tx("admin.settings.seller.setUpSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.seller.setUpFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.seller.setUpFailed")));
     }
   }
 
@@ -83,7 +83,7 @@ export function SellerSettingsTab() {
       toast.success(tx("admin.settings.seller.updateSuccess"));
       setIsEditing(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.seller.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.seller.updateFailed")));
     }
   }
 

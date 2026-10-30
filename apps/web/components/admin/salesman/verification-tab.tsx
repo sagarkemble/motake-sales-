@@ -82,7 +82,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
       await verifyGatepassAsync({ id: pendingGatepass.id });
       toast.success(tx("admin.salesmen.verify.approved"));
     } catch (verifyError) {
-      toast.error(getErrorMessage(verifyError, tx("admin.salesmen.verify.closeFailed")));
+      toast.error(getErrorMessage(tx, verifyError, tx("admin.salesmen.verify.closeFailed")));
     }
   }
 
@@ -96,7 +96,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
       setIsFlagOpen(false);
       setFlagReason("");
     } catch (flagError) {
-      toast.error(getErrorMessage(flagError, tx("admin.salesmen.verify.flagFailed")));
+      toast.error(getErrorMessage(tx, flagError, tx("admin.salesmen.verify.flagFailed")));
     }
   }
 

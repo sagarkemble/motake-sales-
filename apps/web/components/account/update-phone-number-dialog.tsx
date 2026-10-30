@@ -10,6 +10,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/components/ui/input-otp
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
+import { isNetworkError } from "~/lib/get-error-message";
 import { createOtpLoginStore } from "~/lib/login-store";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -82,8 +83,10 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
       goToPasscodeStep();
       startResendCooldown();
       toast.success(tx("auth.otp.codeSent"));
-    } catch {
-      setFormError(tx("account.phone.sendFailed"));
+    } catch (error) {
+      setFormError(
+        isNetworkError(error) ? tx("common.errors.network") : tx("account.phone.sendFailed"),
+      );
     } finally {
       setIsSending(false);
     }
@@ -104,8 +107,10 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
       await confirmPhoneNumberChange({ phone: fullPhoneNumber(), passcode });
       toast.success(tx("account.phone.updated"));
       handleOpenChange(false);
-    } catch {
-      setFormError(tx("auth.otp.invalidOrExpired"));
+    } catch (error) {
+      setFormError(
+        isNetworkError(error) ? tx("common.errors.network") : tx("auth.otp.invalidOrExpired"),
+      );
       setPasscode("");
     } finally {
       setIsVerifying(false);

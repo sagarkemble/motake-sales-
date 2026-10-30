@@ -256,7 +256,7 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
       toast.success(tx("admin.settings.documents.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.documents.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.documents.updateFailed")));
     }
   }
 
@@ -457,7 +457,7 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
       toast.success(tx("admin.settings.documents.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.documents.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.documents.updateFailed")));
     }
   }
 

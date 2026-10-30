@@ -332,7 +332,9 @@ export function useCheckoutWizard() {
       setNewCustomerForm(EMPTY_NEW_CUSTOMER_FORM);
       return createdCustomer;
     } catch (createCustomerError) {
-      toast.error(getErrorMessage(createCustomerError, tx("salesman.checkout.error.saveCustomer")));
+      toast.error(
+        getErrorMessage(tx, createCustomerError, tx("salesman.checkout.error.saveCustomer")),
+      );
       return null;
     }
   }

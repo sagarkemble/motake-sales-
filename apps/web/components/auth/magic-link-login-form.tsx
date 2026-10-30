@@ -9,6 +9,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
+import { isNetworkError } from "~/lib/get-error-message";
 import { useMagicLinkLoginStore } from "~/lib/login-store";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -58,8 +59,10 @@ export function MagicLinkLoginForm() {
       goToLinkSentStep();
       startResendCooldown();
       toast.success(tx("auth.magicLink.sent"));
-    } catch {
-      setFormError(tx("auth.magicLink.sendFailed"));
+    } catch (error) {
+      setFormError(
+        isNetworkError(error) ? tx("common.errors.network") : tx("auth.magicLink.sendFailed"),
+      );
     } finally {
       setIsSending(false);
     }

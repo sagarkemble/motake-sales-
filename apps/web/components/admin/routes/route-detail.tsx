@@ -91,7 +91,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
       await updateRouteAsync({ id: route.id, name: nameText });
     } catch (error) {
       setNameText(route.name);
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -100,7 +100,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await updateRouteAsync({ id: route.id, deliveryState });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -109,7 +109,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await setRouteStatusAsync({ id: route.id, status: isActive ? "active" : "inactive" });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -119,7 +119,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await hideRouteAsync({ id: route.id });
     } catch (error) {
-      setHideRefusal(getErrorMessage(error, tx("admin.routes.deleteFailed")));
+      setHideRefusal(getErrorMessage(tx, error, tx("admin.routes.deleteFailed")));
     } finally {
       setIsConfirmOpen(false);
     }

@@ -37,7 +37,7 @@ export function MoveToRoutePanel({
       await moveCustomerRouteAsync({ id: customerId, toRouteId: targetRouteId });
       onMoved();
     } catch (error) {
-      setRefusal(getErrorMessage(error, tx("admin.customers.move.failed")));
+      setRefusal(getErrorMessage(tx, error, tx("admin.customers.move.failed")));
     }
   }
 

@@ -44,7 +44,7 @@ export function AdminNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, tx("common.errors.logoutFailed")));
+      toast.error(getErrorMessage(tx, logoutError, tx("common.errors.logoutFailed")));
     }
   }
 

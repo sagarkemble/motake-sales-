@@ -62,7 +62,7 @@ export default function CustomerDetailPage() {
       await reactivateCustomerAsync({ id: customerId });
       toast.success(tx("admin.customers.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.customers.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.customers.reactivateFailed")));
     }
   }
 

@@ -157,7 +157,7 @@ export function VarietyFormDialog({
     try {
       await onSubmit({ name: values.name, unit: values.unit, tax });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, tx("admin.varieties.saveFailed"));
+      const errorMessage = getErrorMessage(tx, error, tx("admin.varieties.saveFailed"));
       // The server refuses a second Variety with the same name under this Product.
       if (error instanceof TRPCClientError && error.data?.code === "CONFLICT") {
         form.setError("name", { message: errorMessage });
