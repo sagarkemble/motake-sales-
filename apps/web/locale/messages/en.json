@@ -73,8 +73,7 @@
     "nav": {
       "quickActions": "Quick actions",
       "profile": "Profile",
-      "account": "Account",
-      "updatePhone": "Update phone number"
+      "account": "Account"
     },
     "errors": {
       "logoutFailed": "Could not log out. Try again.",

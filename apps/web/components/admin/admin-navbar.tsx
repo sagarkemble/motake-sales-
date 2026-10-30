@@ -1,12 +1,10 @@
 "use client";
 
-import { LogOutIcon, MenuIcon, SettingsIcon, SmartphoneIcon, UserIcon } from "lucide-react";
+import { LogOutIcon, MenuIcon, SettingsIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 
-import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
 import { LanguageSwitcher } from "~/components/shared/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -34,7 +32,6 @@ export function AdminNavbar() {
   const currentPathname = usePathname();
   const router = useRouter();
   const { signedInUser, logoutAsync } = useAuth();
-  const [isUpdatePhoneDialogOpen, setIsUpdatePhoneDialogOpen] = useState(false);
 
   const pageTitle = getPageTitleForPathname(currentPathname);
   const avatarInitial = getNameInitials(signedInUser?.name, signedInUser?.role.charAt(0) ?? "A");
@@ -166,10 +163,6 @@ export function AdminNavbar() {
                 {tx("common.nav.profile")}
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
-              <SmartphoneIcon className="size-4" />
-              {tx("common.nav.updatePhone")}
-            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/admin/settings">
                 <SettingsIcon className="size-4" />
@@ -183,11 +176,6 @@ export function AdminNavbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <UpdatePhoneNumberDialog
-        open={isUpdatePhoneDialogOpen}
-        onOpenChange={setIsUpdatePhoneDialogOpen}
-      />
     </header>
   );
 }

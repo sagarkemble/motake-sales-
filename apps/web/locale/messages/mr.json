@@ -73,8 +73,7 @@
     "nav": {
       "quickActions": "जलद क्रिया",
       "profile": "प्रोफाइल",
-      "account": "खाते",
-      "updatePhone": "फोन नंबर अपडेट करा"
+      "account": "खाते"
     },
     "errors": {
       "logoutFailed": "लॉग आउट करता आले नाही. पुन्हा प्रयत्न करा.",
