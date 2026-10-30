@@ -22,7 +22,7 @@
     "test": {
       "dependsOn": ["^build"],
       "cache": false,
-      "passThroughEnv": ["DATABASE_URL", "ALLOW_DB_WIPE"]
+      "passThroughEnv": ["DATABASE_URL", "ALLOW_DB_WIPE", "SKIP_VAULT_TESTS"]
     }
   }
 }

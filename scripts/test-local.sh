@@ -1,28 +1,12 @@
 #!/usr/bin/env bash
-# Runs the test suite on a throwaway local Postgres (the same image CI uses), so tests never wipe
-# the motake-testing data used for click-testing. The container is removed when the run ends.
+# Runs the test suite on the local Postgres (not Docker), so tests never wipe the motake-testing
+# data used for click-testing. The database is created once with:
+#   sudo -u postgres psql -c "CREATE ROLE motake_test LOGIN PASSWORD 'motake_test' CREATEDB" \
+#     -c "CREATE DATABASE motake_test OWNER motake_test"
+# Plain Postgres has no Supabase Vault, so the WhatsApp token files are skipped here; CI runs them.
 #   pnpm test:local                  every package
 #   pnpm test:local --filter=@repo/services -- products   one package, matching test files
 set -euo pipefail
 
-CONTAINER=motake-test-pg
-PORT=55432
-IMAGE=supabase/postgres:15.8.1.085
-
-if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-  docker run -d --rm --name "$CONTAINER" -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=motake_test \
-    -p "127.0.0.1:$PORT:5432" "$IMAGE" >/dev/null
-  trap 'docker stop "$CONTAINER" >/dev/null' EXIT
-fi
-
-# The image restarts Postgres once while it initialises; wait until it stays up.
-for _ in $(seq 1 60); do
-  if docker exec "$CONTAINER" pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1 &&
-    docker exec "$CONTAINER" psql -U supabase_admin -h 127.0.0.1 -d motake_test -c 'select 1' >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-
-DATABASE_URL="postgres://supabase_admin:postgres@127.0.0.1:$PORT/motake_test" ALLOW_DB_WIPE=true \
-  npx turbo test --concurrency=1 "$@"
+DATABASE_URL="${TEST_DATABASE_URL:-postgres://motake_test:motake_test@127.0.0.1:5432/motake_test}" \
+  ALLOW_DB_WIPE=true SKIP_VAULT_TESTS=true npx turbo test --concurrency=1 "$@"
