@@ -95,6 +95,8 @@ export function useOrders({
       utils.ledger.invalidate();
       utils.bills.invalidate();
     },
+    // Refused because it was fulfilled or cancelled meanwhile: reload so the list shows that.
+    onError: () => utils.orders.invalidate(),
   });
 
   return {

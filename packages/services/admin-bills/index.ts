@@ -820,26 +820,15 @@ class AdminBillService {
     return run.result;
   }
 
-  // The orders cancel entry: an unfulfilled Pre-order is cancelled as such; an order with a Bill
-  // cancels that Bill at its latest version. Returns the order as it now stands.
+  // The orders cancel entry: only a placed Pre-order that is not yet fulfilled is cancelled. A
+  // fulfilled Pre-order or a Book Now has a Bill, which is cancelled from the Bill instead.
+  // Returns the order as it now stands.
   public async cancelOrder(
     actorProfileId: string,
     input: CancelPreOrderInput,
   ): Promise<SelectOrder> {
     const parsedInput = cancelPreOrderInputSchema.parse(input);
-    const bill = await getBillByOrderId(parsedInput.orderId);
-    if (!bill) {
-      await this.cancelPreOrder(actorProfileId, parsedInput);
-    } else {
-      const run = await runInTransaction((transaction) =>
-        this.cancelBillInTransaction(
-          actorProfileId,
-          { billId: bill.id, reason: parsedInput.reason },
-          transaction,
-        ),
-      );
-      await notifyAdminBillOutcome(this.afterCommit, run.outcome);
-    }
+    await this.cancelPreOrder(actorProfileId, parsedInput);
     const order = await getOrderWithItemsById(parsedInput.orderId);
     if (!order) throw notFound(`Order ${parsedInput.orderId} not found`);
     return order.order;

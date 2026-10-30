@@ -488,27 +488,46 @@ describe("AdminBillService.cancelPreOrder", () => {
 });
 
 describe("AdminBillService.cancelOrder (the orders cancel entry)", () => {
-  it("cancels an unfulfilled Pre-order, or a Book Now's Bill at its latest version", async () => {
+  it("cancels an unfulfilled Pre-order", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const preOrder = await placePreOrder(world);
-    const bookNow = await placeBookNowBill(world);
 
     const cancelledPreOrder = await adminBillService.cancelOrder(world.admin.id, {
       orderId: preOrder.orderId,
       reason: "Shop asked",
     });
-    const cancelledBookNow = await adminBillService.cancelOrder(world.admin.id, {
-      orderId: bookNow.orderId,
-      reason: "Wrong shop",
-    });
 
     expect(cancelledPreOrder.status).toBe("cancelled");
-    expect(cancelledBookNow.status).toBe("cancelled");
-    expect(await billNetLedgerPaise(bookNow.billId)).toBe(0);
-    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
-      "pre_order_cancelled",
-      "bill_cancelled",
-    ]);
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual(["pre_order_cancelled"]);
+  });
+
+  it("refuses a fulfilled Pre-order and a Book Now, leaving their Bills live", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const preOrder = await placePreOrder(world);
+    const bookNow = await placeBookNowBill(world);
+    vi.setSystemTime(new Date(`${tomorrow}T06:00:00Z`));
+    const fulfilled = await orderService.fulfilPreOrder(
+      { profileId: world.admin.id, role: "admin" },
+      {
+        orderId: preOrder.orderId,
+        idempotencyKey: randomUUID(),
+        payment: { mode: "cash", receivedPaise: 0 },
+      },
+    );
+    const cancel = (orderId: string) =>
+      adminBillService.cancelOrder(world.admin.id, { orderId, reason: "Wrong shop" });
+
+    expect(await refusalOf(cancel(preOrder.orderId))).toMatchObject({
+      reason: "already_fulfilled",
+    });
+    expect(await refusalOf(cancel(bookNow.orderId))).toMatchObject({
+      reason: "not_a_pre_order",
+    });
+    expect((await orderOf(preOrder.orderId)).status).toBe("fulfilled");
+    expect((await orderOf(bookNow.orderId)).status).toBe("confirmed");
+    expect(await billNetLedgerPaise(fulfilled.billId)).not.toBe(0);
+    expect(await billNetLedgerPaise(bookNow.billId)).not.toBe(0);
+    expect(outcomes).toEqual([]);
   });
 });
 

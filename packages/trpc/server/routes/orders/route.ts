@@ -198,7 +198,7 @@ export const ordersRouter = router({
         protect: true,
         summary: "Cancel an order",
         description:
-          "Admin cancels an order with a reason: an unfulfilled Pre-order is cancelled as such; an order with a Bill cancels that Bill at its latest version (Spec G Cancel). A salesman cannot cancel.",
+          "Admin cancels a placed Pre-order that is not yet fulfilled, with a reason. A fulfilled Pre-order or a Book Now is refused: its Bill is cancelled from the Bill (Spec G Cancel). A salesman cannot cancel.",
       },
     })
     .input(cancelOrderInputSchema)
