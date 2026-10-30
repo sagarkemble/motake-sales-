@@ -20,6 +20,7 @@
     "./indian-states": "./indian-states/index.ts",
     "./k6-cleanup": "./k6-cleanup/index.ts",
     "./ledger": "./ledger/index.ts",
+    "./limits": "./limits/index.ts",
     "./notification": "./notification/index.ts",
     "./orders": "./orders/index.ts",
     "./payments": "./payments/index.ts",

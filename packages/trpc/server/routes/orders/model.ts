@@ -1,3 +1,5 @@
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "@repo/services/limits";
+
 import { z } from "../../schema";
 
 export const orderTypeSchema = z.enum(["book_now", "pre_order"]);
@@ -163,7 +165,7 @@ export const paymentModeSchema = z.enum(["cash", "bank", "upi"]);
 // than what clears Pending; bank and UPI extra is always kept as Advance.
 export const checkoutPaymentInputSchema = z.object({
   mode: paymentModeSchema,
-  receivedPaise: z.number().int().min(0),
+  receivedPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: z.string().trim().max(128).optional(),
   overpay: z.enum(["return_change", "keep_advance"]).optional(),
 });

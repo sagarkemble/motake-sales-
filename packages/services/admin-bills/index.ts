@@ -89,6 +89,7 @@ import { gstBillLockHook } from "../shared/gst-gates";
 import { dueStateOf, routeStampFromHeader, routeStampOf } from "../shared/checkout-events";
 import { recordAudit } from "../shared/audit";
 import { financialYearOf } from "../shared/financial-year";
+import { MAX_QTY } from "../shared/limits";
 import { computeBillTax, placeOfSupplyOf, type PlaceOfSupply } from "../shared/tax-engine";
 import VarietyTaxPeriodService from "../variety-tax-periods";
 import {
@@ -163,7 +164,7 @@ function sameQuantities(first: Map<string, number>, second: Map<string, number>)
   );
 }
 
-// Technical limits only, as at checkout: int4 quantities and safe-integer paise.
+// As at checkout: MAX_QTY a line, an int4 basket and safe-integer paise.
 const MAX_INT4 = 2_147_483_647;
 const MAX_SAFE_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -211,7 +212,7 @@ function refuseArithmetic(refusalResult: ArithmeticRefusal): never {
   );
 }
 
-// Correct and Debit Note quantities stay inside an int4 qty and a safe-integer amount, like
+// Correct and Debit Note quantities stay inside MAX_QTY a line and a safe-integer amount, like
 // Raise Bill's basket: a line past either is refused as bad_qty instead of overflowing.
 function assertQuantitiesFit(
   items: ArithmeticLine[],
@@ -231,8 +232,8 @@ function assertQuantitiesFit(
       mode === "debit_note" ? (remainingById.get(line.lineId) ?? 0) + line.quantity : line.quantity;
     const amountWithTax = BigInt(item.routePricePaise) * BigInt(lineQuantity) * 2n;
     if (
-      line.quantity > MAX_INT4 ||
-      lineQuantity > MAX_INT4 ||
+      line.quantity > MAX_QTY ||
+      lineQuantity > MAX_QTY ||
       totalQuantity + lineQuantity > MAX_INT4 ||
       totalAmount + amountWithTax > MAX_SAFE_AMOUNT
     ) {
@@ -1396,7 +1397,7 @@ class AdminBillService {
       );
     }
     for (const [varietyId, quantity] of quantityByVarietyId) {
-      if (quantity > MAX_INT4) badQtyIds.add(varietyId);
+      if (quantity > MAX_QTY) badQtyIds.add(varietyId);
     }
     for (const varietyId of badQtyIds) {
       badLines.push({ varietyId, reason: "bad_qty" });

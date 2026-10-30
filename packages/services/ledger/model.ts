@@ -1,7 +1,9 @@
 import type { SelectLedgerEntry } from "@repo/database/schema";
 import { z } from "zod";
 
-const paiseSchema = z.number().int().positive();
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "../shared/limits";
+
+const paiseSchema = z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE);
 const reasonSchema = z.string().trim().min(1);
 // Signed: new amount minus old amount.
 const differenceSchema = z

@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_QTY } from "@repo/trpc/client";
 import { MinusIcon, PlusIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -11,6 +12,8 @@ interface QuantityStepperProps {
   quantity: number;
   onQuantityChange: (quantity: number) => void;
   minQuantity?: number;
+  // "+" stops here and a typed qty is held to it; 5,000 unless a screen needs less.
+  maxQuantity?: number;
   disabled?: boolean;
   className?: string;
 }
@@ -19,6 +22,7 @@ export function QuantityStepper({
   quantity,
   onQuantityChange,
   minQuantity = 0,
+  maxQuantity = MAX_QTY,
   disabled = false,
   className,
 }: QuantityStepperProps) {
@@ -27,7 +31,7 @@ export function QuantityStepper({
   function handleNumericInput(rawValue: string) {
     const digitsOnly = rawValue.replace(/\D/g, "");
     const parsedQuantity = digitsOnly === "" ? minQuantity : Number.parseInt(digitsOnly, 10);
-    onQuantityChange(Math.max(minQuantity, parsedQuantity));
+    onQuantityChange(Math.min(maxQuantity, Math.max(minQuantity, parsedQuantity)));
   }
 
   return (
@@ -59,8 +63,8 @@ export function QuantityStepper({
         variant="outline"
         size="icon"
         className="size-8 shrink-0 rounded-full"
-        disabled={disabled}
-        onClick={() => onQuantityChange(quantity + 1)}
+        disabled={disabled || quantity >= maxQuantity}
+        onClick={() => onQuantityChange(Math.min(maxQuantity, quantity + 1))}
         aria-label={tx("common.a11y.increaseQty")}
       >
         <PlusIcon className="size-3.5" />

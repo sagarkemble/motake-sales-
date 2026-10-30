@@ -7,6 +7,7 @@ import { idempotencyKeySchema } from "../payments/model";
 import type { CorrectClassification, GstSummaryRow } from "../shared/bill-arithmetic";
 import type { BillLockDecision, NoteOutcome } from "../shared/bill-events";
 import type { RouteStamp } from "../shared/checkout-events";
+import { MAX_QTY, QTY_TOO_LARGE } from "../shared/limits";
 
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const reasonSchema = z.string().trim().min(1).max(1000);
@@ -109,7 +110,12 @@ export const previewCorrectInputSchema = z.object({
   expectedVersionNumber: versionNumberSchema,
   // New qty per live line; 0 removes it. A line left out keeps its qty.
   lines: z
-    .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().min(0) }))
+    .array(
+      z.object({
+        lineId: z.string().uuid(),
+        quantity: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
+      }),
+    )
     .refine(noRepeatedLine, "A line appears twice")
     .default([]),
 });
@@ -197,7 +203,12 @@ export const previewRaiseNoteInputSchema = z.object({
   expectedVersionNumber: versionNumberSchema,
   kind: z.enum(["gst_credit_note", "commercial_credit_note", "debit_note"]),
   lines: z
-    .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().positive() }))
+    .array(
+      z.object({
+        lineId: z.string().uuid(),
+        quantity: z.number().int().positive().max(MAX_QTY, QTY_TOO_LARGE),
+      }),
+    )
     .refine(noRepeatedLine, "A line appears twice"),
 });
 export type PreviewRaiseNoteInput = z.input<typeof previewRaiseNoteInputSchema>;

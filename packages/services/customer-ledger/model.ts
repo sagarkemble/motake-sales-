@@ -4,6 +4,7 @@ import type { SelectCustomer, SelectLedgerEntry } from "@repo/database/schema";
 import { z } from "zod";
 
 import type { Balance } from "../ledger/model";
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "../shared/limits";
 
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -82,7 +83,7 @@ export const addOpeningBalanceInputSchema = z.object({
   customerId: z.string().uuid(),
   // Pending = Debit, Advance = Credit.
   side: z.enum(["pending", "advance"]),
-  amountPaise: z.number().int().positive(),
+  amountPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reason: z.string().trim().min(1).max(1000),
   // The cutoff date the Admin types; today when left out. Not in the future.
   openingDate: businessDateSchema.optional(),

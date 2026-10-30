@@ -24,7 +24,7 @@ export function isNetworkError(error: unknown): boolean {
 
 interface ErrorData {
   code?: string;
-  issues?: unknown[] | null;
+  issues?: Array<{ path: string; message: string }> | null;
   refusal?: { reason: string; details: Record<string, unknown> | null } | null;
 }
 
@@ -49,8 +49,9 @@ function refusalText(tx: Translate, refusal: NonNullable<ErrorData["refusal"]>):
 /**
  * Plain words for a failed call, in the user's language. Never the server's own text: it can carry
  * SQL, Supabase errors or internal ids. A refused call gets the text for its reason; a lost
- * connection, an ended session, a missing permission or record and bad input get their own message;
- * anything else gets the screen's fallback ("Could not create product. Try again.").
+ * connection, an ended session, a missing permission or record, a value past a limit and bad input
+ * get their own message; anything else gets the screen's fallback ("Could not create product. Try
+ * again.").
  */
 export function getErrorMessage(tx: Translate, error: unknown, fallbackMessage: string): string {
   if (isNetworkError(error)) return tx("common.errors.network");
@@ -68,7 +69,14 @@ export function getErrorMessage(tx: Translate, error: unknown, fallbackMessage: 
       case "TOO_MANY_REQUESTS":
         return tx("common.errors.tooManyRequests");
     }
-    if (data?.issues) return tx("common.errors.invalidInput");
+    if (data?.issues) {
+      // A value past a limit (amount_too_large, qty_too_large) gets its own words.
+      for (const issue of data.issues) {
+        const message = tx(`common.validation.${issue.message}`);
+        if (message !== `common.validation.${issue.message}`) return message;
+      }
+      return tx("common.errors.invalidInput");
+    }
   }
   return fallbackMessage;
 }

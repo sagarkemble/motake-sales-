@@ -14,7 +14,12 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { bpsToPercent } from "~/lib/gst-rate";
-import { keepRupeeInputCharacters, paiseToRupeeInput, parseRupeesToPaise } from "~/lib/rupee-input";
+import {
+  isAmountTooLarge,
+  keepRupeeInputCharacters,
+  paiseToRupeeInput,
+  parseRupeesToPaise,
+} from "~/lib/rupee-input";
 
 type VarietyTaxToday = { exempt: boolean; gstRateBps: number };
 
@@ -94,7 +99,13 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
   function handleSaveClick() {
     const pricePaise = parseRupeesToPaise(priceText);
     if (pricePaise == null) {
-      setErrorMessage(tx("admin.routes.prices.invalid"));
+      setErrorMessage(
+        tx(
+          isAmountTooLarge(priceText)
+            ? "common.validation.amountTooLarge"
+            : "admin.routes.prices.invalid",
+        ),
+      );
       return;
     }
     setErrorMessage(null);

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CustomerService from "../customers";
 import type { AdminBillOutcome, BillLockHook } from "../shared/bill-events";
+import { MAX_QTY } from "../shared/limits";
 import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
 import {
   BOOK_NOW_TOTAL_PAISE,
@@ -440,7 +441,7 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
     ).toMatchObject({ reason: "customer_inactive" });
   });
 
-  it("refuses a Debit Note qty past int4 as bad_qty, writing nothing", async () => {
+  it("refuses a Debit Note that takes a line past 5,000 as bad_qty, writing nothing", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await billWithLines(world);
 
@@ -451,7 +452,7 @@ describe("AdminBillService.raiseNote (review fixes)", () => {
           billId: placed.billId,
           expectedVersionNumber: 1,
           kind: "debit_note",
-          lines: [{ lineId: milkLine.id, quantity: 2_147_483_647 }],
+          lines: [{ lineId: milkLine.id, quantity: MAX_QTY }],
           reason: "Huge",
         }),
       ),

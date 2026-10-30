@@ -1,3 +1,4 @@
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "@repo/services/limits";
 import { INDIAN_STATES, routeNameSchema, type IndianStateName } from "@repo/services/routes";
 
 import { z } from "../../schema";
@@ -93,7 +94,7 @@ export const setRouteStatusInputSchema = routeIdInputSchema.extend({
 export const setRoutePriceInputSchema = z.object({
   routeId: z.string().uuid(),
   varietyId: z.string().uuid(),
-  pricePaise: z.number().int().positive(),
+  pricePaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
 });
 
 export const clearRoutePriceInputSchema = z.object({

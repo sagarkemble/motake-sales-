@@ -23,7 +23,7 @@ import {
   type PaymentDraft,
   type PaymentMode,
 } from "~/lib/checkout-payment";
-import { paiseToRupeeInput } from "~/lib/rupee-input";
+import { isAmountTooLarge, paiseToRupeeInput } from "~/lib/rupee-input";
 import { cn } from "~/lib/utils";
 
 interface PaymentBlockProps {
@@ -152,8 +152,12 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
               placeholder="0"
               className="h-11 rounded-xl pl-8 text-base tabular-nums"
               aria-label={tx("checkout.payment.receivedA11y")}
+              aria-invalid={isAmountTooLarge(draft.receivedText)}
             />
           </div>
+          {isAmountTooLarge(draft.receivedText) && (
+            <p className="text-xs text-destructive">{tx("common.validation.amountTooLarge")}</p>
+          )}
         </div>
       </div>
 

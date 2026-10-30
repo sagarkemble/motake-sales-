@@ -9,12 +9,13 @@ import {
   reasonSchema,
   referenceSchema,
 } from "../payments/model";
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "../shared/limits";
 
 // Recorded after the external payout; only out of Advance.
 export const addRefundInputSchema = z.object({
   customerId: z.string().uuid(),
   mode: paymentModeSchema,
-  amountPaise: z.number().int().positive(),
+  amountPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: referenceSchema,
   reason: reasonSchema,
   idempotencyKey: idempotencyKeySchema,
@@ -26,7 +27,7 @@ export type ParsedAddRefundInput = z.output<typeof addRefundInputSchema>;
 export const correctRefundInputSchema = z.object({
   refundId: z.string().uuid(),
   expectedLatestEventId: z.string().uuid(),
-  amountPaise: z.number().int().min(0),
+  amountPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   mode: paymentModeSchema,
   reference: correctReferenceSchema,
   reason: reasonSchema,

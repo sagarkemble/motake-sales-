@@ -33,7 +33,7 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useLedger } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage } from "~/lib/refusal";
-import { keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
+import { isAmountTooLarge, keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
 
 import { MAX_REASON_LENGTH, RefusalAlert, businessToday } from "./ledger-shared";
 
@@ -142,8 +142,14 @@ export function OpeningBalanceDialog({
                     placeholder="0.00"
                     value={amount}
                     onChange={(event) => setAmount(keepRupeeInputCharacters(event.target.value))}
+                    aria-invalid={isAmountTooLarge(amount)}
                     className="rounded-xl bg-muted/40"
                   />
+                  {isAmountTooLarge(amount) && (
+                    <p className="text-xs text-destructive">
+                      {tx("common.validation.amountTooLarge")}
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="opening-date">{tx("admin.ledger.opening.date")}</Label>

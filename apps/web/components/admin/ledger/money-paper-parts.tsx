@@ -23,7 +23,7 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import type { LedgerBalance, PaymentMode, PaymentPaper, RefundPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage, refusalOf } from "~/lib/refusal";
-import { keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
+import { isAmountTooLarge, keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
 
 import { LedgerBackHeader, MAX_REASON_LENGTH, PaperLoadFailed } from "./ledger-shared";
 
@@ -55,6 +55,7 @@ export function amountErrorKey(rawInput: string, allowZero: boolean): string | n
   const trimmed = rawInput.trim();
   if (trimmed === "") return null;
   if (!/^\d+(\.\d{0,2})?$/.test(trimmed)) return "admin.ledger.money.amountDecimals";
+  if (isAmountTooLarge(trimmed)) return "common.validation.amountTooLarge";
   const paise = allowZero ? parseRupeesAllowZero(trimmed) : parseRupeesToPaise(trimmed);
   if (paise == null) return "admin.ledger.money.amountAboveZero";
   return null;

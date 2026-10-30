@@ -85,6 +85,11 @@
       "invalidInput": "Some details are missing or not valid. Check the form and try again.",
       "tooManyRequests": "Too many tries. Wait a moment and try again."
     },
+    "validation": {
+      "amountTooLarge": "Amount can be at most ₹50,00,000.",
+      "amount_too_large": "An amount is too large. It can be at most ₹50,00,000.",
+      "qty_too_large": "A quantity is too large. It can be at most 5,000."
+    },
     "pagination": {
       "pageOf": "Page {page} of {total}",
       "previous": "Previous",
@@ -1052,7 +1057,7 @@
       "saving": "Saving…",
       "refusals": {
         "empty_basket": "Add at least one item.",
-        "bad_lines": "Some items cannot be billed. Fix the marked lines.",
+        "bad_lines": "Some items cannot be billed. Fix the marked lines; a quantity can be at most 5,000.",
         "bill_cancelled": "This Bill was cancelled. It has been reloaded.",
         "bill_locked": "This Bill is locked and cannot be changed.",
         "stale_version": "Someone changed this Bill just now. It has been reloaded; redo your changes on the latest version.",
@@ -1300,7 +1305,7 @@
         "badLinesTitle": "Some items cannot be billed",
         "badLine": {
           "unknown_variety": "not in the catalog",
-          "bad_qty": "wrong quantity",
+          "bad_qty": "quantity must be 1 to 5,000",
           "no_route_price": "no price on this Route",
           "no_tax_period": "no GST rate set"
         },
@@ -1726,7 +1731,7 @@
         "badLinesHint": "Remove them to continue.",
         "badLine": {
           "unknown_sku": "This item is not in the catalog any more.",
-          "bad_qty": "Quantity must be a whole number above 0.",
+          "bad_qty": "Quantity must be a whole number from 1 to 5,000.",
           "no_route_price": "No price on your Route for this item. Ask Admin.",
           "no_tax_period": "No GST rate set for today. Ask Admin."
         },
@@ -2040,7 +2045,7 @@
       },
       "bad_lines": {
         "title": "Some items cannot be sold",
-        "message": "{count} item(s) have no price, no GST rate or a wrong quantity. Remove them to continue.",
+        "message": "{count} item(s) have no price, no GST rate or a wrong quantity (1 to 5,000). Fix or remove them to continue.",
         "action": "Fix cart"
       },
       "short_stock": {

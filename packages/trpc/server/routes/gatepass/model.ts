@@ -1,3 +1,5 @@
+import { MAX_QTY, QTY_TOO_LARGE } from "@repo/services/limits";
+
 import { z } from "../../schema";
 
 export const gatepassStatusSchema = z.enum([
@@ -77,7 +79,12 @@ export const allotGatepassInputSchema = z.object({
   routeId: z.string().uuid(),
   businessDate: z.string(),
   items: z
-    .array(z.object({ varietyId: z.string().uuid(), issuedQty: z.number().int().min(0) }))
+    .array(
+      z.object({
+        varietyId: z.string().uuid(),
+        issuedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
+      }),
+    )
     .min(1),
 });
 
@@ -102,17 +109,17 @@ export const allotmentMatrixRowSchema = z.object({
 
 export const recordSaleInputSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  quantity: z.number().int().min(1),
+  quantity: z.number().int().min(1).max(MAX_QTY, QTY_TOO_LARGE),
 });
 
 export const recordReturnInputSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  returnedQty: z.number().int().min(0),
+  returnedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
 });
 
 export const handoverItemInputSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  returnedQty: z.number().int().min(0),
+  returnedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
   shortReason: gatepassShortReasonSchema.optional(),
   shortNote: z.string().max(500).optional(),
 });

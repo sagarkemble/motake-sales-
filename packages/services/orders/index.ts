@@ -65,6 +65,7 @@ import {
   type RouteStamp,
 } from "../shared/checkout-events";
 import { financialYearOf, financialYearOfInstant } from "../shared/financial-year";
+import { MAX_QTY } from "../shared/limits";
 import { computeBillTax, placeOfSupplyOf, type BillTax } from "../shared/tax-engine";
 import VarietyTaxPeriodService from "../variety-tax-periods";
 import {
@@ -97,9 +98,8 @@ import {
 const orderIdempotencyConstraint = "orders_idempotency_key_unique";
 const paymentIdempotencyConstraint = "payments_idempotency_key_unique";
 
-// Technical limits only, no business cap: quantities are int4 columns (order_items.quantity,
-// bills.total_quantity), and Route price × qty with GST (under 100%) on top must stay a safe
-// integer in paise, for each line and for the basket.
+// A line is capped at MAX_QTY; the basket stays inside the int4 columns (bills.total_quantity),
+// and Route price × qty with GST (under 100%) on top must stay a safe integer in paise.
 const MAX_INT4 = 2_147_483_647;
 const MAX_SAFE_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -896,7 +896,7 @@ class OrderService {
       quantityBySku.set(line.sku, (quantityBySku.get(line.sku) ?? 0) + line.qty);
     }
     for (const [sku, quantity] of quantityBySku) {
-      if (quantity > MAX_INT4) badQtySkus.add(sku);
+      if (quantity > MAX_QTY) badQtySkus.add(sku);
     }
     for (const sku of badQtySkus) {
       badLines.push({ sku, reason: "bad_qty" });

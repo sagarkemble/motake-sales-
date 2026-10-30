@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { MAX_QTY, QTY_TOO_LARGE } from "../shared/limits";
+
 export const gatepassItemAllotmentSchema = z.object({
   varietyId: z.string().uuid(),
-  issuedQty: z.number().int().min(0),
+  issuedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
 });
 export type GatepassItemAllotment = z.infer<typeof gatepassItemAllotmentSchema>;
 
@@ -18,13 +20,13 @@ export type AllotGatepassInput = z.infer<typeof allotGatepassInputSchema>;
 
 export const recordSaleInputSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  quantity: z.number().int().min(1),
+  quantity: z.number().int().min(1).max(MAX_QTY, QTY_TOO_LARGE),
 });
 export type RecordSaleInput = z.infer<typeof recordSaleInputSchema>;
 
 export const recordReturnInputSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  returnedQty: z.number().int().min(0),
+  returnedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
 });
 export type RecordReturnInput = z.infer<typeof recordReturnInputSchema>;
 
@@ -33,7 +35,7 @@ export type GatepassShortReason = z.infer<typeof gatepassShortReasonSchema>;
 
 export const handoverItemSchema = z.object({
   gatepassItemId: z.string().uuid(),
-  returnedQty: z.number().int().min(0),
+  returnedQty: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
   shortReason: gatepassShortReasonSchema.optional(),
   shortNote: z.string().max(500).optional(),
 });

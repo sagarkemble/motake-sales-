@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CustomerService from "../customers";
 import type { AdminBillOutcome, BillLockHook } from "../shared/bill-events";
+import { MAX_QTY, QTY_TOO_LARGE } from "../shared/limits";
 import { buildCheckoutWorld, buildSellerSettings, type CheckoutWorld } from "../test/builders";
 import {
   BOOK_NOW_TOTAL_PAISE,
@@ -588,24 +589,19 @@ describe("AdminBillService.correctBill (review fixes)", () => {
     expect(outcomes).toEqual([]);
   });
 
-  it("refuses a qty past int4 as bad_qty, writing nothing", async () => {
+  it("refuses a qty past 5,000 as qty_too_large, writing nothing", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await billWithLines(world);
     outcomes.length = 0;
 
-    expect(
-      await refusalOf(
-        adminBillService.correctBill(world.admin.id, {
-          billId: placed.billId,
-          expectedVersionNumber: 1,
-          lines: [{ lineId: milkLine.id, quantity: 2_147_483_648 }],
-          reason: "Huge",
-        }),
-      ),
-    ).toEqual({
-      reason: "bad_lines",
-      details: { lines: [{ lineId: milkLine.id, reason: "bad_qty" }] },
-    });
+    await expect(
+      adminBillService.correctBill(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        lines: [{ lineId: milkLine.id, quantity: MAX_QTY + 1 }],
+        reason: "Huge",
+      }),
+    ).rejects.toThrow(QTY_TOO_LARGE);
     expect(await versionsOf(placed.billId)).toHaveLength(1);
     expect(await notesOf(placed.billId)).toEqual([]);
     expect(outcomes).toEqual([]);
