@@ -36,7 +36,7 @@ import { isLockTimeout } from "@repo/database/queries/shared/pg-errors";
 import type { SelectNotification, SelectNotificationTemplate } from "@repo/database/schema";
 import { logger } from "@repo/logger";
 
-import { badRequest, conflict, errorMessageOf, notFound, notificationRefused } from "../errors";
+import { conflict, errorMessageOf, notFound, notificationRefused, screenRefusal } from "../errors";
 import {
   enqueueInputSchema,
   failRunInputSchema,
@@ -165,7 +165,10 @@ function sameValues(saved: Record<string, string>, given: Record<string, string>
 }
 
 const lockBusy = () =>
-  conflict("This WhatsApp is being sent right now; try again in a few seconds");
+  screenRefusal(
+    "message_pending",
+    "This WhatsApp is being sent right now; try again in a few seconds",
+  );
 
 // Constant time, whatever the lengths.
 function secretsMatch(given: string, expected: string): boolean {
@@ -400,7 +403,10 @@ class NotificationService {
           transaction,
         ))
       ) {
-        throw conflict("This WhatsApp is still being sent; resend it once it has an outcome");
+        throw screenRefusal(
+          "message_pending",
+          "This WhatsApp is still being sent; resend it once it has an outcome",
+        );
       }
       if (await hasHigherTemplateVersion(row.template, transaction)) {
         throw notificationRefused(
@@ -409,10 +415,15 @@ class NotificationService {
         );
       }
       if (parsedInput.to !== undefined && !isValidPhone(parsedInput.to)) {
-        throw badRequest(`Phone ${parsedInput.to} is not + followed by 8 to 15 digits`);
+        throw screenRefusal(
+          "phone_unusable",
+          `Phone ${parsedInput.to} is not + followed by 8 to 15 digits`,
+        );
       }
       const phone = parsedInput.to ?? row.notification.recipientPhone;
-      if (!isValidPhone(phone)) throw badRequest("No valid phone to resend to");
+      if (!isValidPhone(phone)) {
+        throw screenRefusal("phone_unusable", "No valid phone to resend to");
+      }
 
       const updated = await updateNotification(
         row.notification.id,

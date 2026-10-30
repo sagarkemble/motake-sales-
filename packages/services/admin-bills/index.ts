@@ -54,7 +54,7 @@ import type {
 
 import BillService from "../bills";
 import DocumentNumberService from "../document-numbers";
-import { internalError, ledgerRefusal, notFound } from "../errors";
+import { internalError, ledgerRefusal, notFound, screenRefusal } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
 import LedgerService from "../ledger";
 import RouteService from "../routes";
@@ -1371,7 +1371,9 @@ class AdminBillService {
       );
       if (quantity <= 0) continue;
       const updated = await restoreSoldQtyOnCancellation(stock.id, quantity, transaction);
-      if (!updated) throw internalError(`GatePass stock moved under lock: ${item.varietyId}`);
+      if (!updated) {
+        throw screenRefusal("stock_changed", `GatePass stock moved under lock: ${item.varietyId}`);
+      }
       restored = true;
     }
     return restored;

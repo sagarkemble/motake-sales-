@@ -41,7 +41,7 @@ import type { SelectCustomer, SelectOrder } from "@repo/database/schema";
 
 import BillService, { type IssueBillInput } from "../bills";
 import DocumentNumberService from "../document-numbers";
-import { badRequest, checkoutRefusal, conflict, internalError, notFound } from "../errors";
+import { badRequest, checkoutRefusal, internalError, notFound, screenRefusal } from "../errors";
 import GatepassService from "../gatepass";
 import LedgerService from "../ledger";
 import PaymentService, { splitPayment } from "../payments";
@@ -321,7 +321,12 @@ class OrderService {
                   line.quantity,
                   transaction,
                 );
-                if (!deducted) throw internalError(`GatePass stock moved under lock: ${line.sku}`);
+                if (!deducted) {
+                  throw screenRefusal(
+                    "stock_changed",
+                    `GatePass stock moved under lock: ${line.sku}`,
+                  );
+                }
               }
               return { orderId: order.id, items };
             },
@@ -1005,7 +1010,12 @@ class OrderService {
     retryPayment: ParsedCheckoutPayment,
   ): Promise<BilledCheckoutResult> {
     const bill = await getBillByOrderId(order.id);
-    if (!bill) throw conflict("This checkout key was already used to place a Pre-order");
+    if (!bill) {
+      throw screenRefusal(
+        "checkout_already_placed",
+        "This checkout key was already used to place a Pre-order",
+      );
+    }
     const payment = await getCheckoutPaymentForBill(bill.id);
     const balanceAfterBillPaise = await getBalanceThroughBillDebit(bill.id);
     const balance = await this.ledgerService.getBalance(order.customerId);
@@ -1035,7 +1045,10 @@ class OrderService {
   // The first result of a Pre-order place, with the indicative total from its locked lines.
   private async preOrderResultOf(order: SelectOrder): Promise<PreOrderResult> {
     if (order.type !== "pre_order") {
-      throw conflict("This checkout key was already used for a Book Now");
+      throw screenRefusal(
+        "checkout_already_placed",
+        "This checkout key was already used for a Book Now",
+      );
     }
     const items = await listOrderItemsByOrderId(order.id);
     const latestVersion = await getLatestOrderVersion(order.id);

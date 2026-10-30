@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import { createContext } from "./context";
 import { authService, salesmanService } from "./services";
 import { getAuthentication } from "./utils/cookie";
-import { forbidden, refusalOf, unauthorized } from "@repo/services/errors";
+import { forbidden, refusalOf, screenRefusal, unauthorized } from "@repo/services/errors";
 
 export const tRPCContext = initTRPC
   .meta<OpenApiMeta>()
@@ -66,7 +66,7 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 async function assertSalesmanActive(salesmanId: string): Promise<void> {
   const salesmanWithProfile = await salesmanService.getSalesmanWithProfile(salesmanId);
   if (salesmanWithProfile?.profile.status === "inactive") {
-    throw forbidden("Account is deactivated. Contact admin.");
+    throw screenRefusal("account_deactivated", "Account is deactivated. Contact admin.");
   }
 }
 

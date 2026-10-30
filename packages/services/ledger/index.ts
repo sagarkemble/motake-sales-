@@ -19,7 +19,7 @@ import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { InsertLedgerEntry } from "@repo/database/schema";
 
-import { badRequest, conflict, notFound } from "../errors";
+import { badRequest, conflict, notFound, screenRefusal } from "../errors";
 import { recordAudit } from "../shared/audit";
 import { assertCustomerActive } from "../shared/checkout";
 import {
@@ -74,7 +74,10 @@ class LedgerService {
     return executor.transaction(async (transaction) => {
       await this.lockBalance(parsedInput.customerId, transaction);
       if (await hasOpeningBalance(parsedInput.customerId, transaction)) {
-        throw conflict("This Customer already has an Opening balance");
+        throw screenRefusal(
+          "opening_balance_exists",
+          "This Customer already has an Opening balance",
+        );
       }
       const result = await this.writeEntry(
         parsedInput,
@@ -141,7 +144,7 @@ class LedgerService {
         if (!payment) throw notFound(`Payment ${input.paymentId} not found`);
         assertSameCustomer(payment.customerId, input.customerId, "Payment");
         if (await findFirstPosting({ paymentId: payment.id }, executor)) {
-          throw conflict("This Payment is already posted");
+          throw screenRefusal("already_posted", "This Payment is already posted");
         }
         return {
           entryType: "payment",
@@ -168,7 +171,7 @@ class LedgerService {
         if (!refund) throw notFound(`Refund ${input.refundId} not found`);
         assertSameCustomer(refund.customerId, input.customerId, "Refund");
         if (await findFirstPosting({ refundId: refund.id }, executor)) {
-          throw conflict("This Refund is already posted");
+          throw screenRefusal("already_posted", "This Refund is already posted");
         }
         return {
           entryType: "refund",
@@ -204,7 +207,7 @@ class LedgerService {
         if (!noteCustomerId) throw badRequest("This Note's Bill has no Customer");
         assertSameCustomer(noteCustomerId, input.customerId, "Note");
         if (await findLedgerEntryForNote(note.id, executor)) {
-          throw conflict("This Note is already posted");
+          throw screenRefusal("already_posted", "This Note is already posted");
         }
         return {
           // The Note already carries the id of its one Ledger row (deferred FK pair).
@@ -226,7 +229,10 @@ class LedgerService {
   ): Promise<PostResult> {
     // The paper's own amount, e.g. a Payment where nothing was kept.
     if (!Number.isInteger(entry.amountPaise) || entry.amountPaise <= 0) {
-      throw badRequest("A Ledger amount must be a positive whole number of paise");
+      throw screenRefusal(
+        "amount_not_positive",
+        "A Ledger amount must be a positive whole number of paise",
+      );
     }
     const deltaPaise = entry.side === "debit" ? entry.amountPaise : -entry.amountPaise;
     const balanceAfterPaise = await applyBalanceChange(
@@ -238,7 +244,9 @@ class LedgerService {
     const isRefundDebit =
       (entry.entryType === "refund" || entry.entryType === "refund_adjusted") &&
       entry.side === "debit";
-    if (isRefundDebit && balanceAfterPaise > 0) throw conflict("Refund cannot exceed Advance");
+    if (isRefundDebit && balanceAfterPaise > 0) {
+      throw screenRefusal("refund_above_advance", "Refund cannot exceed Advance");
+    }
 
     const occurredAt = input.occurredAt ?? new Date();
     try {
@@ -267,7 +275,9 @@ class LedgerService {
         occurredAt: row.occurredAt,
       };
     } catch (error) {
-      if (violatedUniqueConstraint(error)) throw conflict("This paper is already posted");
+      if (violatedUniqueConstraint(error)) {
+        throw screenRefusal("already_posted", "This paper is already posted");
+      }
       throw error;
     }
   }

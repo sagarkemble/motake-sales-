@@ -22,16 +22,42 @@ export function isNetworkError(error: unknown): boolean {
   return error instanceof Error && networkFailureMessages.includes(error.message);
 }
 
+interface ErrorData {
+  code?: string;
+  issues?: unknown[] | null;
+  refusal?: { reason: string; details: Record<string, unknown> | null } | null;
+}
+
+// The locale text for a refusal reason, filled from its details; null when none is written.
+function refusalText(tx: Translate, refusal: NonNullable<ErrorData["refusal"]>): string | null {
+  const values = Object.fromEntries(
+    Object.entries(refusal.details ?? {}).filter(
+      (entry): entry is [string, string | number] =>
+        typeof entry[1] === "string" || typeof entry[1] === "number",
+    ),
+  );
+  for (const key of [
+    `common.refusals.${refusal.reason}`,
+    `admin.ledger.refusals.${refusal.reason}`,
+  ]) {
+    const message = tx(key, values);
+    if (message !== key) return message;
+  }
+  return null;
+}
+
 /**
  * Plain words for a failed call, in the user's language. Never the server's own text: it can carry
- * SQL, Supabase errors or internal ids. A lost connection, an ended session, a missing permission
- * or record and bad input get their own message; anything else gets the screen's fallback
- * ("Could not create product. Try again.").
+ * SQL, Supabase errors or internal ids. A refused call gets the text for its reason; a lost
+ * connection, an ended session, a missing permission or record and bad input get their own message;
+ * anything else gets the screen's fallback ("Could not create product. Try again.").
  */
 export function getErrorMessage(tx: Translate, error: unknown, fallbackMessage: string): string {
   if (isNetworkError(error)) return tx("common.errors.network");
   if (error instanceof TRPCClientError) {
-    const data = error.data as { code?: string; issues?: unknown[] | null } | undefined;
+    const data = error.data as ErrorData | undefined;
+    const refused = data?.refusal ? refusalText(tx, data.refusal) : null;
+    if (refused) return refused;
     switch (data?.code) {
       case "UNAUTHORIZED":
         return tx("common.errors.sessionEnded");

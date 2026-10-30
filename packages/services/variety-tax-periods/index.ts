@@ -14,7 +14,7 @@ import {
 } from "@repo/database/queries/variety-tax-periods";
 import type { SelectVarietyTaxPeriod } from "@repo/database/schema";
 
-import { badRequest, noCoveringTaxPeriod, notFound } from "../errors";
+import { badRequest, noCoveringTaxPeriod, notFound, screenRefusal } from "../errors";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import { financialYearBounds, financialYearOf } from "../shared/financial-year";
 import {
@@ -146,14 +146,18 @@ class VarietyTaxPeriodService {
   ): Promise<UpsertTaxPeriodResult> {
     const parsedInput = upsertTaxPeriodInputSchema.parse(input);
     if (parsedInput.exempt && parsedInput.gstRateBps !== 0) {
-      throw badRequest("An exempt period must have a GST rate of 0%");
+      throw screenRefusal(
+        "gst_exempt_rate_not_zero",
+        "An exempt period must have a GST rate of 0%",
+      );
     }
     if (!parsedInput.exempt && parsedInput.gstRateBps <= 0) {
-      throw badRequest("A taxable period must have a GST rate above 0%");
+      throw screenRefusal("gst_rate_required", "A taxable period must have a GST rate above 0%");
     }
     const { currentFinancialYear } = currentWindow();
     if (!inWindow(parsedInput.effectiveFrom, currentFinancialYear)) {
-      throw badRequest(
+      throw screenRefusal(
+        "gst_start_outside_window",
         `Only starts from ${windowText(currentFinancialYear)} can be added or changed`,
       );
     }
