@@ -285,7 +285,6 @@
         "nameRequired": "Enter a variety name",
         "unitRequired": "Enter a unit, e.g. pouch or kg"
       },
-      "skuOnSave": "The SKU is generated from the Product and Variety name when you save. You cannot type or change it.",
       "skuFixed": "SKU (fixed)",
       "skuNeverChanges": "This SKU never changes. Renaming or changing the unit keeps it, so salesman baskets and old Bills still find it.",
       "copySkuAria": "Copy SKU {sku}",

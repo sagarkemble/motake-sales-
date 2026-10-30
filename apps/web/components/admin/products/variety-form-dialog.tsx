@@ -243,13 +243,7 @@ export function VarietyFormDialog({
                   )}
                 />
 
-                {editing ? (
-                  <LockedSku sku={editing.sku} />
-                ) : (
-                  <p className="rounded-xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-                    {tx("admin.varieties.skuOnSave")}
-                  </p>
-                )}
+                {editing && <LockedSku sku={editing.sku} />}
 
                 <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3">
                   <div>
