@@ -1,176 +1,172 @@
 // @jsxRuntime automatic
 import { Text, View } from "@react-pdf/renderer";
 
-import { amountInWords, formatDate, formatPaise } from "../format";
-import type { CommercialCreditNoteValues, GstNoteValues, NoteHeaderValues } from "../types";
+import { formatDate, formatPaise, formatRateBps } from "../format";
+import type {
+  CommercialCreditNoteValues,
+  GstNoteLine,
+  GstNoteValues,
+  NoteHeaderValues,
+} from "../types";
 import {
-  FactsRow,
+  GstSummary,
+  HeaderBox,
   LinesTable,
   PaperDocument,
   PaperPage,
-  Parties,
-  TitleRow,
+  PartyBox,
+  TermsFooter,
   TotalsBox,
-  partyFacts,
+  joined,
+  stateWithCode,
   styles,
-  supplyTypeLabel,
+  totalQuantityText,
   type Column,
-  type TotalLine,
+  type KeyRow,
 } from "./parts";
 
-function noteMeta(values: NoteHeaderValues): Array<[string, string]> {
-  return [
-    ["Note No.", values.noteNumber],
+function noteRows(values: NoteHeaderValues): KeyRow[] {
+  const rows: KeyRow[] = [
+    ["Document No.", values.noteNumber],
     ["Date", formatDate(values.issuedOn)],
   ];
+  if (values.seller.place) rows.push(["Place", values.seller.place]);
+  return rows;
 }
 
-function noteFacts(values: NoteHeaderValues): Array<[string, string]> {
-  const facts: Array<[string, string]> = [
-    ["Against Bill:", values.originalBill.number],
-    ["Bill date:", formatDate(values.originalBill.date)],
-  ];
-  if (values.returnOrDamageOn) {
-    facts.push(["Return / damage date:", formatDate(values.returnOrDamageOn)]);
-  }
-  return facts;
-}
-
-function Reason({ reason }: { reason: string }) {
+function CustomerBox(props: { values: NoteHeaderValues }) {
+  const { buyer, placeOfSupply, route } = props.values;
   return (
-    <View style={{ flexDirection: "row", marginBottom: 8 }}>
-      <Text style={styles.label}>Reason:</Text>
-      <Text style={[styles.bold, { flex: 1 }]}>{reason}</Text>
+    <PartyBox
+      heading="Customer"
+      name={buyer.shopName}
+      details={[
+        buyer.address,
+        joined([`GSTIN: ${buyer.gstin ?? "Unregistered"}`, `Mobile: ${buyer.phone}`]),
+      ]}
+      rows={[
+        ["Place of Supply", stateWithCode(placeOfSupply)],
+        ["Route", route.name],
+      ]}
+    />
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flexDirection: "row", width: "50%", paddingVertical: 2 }}>
+      <Text style={[styles.bold, { width: 118 }]}>{label}</Text>
+      <Text style={{ flex: 1 }}>{value}</Text>
     </View>
   );
 }
 
-function gstNoteColumns(intraState: boolean): Column[] {
-  const lead: Column[] = [
-    { header: "#", width: 5, align: "center" },
-    { header: "Item", width: intraState ? 27 : 37 },
-    { header: "Unit", width: 9 },
-    { header: "HSN", width: 9 },
-    { header: "Qty", width: 7, align: "right" },
-    { header: "Taxable", width: 13, align: "right" },
-  ];
-  const tax: Column[] = intraState
-    ? [
-        { header: "CGST", width: 10, align: "right" },
-        { header: "SGST", width: 10, align: "right" },
-      ]
-    : [{ header: "IGST", width: 10, align: "right" }];
-  return [...lead, ...tax, { header: "Total", width: 10, align: "right" }];
+// Original Invoice No. and Date, the return or damage date when set, and the reason in full.
+function OriginalInvoiceBox(props: { values: NoteHeaderValues; paperName: string }) {
+  const { values } = props;
+  return (
+    <View style={styles.boxColumn} wrap={false}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+        <Fact label="Original Invoice No." value={values.originalBill.number} />
+        <Fact label="Original Invoice Date" value={formatDate(values.originalBill.date)} />
+      </View>
+      <View style={{ flexDirection: "row", paddingTop: 2 }}>
+        <Text style={[styles.bold, { width: 118 }]}>Reason for {props.paperName}</Text>
+        <Text style={{ flex: 1 }}>{values.reason}</Text>
+      </View>
+    </View>
+  );
 }
 
-// GST Credit Note and Debit Note: same paper, different title and wording of the tax line.
+// The Note line's own value per unit, to the paisa (a rate difference is not the Bill's rate).
+function rateOf(line: GstNoteLine): number {
+  return Math.round(line.taxablePaise / line.quantity);
+}
+
+const gstNoteColumns: Column[] = [
+  { header: "Sl.", width: 4, align: "center" },
+  { header: "Description of Product", width: 28 },
+  { header: "HSN", width: 7 },
+  { header: "Rate (Excl. GST)", width: 11, align: "right" },
+  { header: "GST %", width: 6, align: "center" },
+  { header: "Qty", width: 7, align: "right" },
+  { header: "Unit", width: 9 },
+  { header: "Taxable Value", width: 13, align: "right" },
+  { header: "Total Amount", width: 15, align: "right" },
+];
+
+// GST Credit Note and Debit Note: same paper, different title.
 export function GstNotePaper(props: { values: GstNoteValues; kind: "credit" | "debit" }) {
   const { values } = props;
   const title = props.kind === "credit" ? "Credit Note" : "Debit Note";
-  const intraState = values.supplyType === "intra_state";
   const rows = values.lines.map((line, index) => [
     String(index + 1),
     line.name,
-    line.unit,
     line.hsn,
+    formatPaise(rateOf(line)),
+    formatRateBps(line.gstRateBps),
     String(line.quantity),
+    line.unit,
     formatPaise(line.taxablePaise),
-    ...(intraState
-      ? [formatPaise(line.cgstPaise), formatPaise(line.sgstPaise)]
-      : [formatPaise(line.igstPaise)]),
     formatPaise(line.taxablePaise + line.cgstPaise + line.sgstPaise + line.igstPaise),
   ]);
-  const taxLines: TotalLine[] = intraState
-    ? [
-        ["CGST", values.totals.cgstPaise],
-        ["SGST", values.totals.sgstPaise],
-      ]
-    : [["IGST", values.totals.igstPaise]];
   return (
     <PaperDocument title={`${title} ${values.noteNumber}`} seller={values.seller}>
-      <PaperPage paperName={title} documentNumber={values.noteNumber} seller={values.seller}>
-        <TitleRow
-          title={title}
-          subtitle={
-            props.kind === "credit" ? "GST reversed on the lines below" : "Additional GST charged"
-          }
-          meta={noteMeta(values)}
+      <PaperPage paperName={title} documentNumber={values.noteNumber}>
+        <HeaderBox seller={values.seller} rows={noteRows(values)} />
+        <CustomerBox values={values} />
+        <OriginalInvoiceBox values={values} paperName={title} />
+        <LinesTable columns={gstNoteColumns} rows={rows} />
+        <TotalsBox
+          totalLabel={`${title} Total`}
+          totalPaise={values.totals.totalPaise}
+          roundOffPaise={values.totals.roundOffPaise}
+          quantityText={totalQuantityText(values.lines)}
+          wordsLabel="Amount in words"
         />
-        <Parties blocks={values} />
-        <FactsRow
-          facts={[
-            ...noteFacts(values),
-            ...partyFacts(values),
-            ["Supply:", supplyTypeLabel(values.supplyType)],
-            ["Reverse charge:", "No"],
-          ]}
-        />
-        <Reason reason={values.reason} />
-        <LinesTable columns={gstNoteColumns(intraState)} rows={rows} />
-        <View style={styles.summary} wrap={false}>
-          <View style={styles.summaryLeft}>
-            <Text style={styles.label}>Total in words</Text>
-            <Text style={styles.words}>{amountInWords(values.totals.totalPaise)}</Text>
-          </View>
-          <TotalsBox
-            lines={[
-              ["Taxable value", values.totals.taxablePaise],
-              ...taxLines,
-              ["Round off", values.totals.roundOffPaise, "signed"],
-            ]}
-            totalLabel={props.kind === "credit" ? "Total credit" : "Total debit"}
-            totalPaise={values.totals.totalPaise}
-          />
-        </View>
+        <GstSummary supplyType={values.supplyType} lines={values.lines} />
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );
 }
 
 const commercialColumns: Column[] = [
-  { header: "#", width: 5, align: "center" },
-  { header: "Item", width: 45 },
+  { header: "Sl.", width: 5, align: "center" },
+  { header: "Description of Product", width: 45 },
+  { header: "HSN", width: 10 },
+  { header: "Qty", width: 10, align: "right" },
   { header: "Unit", width: 12 },
-  { header: "HSN", width: 12 },
-  { header: "Qty", width: 9, align: "right" },
-  { header: "Amount", width: 17, align: "right" },
+  { header: "Amount", width: 18, align: "right" },
 ];
 
 export function CommercialCreditNotePaper({ values }: { values: CommercialCreditNoteValues }) {
   const rows = values.lines.map((line, index) => [
     String(index + 1),
     line.name,
-    line.unit,
     line.hsn,
     String(line.quantity),
+    line.unit,
     formatPaise(line.amountPaise),
   ]);
-  const linesAmount = values.lines.reduce((sum, line) => sum + line.amountPaise, 0);
   return (
     <PaperDocument title={`Credit Note ${values.noteNumber}`} seller={values.seller}>
-      <PaperPage paperName="Credit Note" documentNumber={values.noteNumber} seller={values.seller}>
-        <TitleRow title="Credit Note (Commercial)" meta={noteMeta(values)} />
-        <Parties blocks={values} />
-        <FactsRow facts={[...noteFacts(values), ...partyFacts(values)]} />
-        <Reason reason={values.reason} />
+      <PaperPage paperName="Credit Note (Commercial)" documentNumber={values.noteNumber}>
+        <HeaderBox seller={values.seller} rows={noteRows(values)} />
+        <CustomerBox values={values} />
+        <OriginalInvoiceBox values={values} paperName="Credit Note" />
         <LinesTable columns={commercialColumns} rows={rows} />
-        <View style={styles.summary} wrap={false}>
-          <View style={styles.summaryLeft}>
-            <Text style={styles.label}>Total in words</Text>
-            <Text style={styles.words}>{amountInWords(values.totals.totalPaise)}</Text>
-            <Text style={styles.notice}>
-              This Credit Note does not reduce GST. Not a GST Credit Note.
-            </Text>
-          </View>
-          <TotalsBox
-            lines={[
-              ["Amount", linesAmount],
-              ["Round off", values.totals.roundOffPaise, "signed"],
-            ]}
-            totalLabel="Total credit"
-            totalPaise={values.totals.totalPaise}
-          />
-        </View>
+        <TotalsBox
+          totalLabel="Credit Note Total"
+          totalPaise={values.totals.totalPaise}
+          roundOffPaise={values.totals.roundOffPaise}
+          quantityText={totalQuantityText(values.lines)}
+          wordsLabel="Amount in words"
+        />
+        <Text style={styles.notice}>
+          This Credit Note does not reduce GST. Not a GST Credit Note.
+        </Text>
+        <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>
   );

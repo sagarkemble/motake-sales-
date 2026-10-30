@@ -204,6 +204,7 @@ export const billedCheckoutResultSchema = z.object({
   balanceAfterBillPaise: z.number().int(),
   payment: z
     .object({
+      paymentId: z.string(),
       number: z.string(),
       keptPaise: z.number().int(),
       returnedPaise: z.number().int(),

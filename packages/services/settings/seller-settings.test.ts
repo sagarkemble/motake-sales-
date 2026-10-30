@@ -220,3 +220,130 @@ describe("Seller master edits", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Seller master not set up" });
   });
 });
+
+describe("Seller document details", () => {
+  const documentDetails = {
+    pan: "EHCPP4509Q",
+    bankAccountName: "MOTAKE MILK AND MILK PRODUCTS",
+    bankName: "BANK OF INDIA",
+    bankBranch: "JAYSINGPUR",
+    bankAccountNumber: "091920110000529",
+    bankIfsc: "BKID0000919",
+    terms: "1. Please verify quantities at delivery.\n2. Refrigerate where required.",
+    place: "Jambhali, Maharashtra",
+  };
+
+  it("leaves every document detail empty when setup gives none", async () => {
+    const admin = await buildProfile();
+
+    const created = await settings.setUpSellerSettings(sellerInput, admin.id);
+
+    expect(created).toMatchObject({
+      pan: null,
+      bankAccountName: null,
+      bankName: null,
+      bankBranch: null,
+      bankAccountNumber: null,
+      bankIfsc: null,
+      terms: null,
+      place: null,
+    });
+  });
+
+  it("saves PAN and IFSC upper-cased, trims each term line, and audits old and new values", async () => {
+    const admin = await buildProfile();
+    await settings.setUpSellerSettings(sellerInput, admin.id);
+
+    const updated = await settings.updateSellerSettings(
+      {
+        ...documentDetails,
+        pan: " ehcpp4509q ",
+        bankIfsc: "bkid0000919",
+        terms:
+          "  1. Please verify quantities at delivery.  \r\n\n 2. Refrigerate where required.\n",
+        reason: "Bank letter",
+      },
+      admin.id,
+    );
+
+    expect(updated).toMatchObject(documentDetails);
+    const [latest] = await settings.listSellerSettingsHistory();
+    expect(latest).toMatchObject({ action: "updated", reason: "Bank letter" });
+    expect(latest?.payload).toEqual({
+      pan: { old: null, new: "EHCPP4509Q" },
+      bankAccountName: { old: null, new: "MOTAKE MILK AND MILK PRODUCTS" },
+      bankName: { old: null, new: "BANK OF INDIA" },
+      bankBranch: { old: null, new: "JAYSINGPUR" },
+      bankAccountNumber: { old: null, new: "091920110000529" },
+      bankIfsc: { old: null, new: "BKID0000919" },
+      terms: { old: null, new: documentDetails.terms },
+      place: { old: null, new: "Jambhali, Maharashtra" },
+    });
+  });
+
+  it("takes the details at setup and records them in the created audit row", async () => {
+    const admin = await buildProfile();
+
+    const created = await settings.setUpSellerSettings(
+      { ...sellerInput, ...documentDetails },
+      admin.id,
+    );
+
+    expect(created).toMatchObject(documentDetails);
+    const [history] = await settings.listSellerSettingsHistory();
+    expect(history?.payload).toEqual({ ...sellerInput, ...documentDetails });
+  });
+
+  it("clears a detail saved blank, and records nothing when the same details are saved again", async () => {
+    const admin = await buildProfile();
+    await settings.setUpSellerSettings({ ...sellerInput, ...documentDetails }, admin.id);
+
+    await settings.updateSellerSettings({ ...documentDetails }, admin.id);
+    expect(await settings.listSellerSettingsHistory()).toHaveLength(1);
+
+    const cleared = await settings.updateSellerSettings(
+      { bankBranch: "  ", terms: "\n" },
+      admin.id,
+    );
+
+    expect(cleared).toMatchObject({ bankBranch: null, terms: null, bankName: "BANK OF INDIA" });
+    const [latest] = await settings.listSellerSettingsHistory();
+    expect(latest?.payload).toEqual({
+      bankBranch: { old: "JAYSINGPUR", new: null },
+      terms: { old: documentDetails.terms, new: null },
+    });
+  });
+
+  it("refuses a PAN or IFSC of the wrong shape, a PAN that is not in the GSTIN, and a bad account number", async () => {
+    const admin = await buildProfile();
+    const created = await settings.setUpSellerSettings(sellerInput, admin.id);
+
+    await expect(settings.updateSellerSettings({ pan: "EHCPP4509" }, admin.id)).rejects.toThrow(
+      /Not a valid PAN/,
+    );
+    await expect(
+      settings.updateSellerSettings({ bankIfsc: "BKID1000919" }, admin.id),
+    ).rejects.toThrow(/Not a valid IFSC/);
+    await expect(
+      settings.updateSellerSettings({ bankAccountNumber: "0919-2011" }, admin.id),
+    ).rejects.toThrow(/6 to 34 digits/);
+    await expect(
+      settings.updateSellerSettings({ pan: "ABCDE1234F" }, admin.id),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      settings.setUpSellerSettings({ ...sellerInput, pan: "ABCDE1234F" }, admin.id),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    expect(await settings.getSellerSettings()).toEqual(created);
+    expect(await settings.listSellerSettingsHistory()).toHaveLength(1);
+  });
+
+  it("refuses a GSTIN change that no longer contains the saved PAN", async () => {
+    const admin = await buildProfile();
+    await settings.setUpSellerSettings({ ...sellerInput, pan: "EHCPP4509Q" }, admin.id);
+
+    await expect(
+      settings.updateSellerSettings({ gstin: "27ABCDE1234F1Z5" }, admin.id),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});

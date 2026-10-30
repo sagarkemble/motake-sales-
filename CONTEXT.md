@@ -153,7 +153,7 @@ An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept wit
 A one-time starting Balance entered for a Customer to carry over what was owed before the app; may be Pending or Advance. Admin sets it once from the Ledger and does not Correct it afterwards.
 
 **Receipt**:
-The WhatsApp sent because a Payment was kept above ₹0. Names Customer and Route, kept amount, cash returned if any, and Balance after that Payment. Carries the Payment receipt Document.
+The WhatsApp sent because a Payment was kept above ₹0. Names Customer and Route, kept amount, mode, and Balance after that Payment. Carries the Payment receipt Document, which also shows cash returned if any.
 *Avoid*: Bill message, invoice; a second Receipt when IRN is later recorded
 
 **Account update**:

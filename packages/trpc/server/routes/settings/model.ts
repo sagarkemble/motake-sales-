@@ -12,6 +12,14 @@ export const sellerSettingsSchema = z.object({
   gstin: z.string(),
   phone: z.string(),
   email: z.string().nullable(),
+  pan: z.string().nullable(),
+  bankAccountName: z.string().nullable(),
+  bankName: z.string().nullable(),
+  bankBranch: z.string().nullable(),
+  bankAccountNumber: z.string().nullable(),
+  bankIfsc: z.string().nullable(),
+  terms: z.string().nullable(),
+  place: z.string().nullable(),
   einvoicingRequired: z.boolean(),
   updatedBy: z.string(),
   createdAt: z.date(),
@@ -34,6 +42,15 @@ const sellerFieldsSchema = z.object({
   gstin: z.string().max(20),
   phone: z.string().min(1).max(20),
   email: z.string().max(255).nullable().optional(),
+  // Printed on Documents only; a blank value clears the field.
+  pan: z.string().max(10).nullable().optional(),
+  bankAccountName: z.string().max(200).nullable().optional(),
+  bankName: z.string().max(120).nullable().optional(),
+  bankBranch: z.string().max(120).nullable().optional(),
+  bankAccountNumber: z.string().max(34).nullable().optional(),
+  bankIfsc: z.string().max(11).nullable().optional(),
+  terms: z.string().max(2000).nullable().optional(),
+  place: z.string().max(120).nullable().optional(),
 });
 
 export const setUpSellerSettingsInputSchema = sellerFieldsSchema.extend({ reason: reasonSchema });

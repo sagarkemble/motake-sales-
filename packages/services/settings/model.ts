@@ -9,7 +9,33 @@ import { INDIAN_STATES } from "../shared/indian-states";
 // 2-digit state code, PAN (5 letters, 4 digits, 1 letter), entity number, Z, check character.
 export const GSTIN_PATTERN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
+// Five letters, four digits, one letter; a seller PAN is also characters 3–12 of its GSTIN.
+export const PAN_PATTERN = /^[A-Z]{5}\d{4}[A-Z]$/;
+
+// Four letters (the bank), a zero, six letters or digits (the branch).
+export const IFSC_PATTERN = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
 const reasonSchema = z.string().trim().max(500).optional();
+
+function blankAsNull(value: string): string | null {
+  return value === "" ? null : value;
+}
+
+function optionalText(maxLength: number) {
+  return z.string().trim().max(maxLength).transform(blankAsNull).nullable().optional();
+}
+
+// Trimmed and upper-cased, then checked; blank clears it.
+function optionalUpperCode(pattern: RegExp, message: string) {
+  return z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine((value) => value === "" || pattern.test(value), message)
+    .transform(blankAsNull)
+    .nullable()
+    .optional();
+}
 
 const sellerFieldsSchema = z.object({
   legalName: z.string().trim().min(1).max(200),
@@ -26,6 +52,35 @@ const sellerFieldsSchema = z.object({
   // Same rule as Customer phone.
   phone: z.string().min(1).max(20),
   email: z.string().trim().email().max(255).nullable().optional(),
+  // Printed on Documents only. A blank value saves as null, which clears the field.
+  pan: optionalUpperCode(PAN_PATTERN, "Not a valid PAN"),
+  bankAccountName: optionalText(200),
+  bankName: optionalText(120),
+  bankBranch: optionalText(120),
+  bankAccountNumber: z
+    .string()
+    .trim()
+    .regex(/^(\d{6,34})?$/, "An account number is 6 to 34 digits")
+    .transform(blankAsNull)
+    .nullable()
+    .optional(),
+  bankIfsc: optionalUpperCode(IFSC_PATTERN, "Not a valid IFSC"),
+  // One term per line; blank lines and the spaces around each line are dropped.
+  terms: z
+    .string()
+    .max(2000)
+    .transform((terms) =>
+      blankAsNull(
+        terms
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .join("\n"),
+      ),
+    )
+    .nullable()
+    .optional(),
+  place: optionalText(120),
 });
 
 // No einvoicingRequired: the seller-level flag stays at its default (true) and is not editable here.

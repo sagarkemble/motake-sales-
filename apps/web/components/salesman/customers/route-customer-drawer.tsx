@@ -84,6 +84,7 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
               </DrawerHeader>
               <CheckoutSuccess
                 input={fieldPayment.result}
+                whatsapp
                 actions={[{ label: tx("checkout.success.done"), primary: true, onClick: onClose }]}
               />
             </ScrollArea>

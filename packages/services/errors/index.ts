@@ -279,3 +279,34 @@ export const ledgerRefusal = (
   message: string,
   details: Record<string, unknown> | null = null,
 ) => refused(ledgerRefusalCodes[reason], reason, message, details);
+
+// Why a WhatsApp Resend or Send latest Bill was refused (Spec J). The message is for the staff
+// member; the reason reaches the app as `data.refusal.reason`.
+export type CustomerMessageRefusalReason =
+  | "no_active_gatepass"
+  | "customer_not_on_route"
+  | "message_pending"
+  | "not_latest_bill"
+  | "bill_cancelled"
+  | "irn_pending"
+  | "phone_unusable"
+  | "template_superseded"
+  | "notification_unavailable";
+
+const customerMessageRefusalCodes: Record<CustomerMessageRefusalReason, TRPCError["code"]> = {
+  no_active_gatepass: "FORBIDDEN",
+  customer_not_on_route: "FORBIDDEN",
+  message_pending: "CONFLICT",
+  not_latest_bill: "CONFLICT",
+  bill_cancelled: "CONFLICT",
+  irn_pending: "CONFLICT",
+  phone_unusable: "BAD_REQUEST",
+  template_superseded: "CONFLICT",
+  notification_unavailable: "SERVICE_UNAVAILABLE",
+};
+
+export const customerMessageRefused = (
+  reason: CustomerMessageRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(customerMessageRefusalCodes[reason], reason, message, details);

@@ -18,7 +18,7 @@ import {
 } from "@repo/database/queries/documents";
 import { getBillGstFacts } from "@repo/database/queries/gst";
 import { businessDateOf, businessTimeOf } from "@repo/database/queries/shared/business-date";
-import type { SelectNote, SelectNoteLine } from "@repo/database/schema";
+import type { SelectNote, SelectNoteLine, SelectSellerSettings } from "@repo/database/schema";
 import {
   documentFileName,
   draftBillFileName,
@@ -114,14 +114,35 @@ function stateByName(stateName: string) {
   return { stateName: state.name, stateCode: state.gstStateCode };
 }
 
+function bankOf(settings: SelectSellerSettings): SellerValues["bank"] {
+  const bank = {
+    accountName: settings.bankAccountName,
+    bankName: settings.bankName,
+    branch: settings.bankBranch,
+    accountNumber: settings.bankAccountNumber,
+    ifsc: settings.bankIfsc,
+  };
+  return Object.values(bank).some(Boolean) ? bank : null;
+}
+
 // The seller stamp has no state: on every layout it comes from the GSTIN's first two digits
-// (Settings only accepts a GSTIN whose prefix is the selected state's GST code).
-function sellerFromStamp(stamp: {
-  legalName: string;
-  address: string;
-  gstin: string;
-}): SellerValues {
-  return { ...stamp, ...stateByCode(stamp.gstin.slice(0, 2)) };
+// (Settings only accepts a GSTIN whose prefix is the selected state's GST code). Legal name,
+// address and GSTIN come from the stamp; phone, email, PAN, bank, terms and place are not stamped
+// and come from the Seller master at the draw (db-decisions/0017).
+function sellerFromStamp(
+  stamp: { legalName: string; address: string; gstin: string },
+  settings: SelectSellerSettings,
+): SellerValues {
+  return {
+    ...stamp,
+    ...stateByCode(stamp.gstin.slice(0, 2)),
+    phone: settings.phone,
+    email: settings.email,
+    pan: settings.pan,
+    bank: bankOf(settings),
+    terms: settings.terms,
+    place: settings.place,
+  };
 }
 
 function partyBlocksOf(version: BillVersionSnapshot, seller: SellerValues): PartyBlocks {
@@ -166,23 +187,30 @@ function irnValuesOf(bill: BillDocumentState): IrnValues | null {
   };
 }
 
-// Bill values come only from the version snapshot; the IRN block from the live Bill.
+// Bill values come only from the version snapshot; the IRN block and who dispatched it from the
+// live Bill.
 function billPaper(
   version: BillVersionSnapshot,
+  bill: BillDocumentState,
+  settings: SelectSellerSettings,
   irn: { draft: true } | { draft: false; irn: IrnValues | null },
 ): PaperFor<"tax_invoice" | "bill_of_supply"> {
   const { header } = version;
-  const seller = sellerFromStamp({
-    legalName: header.letterhead.seller.legal_name,
-    address: header.letterhead.seller.address,
-    gstin: header.letterhead.seller.gstin,
-  });
+  const seller = sellerFromStamp(
+    {
+      legalName: header.letterhead.seller.legal_name,
+      address: header.letterhead.seller.address,
+      gstin: header.letterhead.seller.gstin,
+    },
+    settings,
+  );
   const blocks = partyBlocksOf(version, seller);
   const billHeader = {
     ...blocks,
     billNumber: header.number,
     billDate: header.billDate,
     versionNumber: version.versionNumber,
+    salesmanName: bill.salesmanName,
   };
   if (header.legalType === "bill_of_supply" && !irn.draft) {
     return {
@@ -240,6 +268,7 @@ interface PrintedNoteLine {
   name: string;
   unit: string;
   hsn: string;
+  gstRateBps: number;
   position: number;
 }
 
@@ -249,12 +278,12 @@ function notePaper(
   note: SelectNote,
   letterheadVersion: BillVersionSnapshot,
   printedLines: PrintedNoteLine[],
+  settings: SelectSellerSettings,
 ): PaperFor<"gst_credit_note" | "commercial_credit_note" | "debit_note"> {
-  const seller = sellerFromStamp({
-    legalName: note.sellerLegalName,
-    address: note.sellerAddress,
-    gstin: note.sellerGstin,
-  });
+  const seller = sellerFromStamp(
+    { legalName: note.sellerLegalName, address: note.sellerAddress, gstin: note.sellerGstin },
+    settings,
+  );
   const blocks = partyBlocksOf(letterheadVersion, seller);
   const noteHeader = {
     ...blocks,
@@ -303,6 +332,7 @@ function notePaper(
         unit: printed.unit,
         hsn: printed.hsn,
         quantity: printed.line.quantity,
+        gstRateBps: printed.gstRateBps,
         taxablePaise: printed.line.amountPaise,
         cgstPaise: printed.line.cgstPaise,
         sgstPaise: printed.line.sgstPaise,
@@ -363,7 +393,8 @@ class DocumentService {
         ? documentKeys.billVersionWithIrn(bill.id, version.versionNumber, bill.irnRecordedAt)
         : documentKeys.billVersion(bill.id, version.versionNumber);
 
-    const bytes = await draw(billPaper(version, { draft: false, irn }));
+    const settings = await this.settingsService.requireSellerSettings();
+    const bytes = await draw(billPaper(version, bill, settings, { draft: false, irn }));
     await this.store.put(key, bytes, PDF_CONTENT_TYPE);
     const storedKey = await setBillVersionPdfKeyIfUnset(version.id, key);
     if (!storedKey) throw internalError(`Bill version ${version.id} lost its PDF key`);
@@ -385,7 +416,8 @@ class DocumentService {
     const key = documentKeys.billVersionWithIrn(bill.id, latest.versionNumber, bill.irnRecordedAt);
     if (latest.pdfKey === key) return this.toResult(key, filename, options);
 
-    const bytes = await draw(billPaper(latest, { draft: false, irn }));
+    const settings = await this.settingsService.requireSellerSettings();
+    const bytes = await draw(billPaper(latest, bill, settings, { draft: false, irn }));
     await this.store.put(key, bytes, PDF_CONTENT_TYPE);
     await replaceBillVersionPdfKey(latest.id, key);
     return this.toResult(key, filename, options, bytes);
@@ -418,12 +450,13 @@ class DocumentService {
             `Note ${note.number} points at a missing Bill line ${line.snapshotLineId}`,
           );
         }
-        return { line, ...item.stamp, position };
+        return { line, ...item.stamp, gstRateBps: item.gstRateBps, position };
       })
       .sort((first, second) => first.position - second.position);
 
     const key = documentKeys.note(note.id);
-    const bytes = await draw(notePaper(note, letterheadVersion, printedLines));
+    const settings = await this.settingsService.requireSellerSettings();
+    const bytes = await draw(notePaper(note, letterheadVersion, printedLines, settings));
     await this.store.put(key, bytes, PDF_CONTENT_TYPE);
     const storedKey = await setNotePdfKeyIfUnset(note.id, key);
     if (!storedKey) throw internalError(`Note ${note.id} lost its PDF key`);
@@ -460,12 +493,15 @@ class DocumentService {
     const bytes = await draw({
       layout: "payment_receipt",
       values: {
-        seller: sellerFromStamp({
-          legalName: settings.legalName,
-          address: settings.address,
-          gstin: settings.gstin,
-        }),
-        customer: { shopName: customer.shopName, phone: customer.phone },
+        seller: sellerFromStamp(
+          { legalName: settings.legalName, address: settings.address, gstin: settings.gstin },
+          settings,
+        ),
+        customer: {
+          shopName: customer.shopName,
+          phone: customer.phone,
+          address: customer.address,
+        },
         route: { name: customer.routeName, code: customer.routeCode },
         receiptNumber: payment.number,
         paidOn: businessDateOf(event.occurredAt),
@@ -487,7 +523,8 @@ class DocumentService {
     const bill = await this.requireBill(billIdSchema.parse(billId));
     await this.assertDraftAllowed(bill);
     const latest = await this.requireLatestVersion(bill.id);
-    const bytes = await draw(billPaper(latest, { draft: true }));
+    const settings = await this.settingsService.requireSellerSettings();
+    const bytes = await draw(billPaper(latest, bill, settings, { draft: true }));
     return { filename: draftBillFileName(bill.number), bytes };
   }
 

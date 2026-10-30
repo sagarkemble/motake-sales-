@@ -802,6 +802,7 @@ class OrderService {
         balanceAfterBillPaise: issued.balanceAfterPaise,
         payment: posted
           ? {
+              paymentId: posted.payment.id,
               number: posted.payment.number,
               keptPaise: split.keptPaise,
               returnedPaise: split.returnedPaise,
@@ -828,6 +829,7 @@ class OrderService {
               postedEventId: posted.postedEventId,
               paymentNumber: posted.payment.number,
               customerId: customer.id,
+              mode: posted.payment.mode,
               keptPaise: split.keptPaise,
               returnedPaise: split.returnedPaise,
               balanceAfterPaise: posted.balanceAfterPaise,
@@ -1015,6 +1017,7 @@ class OrderService {
       balanceAfterBillPaise: balanceAfterBillPaise ?? balance.balancePaise,
       payment: payment
         ? {
+            paymentId: payment.id,
             number: payment.number,
             keptPaise: payment.amountKeptPaise,
             returnedPaise: payment.amountReturnedPaise,

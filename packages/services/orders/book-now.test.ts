@@ -654,6 +654,8 @@ describe("OrderService.placeBookNow checkout Payment", () => {
       balancePaise: 6_900,
     });
     const [payment] = await paymentsOf(world.customer.id);
+    // The Receipt's WhatsApp status on the checkout result reads this Payment.
+    expect(result.payment?.paymentId).toBe(payment!.id);
     expect(payment).toMatchObject({
       mode: "cash",
       amountReceivedPaise: 5_000,
@@ -951,6 +953,7 @@ describe("OrderService.placeBookNow events", () => {
         postedEventId: event!.id,
         paymentNumber: "MP/26-27/000001",
         customerId: world.customer.id,
+        mode: "cash",
         keptPaise: 5_000,
         returnedPaise: 0,
         balanceAfterPaise: 6_900,

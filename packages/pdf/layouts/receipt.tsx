@@ -1,81 +1,107 @@
 // @jsxRuntime automatic
 import { Text, View } from "@react-pdf/renderer";
 
-import { amountInWords, balanceWording, formatDate, formatPaise } from "../format";
+import { amountInWords, formatDate, formatPaise } from "../format";
 import type { PaymentModeValue, PaymentReceiptValues } from "../types";
-import { Fact, PaperDocument, PaperPage, TitleRow, styles } from "./parts";
+import {
+  BankDetails,
+  HeaderBox,
+  PaperDocument,
+  PaperPage,
+  PartyBox,
+  TermsAndSignatory,
+  styles,
+  type KeyRow,
+} from "./parts";
 
 const MODE_LABELS: Record<PaymentModeValue, string> = { cash: "Cash", bank: "Bank", upi: "UPI" };
 
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+const RECEIPT_NOTES = [
+  "1. This receipt acknowledges the payment received.",
+  "2. The amount is credited to the customer's running balance.",
+];
+
+// Above zero the Customer owes Motake (Outstanding); below zero Motake holds an Advance.
+function balanceLabel(balancePaise: number, moment: "before" | "after"): string {
+  return `${balancePaise < 0 ? "Advance" : "Outstanding"} balance ${moment} receipt`;
+}
+
+function SummaryLine(props: { label: string; paise: number; strong?: boolean }) {
   return (
     <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderBottomWidth: 0.5,
-        borderBottomColor: "#c8c8c8",
-      }}
+      style={[
+        { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2.5 },
+        props.strong ? [styles.bold, { borderTopWidth: 0.75, marginTop: 2, paddingTop: 4 }] : {},
+      ]}
     >
-      <Text style={styles.label}>{label}</Text>
-      <Text style={strong ? [styles.bold, { fontSize: 10 }] : styles.bold}>{value}</Text>
+      <Text>{props.label}</Text>
+      <Text>{formatPaise(props.paise)}</Text>
     </View>
   );
 }
 
+function remarksOf(values: PaymentReceiptValues): string {
+  if (values.returnedPaise > 0) {
+    return `${formatPaise(values.receivedPaise)} handed over; ${formatPaise(values.returnedPaise)} cash returned as change. ${formatPaise(values.keptPaise)} credited to the customer's account.`;
+  }
+  return "Payment received and credited to the customer's account; no specific invoice allocation.";
+}
+
 export function PaymentReceiptPaper({ values }: { values: PaymentReceiptValues }) {
+  const headerRows: KeyRow[] = [
+    ["Receipt No.", values.receiptNumber],
+    ["Receipt Date", formatDate(values.paidOn)],
+  ];
+  if (values.seller.place) headerRows.push(["Received At", values.seller.place]);
+  const paymentRows: KeyRow[] = [["Mode", MODE_LABELS[values.mode]]];
+  if (values.reference) paymentRows.push(["Reference", values.reference]);
+  paymentRows.push(["Payment Date", `${formatDate(values.paidOn)} ${values.paidAtTime}`]);
+  const balanceBeforePaise = values.balanceAfterPaise + values.keptPaise;
   return (
     <PaperDocument title={`Payment Receipt ${values.receiptNumber}`} seller={values.seller}>
-      <PaperPage
-        paperName="Payment Receipt"
-        documentNumber={values.receiptNumber}
-        seller={values.seller}
-      >
-        <TitleRow
-          title="Payment Receipt"
-          meta={[
-            ["Receipt No.", values.receiptNumber],
-            ["Date", `${formatDate(values.paidOn)} ${values.paidAtTime}`],
+      <PaperPage paperName="Payment Receipt" documentNumber={values.receiptNumber}>
+        <HeaderBox seller={values.seller} rows={headerRows} />
+        <PartyBox
+          heading="Received From"
+          name={values.customer.shopName}
+          details={[
+            values.customer.address,
+            `Mobile: ${values.customer.phone}`,
           ]}
+          rows={paymentRows}
         />
-        <View style={styles.parties} wrap={false}>
-          <View style={styles.party}>
-            <Text style={styles.partyLabel}>Seller</Text>
-            <Text style={styles.partyName}>{values.seller.legalName}</Text>
-            <Text>{values.seller.address}</Text>
-            <Fact label="GSTIN:" value={values.seller.gstin} />
-            <Fact
-              label="State:"
-              value={`${values.seller.stateName} (${values.seller.stateCode})`}
-            />
+        <View style={[styles.box, { backgroundColor: "#efefef" }]} wrap={false}>
+          <View style={[styles.cellBlock, { flex: 0.8 }]}>
+            <Text style={styles.heading}>Amount Received</Text>
+            <Text style={{ fontSize: 17, fontWeight: 700 }}>{formatPaise(values.keptPaise)}</Text>
           </View>
-          <View style={[styles.party, styles.partyDivider]}>
-            <Text style={styles.partyLabel}>Received from</Text>
-            <Text style={styles.partyName}>{values.customer.shopName}</Text>
-            <Fact label="Phone:" value={values.customer.phone} />
-            <Fact label="Route:" value={`${values.route.name} (${values.route.code})`} />
+          <View style={[styles.cellBlock, { flex: 1.6 }]}>
+            <Text style={styles.heading}>Amount in Words</Text>
+            <Text style={styles.bold}>{amountInWords(values.keptPaise)}</Text>
+            <Text style={[styles.small, { marginTop: 2 }]}>
+              Payment will be adjusted against the customer's outstanding balance.
+            </Text>
           </View>
         </View>
-        <View style={{ borderWidth: 0.75, borderColor: "#8c8c8c", marginTop: 4 }} wrap={false}>
-          <Row label="Mode" value={MODE_LABELS[values.mode]} />
-          {values.reference ? <Row label="Reference" value={values.reference} /> : null}
-          <Row label="Amount received" value={formatPaise(values.receivedPaise)} />
-          <Row label="Amount kept" value={formatPaise(values.keptPaise)} strong />
-          {values.returnedPaise > 0 ? (
-            <Row label="Cash returned" value={formatPaise(values.returnedPaise)} />
-          ) : null}
-          <Row
-            label="Balance after this payment"
-            value={balanceWording(values.balanceAfterPaise)}
+        <View style={styles.boxColumn} wrap={false}>
+          <Text style={styles.heading}>Customer Account Summary</Text>
+          <SummaryLine
+            label={balanceLabel(balanceBeforePaise, "before")}
+            paise={Math.abs(balanceBeforePaise)}
+          />
+          <SummaryLine label="Less: Payment received" paise={values.keptPaise} />
+          <SummaryLine
+            label={balanceLabel(values.balanceAfterPaise, "after")}
+            paise={Math.abs(values.balanceAfterPaise)}
+            strong
           />
         </View>
-        <View style={{ marginTop: 8 }}>
-          <Text style={styles.label}>Amount kept in words</Text>
-          <Text style={styles.words}>{amountInWords(values.keptPaise)}</Text>
+        <View style={styles.boxColumn} wrap={false}>
+          <Text style={styles.heading}>Remarks</Text>
+          <Text>{remarksOf(values)}</Text>
         </View>
-        <Text style={styles.notice}>This is not a tax invoice.</Text>
+        <BankDetails bank={values.seller.bank} />
+        <TermsAndSignatory seller={values.seller} title="Notes" lines={RECEIPT_NOTES} />
       </PaperPage>
     </PaperDocument>
   );

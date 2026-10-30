@@ -19,7 +19,20 @@ import type { DbExecutor } from "../shared/executor";
 
 export type SellerSettingsFields = Pick<
   InsertSellerSettings,
-  "legalName" | "address" | "state" | "gstin" | "phone" | "email"
+  | "legalName"
+  | "address"
+  | "state"
+  | "gstin"
+  | "phone"
+  | "email"
+  | "pan"
+  | "bankAccountName"
+  | "bankName"
+  | "bankBranch"
+  | "bankAccountNumber"
+  | "bankIfsc"
+  | "terms"
+  | "place"
 >;
 
 // The schema has no single-row constraint; callers refuse to choose when this returns two rows.

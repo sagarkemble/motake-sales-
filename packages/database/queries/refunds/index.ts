@@ -136,3 +136,15 @@ export async function listRefundEventsWithActor(refundId: string, executor: DbEx
       asc(refundEventsTable.id),
     );
 }
+
+// The Customer the Refund was paid to.
+export async function getRefundCustomerId(
+  refundId: string,
+  executor: DbExecutor = db,
+): Promise<string | null> {
+  const [row] = await executor
+    .select({ customerId: refundsTable.customerId })
+    .from(refundsTable)
+    .where(eq(refundsTable.id, refundId));
+  return row?.customerId ?? null;
+}

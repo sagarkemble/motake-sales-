@@ -1,6 +1,7 @@
 import { logger } from "@repo/logger";
 
 import { internalError } from "../errors";
+import type { PaymentMode } from "../payments";
 
 // What a checkout tells Spec J (WhatsApp) after its transaction commits. Every figure was captured
 // inside the transaction, so the listener never re-derives a Balance.
@@ -52,6 +53,7 @@ export interface PaymentPostedEvent {
   postedEventId: string;
   paymentNumber: string;
   customerId: string;
+  mode: PaymentMode;
   keptPaise: number;
   returnedPaise: number;
   balanceAfterPaise: number;

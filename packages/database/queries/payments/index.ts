@@ -168,3 +168,15 @@ export async function listPaymentEventsWithActor(paymentId: string, executor: Db
       asc(paymentEventsTable.id),
     );
 }
+
+// The Customer the Payment was taken from.
+export async function getPaymentCustomerId(
+  paymentId: string,
+  executor: DbExecutor = db,
+): Promise<string | null> {
+  const [row] = await executor
+    .select({ customerId: paymentsTable.customerId })
+    .from(paymentsTable)
+    .where(eq(paymentsTable.id, paymentId));
+  return row?.customerId ?? null;
+}

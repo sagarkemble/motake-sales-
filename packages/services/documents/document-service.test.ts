@@ -16,7 +16,9 @@ import {
   buildBill,
   buildBillVersion,
   buildCustomer,
+  buildGatepass,
   buildNoteWithLines,
+  buildOrder,
   buildPayment,
   buildPaymentEvent,
   buildProfile,
@@ -129,13 +131,94 @@ describe("DocumentService.ensureBillVersionDocument", () => {
     expect(store.objects.get(expectedKey)?.contentType).toBe("application/pdf");
 
     const text = await printedText(first.bytes!);
-    expect(text).toContain("Tax Invoice");
+    expect(text).toContain("TAX INVOICE");
     expect(text).toContain(bill.number);
     expect(text).toContain("Laxmi Dairy");
-    expect(text).toContain(`${route.name} (${route.code})`);
+    expect(text).toContain(`Destination / Route ${route.name}`);
+    expect(text).toContain("Dispatched through Office");
     expect(text).toContain("Maharashtra (27)");
     expect(text).toContain("Fresh Paneer 200 g");
     expect(text).toContain("₹945.00");
+  });
+
+  it("prints the GatePass salesman as Dispatched through on a field Bill", async () => {
+    const { admin, customer, paneer } = await setup();
+    const { profile: salesman } = await buildSalesman({ name: "Rahul Patil" });
+    const gatepass = await buildGatepass({
+      salesmanId: salesman.id,
+      issuedBy: admin.id,
+      routeId: customer.routeId,
+      lines: [],
+    });
+    const lines = [{ variety: paneer, quantity: 2, routePricePaise: 9_000 }];
+    const { order, orderItemIds } = await buildOrder({
+      customer,
+      actorId: salesman.id,
+      salesmanId: salesman.id,
+      gatepassId: gatepass.id,
+      lines,
+    });
+    const { bill } = await buildBill({
+      customer,
+      actorId: salesman.id,
+      orderId: order.id,
+      orderItemIds,
+      lines,
+    });
+    const [version] = await versionsOf(bill.id);
+
+    const result = await documentsWith(new MemoryDocumentStore()).ensureBillVersionDocument(
+      version!.id,
+      { bytes: true },
+    );
+
+    expect(await printedText(result.bytes!)).toContain("Dispatched through Salesman: Rahul Patil");
+  });
+
+  it("prints the Seller master's phone, email, PAN, bank details and terms, and leaves out the empty ones", async () => {
+    const { admin, customer, paneer } = await setup();
+    const lines = [{ variety: paneer, quantity: 1, routePricePaise: 9_000 }];
+    const documents = documentsWith(new MemoryDocumentStore());
+    const draw = async () => {
+      const { version } = await taxInvoiceOf(customer, admin.id, lines);
+      const result = await documents.ensureBillVersionDocument(version.id, { bytes: true });
+      return printedText(result.bytes!);
+    };
+
+    const bare = await draw();
+    await db.update(sellerSettingsTable).set({
+      email: "motakemilk@gmail.com",
+      pan: "AAAAA0000A",
+      bankName: "BANK OF INDIA",
+      bankAccountNumber: "091920110000529",
+      bankIfsc: "BKID0000919",
+      terms: "1. Verify quantities at delivery.\n2. Refrigerate where required.",
+    });
+    const filled = await draw().finally(() =>
+      db.update(sellerSettingsTable).set({
+        email: null,
+        pan: null,
+        bankName: null,
+        bankAccountNumber: null,
+        bankIfsc: null,
+        terms: null,
+      }),
+    );
+
+    expect(bare).toContain("Mobile: 9800000000");
+    expect(bare).not.toContain("PAN");
+    expect(bare).not.toContain("Email");
+    expect(bare).not.toContain("Company Bank Details");
+    expect(bare).not.toContain("Terms and Conditions");
+    expect(filled).toContain("Email: motakemilk@gmail.com");
+    expect(filled).toContain("GSTIN/UIN: 27AAAAA0000A1Z5 | PAN: AAAAA0000A");
+    expect(filled).toContain(
+      "Company Bank Details Bank: BANK OF INDIA | A/c No.: 091920110000529 | IFSC: BKID0000919",
+    );
+    expect(filled).toContain(
+      "Terms and Conditions 1. Verify quantities at delivery. 2. Refrigerate where required.",
+    );
+    expect(filled).toContain("For Motake Test Foods Pvt Ltd Authorised Signatory");
   });
 
   it("refuses an e-invoiced Tax Invoice without IRN and leaves pdf_key empty", async () => {
@@ -186,7 +269,7 @@ describe("DocumentService.ensureBillVersionDocument", () => {
 
     expect(result.key).toBe(`documents/bills/${bill.id}/v1.pdf`);
     const text = await printedText(result.bytes!);
-    expect(text).toContain("Bill of Supply");
+    expect(text).toContain("BILL OF SUPPLY");
     expect(text).toContain("Exempt supply. No tax charged.");
   });
 
@@ -362,16 +445,17 @@ describe("DocumentService.ensureNoteDocument", () => {
     expect(stored!.pdfKey).toBe(first.key);
 
     const text = await printedText(first.bytes!);
-    expect(text).toContain("Credit Note");
+    expect(text).toContain("CREDIT NOTE");
     expect(text).toContain("MC/26-27/000045");
     expect(text).toContain("Laxmi Dairy");
     expect(text).not.toContain("Laxmi Dairy Renamed");
     expect(text).toContain(bill.number);
     expect(text).toContain("25/10/2026");
     expect(text).toContain("Paneer returned: seal broken");
-    expect(text).toContain("27/10/2026");
-    expect(text).toContain("₹9.00");
-    expect(text).toContain("₹378.00");
+    expect(text).not.toContain("27/10/2026");
+    // The line's GST rate comes from the Bill version line it points at.
+    expect(text).toContain("₹360.00 5% — ₹9.00 ₹9.00 ₹18.00");
+    expect(text).toContain("Credit Note Total: ₹378.00");
   });
 
   it("prints a Commercial Credit Note without tax and with the does-not-reduce-GST line", async () => {
@@ -403,7 +487,7 @@ describe("DocumentService.ensureNoteDocument", () => {
 
     expect(result.filename).toBe("Motake Credit Note MC-26-27-000046.pdf");
     const text = await printedText(result.bytes!);
-    expect(text).toContain("Credit Note (Commercial)");
+    expect(text).toContain("CREDIT NOTE (COMMERCIAL)");
     expect(text).toContain("This Credit Note does not reduce GST. Not a GST Credit Note.");
     expect(text).toContain("₹94.50");
     expect(text).not.toMatch(/CGST|SGST|IGST/);
@@ -449,18 +533,18 @@ describe("DocumentService.drawPaymentReceipt", () => {
     expect(paymentAfter).toEqual(payment);
 
     const text = await printedText(result.bytes!);
-    expect(text).toContain("Payment Receipt");
+    expect(text).toContain("PAYMENT RECEIPT");
     expect(text).toContain("MP/26-27/000010");
-    expect(text).toContain("25/10/2026 18:42");
+    expect(text).toContain("Payment Date 25/10/2026 18:42");
     const [seller] = await db.select().from(sellerSettingsTable);
     expect(text).toContain(seller!.legalName);
-    expect(text).toContain("Maharashtra (27)");
     expect(text).toContain("Laxmi Dairy");
-    expect(text).toContain(`${route.name} (${route.code})`);
-    expect(text).toContain("₹4,435.00");
-    expect(text).toContain("Cash returned");
-    expect(text).toContain("₹565.00");
-    expect(text).toContain("Pending ₹1,250.50");
+    expect(text).toContain(customer.address);
+    expect(text).not.toContain(`Route: ${route.name}`);
+    expect(text).toContain("AMOUNT RECEIVED ₹4,435.00");
+    expect(text).toContain("₹565.00 cash returned as change");
+    expect(text).toContain("Outstanding balance before receipt ₹5,685.50");
+    expect(text).toContain("Outstanding balance after receipt ₹1,250.50");
   });
 
   it("returns the stored receipt on a retry after a Payment Correct and a Settings edit", async () => {
@@ -545,10 +629,13 @@ describe("DocumentService.drawPaymentReceipt", () => {
 describe("DocumentService.drawDraftBill", () => {
   it("returns draft bytes marked on every page, with no put and no pdf_key", async () => {
     const { admin, customer } = await setup({ einvoicingRequired: true });
-    const lines: LineInput[] = [];
-    for (let index = 0; index < 45; index += 1) {
-      lines.push({ variety: await buildVariety(), quantity: index + 1, routePricePaise: 9_000 });
-    }
+    // Built side by side: one at a time takes most of the test timeout on a remote database.
+    const varieties = await Promise.all(Array.from({ length: 45 }, () => buildVariety()));
+    const lines: LineInput[] = varieties.map((variety, index) => ({
+      variety,
+      quantity: index + 1,
+      routePricePaise: 9_000,
+    }));
     const { bill } = await buildBill({ customer, actorId: admin.id, lines });
     const [version] = await versionsOf(bill.id);
     const store = new MemoryDocumentStore();

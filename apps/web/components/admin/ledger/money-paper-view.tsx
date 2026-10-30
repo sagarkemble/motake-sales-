@@ -21,6 +21,7 @@ import { useTranslate } from "~/hooks/use-translate";
 
 import { LedgerBackHeader, useBalanceText } from "./ledger-shared";
 import { CorrectPaymentForm, CorrectRefundForm } from "./money-paper-forms";
+import { PaperWhatsapp } from "./paper-whatsapp";
 import {
   Fact,
   HistoryList,
@@ -125,14 +126,25 @@ export function MoneyPaperView({
       <article className="space-y-4 rounded-2xl border bg-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <PaperHeading model={model} />
-          <Button
-            className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
-            disabled={!canCorrect}
-            title={canCorrect ? undefined : tx("admin.ledger.paper.off.inactive")}
-            onClick={() => setOpen(true)}
-          >
-            {tx("admin.ledger.money.correct.button")}
-          </Button>
+          <div className="flex flex-col gap-2 sm:items-end">
+            <Button
+              className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+              disabled={!canCorrect}
+              title={canCorrect ? undefined : tx("admin.ledger.paper.off.inactive")}
+              onClick={() => setOpen(true)}
+            >
+              {tx("admin.ledger.money.correct.button")}
+            </Button>
+            <PaperWhatsapp
+              document={
+                model.kind === "payment"
+                  ? { paymentId: model.paper.payment.id }
+                  : { refundId: model.paper.refund.id }
+              }
+              title={`${tx(`admin.ledger.money.paper.${model.kind}`)} ${numberOf(model)}`}
+              context={{ customerActive: paper.customer.status !== "inactive" }}
+            />
+          </div>
         </div>
         {model.kind === "payment" ? (
           <PaymentFacts paper={model.paper} />

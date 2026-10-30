@@ -242,6 +242,7 @@ class PaymentService {
         postedEventId: posted.postedEventId,
         paymentNumber: posted.payment.number,
         customerId: posted.payment.customerId,
+        mode: posted.payment.mode,
         keptPaise: posted.split.keptPaise,
         returnedPaise: posted.split.returnedPaise,
         balanceAfterPaise: posted.balanceAfterPaise,

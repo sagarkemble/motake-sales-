@@ -114,6 +114,7 @@ describe("GstService.enterIrn", () => {
         customerId: world.customer.id,
         versionNumber: 1,
         irnRecordedAt: recordedAt,
+        balanceAfterPaise: placed.balancePaise,
       },
     ]);
   });
@@ -481,6 +482,7 @@ describe("GstService.correctIrn", () => {
         customerId: world.customer.id,
         versionNumber: 1,
         irnRecordedAt: correctedAt,
+        balanceAfterPaise: placed.balancePaise,
         reason: "Copied the wrong IRN",
       },
     ]);

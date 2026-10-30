@@ -63,7 +63,22 @@ const SELLER_SETUP_DEFAULTS: SellerSetupDefaults = {
   email: "akashpatil8090@gmail.com",
 };
 
-const sellerAuditedFields = ["legalName", "address", "state", "gstin", "phone", "email"] as const;
+const sellerAuditedFields = [
+  "legalName",
+  "address",
+  "state",
+  "gstin",
+  "phone",
+  "email",
+  "pan",
+  "bankAccountName",
+  "bankName",
+  "bankBranch",
+  "bankAccountNumber",
+  "bankIfsc",
+  "terms",
+  "place",
+] as const;
 
 // GST allows 16 characters; a 2-letter prefix always fits, this only guards the rule.
 const MAX_DOCUMENT_NUMBER_LENGTH = 16;
@@ -75,6 +90,13 @@ function assertGstinMatchesState(gstin: string, state: string): void {
   const code = INDIAN_STATES.find((candidate) => candidate.name === state)?.gstStateCode;
   if (gstin.slice(0, 2) !== code) {
     throw badRequest(`GSTIN ${gstin} does not belong to ${state} (state code ${code})`);
+  }
+}
+
+// A PAN is characters 3–12 of the GSTIN issued to it.
+function assertPanMatchesGstin(pan: string | null | undefined, gstin: string): void {
+  if (pan && gstin.slice(2, 12) !== pan) {
+    throw badRequest(`PAN ${pan} does not match GSTIN ${gstin}`);
   }
 }
 
@@ -133,6 +155,7 @@ class SettingsService {
   ): Promise<SelectSellerSettings> {
     const { reason, ...fields } = setUpSellerSettingsInputSchema.parse(input);
     assertGstinMatchesState(fields.gstin, fields.state);
+    assertPanMatchesGstin(fields.pan, fields.gstin);
     return runInTransaction(async (transaction) => {
       await lockSellerSettingsTable(transaction);
       const existing = await listSellerSettingsRows(transaction);
@@ -173,6 +196,7 @@ class SettingsService {
       const changes = changedFields(before, merged, sellerAuditedFields);
       if (Object.keys(changes).length === 0) return before;
       assertGstinMatchesState(merged.gstin, merged.state);
+      assertPanMatchesGstin(merged.pan, merged.gstin);
 
       const changedValues = Object.fromEntries(
         Object.keys(changes).map((field) => [field, merged[field as keyof typeof merged] ?? null]),

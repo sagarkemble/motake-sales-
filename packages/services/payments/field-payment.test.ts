@@ -263,6 +263,7 @@ describe("PaymentService.recordFieldPayment", () => {
           postedEventId: event!.id,
           paymentNumber: "MP/26-27/000001",
           customerId: world.customer.id,
+          mode: "cash",
           keptPaise: 5_000,
           returnedPaise: 0,
           balanceAfterPaise: 5_000,

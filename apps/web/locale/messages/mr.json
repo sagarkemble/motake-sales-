@@ -692,7 +692,15 @@
         "email": "ईमेल",
         "prefix": "प्रीफिक्स",
         "deadlineDate": "अंतिम तारीख",
-        "defaultDate": "डीफॉल्ट अंतिम तारीख"
+        "defaultDate": "डीफॉल्ट अंतिम तारीख",
+        "pan": "PAN",
+        "bankAccountName": "खातेदाराचे नाव",
+        "bankName": "बँक",
+        "bankBranch": "शाखा",
+        "bankAccountNumber": "खाते क्रमांक",
+        "bankIfsc": "IFSC",
+        "terms": "अटी व शर्ती",
+        "place": "ठिकाण (Received At)"
       },
       "history": {
         "title": "इतिहास",
@@ -728,6 +736,34 @@
           "gstinState": "GSTIN {code} ने सुरू होतो पण {state} चा कोड {stateCode} आहे.",
           "phone": "फोन नंबर टाका (जास्तीत जास्त 20 अक्षरे).",
           "email": "ईमेल योग्य नाही."
+        }
+      },
+      "documents": {
+        "taxTitle": "कर आणि कागदपत्रे",
+        "taxEmpty": "सेट केलेले नाही. PDF वर PAN, Received At आणि अटी छापल्या जात नाहीत.",
+        "bankTitle": "बँक तपशील",
+        "bankEmpty": "सेट केलेले नाही. PDF वर बँक तपशील छापले जात नाहीत.",
+        "add": "जोडा",
+        "dialogDescription": "ऐच्छिक. रिकामे ठेवलेली ओळ PDF वर छापली जात नाही.",
+        "gstinOnFile": "नोंदवलेला GSTIN:",
+        "panHint": "प्रत्येक PDF वर GSTIN खाली छापला जातो. GSTIN शी जुळला पाहिजे.",
+        "useFromGstin": "GSTIN मधील {pan} वापरा",
+        "placeHint": "पावत्यांवर Received At म्हणून दिसते.",
+        "placePlaceholder": "जांभळी, महाराष्ट्र",
+        "termsHint": "प्रत्येक ओळीत एक अट; PDF वर प्रत्येक अट स्वतंत्र ओळीत छापली जाते. {count}/{max}",
+        "termsPlaceholder": "डिलिव्हरीच्या वेळी प्रमाण तपासा.\nगळती लगेच कळवा.",
+        "printsAs": "असे छापले जाईल",
+        "accountNamePlaceholder": "खात्यावरील नाव",
+        "bankPartial": "बँक तपशील अर्धवट भरलेले आहेत ({missing} बाकी). PDF वर फक्त भरलेले तपशील छापले जातात.",
+        "appliesNote": "बदल फक्त जतन केल्यानंतर तयार होणाऱ्या PDF ना लागू होतात. आधी तयार झालेल्या PDF मध्ये जुने तपशील राहतात.",
+        "updateSuccess": "कागदपत्र तपशील जतन झाले",
+        "updateFailed": "कागदपत्र तपशील जतन करता आले नाहीत. पुन्हा प्रयत्न करा.",
+        "validation": {
+          "pan": "PAN 10 अक्षरांचा असतो: 5 अक्षरे, 4 अंक, 1 अक्षर (उदा. ABCDE1234F).",
+          "panGstin": "PAN हा GSTIN मधील 3–12 अक्षरांशी जुळला पाहिजे ({pan}).",
+          "ifsc": "IFSC 11 अक्षरांचा असतो: 4 अक्षरे, शून्य, मग 6 अक्षरे किंवा अंक (उदा. BKID0000919).",
+          "accountNumber": "फक्त अंक, 6 ते 18.",
+          "tooLong": "जास्तीत जास्त {max} अक्षरे."
         }
       },
       "prefixes": {
@@ -989,7 +1025,14 @@
         "irn_missing": "या बिलाला अजून IRN नाही, त्यामुळे PDF तयार करता येत नाही.",
         "not_found": "सापडले नाही. कदाचित काढले गेले असेल.",
         "pre_order_cancelled": "ही प्री-ऑर्डर रद्द झाली आहे.",
-        "generic": "काहीतरी चुकले. पुन्हा प्रयत्न करा."
+        "generic": "काहीतरी चुकले. पुन्हा प्रयत्न करा.",
+        "message_pending": "हा WhatsApp अजून पाठवला जात आहे. निकाल आल्यावर पुन्हा पाठवा.",
+        "not_latest_bill": "ही बिलाची जुनी आवृत्ती आहे, ती पुन्हा पाठवता येत नाही. नवीनतम बिल पाठवा वापरा.",
+        "phone_unusable": "ग्राहकाचा फोन वैध भारतीय मोबाईल नाही. आधी फोन दुरुस्त करा.",
+        "no_active_gatepass": "आज तुमचा कोणताही सक्रिय GatePass नाही, त्यामुळे तुम्ही WhatsApp संदेश पाहू किंवा पुन्हा पाठवू शकत नाही.",
+        "customer_not_on_route": "हा ग्राहक तुमच्या सक्रिय GatePass रूटवर नाही.",
+        "notification_unavailable": "या सर्व्हरवर WhatsApp संदेश सेट केलेले नाहीत.",
+        "irn_pending": "हे बिल IRN ची वाट पाहत आहे; IRN नोंदल्यावर पाठवले जाते."
       },
       "paper": {
         "back": "{shopName} खातेवही",
@@ -2002,6 +2045,117 @@
         "message": "ही चेकआउट आधीच वेगळ्या वस्तू किंवा पेमेंटसह पाठवली गेली. चेकआउट पुन्हा सुरू करा.",
         "action": "पुन्हा सुरू करा"
       }
+    }
+  },
+  "whatsapp": {
+    "entry": {
+      "label": "WhatsApp · {status} · {count}",
+      "none": "WhatsApp · काहीही नाही",
+      "loading": "WhatsApp · …",
+      "error": "WhatsApp · लोड झाले नाही"
+    },
+    "dialog": {
+      "title": "WhatsApp · {paper}",
+      "description": "नवीन आधी. पुन्हा पाठवा हाच संदेश आणि PDF पुन्हा पाठवते; पैशात काहीही बदलत नाही.",
+      "empty": "या कागदासाठी कोणतेही WhatsApp संदेश नाहीत.",
+      "loadError": "WhatsApp स्थिती लोड झाली नाही. कागद ठीक आहे.",
+      "retry": "पुन्हा प्रयत्न करा"
+    },
+    "status": {
+      "waiting": "प्रतीक्षेत",
+      "sent": "पाठवला",
+      "held": "थांबवला",
+      "delivered": "पोहोचला",
+      "read": "वाचला",
+      "failed": "अयशस्वी",
+      "superseded": "रद्द झाला",
+      "skipped": "पाठवला नाही",
+      "sending": "पाठवत आहे"
+    },
+    "hint": {
+      "waiting": "रांगेत. WhatsApp ने अजून घेतलेला नाही.",
+      "sent": "WhatsApp ने घेतला. अजून पोहोचल्याची खूण नाही.",
+      "held": "WhatsApp ठीक होईपर्यंत थांबवला. नंतर आपोआप जाईल.",
+      "delivered": "दुकानाच्या फोनवर पोहोचला.",
+      "read": "दुकानाने उघडला.",
+      "failed": "WhatsApp पोहोचवू शकले नाही.",
+      "superseded": "जाण्यापूर्वीच वगळला.",
+      "skipped": "कधीच पाठवला नाही."
+    },
+    "template": {
+      "bill": "बिल",
+      "billVersion": "बिल v{version}",
+      "receipt": "पावती",
+      "bill_corrected": "बिल दुरुस्त",
+      "payment_corrected": "पेमेंट दुरुस्त",
+      "refund": "परतावा",
+      "cancellation": "रद्द",
+      "gst_credit_note": "GST क्रेडिट नोट",
+      "gst_debit_note": "GST डेबिट नोट",
+      "note_update": "नोट अपडेट"
+    },
+    "withPdf": "PDF सह",
+    "tries": "{count} प्रयत्न",
+    "reason": {
+      "supersededCancelled": "वगळला: हा जाण्यापूर्वी बिल रद्द झाले.",
+      "supersededNewer": "वगळला: हा जाण्यापूर्वी बिलाची नवी आवृत्ती बनली.",
+      "missingPhone": "या ग्राहकाचा फोन नंबर जतन केलेला नाही.",
+      "invalidPhone": "जतन केलेला फोन वैध भारतीय मोबाईल नाही.",
+      "failure": {
+        "invalid_recipient": "हा नंबर WhatsApp वर नाही, किंवा चुकीचा आहे.",
+        "window_closed": "WhatsApp ने आत्ता हा संदेश पाठवू दिला नाही.",
+        "template_error": "WhatsApp ने संदेशाचा मजकूर नाकारला. डेव्हलपरला सांगा.",
+        "media_error": "PDF जोडता आली नाही.",
+        "auth_error": "WhatsApp थांबले आहे: access token चालत नाही.",
+        "payment_error": "WhatsApp थांबले आहे: WhatsApp खात्यावर पेमेंटची अडचण.",
+        "opted_out_or_blocked": "दुकानाने WhatsApp वर Motake ब्लॉक केले किंवा व्यवसाय संदेश बंद केले.",
+        "rate_limited": "एकाच वेळी खूप संदेश. WhatsApp पुन्हा प्रयत्न करेल.",
+        "provider_unavailable": "WhatsApp शी संपर्क झाला नाही.",
+        "ambiguous": "संदेश गेला की नाही हे WhatsApp ने कळवले नाही.",
+        "unknown": "WhatsApp ने कारण सांगितले नाही."
+      }
+    },
+    "block": {
+      "inactive": "ग्राहक निष्क्रिय आहे.",
+      "pending": "अजून पाठवत आहे.",
+      "held": "WhatsApp ठीक झाल्यावर आपोआप जाईल.",
+      "billCancelled": "बिल रद्द आहे. त्याचे बिल संदेश पुन्हा पाठवले जात नाहीत.",
+      "olderBill": "बिलाची जुनी आवृत्ती. नवीनतम बिल पाठवा वापरा.",
+      "latestCancelled": "हे बिल रद्द आहे. त्यासाठी आणखी काही पाठवले जात नाही.",
+      "latestIrnPending": "IRN बाकी. IRN भरल्यावर बिल आपोआप जाईल."
+    },
+    "resend": {
+      "button": "पुन्हा पाठवा",
+      "confirmTitle": "{message} पुन्हा पाठवायचा?",
+      "confirmBody": "हाच WhatsApp ग्राहकाच्या फोनवर पुन्हा पाठवतो. काहीही पुन्हा बिल किंवा नोंद होत नाही; आकडे पहिल्यांदा पाठवले तसेच राहतात.",
+      "confirmBodyPdf": "हाच WhatsApp आणि PDF ग्राहकाच्या फोनवर पुन्हा पाठवतो. काहीही पुन्हा बिल किंवा नोंद होत नाही; आकडे पहिल्यांदा पाठवले तसेच राहतात.",
+      "done": "{message} पुन्हा जात आहे. तोच संदेश; पैसे बदलले नाहीत.",
+      "refused": "पुन्हा पाठवला नाही"
+    },
+    "latest": {
+      "button": "नवीनतम बिल पाठवा",
+      "hint": "v{version} त्याच्या PDF आणि आजच्या शिल्लकेसह.",
+      "confirmTitle": "नवीनतम बिल पाठवायचे?",
+      "confirmBody": "{number} v{version} त्याच्या PDF सह पाठवते. संदेशात आजची शिल्लक ({balance}) दिसते. न गेलेले जुने बिल संदेश वगळले जातात. काहीही पुन्हा बिल होत नाही.",
+      "confirm": "पाठवा",
+      "done": "नवीनतम बिल त्याच्या PDF आणि आजच्या शिल्लकेसह पाठवले.",
+      "refused": "पाठवले नाही"
+    },
+    "checkout": {
+      "pill": "WhatsApp: {text}",
+      "checking": "WhatsApp तपासत आहे…",
+      "unknown": "WhatsApp स्थिती माहीत नाही",
+      "none": "अजून WhatsApp नाही",
+      "billPart": "बिल {status}",
+      "receiptPart": "पावती {status}",
+      "title": "{shop} ला WhatsApp",
+      "description": "आधी बिल, मग पावती. पुन्हा पाठवा हाच संदेश आणि PDF पुन्हा पाठवते.",
+      "billPdf": "बिल (PDF)",
+      "receiptPdf": "पावती (PDF)",
+      "loadError": "WhatsApp तपासता आले नाही. विक्री जतन झाली आहे.",
+      "retry": "पुन्हा प्रयत्न",
+      "noReceipt": "पावती नाही: काहीही ठेवले नाही.",
+      "empty": "अजून काहीही गेले नाही. हे आपोआप अपडेट होते."
     }
   }
 }
