@@ -16,6 +16,9 @@ import { useTranslate } from "~/hooks/use-translate";
 
 export const HSN_PATTERN = /^[0-9]{4,8}$/;
 
+/** The GST rate a new Variety starts with, and the rate after switching Exempt off. */
+export const DEFAULT_GST_RATE_PERCENT = "5";
+
 /** A Variety's GST: HSN, exempt and rate in basis points (5% is 500). */
 export type VarietyTax = { hsn: string; exempt: boolean; gstRateBps: number };
 
@@ -69,8 +72,8 @@ export function VarietyTaxRateFields() {
                 className="data-[state=checked]:bg-brand"
                 onCheckedChange={(checked) => {
                   field.onChange(checked);
-                  // Exempt forces the rate to 0; switching back asks for a fresh rate.
-                  form.setValue("ratePercent", "");
+                  // Exempt forces the rate to 0; switching back starts again from the default.
+                  form.setValue("ratePercent", DEFAULT_GST_RATE_PERCENT);
                   form.clearErrors("ratePercent");
                 }}
               />
