@@ -44,10 +44,6 @@ export function PasswordLoginForm() {
     [tx],
   );
 
-  const remainingPasswordCharacters = minPasswordLength - password.length;
-  const showRemainingPasswordCharactersHint =
-    password.length > 0 && remainingPasswordCharacters > 0;
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (isSubmitting) return;
@@ -119,16 +115,6 @@ export function PasswordLoginForm() {
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </button>
         </div>
-        {showRemainingPasswordCharactersHint && (
-          <p className="text-xs text-muted-foreground">
-            {tx(
-              remainingPasswordCharacters === 1
-                ? "admin.salesmen.form.moreCharsOne"
-                : "admin.salesmen.form.moreCharsOther",
-              { count: remainingPasswordCharacters },
-            )}
-          </p>
-        )}
       </div>
 
       {formError ? (
