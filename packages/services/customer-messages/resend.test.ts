@@ -9,7 +9,7 @@ import {
 } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { refusalOf } from "../test/admin-bill-world";
+import { billItemsOf, refusalOf } from "../test/admin-bill-world";
 import {
   buildCheckoutWorld,
   buildGatepass,
@@ -68,12 +68,14 @@ async function moneyRowCounts() {
   return [payments!.total, events!.total, ledger!.total];
 }
 
-async function textCorrect(world: CheckoutWorld, billId: string, expectedVersionNumber: number) {
+// A new Bill version: one more Milk.
+async function qtyCorrect(world: CheckoutWorld, billId: string, expectedVersionNumber: number) {
+  const milkLine = (await billItemsOf(billId)).find((item) => item.varietyId === world.milk.id)!;
   await harness.adminBillService.correctBill(world.admin.id, {
     billId,
     expectedVersionNumber,
-    buyer: { shopName: `Shop v${expectedVersionNumber + 1}`, phone: "9822000000", address: "Rd" },
-    reason: "Shop name",
+    lines: [{ lineId: milkLine.id, quantity: milkLine.quantity + 1 }],
+    reason: "One more Milk",
   });
 }
 
@@ -197,7 +199,7 @@ describe("resend", () => {
     const placed = await bookNow(world);
     const v1 = harness.gateway.rows[0]!;
     harness.gateway.setStatus(v1.notificationId, "delivered");
-    await textCorrect(world, placed.billId, 1);
+    await qtyCorrect(world, placed.billId, 1);
 
     const error = await harness.messages
       .resend(admin(world), { notificationId: v1.notificationId })
@@ -265,7 +267,7 @@ describe("sendLatestBill", () => {
     const placed = await bookNow(world);
     const v1 = harness.gateway.rows[0]!;
     harness.gateway.enqueueAlwaysFails = true;
-    await textCorrect(world, placed.billId, 1);
+    await qtyCorrect(world, placed.billId, 1);
     harness.gateway.enqueueAlwaysFails = false;
     // v1 was skipped by the failed Correct chain's supersede step.
     harness.gateway.setStatus(v1.notificationId, "pending");
@@ -338,7 +340,7 @@ describe("status reads", () => {
   it("lists a Bill's messages (versions, update, cancellation, Notes) newest first, flagging the latest Bill", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const placed = await bookNow(world, 5_000);
-    await textCorrect(world, placed.billId, 1);
+    await qtyCorrect(world, placed.billId, 1);
     await harness.adminBillService.cancelBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 2,
@@ -351,10 +353,11 @@ describe("status reads", () => {
 
     expect(statuses.map((status) => [status.kind, status.businessRef, status.latestBill])).toEqual([
       ["cancellation", `bill/${placed.billId}/cancel`, false],
+      ["account_update", `bill/${placed.billId}/v2`, false],
       ["bill", `bill/${placed.billId}/v2`, true],
       ["bill", `bill/${placed.billId}/v1`, false],
     ]);
-    expect(statuses[2]).toMatchObject({ status: "skipped", skipReason: "superseded: newer Bill" });
+    expect(statuses[3]).toMatchObject({ status: "skipped", skipReason: "superseded: newer Bill" });
     expect(statuses[0]).not.toHaveProperty("idempotencyKey");
 
     const [payment] = await db.select().from(paymentsTable);

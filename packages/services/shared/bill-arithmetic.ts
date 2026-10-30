@@ -285,11 +285,7 @@ function omitTaxable(components: LineComponents) {
   };
 }
 
-export type CorrectClassification =
-  | "text_only"
-  | "debit_note"
-  | "credit_note"
-  | "debit_and_credit_notes";
+export type CorrectClassification = "debit_note" | "credit_note" | "debit_and_credit_notes";
 
 export interface CorrectedLine extends ArithmeticLine {
   previousQty: number;
@@ -317,7 +313,6 @@ export function planCorrect(input: {
   currentItems: ArithmeticLine[];
   standing: BillStanding;
   newQuantities: Map<string, number>;
-  buyerChanged: boolean;
   placeOfSupply: PlaceOfSupply;
   creditNoteKind: CreditNoteKind;
   oldTotalPaise: number;
@@ -332,7 +327,7 @@ export function planCorrect(input: {
     quantity: input.newQuantities.get(item.id) ?? item.quantity,
   }));
   const qtyChanged = asked.some(({ item, quantity }) => quantity !== item.quantity);
-  if (!qtyChanged && !input.buyerChanged) return refusal("nothing_changed");
+  if (!qtyChanged) return refusal("nothing_changed");
   if (asked.every(({ quantity }) => quantity === 0)) return refusal("all_lines_zero");
 
   const belowCredited = asked
@@ -400,18 +395,17 @@ export function planCorrect(input: {
     else if (debitNote)
       debitNote = { ...debitNote, amountPaise: debitNote.amountPaise + roundOffChange };
   }
-  if ((debitNote && debitNote.amountPaise <= 0) || (creditNote && creditNote.amountPaise <= 0)) {
+  // A qty change always needs a Note; none (a ₹0.00 price) would change the Bill for nothing.
+  if (
+    (!debitNote && !creditNote) ||
+    (debitNote && debitNote.amountPaise <= 0) ||
+    (creditNote && creditNote.amountPaise <= 0)
+  ) {
     return refusal("note_amount_zero");
   }
 
   const classification: CorrectClassification =
-    debitNote && creditNote
-      ? "debit_and_credit_notes"
-      : debitNote
-        ? "debit_note"
-        : creditNote
-          ? "credit_note"
-          : "text_only";
+    debitNote && creditNote ? "debit_and_credit_notes" : debitNote ? "debit_note" : "credit_note";
   return { ok: true, classification, lines, tax, debitNote, creditNote, netDifferencePaise };
 }
 

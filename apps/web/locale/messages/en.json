@@ -1157,21 +1157,12 @@
           "print": "Print"
         },
         "editing": "Correcting version {version}. Saving makes version {next}.",
-        "buyerText": "Buyer text",
-        "buyer": {
-          "shopName": "Shop name",
-          "phone": "Phone",
-          "address": "Address",
-          "gstinHint": "GSTIN and the Bill note cannot be changed here.",
-          "required": "Shop name, phone and address are required."
-        },
         "correctReasonPlaceholder": "Why is this Bill being corrected?",
         "saveCorrect": "Save correction",
         "correctSaved": "Saved as version {version}.",
         "preview": {
-          "nothingYet": "Change a quantity or the buyer text to see what happens.",
+          "nothingYet": "Change a quantity to see what happens.",
           "checking": "Checking…",
-          "text_only": "Only the text changes. No note is raised.",
           "debit_note": "A debit note will be raised.",
           "credit_note": "A credit note will be raised.",
           "debit_and_credit_notes": "A debit note and a credit note will be raised.",

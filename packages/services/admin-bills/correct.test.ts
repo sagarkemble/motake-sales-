@@ -221,35 +221,20 @@ describe("AdminBillService.correctBill", () => {
     expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(bill.totalPaise);
   });
 
-  it("a buyer text edit alone appends a version, writes no Note and leaves the Balance", async () => {
+  it("keeps the buyer as issued: a qty Correct leaves the letterhead buyer unchanged", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await billWithLines(world);
-    outcomes.length = 0;
+    const { placed, milkLine } = await billWithLines(world);
+    const issuedBuyer = ((await billTotal(placed.billId)).letterhead as { buyer: unknown }).buyer;
 
-    const result = await adminBillService.correctBill(world.admin.id, {
+    await adminBillService.correctBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 1,
-      buyer: { shopName: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-      reason: "Shop name spelt wrong",
+      lines: [{ lineId: milkLine.id, quantity: 4 }],
+      reason: "One more Milk",
     });
 
-    expect(result).toMatchObject({
-      classification: "text_only",
-      notes: [],
-      totalPaise: BOOK_NOW_TOTAL_PAISE,
-      balancePaise: BOOK_NOW_TOTAL_PAISE,
-    });
     const bill = await billTotal(placed.billId);
-    expect(bill.letterhead).toMatchObject({
-      buyer: { shop_name: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-    });
-    expect(await notesOf(placed.billId)).toEqual([]);
-    expect((await versionsOf(placed.billId)).map((version) => version.versionNumber)).toEqual([
-      1, 2,
-    ]);
-    expect(outcomes).toEqual([
-      expect.objectContaining({ kind: "bill_corrected", balanceChanged: false, notes: [] }),
-    ]);
+    expect((bill.letterhead as { buyer: unknown }).buyer).toEqual(issuedBuyer);
   });
 
   it("previews the classification, Notes and new totals and warns when the Bill has Notes, writing nothing", async () => {
@@ -583,9 +568,9 @@ describe("AdminBillService.correctBill (review fixes)", () => {
     ).toMatchObject({ reason: "customer_inactive" });
   });
 
-  it("a text-only Correct for a deactivated Customer is refused customer_inactive", async () => {
+  it("a Correct for a deactivated Customer is refused customer_inactive", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await billWithLines(world);
+    const { placed, milkLine } = await billWithLines(world);
     await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
     outcomes.length = 0;
 
@@ -594,8 +579,8 @@ describe("AdminBillService.correctBill (review fixes)", () => {
         adminBillService.correctBill(world.admin.id, {
           billId: placed.billId,
           expectedVersionNumber: 1,
-          buyer: { shopName: "New Name", phone: "9822000000", address: "New address" },
-          reason: "Fix the name",
+          lines: [{ lineId: milkLine.id, quantity: 4 }],
+          reason: "One more Milk",
         }),
       ),
     ).toMatchObject({ reason: "customer_inactive" });

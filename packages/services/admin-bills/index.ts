@@ -194,7 +194,7 @@ interface Run<Result> {
 
 const arithmeticMessages: Record<ArithmeticRefusal["reason"], string> = {
   unknown_line: "A line is not on the latest version of this Bill.",
-  nothing_changed: "Nothing changed. Change a qty or the buyer text, or close Correct.",
+  nothing_changed: "Nothing changed. Change a qty, or close Correct.",
   all_lines_zero: "Every line would be 0. Use Cancel to void a Bill.",
   below_credited_qty: "A line cannot go below the qty already on a Credit Note.",
   note_amount_zero: "This change would make a ₹0.00 Note after round-off.",
@@ -524,8 +524,8 @@ class AdminBillService {
     };
   }
 
-  // Fixes a wrong entry on the latest version: line qty (0 removes) and the buyer text, at the
-  // frozen price and tax facts. Rewrites the live Bill and its lines in place (surviving line ids
+  // Fixes a wrong qty on the latest version (0 removes a line), at the frozen price and tax facts.
+  // The buyer stays as issued. Rewrites the live Bill and its lines in place (surviving line ids
   // kept), appends a version, and writes the Credit and Debit Notes the change needs, pointing at
   // the replaced version. No stock goes back to any GatePass.
   public async correctBill(
@@ -536,11 +536,7 @@ class AdminBillService {
     const run = await runInTransaction(async (transaction): Promise<Run<CorrectResult>> => {
       const bill = await this.lockOpenBill(parsedInput.billId, "correct", transaction);
       const customerId = await this.activeCustomerOf(bill, transaction);
-      const { state, plan, buyer, issuedOn } = await this.planCorrectFor(
-        bill,
-        parsedInput,
-        transaction,
-      );
+      const { state, plan, issuedOn } = await this.planCorrectFor(bill, parsedInput, transaction);
 
       const creditNumber = plan.creditNote
         ? await this.allocateNoteNumber("credit_note", issuedOn, actorProfileId, transaction)
@@ -571,7 +567,6 @@ class AdminBillService {
         bill.id,
         {
           legalType: plan.tax.legalType,
-          letterhead: { ...state.letterhead, buyer },
           totalQuantity: plan.tax.totalQuantity,
           totalPaise: plan.tax.totalPaise,
           taxablePaise: plan.tax.taxablePaise,
@@ -1247,37 +1242,23 @@ class AdminBillService {
     input: {
       expectedVersionNumber: number;
       lines: Array<{ lineId: string; quantity: number }>;
-      buyer?: { shopName: string; phone: string; address: string };
     },
     executor: DbExecutor,
   ) {
     const state = await this.loadBillState(bill, executor);
     this.assertExpectedVersion(state, input.expectedVersionNumber);
     const issuedOn = businessDateOf(new Date());
-    const current = state.letterhead.buyer;
-    const buyer = input.buyer
-      ? {
-          ...current,
-          shop_name: input.buyer.shopName,
-          phone: input.buyer.phone,
-          address: input.buyer.address,
-        }
-      : current;
     assertQuantitiesFit(state.items, state.standing, input.lines, "correct");
     const plan = planCorrect({
       currentItems: state.items,
       standing: state.standing,
       newQuantities: new Map(input.lines.map((line) => [line.lineId, line.quantity])),
-      buyerChanged:
-        buyer.shop_name !== current.shop_name ||
-        buyer.phone !== current.phone ||
-        buyer.address !== current.address,
       placeOfSupply: state.placeOfSupply,
       creditNoteKind: await this.creditNoteKindFor(bill, issuedOn, executor),
       oldTotalPaise: bill.totalPaise,
     });
     if (!plan.ok) refuseArithmetic(plan);
-    return { state, plan, buyer, issuedOn };
+    return { state, plan, issuedOn };
   }
 
   private async planNoteFor(

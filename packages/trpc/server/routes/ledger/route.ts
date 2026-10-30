@@ -205,7 +205,7 @@ export const ledgerRouter = router({
         protect: true,
         summary: "Preview Correct",
         description:
-          "Return what Correct would do (history only, Debit Note, Credit Note or both), the Notes, the new totals and whether the Bill already has Notes. Refuses as Correct would. No writes.",
+          "Return what Correct would do (Debit Note, Credit Note or both), the Notes, the new totals and whether the Bill already has Notes. Refuses as Correct would. No writes.",
       },
     })
     .input(previewCorrectInputSchema)
@@ -221,7 +221,7 @@ export const ledgerRouter = router({
         protect: true,
         summary: "Correct a Bill",
         description:
-          "Fix line qty (0 removes) and the buyer text on the latest version at the frozen price and tax: rewrites the Bill, appends a version and writes the Credit and Debit Notes the change needs. Refused on a stale version, a cancelled or locked Bill, or below a credited qty.",
+          "Fix line qty (0 removes) on the latest version at the frozen price and tax; the buyer stays as issued: rewrites the Bill, appends a version and writes the Credit and Debit Notes the change needs. Refused on a stale version, a cancelled or locked Bill, or below a credited qty.",
       },
     })
     .input(correctBillInputSchema)

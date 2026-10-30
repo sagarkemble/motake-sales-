@@ -55,13 +55,12 @@ function asNote(draft: NoteDraft): ArithmeticNote {
 function correct(
   items: ArithmeticLine[],
   newQuantities: Record<string, number>,
-  options: { notes?: ArithmeticNote[]; buyerChanged?: boolean; commercial?: boolean } = {},
+  options: { notes?: ArithmeticNote[]; commercial?: boolean } = {},
 ) {
   return planCorrect({
     currentItems: items,
     standing: standingOf(items, options.notes),
     newQuantities: new Map(Object.entries(newQuantities)),
-    buyerChanged: options.buyerChanged ?? false,
     placeOfSupply: intra,
     creditNoteKind: options.commercial ? "commercial_credit_note" : "gst_credit_note",
     oldTotalPaise: totalOf(items),
@@ -165,13 +164,11 @@ describe("billStanding", () => {
 });
 
 describe("planCorrect", () => {
-  it("is text-only when only the buyer text changed", () => {
-    const plan = planned(correct([milk(), curd()], {}, { buyerChanged: true }));
-    expect(plan).toMatchObject({
-      classification: "text_only",
-      debitNote: null,
-      creditNote: null,
-      netDifferencePaise: 0,
+  it("refuses a qty change on a ₹0.00 line, which would need no Note", () => {
+    const free = line("free", { quantity: 2, routePricePaise: 0, exempt: true, gstRateBps: 0 });
+    expect(correct([milk(), free], { free: 5 })).toMatchObject({
+      ok: false,
+      reason: "note_amount_zero",
     });
   });
 

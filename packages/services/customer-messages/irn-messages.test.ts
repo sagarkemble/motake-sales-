@@ -60,13 +60,14 @@ describe("IRN pending", () => {
     await harness.adminBillService.correctBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 2,
-      buyer: { shopName: "Shree Dairy", phone: "9822418224", address: "Main Rd" },
-      reason: "Shop name",
+      lines: [{ lineId: milkLine.id, quantity: 5 }],
+      reason: "Another Milk",
     });
-    // Receipt at checkout, the Debit Note at Correct; no Bill and no Bill PDF yet.
-    expect(kindsOf(harness)).toEqual(["receipt", "debit_note"]);
+    // Receipt at checkout, a Debit Note at each Correct; no Bill and no Bill PDF yet.
+    expect(kindsOf(harness)).toEqual(["receipt", "debit_note", "debit_note"]);
     expect(harness.documents.calls.map((call) => call.method)).toEqual([
       "drawPaymentReceipt",
+      "ensureNoteDocument",
       "ensureNoteDocument",
     ]);
 
@@ -81,16 +82,16 @@ describe("IRN pending", () => {
       method: "ensureBillVersionDocument",
       billVersionId: versions[2]!.id,
     });
-    expect(harness.gateway.instructions.slice(2)).toEqual([
+    expect(harness.gateway.instructions.slice(3)).toEqual([
       expect.objectContaining({
         kind: "bill",
         businessRef: ref,
         idempotencyKey: `bill|${ref}|irn/${entered.irnRecordedAt.getTime()}`,
         values: expect.objectContaining({
-          customer: `Shree Dairy, ${world.route.name}`,
-          bill_amount: "₹145.00",
-          // The Balance at the Enter IRN commit: ₹145 Bill − ₹50 kept.
-          balance_line: "बिलानंतरची बाकी रक्कम: ₹95.00",
+          customer: `${world.customer.shopName}, ${world.route.name}`,
+          bill_amount: "₹171.00",
+          // The Balance at the Enter IRN commit: ₹171 Bill − ₹50 kept.
+          balance_line: "बिलानंतरची बाकी रक्कम: ₹121.00",
         }),
         attachment: expect.objectContaining({
           key: `documents/bill-versions/${versions[2]!.id}.pdf`,

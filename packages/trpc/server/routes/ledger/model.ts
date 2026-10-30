@@ -54,7 +54,7 @@ export const routeStampSchema = z.object({
   delivery_state: z.string(),
 });
 
-// Frozen at issue; the buyer text changes only through Correct.
+// Frozen at issue; Correct changes qty only, never the buyer.
 export const billLetterheadSchema = z.object({
   route: routeStampSchema,
   buyer: z.object({
@@ -277,23 +277,11 @@ export const previewCorrectInputSchema = z.object({
     .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().min(0) }))
     .refine(noRepeatedLine, "A line appears twice")
     .default([]),
-  buyer: z
-    .object({
-      shopName: z.string().trim().min(1).max(200),
-      phone: z.string().trim().min(1).max(20),
-      address: z.string().trim().min(1),
-    })
-    .optional(),
 });
 
 export const correctBillInputSchema = previewCorrectInputSchema.extend({ reason: reasonSchema });
 
-const correctClassificationSchema = z.enum([
-  "text_only",
-  "debit_note",
-  "credit_note",
-  "debit_and_credit_notes",
-]);
+const correctClassificationSchema = z.enum(["debit_note", "credit_note", "debit_and_credit_notes"]);
 
 export const correctPreviewSchema = z.object({
   classification: correctClassificationSchema,

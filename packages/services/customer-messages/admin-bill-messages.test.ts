@@ -93,56 +93,60 @@ describe("Raise Bill", () => {
 });
 
 describe("Correct", () => {
-  it("a text-only Correct sends Bill v2 only (the new letterhead) and skips the unsent v1", async () => {
+  it("a Correct sends Bill v2 (the new total) and skips the unsent v1", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await bookNow(world);
+    const { placed, milkLine } = await bookNow(world);
     const v1 = harness.gateway.rowByKey(`bill|bill/${placed.billId}/v1`);
 
     await harness.adminBillService.correctBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 1,
-      buyer: { shopName: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-      reason: "Shop name spelt wrong",
+      lines: [{ lineId: milkLine.id, quantity: 4 }],
+      reason: "One more Milk",
     });
 
     const versions = await versionsOf(placed.billId);
-    expect(harness.gateway.instructions.slice(1)).toEqual([
+    expect(harness.gateway.instructions[1]).toEqual(
       expect.objectContaining({
         kind: "bill",
         businessRef: `bill/${placed.billId}/v2`,
         values: expect.objectContaining({
-          customer: `Shree Ganesh Kirana, ${world.route.name}`,
-          bill_amount: "₹119.00",
+          customer: `${world.customer.shopName}, ${world.route.name}`,
+          bill_amount: "₹145.00",
         }),
       }),
-    ]);
-    expect(harness.documents.calls.at(-1)).toEqual({
+    );
+    expect(harness.documents.calls).toContainEqual({
       method: "ensureBillVersionDocument",
       billVersionId: versions[1]!.id,
     });
     expect(v1).toMatchObject({ status: "skipped", skipReason: "superseded: newer Bill" });
     // The suppress ran before the v2 enqueue.
-    expect(harness.gateway.calls.slice(-2)).toEqual([
-      `suppress ${v1.notificationId}`,
-      `enqueue bill|bill/${placed.billId}/v2`,
-    ]);
+    const calls = harness.gateway.calls;
+    expect(calls.indexOf(`suppress ${v1.notificationId}`)).toBeLessThan(
+      calls.indexOf(`enqueue bill|bill/${placed.billId}/v2`),
+    );
   });
 
   it("a v1 that already left stays in history", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await bookNow(world);
+    const { placed, milkLine } = await bookNow(world);
     const v1 = harness.gateway.rowByKey(`bill|bill/${placed.billId}/v1`);
     harness.gateway.setStatus(v1.notificationId, "pending", true);
 
     await harness.adminBillService.correctBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 1,
-      buyer: { shopName: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-      reason: "Shop name spelt wrong",
+      lines: [{ lineId: milkLine.id, quantity: 4 }],
+      reason: "One more Milk",
     });
 
     expect(v1.status).toBe("pending");
-    expect(kindsOf(harness)).toEqual(["bill:motake_bill_v2", "bill:motake_bill_v2"]);
+    expect(kindsOf(harness)).toEqual([
+      "bill:motake_bill_v2",
+      "bill:motake_bill_v2",
+      "account_update:motake_bill_corrected_v2",
+    ]);
   });
 
   it("an amount-up Correct for a GSTIN Customer sends Bill v2 then the GST Debit Note, no account update", async () => {

@@ -104,12 +104,6 @@ export interface RaiseBillResult {
 
 // --- Correct.
 
-const buyerTextSchema = z.object({
-  shopName: z.string().trim().min(1).max(200),
-  phone: z.string().trim().min(1).max(20),
-  address: z.string().trim().min(1),
-});
-
 export const previewCorrectInputSchema = z.object({
   billId: z.string().uuid(),
   expectedVersionNumber: versionNumberSchema,
@@ -118,8 +112,6 @@ export const previewCorrectInputSchema = z.object({
     .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().min(0) }))
     .refine(noRepeatedLine, "A line appears twice")
     .default([]),
-  // The paper's buyer text; GSTIN is not editable here.
-  buyer: buyerTextSchema.optional(),
 });
 export type PreviewCorrectInput = z.input<typeof previewCorrectInputSchema>;
 
