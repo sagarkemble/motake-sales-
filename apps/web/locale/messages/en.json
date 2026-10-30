@@ -1984,6 +1984,8 @@
       "payment": "Payment · {mode}",
       "paymentLabel": "Payment",
       "noPayment": "None taken. Whole Bill is Pending.",
+      "paidFromAdvance": "None taken. Paid from Advance.",
+      "partlyFromAdvance": "None taken. {advance} from Advance, {pending} Pending.",
       "kept": "Kept",
       "cashReturned": "Cash returned",
       "newBalance": "New Balance",

@@ -1984,6 +1984,8 @@
       "payment": "पेमेंट · {mode}",
       "paymentLabel": "पेमेंट",
       "noPayment": "काहीही घेतले नाही. पूर्ण बिल बाकी आहे.",
+      "paidFromAdvance": "काहीही घेतले नाही. आगाऊ रकमेतून भरले.",
+      "partlyFromAdvance": "काहीही घेतले नाही. {advance} आगाऊ रकमेतून, {pending} बाकी.",
       "kept": "ठेवले",
       "cashReturned": "परत दिलेली रोख",
       "newBalance": "नवीन शिल्लक",
