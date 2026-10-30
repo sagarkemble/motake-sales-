@@ -1314,9 +1314,7 @@
         "submit": "बिल करा",
         "submitAmount": "बिल करा · {amount}",
         "submitting": "बिल करत आहे…",
-        "successTitle": "बिल झाले",
         "success": "{amount} चे {number}.",
-        "openPaper": "बिल उघडा",
         "catalogError": {
           "title": "कॅटलॉग लोड झाला नाही",
           "body": "कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
@@ -1705,7 +1703,7 @@
         "body": "आपली ऑर्डर दिली गेली आहे.",
         "totalItems": "एकूण वस्तू",
         "orderTime": "ऑर्डर वेळ",
-        "viewOrders": "माझे ऑर्डर पहा",
+        "viewOrder": "ही ऑर्डर पहा",
         "backHome": "होमवर परत जा"
       },
       "gatepass": {

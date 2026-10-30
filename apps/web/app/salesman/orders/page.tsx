@@ -1,7 +1,8 @@
 "use client";
 
 import { CalendarCheckIcon, ClipboardListIcon } from "lucide-react";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import type { RouterOutputs } from "@repo/trpc/client";
 
@@ -25,13 +26,17 @@ type PreorderStatusFilter = "pending" | "fulfilled";
 
 type ListedOrder = RouterOutputs["orders"]["list"]["data"]["items"][number];
 
-export default function SalesmanOrdersPage() {
+function SalesmanOrdersContent() {
   const tx = useTranslate();
   const formatDate = useFormatDate();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [bookNowPage, setBookNowPage] = useState(1);
   const [preorderPage, setPreorderPage] = useState(1);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  // ?order=<id> (after checkout) opens that order's sheet.
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(searchParams.get("order"));
   const [preorderStatusFilter, setPreorderStatusFilter] = useState<PreorderStatusFilter>("pending");
 
   const {
@@ -177,8 +182,27 @@ export default function SalesmanOrdersPage() {
 
       <OrderDetailSheet
         orderId={selectedOrderId}
-        onOpenChange={(open) => !open && setSelectedOrderId(null)}
+        onOpenChange={(open) => {
+          if (open) return;
+          setSelectedOrderId(null);
+          // Closing drops ?order, so a reload does not open it again.
+          if (searchParams.has("order")) router.replace(pathname, { scroll: false });
+        }}
       />
     </div>
+  );
+}
+
+export default function SalesmanOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-3 px-4 py-4">
+          <ListItemSkeleton count={4} />
+        </div>
+      }
+    >
+      <SalesmanOrdersContent />
+    </Suspense>
   );
 }

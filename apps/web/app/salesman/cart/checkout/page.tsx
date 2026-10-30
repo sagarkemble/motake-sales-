@@ -29,8 +29,8 @@ export default function SalesmanCheckoutPage() {
         whatsapp
         actions={[
           {
-            label: tx("salesman.checkout.success.viewOrders"),
-            onClick: wizard.goToOrdersList,
+            label: tx("salesman.checkout.success.viewOrder"),
+            onClick: wizard.goToPlacedOrder,
             primary: true,
           },
           { label: tx("salesman.checkout.success.backHome"), onClick: wizard.goToHome },

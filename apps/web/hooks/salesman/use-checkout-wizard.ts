@@ -288,6 +288,12 @@ export function useCheckoutWizard() {
     router.push("/salesman");
   }
 
+  // The order just placed, its sheet open on My orders.
+  function goToPlacedOrder() {
+    if (!result || !("orderId" in result.result)) return;
+    router.push(`/salesman/orders?order=${result.result.orderId}`);
+  }
+
   // A new Customer is saved at Place, not when leaving the Customer step, so an abandoned checkout
   // or Back → change leaves no stray Customer. Once saved they stay selected for a retry.
   async function ensureCustomer(): Promise<CheckoutCustomer | null> {
@@ -485,5 +491,6 @@ export function useCheckoutWizard() {
     result,
     goToOrdersList,
     goToHome,
+    goToPlacedOrder,
   };
 }

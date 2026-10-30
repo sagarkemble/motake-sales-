@@ -1314,9 +1314,7 @@
         "submit": "Raise Bill",
         "submitAmount": "Raise Bill · {amount}",
         "submitting": "Raising…",
-        "successTitle": "Bill raised",
         "success": "{number} for {amount}.",
-        "openPaper": "Open the Bill",
         "catalogError": {
           "title": "Could not load the catalog",
           "body": "Check your connection and try again."
@@ -1705,7 +1703,7 @@
         "body": "Your order has been placed.",
         "totalItems": "Total items",
         "orderTime": "Order time",
-        "viewOrders": "View my orders",
+        "viewOrder": "View this order",
         "backHome": "Back to home"
       },
       "gatepass": {
