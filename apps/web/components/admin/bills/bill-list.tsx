@@ -35,7 +35,7 @@ import { useTranslate } from "~/hooks/use-translate";
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { cn } from "~/lib/utils";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 type BillListRow = RouterOutputs["bills"]["list"]["data"]["items"][number];
 
@@ -58,18 +58,19 @@ export function BillList() {
 
   const { billsPage, isBillsListLoading, findBillByNumber, refetchBillsList, isBillsListFetching } =
     useBills({
-    listFilters: {
-      customerId: orUndefined(customerId),
-      salesmanId: orUndefined(salesmanId),
-      numberSearch: debouncedNumberSearch || undefined,
-      billDateFrom: billDateFrom || undefined,
-      billDateTo: billDateTo || undefined,
-      hideCancelled,
-      page,
-      pageSize,
-    },
-  });
+      listFilters: {
+        customerId: orUndefined(customerId),
+        salesmanId: orUndefined(salesmanId),
+        numberSearch: debouncedNumberSearch || undefined,
+        billDateFrom: billDateFrom || undefined,
+        billDateTo: billDateTo || undefined,
+        hideCancelled,
+        page,
+        pageSize,
+      },
+    });
   usePageRefresh(refetchBillsList, isBillsListFetching);
+  const isReloading = usePageReloading();
 
   async function handleLookup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,7 +179,7 @@ export function BillList() {
         </label>
       </div>
 
-      {isBillsListLoading ? (
+      {isBillsListLoading || (isReloading && isBillsListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : billsPage.items.length === 0 ? (
         <p className="rounded-2xl border border-dashed py-10 text-center text-sm text-muted-foreground">

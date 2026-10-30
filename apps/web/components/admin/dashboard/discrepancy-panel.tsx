@@ -7,7 +7,7 @@ import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 interface DiscrepancyPanelProps {
   businessDate: string;
@@ -22,6 +22,7 @@ export function DiscrepancyPanel({ businessDate }: DiscrepancyPanelProps) {
       includeDiscrepancies: true,
     });
   usePageRefresh(refetchDiscrepancies, isDiscrepanciesFetching, Boolean(businessDate));
+  const isReloading = usePageReloading();
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:p-5">
@@ -39,7 +40,7 @@ export function DiscrepancyPanel({ businessDate }: DiscrepancyPanelProps) {
         )}
       </div>
 
-      {isDiscrepanciesLoading ? (
+      {isDiscrepanciesLoading || (isReloading && isDiscrepanciesFetching) ? (
         <ListItemSkeleton count={3} />
       ) : discrepancies.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">

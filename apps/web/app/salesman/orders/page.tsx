@@ -16,7 +16,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const ORDERS_PAGE_SIZE = 20;
 const PREORDERS_PAGE_SIZE = 20;
@@ -55,6 +55,7 @@ export default function SalesmanOrdersPage() {
     () => Promise.all([refetchBookNow(), refetchMyPreorders()]),
     isBookNowFetching || isMyPreordersFetching,
   );
+  const isReloading = usePageReloading();
 
   // Pre-orders on the Route from every salesman are in the Route Pre-orders section above;
   // this tab lists this salesman's own.
@@ -79,7 +80,7 @@ export default function SalesmanOrdersPage() {
         </TabsList>
 
         <TabsContent value="book_now" className="flex flex-col gap-3">
-          {isBookNowLoading ? (
+          {isBookNowLoading || (isReloading && isBookNowFetching) ? (
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
@@ -134,7 +135,7 @@ export default function SalesmanOrdersPage() {
             </ToggleGroupItem>
           </ToggleGroup>
 
-          {isMyPreordersLoading ? (
+          {isMyPreordersLoading || (isReloading && isMyPreordersFetching) ? (
             <ListItemSkeleton count={5} />
           ) : visiblePreorderRows.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">

@@ -19,7 +19,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { checkoutRefusalOf } from "~/lib/checkout-refusal";
 import { cn } from "~/lib/utils";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 type RoutePreorder = RouterOutputs["orders"]["listRoutePreorders"]["data"][number];
 
@@ -40,6 +40,7 @@ export function RoutePreordersSection() {
     isDuePreordersFetching,
   } = useOrders({ routePreorders: true });
   usePageRefresh(refetchDuePreorders, isDuePreordersFetching);
+  const isReloading = usePageReloading();
 
   const noActiveGatepass = checkoutRefusalOf(duePreordersError)?.reason === "no_active_gatepass";
   const dueToday = duePreorders.filter((order) => order.dueState === "due");
@@ -140,7 +141,7 @@ export function RoutePreordersSection() {
         <p className="text-xs text-muted-foreground">{tx("salesman.orders.route.allSalesmen")}</p>
       </div>
 
-      {isDuePreordersLoading ? (
+      {isDuePreordersLoading || (isReloading && isDuePreordersFetching) ? (
         <ListItemSkeleton count={2} />
       ) : noActiveGatepass ? (
         <Alert className="border-amber-500/40 bg-amber-500/5">

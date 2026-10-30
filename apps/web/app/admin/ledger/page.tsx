@@ -33,7 +33,7 @@ import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { useLedger, type LedgerRowType } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const PAGE_SIZE = 25;
 
@@ -95,6 +95,7 @@ function LedgerPageContent() {
     isSummaryFetching || isRowsFetching || isOpenPreordersFetching,
     Boolean(customerId),
   );
+  const isReloading = usePageReloading();
 
   useEffect(() => {
     try {
@@ -156,7 +157,8 @@ function LedgerPageContent() {
   }
 
   const inactive = summary?.customer.status === "inactive";
-  const isLoading = isSummaryLoading || isRowsLoading;
+  const isLoading =
+    isSummaryLoading || isRowsLoading || (isReloading && (isSummaryFetching || isRowsFetching));
   const isError = isSummaryError || isRowsError;
 
   return (

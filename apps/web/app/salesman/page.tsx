@@ -15,7 +15,7 @@ import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const CATALOG_PAGE_SIZE = 40;
 
@@ -48,6 +48,7 @@ function SalesmanCatalogContent() {
     () => Promise.all([refetchMyGatepass(), refetchProductsList()]),
     isMyGatepassFetching || isProductsListFetching,
   );
+  const isReloading = usePageReloading();
 
   // By default only the Varieties still on the GatePass; "All" shows the whole catalogue.
   const catalogItems = productsPage.items
@@ -99,7 +100,7 @@ function SalesmanCatalogContent() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {isProductsListLoading ? (
+        {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : catalogItems.length === 0 ? (
           <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">

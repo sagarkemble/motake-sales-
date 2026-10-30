@@ -53,7 +53,7 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 type OrderListRow = RouterOutputs["orders"]["list"]["data"]["items"][number];
 type OrderType = OrderListRow["type"];
@@ -131,6 +131,7 @@ export function OrderList({ customerId }: OrderListProps) {
     },
   });
   usePageRefresh(refetchOrdersList, isOrdersListFetching);
+  const isReloading = usePageReloading();
 
   function setFilter<K extends keyof OrderFilters>(key: K, value: OrderFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -234,7 +235,7 @@ export function OrderList({ customerId }: OrderListProps) {
         </Collapsible>
       )}
 
-      {isOrdersListLoading ? (
+      {isOrdersListLoading || (isReloading && isOrdersListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : ordersPage.items.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">

@@ -24,7 +24,7 @@ import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 function SalesmanPageContent() {
   const tx = useTranslate();
@@ -48,6 +48,7 @@ function SalesmanPageContent() {
     listFilters: { page, pageSize, includeDeleted },
   });
   usePageRefresh(refetchSalesmenList, isSalesmenListFetching);
+  const isReloading = usePageReloading();
 
   async function handleDeactivate(salesmanId: string) {
     try {
@@ -104,7 +105,7 @@ function SalesmanPageContent() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {isSalesmenListLoading ? (
+        {isSalesmenListLoading || (isReloading && isSalesmenListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">

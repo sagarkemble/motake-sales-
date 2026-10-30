@@ -21,6 +21,9 @@ interface RefreshSource {
 interface PageRefreshContextValue {
   sources: Record<string, RefreshSource>;
   setSource: (id: string, source: RefreshSource | null) => void;
+  /** From a Reload click until every refetch settles. */
+  isReloading: boolean;
+  reload: () => Promise<void>;
 }
 
 const PageRefreshContext = createContext<PageRefreshContextValue | null>(null);
@@ -38,7 +41,20 @@ export function PageRefreshProvider({ children }: { children: React.ReactNode })
     });
   }, []);
 
-  const value = useMemo(() => ({ sources, setSource }), [sources, setSource]);
+  const [isReloading, setIsReloading] = useState(false);
+  const reload = useCallback(async () => {
+    setIsReloading(true);
+    try {
+      await Promise.allSettled(Object.values(sources).map((source) => source.refetch()));
+    } finally {
+      setIsReloading(false);
+    }
+  }, [sources]);
+
+  const value = useMemo(
+    () => ({ sources, setSource, isReloading, reload }),
+    [sources, setSource, isReloading, reload],
+  );
   return <PageRefreshContext.Provider value={value}>{children}</PageRefreshContext.Provider>;
 }
 
@@ -62,16 +78,24 @@ export function usePageRefresh(refetch: () => unknown, isFetching: boolean, enab
   useEffect(() => () => setSource?.(id, null), [setSource, id]);
 }
 
+/**
+ * True while a Reload runs. A section shows its loading state for `isReloading && isFetching` of
+ * its own query, so each section fills in as soon as its own data arrives.
+ */
+export function usePageReloading(): boolean {
+  return useContext(PageRefreshContext)?.isReloading ?? false;
+}
+
 /** The navbar's Reload button; shown only while the open page has registered something. */
 export function NavbarRefreshButton() {
   const context = useContext(PageRefreshContext);
   const sources = Object.values(context?.sources ?? {});
-  if (sources.length === 0) return null;
+  if (!context || sources.length === 0) return null;
 
   return (
     <RefreshButton
-      isRefreshing={sources.some((source) => source.isFetching)}
-      onRefresh={() => Promise.all(sources.map((source) => source.refetch()))}
+      isRefreshing={context.isReloading || sources.some((source) => source.isFetching)}
+      onRefresh={context.reload}
     />
   );
 }

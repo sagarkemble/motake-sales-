@@ -24,7 +24,7 @@ import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { getErrorMessage } from "~/lib/get-error-message";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 import type { IndianStateName } from "@repo/trpc/client";
 
 import { DeliveryStateSelect } from "./delivery-state-select";
@@ -62,6 +62,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     () => Promise.all([refetchRoute(), varietyIds.length > 0 ? refetchCurrentTaxes() : null]),
     isRouteFetching || isCurrentTaxesFetching,
   );
+  const isReloading = usePageReloading();
 
   useEffect(() => {
     setNameText(route?.name ?? "");
@@ -71,7 +72,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     setHideRefusal(null);
   }, [routeId]);
 
-  if (isRouteLoading) {
+  if (isRouteLoading || (isReloading && isRouteFetching)) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-10 rounded-full" />
@@ -238,7 +239,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                     routeId={route.id}
                     variety={variety}
                     currentTax={
-                      isCurrentTaxesLoading
+                      isCurrentTaxesLoading || (isReloading && isCurrentTaxesFetching)
                         ? undefined
                         : (currentTaxes.find((tax) => tax.varietyId === variety.varietyId)
                             ?.period ?? null)

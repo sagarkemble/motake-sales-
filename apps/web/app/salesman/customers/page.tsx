@@ -17,7 +17,7 @@ import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { useCustomers } from "~/hooks/use-customers";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const CUSTOMERS_PAGE_SIZE = 20;
 
@@ -30,10 +30,11 @@ export default function SalesmanRouteCustomersPage() {
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 350);
 
-  const { myGatepass, isMyGatepassLoading, refetchMyGatepass, isMyGatepassFetching } = useGatepasses({
-    businessDate: businessDateOf(new Date()),
-    includeMyGatepass: true,
-  });
+  const { myGatepass, isMyGatepassLoading, refetchMyGatepass, isMyGatepassFetching } =
+    useGatepasses({
+      businessDate: businessDateOf(new Date()),
+      includeMyGatepass: true,
+    });
   const activeRouteName =
     myGatepass?.gatepass.status === "active" ? myGatepass.gatepass.routeName : null;
 
@@ -51,6 +52,7 @@ export default function SalesmanRouteCustomersPage() {
     () => Promise.all([refetchMyGatepass(), activeRouteName ? refetchCustomersList() : null]),
     isMyGatepassFetching || isCustomersListFetching,
   );
+  const isReloading = usePageReloading();
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4 md:px-6">
@@ -77,7 +79,7 @@ export default function SalesmanRouteCustomersPage() {
         )}
       </div>
 
-      {isMyGatepassLoading ? (
+      {isMyGatepassLoading || (isReloading && isMyGatepassFetching) ? (
         <ListItemSkeleton count={4} />
       ) : !activeRouteName ? (
         <NoActiveGatepassNotice
@@ -114,7 +116,7 @@ export default function SalesmanRouteCustomersPage() {
             )}
           </div>
 
-          {isCustomersListLoading ? (
+          {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
             <ListItemSkeleton count={5} />
           ) : customersPage.items.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">

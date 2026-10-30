@@ -24,7 +24,7 @@ import { useCustomers } from "~/hooks/use-customers";
 import { useRoutes } from "~/hooks/use-routes";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
-import { usePageRefresh } from "~/providers/page-refresh-provider";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const ALL_ROUTES = "all";
 
@@ -42,18 +42,19 @@ function CustomersPageContent() {
   });
   const { customersPage, isCustomersListLoading, refetchCustomersList, isCustomersListFetching } =
     useCustomers({
-    listFilters: {
-      searchTerm: debouncedSearchTerm || undefined,
-      routeId: routeFilter === ALL_ROUTES ? undefined : routeFilter,
-      page,
-      pageSize,
-      includeInactive,
-    },
-  });
+      listFilters: {
+        searchTerm: debouncedSearchTerm || undefined,
+        routeId: routeFilter === ALL_ROUTES ? undefined : routeFilter,
+        page,
+        pageSize,
+        includeInactive,
+      },
+    });
   usePageRefresh(
     () => Promise.all([refetchCustomersList(), refetchRoutesList()]),
     isCustomersListFetching || isRoutesListFetching,
   );
+  const isReloading = usePageReloading();
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
@@ -126,13 +127,13 @@ function CustomersPageContent() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {isCustomersListLoading
+        {isCustomersListLoading || (isReloading && isCustomersListFetching)
           ? tx("common.status.loading")
           : tx("admin.customers.totalCount", { count: customersPage.totalCount })}
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {isCustomersListLoading ? (
+        {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : customersPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
