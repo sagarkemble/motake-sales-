@@ -24,6 +24,7 @@ import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 function SalesmanPageContent() {
   const tx = useTranslate();
@@ -35,6 +36,8 @@ function SalesmanPageContent() {
   const {
     salesmenPage,
     isSalesmenListLoading,
+    refetchSalesmenList,
+    isSalesmenListFetching,
     deactivateSalesmanAccountAsync,
     isDeactivatingSalesmanAccount,
     reactivateSalesmanAccountAsync,
@@ -44,6 +47,7 @@ function SalesmanPageContent() {
   } = useSalesmen({
     listFilters: { page, pageSize, includeDeleted },
   });
+  usePageRefresh(refetchSalesmenList, isSalesmenListFetching);
 
   async function handleDeactivate(salesmanId: string) {
     try {

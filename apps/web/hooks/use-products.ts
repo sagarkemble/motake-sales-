@@ -69,6 +69,7 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     isProductsListLoading: productsListQuery.isLoading,
     isProductsListError: productsListQuery.isError,
     refetchProductsList: productsListQuery.refetch,
+    isProductsListFetching: productsListQuery.isFetching,
 
     product: productQuery.data?.data ?? null,
     isProductLoading: productQuery.isLoading,

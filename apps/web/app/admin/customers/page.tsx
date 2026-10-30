@@ -24,6 +24,7 @@ import { useCustomers } from "~/hooks/use-customers";
 import { useRoutes } from "~/hooks/use-routes";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 const ALL_ROUTES = "all";
 
@@ -36,8 +37,11 @@ function CustomersPageContent() {
   const [routeFilter, setRouteFilter] = useState(ALL_ROUTES);
 
   // Hidden Routes too: their Customers are still listed, so Admin can find and move them.
-  const { routes } = useRoutes({ listFilters: { includeHidden: true } });
-  const { customersPage, isCustomersListLoading } = useCustomers({
+  const { routes, refetchRoutesList, isRoutesListFetching } = useRoutes({
+    listFilters: { includeHidden: true },
+  });
+  const { customersPage, isCustomersListLoading, refetchCustomersList, isCustomersListFetching } =
+    useCustomers({
     listFilters: {
       searchTerm: debouncedSearchTerm || undefined,
       routeId: routeFilter === ALL_ROUTES ? undefined : routeFilter,
@@ -46,6 +50,10 @@ function CustomersPageContent() {
       includeInactive,
     },
   });
+  usePageRefresh(
+    () => Promise.all([refetchCustomersList(), refetchRoutesList()]),
+    isCustomersListFetching || isRoutesListFetching,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">

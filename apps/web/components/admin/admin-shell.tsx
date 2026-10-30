@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { PageSplashSkeleton } from "~/components/shared/page-splash-skeleton";
 import { useAuth } from "~/hooks/use-auth";
+import { PageRefreshProvider } from "~/providers/page-refresh-provider";
 import { AdminBottomTabs } from "./admin-bottom-tabs";
 import { AdminNavbar } from "./admin-navbar";
 import { WhatsAppTokenBanner } from "./whatsapp-token/whatsapp-token-banner";
@@ -28,11 +29,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="bg-dairy-doodle flex min-h-dvh flex-col bg-background">
-      <AdminNavbar />
-      <WhatsAppTokenBanner />
-      <main className="flex-1 pb-20 md:pb-6">{children}</main>
-      <AdminBottomTabs />
-    </div>
+    <PageRefreshProvider>
+      <div className="bg-dairy-doodle flex min-h-dvh flex-col bg-background">
+        <AdminNavbar />
+        <WhatsAppTokenBanner />
+        <main className="flex-1 pb-20 md:pb-6">{children}</main>
+        <AdminBottomTabs />
+      </div>
+    </PageRefreshProvider>
   );
 }

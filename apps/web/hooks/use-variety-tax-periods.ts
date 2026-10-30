@@ -40,6 +40,8 @@ export function useVarietyTaxPeriods({
 
     currentTaxes: currentTaxQuery.data?.data ?? [],
     isCurrentTaxesLoading: currentTaxQuery.isLoading,
+    refetchCurrentTaxes: currentTaxQuery.refetch,
+    isCurrentTaxesFetching: currentTaxQuery.isFetching,
     isCurrentTaxesError: currentTaxQuery.isError,
 
     upsertTaxPeriodAsync: upsertTaxPeriodMutation.mutateAsync,

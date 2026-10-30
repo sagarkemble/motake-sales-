@@ -12,6 +12,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useOrderHistory } from "~/hooks/use-order-history";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 interface OrderHistoryPanelProps {
   salesmanId?: string;
@@ -27,7 +28,10 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
     isLoadingMoreOrders,
     hasMoreOrders,
     loadMoreOrders,
+    refetchOrderHistory,
+    isOrderHistoryFetching,
   } = useOrderHistory({ pageSize: 15, salesmanId });
+  usePageRefresh(refetchOrderHistory, isOrderHistoryFetching);
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);

@@ -16,6 +16,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 const ORDERS_PAGE_SIZE = 20;
 const PREORDERS_PAGE_SIZE = 20;
@@ -33,13 +34,27 @@ export default function SalesmanOrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [preorderStatusFilter, setPreorderStatusFilter] = useState<PreorderStatusFilter>("pending");
 
-  const { ordersPage: bookNowOrdersPage, isOrdersListLoading: isBookNowLoading } = useOrders({
+  const {
+    ordersPage: bookNowOrdersPage,
+    isOrdersListLoading: isBookNowLoading,
+    refetchOrdersList: refetchBookNow,
+    isOrdersListFetching: isBookNowFetching,
+  } = useOrders({
     listFilters: { type: "book_now", page: bookNowPage, pageSize: ORDERS_PAGE_SIZE },
   });
 
-  const { ordersPage: myPreordersPageData, isOrdersListLoading: isMyPreordersLoading } = useOrders({
+  const {
+    ordersPage: myPreordersPageData,
+    isOrdersListLoading: isMyPreordersLoading,
+    refetchOrdersList: refetchMyPreorders,
+    isOrdersListFetching: isMyPreordersFetching,
+  } = useOrders({
     listFilters: { type: "pre_order", page: preorderPage, pageSize: PREORDERS_PAGE_SIZE },
   });
+  usePageRefresh(
+    () => Promise.all([refetchBookNow(), refetchMyPreorders()]),
+    isBookNowFetching || isMyPreordersFetching,
+  );
 
   // Pre-orders on the Route from every salesman are in the Route Pre-orders section above;
   // this tab lists this salesman's own.

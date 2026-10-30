@@ -19,6 +19,7 @@ import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { checkoutRefusalOf } from "~/lib/checkout-refusal";
 import { cn } from "~/lib/utils";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 type RoutePreorder = RouterOutputs["orders"]["listRoutePreorders"]["data"][number];
 
@@ -31,9 +32,14 @@ export function RoutePreordersSection() {
   const formatDate = useFormatDate();
   const { signedInUser } = useAuth();
   const [fulfilTarget, setFulfilTarget] = useState<FulfilTarget | null>(null);
-  const { duePreorders, isDuePreordersLoading, duePreordersError, refetchDuePreorders } = useOrders(
-    { routePreorders: true },
-  );
+  const {
+    duePreorders,
+    isDuePreordersLoading,
+    duePreordersError,
+    refetchDuePreorders,
+    isDuePreordersFetching,
+  } = useOrders({ routePreorders: true });
+  usePageRefresh(refetchDuePreorders, isDuePreordersFetching);
 
   const noActiveGatepass = checkoutRefusalOf(duePreordersError)?.reason === "no_active_gatepass";
   const dueToday = duePreorders.filter((order) => order.dueState === "due");

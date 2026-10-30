@@ -72,6 +72,7 @@ export function useSalesmen({
     isSalesmenListLoading: salesmenListQuery.isLoading,
     isSalesmenListError: salesmenListQuery.isError,
     refetchSalesmenList: salesmenListQuery.refetch,
+    isSalesmenListFetching: salesmenListQuery.isFetching,
 
     salesmanHistory: salesmanHistoryQuery.data?.data ?? [],
     isSalesmanHistoryLoading: salesmanHistoryQuery.isLoading,

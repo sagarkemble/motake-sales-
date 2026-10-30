@@ -16,6 +16,7 @@ import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 const CATALOG_PAGE_SIZE = 200;
 
@@ -25,14 +26,27 @@ export default function SalesmanGatepassPage() {
   const [detailBusinessDate, setDetailBusinessDate] = useState<string | null>(null);
   const [isHandoverDialogOpen, setIsHandoverDialogOpen] = useState(false);
 
-  const { myGatepass, isMyGatepassLoading, myHistory, isMyHistoryLoading } = useGatepasses({
+  const {
+    myGatepass,
+    isMyGatepassLoading,
+    refetchMyGatepass,
+    isMyGatepassFetching,
+    myHistory,
+    isMyHistoryLoading,
+    refetchMyHistory,
+    isMyHistoryFetching,
+  } = useGatepasses({
     businessDate: businessDateKey,
     includeMyGatepass: true,
     includeMyHistory: true,
   });
-  const { productsPage } = useProducts({
+  const { productsPage, refetchProductsList, isProductsListFetching } = useProducts({
     listFilters: { page: 1, pageSize: CATALOG_PAGE_SIZE },
   });
+  usePageRefresh(
+    () => Promise.all([refetchMyGatepass(), refetchMyHistory(), refetchProductsList()]),
+    isMyGatepassFetching || isMyHistoryFetching || isProductsListFetching,
+  );
 
   const varietyDisplayById = new Map(
     productsPage.items.flatMap(({ product, varieties }) =>

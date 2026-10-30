@@ -16,6 +16,7 @@ export function useOrderHistory({
   enabled = true,
   salesmanId,
 }: UseOrderHistoryParams = {}) {
+  const utils = trpc.useUtils();
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedOrders, setLoadedOrders] = useState<OrderHistoryRow[]>([]);
 
@@ -50,11 +51,19 @@ export function useOrderHistory({
     }
   }, [hasMoreOrders, orderHistoryQuery.isFetching]);
 
+  // Reload: back to the first page, with every loaded page marked stale so each refetches.
+  const refetchOrderHistory = useCallback(() => {
+    setCurrentPage(1);
+    return utils.orders.list.invalidate({ pageSize, salesmanId });
+  }, [utils, pageSize, salesmanId]);
+
   return {
     orderHistory: loadedOrders,
     isOrderHistoryLoading: orderHistoryQuery.isLoading,
     isLoadingMoreOrders: orderHistoryQuery.isFetching && currentPage > 1,
     hasMoreOrders,
     loadMoreOrders,
+    refetchOrderHistory,
+    isOrderHistoryFetching: orderHistoryQuery.isFetching,
   };
 }

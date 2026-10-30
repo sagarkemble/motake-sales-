@@ -53,6 +53,7 @@ import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 type OrderListRow = RouterOutputs["orders"]["list"]["data"]["items"][number];
 type OrderType = OrderListRow["type"];
@@ -116,7 +117,7 @@ export function OrderList({ customerId }: OrderListProps) {
   const pageSize = 20;
   const showFilters = !customerId;
 
-  const { ordersPage, isOrdersListLoading } = useOrders({
+  const { ordersPage, isOrdersListLoading, refetchOrdersList, isOrdersListFetching } = useOrders({
     listFilters: {
       customerId: customerId ?? orUndefined(filters.customerId),
       salesmanId: orUndefined(filters.salesmanId),
@@ -129,6 +130,7 @@ export function OrderList({ customerId }: OrderListProps) {
       pageSize,
     },
   });
+  usePageRefresh(refetchOrdersList, isOrdersListFetching);
 
   function setFilter<K extends keyof OrderFilters>(key: K, value: OrderFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));

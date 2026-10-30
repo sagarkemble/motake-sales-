@@ -17,6 +17,7 @@ import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { useCustomers } from "~/hooks/use-customers";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 const CUSTOMERS_PAGE_SIZE = 20;
 
@@ -29,21 +30,27 @@ export default function SalesmanRouteCustomersPage() {
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 350);
 
-  const { myGatepass, isMyGatepassLoading } = useGatepasses({
+  const { myGatepass, isMyGatepassLoading, refetchMyGatepass, isMyGatepassFetching } = useGatepasses({
     businessDate: businessDateOf(new Date()),
     includeMyGatepass: true,
   });
   const activeRouteName =
     myGatepass?.gatepass.status === "active" ? myGatepass.gatepass.routeName : null;
 
-  const { customersPage, isCustomersListLoading } = useCustomers({
-    listFilters: {
-      searchTerm: debouncedSearchTerm || undefined,
-      page,
-      pageSize: CUSTOMERS_PAGE_SIZE,
-    },
-    enabled: Boolean(activeRouteName),
-  });
+  const { customersPage, isCustomersListLoading, refetchCustomersList, isCustomersListFetching } =
+    useCustomers({
+      listFilters: {
+        searchTerm: debouncedSearchTerm || undefined,
+        page,
+        pageSize: CUSTOMERS_PAGE_SIZE,
+      },
+      enabled: Boolean(activeRouteName),
+    });
+  // Customers load only on an Active GatePass Route.
+  usePageRefresh(
+    () => Promise.all([refetchMyGatepass(), activeRouteName ? refetchCustomersList() : null]),
+    isMyGatepassFetching || isCustomersListFetching,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4 md:px-6">

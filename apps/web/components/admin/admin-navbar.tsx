@@ -20,6 +20,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
+import { NavbarRefreshButton } from "~/providers/page-refresh-provider";
 import {
   adminNavItems,
   adminQuickActions,
@@ -137,6 +138,7 @@ export function AdminNavbar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <NavbarRefreshButton />
         <LanguageSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

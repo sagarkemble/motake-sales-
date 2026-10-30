@@ -22,6 +22,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useReports } from "~/hooks/use-reports";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 function KpiGridSkeleton({ count, columnClassName }: { count: number; columnClassName: string }) {
   return (
@@ -48,11 +49,23 @@ export default function AdminDashboardPage() {
   const tx = useTranslate();
   const { signedInUser } = useAuth();
   const { formatPaiseCompact } = useFormatMoney();
-  const { dailyKpiSummary: todayKpiSummary, isDailyKpiSummaryLoading: isTodayKpiSummaryLoading } =
-    useReports({ dailyKpiFilters: toBusinessDateFilters(today) });
-  const { dailyKpiSummary: yesterdayKpiSummary } = useReports({
+  const {
+    dailyKpiSummary: todayKpiSummary,
+    isDailyKpiSummaryLoading: isTodayKpiSummaryLoading,
+    refetchDailyKpiSummary: refetchTodayKpiSummary,
+    isDailyKpiSummaryFetching: isTodayKpiSummaryFetching,
+  } = useReports({ dailyKpiFilters: toBusinessDateFilters(today) });
+  const {
+    dailyKpiSummary: yesterdayKpiSummary,
+    refetchDailyKpiSummary: refetchYesterdayKpiSummary,
+    isDailyKpiSummaryFetching: isYesterdayKpiSummaryFetching,
+  } = useReports({
     dailyKpiFilters: toBusinessDateFilters(yesterday),
   });
+  usePageRefresh(
+    () => Promise.all([refetchTodayKpiSummary(), refetchYesterdayKpiSummary()]),
+    isTodayKpiSummaryFetching || isYesterdayKpiSummaryFetching,
+  );
 
   const trimmedSignedInUserName = signedInUser?.name?.trim();
   const firstName = trimmedSignedInUserName

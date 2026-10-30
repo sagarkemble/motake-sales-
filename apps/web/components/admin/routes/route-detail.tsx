@@ -24,6 +24,7 @@ import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 import type { IndianStateName } from "@repo/trpc/client";
 
 import { DeliveryStateSelect } from "./delivery-state-select";
@@ -40,6 +41,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     route,
     routePriceForm,
     isRouteLoading,
+    refetchRoute,
+    isRouteFetching,
     updateRouteAsync,
     setRouteStatusAsync,
     isSettingRouteStatus,
@@ -53,7 +56,12 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     () => routePriceForm.map((variety) => variety.varietyId),
     [routePriceForm],
   );
-  const { currentTaxes, isCurrentTaxesLoading } = useVarietyTaxPeriods({ varietyIds });
+  const { currentTaxes, isCurrentTaxesLoading, refetchCurrentTaxes, isCurrentTaxesFetching } =
+    useVarietyTaxPeriods({ varietyIds });
+  usePageRefresh(
+    () => Promise.all([refetchRoute(), varietyIds.length > 0 ? refetchCurrentTaxes() : null]),
+    isRouteFetching || isCurrentTaxesFetching,
+  );
 
   useEffect(() => {
     setNameText(route?.name ?? "");

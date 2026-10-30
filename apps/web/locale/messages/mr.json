@@ -17,7 +17,8 @@
       "clearSearch": "शोध साफ करा",
       "pickDate": "तारीख निवडा",
       "clearDate": "तारीख साफ करा",
-      "logout": "लॉग आउट"
+      "logout": "लॉग आउट",
+      "reload": "रीलोड करा"
     },
     "status": {
       "loading": "लोड होत आहे…",

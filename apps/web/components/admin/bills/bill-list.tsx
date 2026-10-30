@@ -35,6 +35,7 @@ import { useTranslate } from "~/hooks/use-translate";
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { cn } from "~/lib/utils";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 type BillListRow = RouterOutputs["bills"]["list"]["data"]["items"][number];
 
@@ -55,7 +56,8 @@ export function BillList() {
   const debouncedNumberSearch = useDebouncedValue(numberSearch.trim(), 350);
   const pageSize = 20;
 
-  const { billsPage, isBillsListLoading, findBillByNumber } = useBills({
+  const { billsPage, isBillsListLoading, findBillByNumber, refetchBillsList, isBillsListFetching } =
+    useBills({
     listFilters: {
       customerId: orUndefined(customerId),
       salesmanId: orUndefined(salesmanId),
@@ -67,6 +69,7 @@ export function BillList() {
       pageSize,
     },
   });
+  usePageRefresh(refetchBillsList, isBillsListFetching);
 
   async function handleLookup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

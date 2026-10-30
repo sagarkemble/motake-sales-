@@ -15,6 +15,7 @@ import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useRoutes } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 function RoutesPageContent() {
   const tx = useTranslate();
@@ -24,9 +25,10 @@ function RoutesPageContent() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
 
-  const { routes, isRoutesListLoading } = useRoutes({
+  const { routes, isRoutesListLoading, refetchRoutesList, isRoutesListFetching } = useRoutes({
     listFilters: { search: debouncedSearchTerm || undefined, includeHidden },
   });
+  usePageRefresh(refetchRoutesList, isRoutesListFetching);
 
   const activeRouteId = selectedRouteId ?? routes[0]?.id ?? null;
 

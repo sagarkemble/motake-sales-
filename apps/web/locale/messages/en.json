@@ -17,7 +17,8 @@
       "clearSearch": "Clear search",
       "pickDate": "Pick a date",
       "clearDate": "Clear date",
-      "logout": "Logout"
+      "logout": "Logout",
+      "reload": "Reload"
     },
     "status": {
       "loading": "Loading…",

@@ -15,6 +15,7 @@ import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh } from "~/providers/page-refresh-provider";
 
 const CATALOG_PAGE_SIZE = 40;
 
@@ -25,7 +26,7 @@ function SalesmanCatalogContent() {
   const [showAllProducts, setShowAllProducts] = useState(false);
 
   // What is left on the Active GatePass, by Variety; null without one (then every product shows).
-  const { myGatepass } = useGatepasses({
+  const { myGatepass, refetchMyGatepass, isMyGatepassFetching } = useGatepasses({
     businessDate: businessDateOf(new Date()),
     includeMyGatepass: true,
   });
@@ -35,13 +36,18 @@ function SalesmanCatalogContent() {
   }, [myGatepass]);
   const onlyGatepassProducts = sellableByVarietyId !== null && !showAllProducts;
 
-  const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: {
-      searchTerm: debouncedSearchTerm || undefined,
-      page: 1,
-      pageSize: CATALOG_PAGE_SIZE,
-    },
-  });
+  const { productsPage, isProductsListLoading, refetchProductsList, isProductsListFetching } =
+    useProducts({
+      listFilters: {
+        searchTerm: debouncedSearchTerm || undefined,
+        page: 1,
+        pageSize: CATALOG_PAGE_SIZE,
+      },
+    });
+  usePageRefresh(
+    () => Promise.all([refetchMyGatepass(), refetchProductsList()]),
+    isMyGatepassFetching || isProductsListFetching,
+  );
 
   // By default only the Varieties still on the GatePass; "All" shows the whole catalogue.
   const catalogItems = productsPage.items
