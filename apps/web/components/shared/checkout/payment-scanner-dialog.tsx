@@ -1,5 +1,10 @@
 "use client";
 
+import { QrCodeIcon } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+
+import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -8,7 +13,7 @@ interface PaymentScannerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Placeholder company UPI QR; the real QR is not wired yet. */
+/** The company UPI QR the shop scans to pay; it records nothing. */
 export function PaymentScannerDialog({ open, onOpenChange }: PaymentScannerDialogProps) {
   const tx = useTranslate();
 
@@ -22,13 +27,36 @@ export function PaymentScannerDialog({ open, onOpenChange }: PaymentScannerDialo
         </DialogHeader>
 
         <div className="flex justify-center">
-          <img
-            src="https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=400&h=400&fit=crop"
+          <Image
+            src="/upi-qr.png"
+            width={382}
+            height={421}
             alt={tx("checkout.payment.scannerAlt")}
-            className="size-64 rounded-2xl border border-border object-cover shadow-sm"
+            className="w-64 rounded-2xl border border-border bg-white object-contain p-2 shadow-sm"
           />
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** "Open payment scanner" with its dialog, for any form whose mode is UPI. */
+export function PaymentScannerButton() {
+  const tx = useTranslate();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-12 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:bg-accent/70"
+        onClick={() => setIsScannerOpen(true)}
+      >
+        <QrCodeIcon className="size-5" />
+        {tx("checkout.payment.openScanner")}
+      </Button>
+      <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
+    </>
   );
 }

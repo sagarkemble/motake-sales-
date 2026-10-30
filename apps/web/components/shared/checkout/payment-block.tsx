@@ -1,10 +1,10 @@
 "use client";
 
-import { InfoIcon, QrCodeIcon, UndoIcon, WalletIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { InfoIcon, UndoIcon, WalletIcon } from "lucide-react";
+import { useId } from "react";
 
 import { BalanceChip, BalanceText } from "~/components/shared/checkout/balance-text";
-import { PaymentScannerDialog } from "~/components/shared/checkout/payment-scanner-dialog";
+import { PaymentScannerButton } from "~/components/shared/checkout/payment-scanner-dialog";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -40,7 +40,6 @@ interface PaymentBlockProps {
 export function PaymentBlock({ context, draft, onChange, disabled = false }: PaymentBlockProps) {
   const tx = useTranslate();
   const { formatPaise } = useFormatMoney();
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   // The checkout mounts a mobile and a desktop tree; ids must differ between them.
   const idPrefix = useId();
   const maths = paymentMaths(context, draft);
@@ -178,17 +177,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
 
       {draft.mode !== "cash" && (
         <div className="flex flex-col gap-2">
-          {draft.mode === "upi" && (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:bg-accent/70"
-              onClick={() => setIsScannerOpen(true)}
-            >
-              <QrCodeIcon className="size-5" />
-              {tx("checkout.payment.openScanner")}
-            </Button>
-          )}
+          {draft.mode === "upi" && <PaymentScannerButton />}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`${idPrefix}-reference`} className="text-xs">
               {tx(
@@ -304,8 +293,6 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
           <BalanceText balancePaise={preview.balanceAfterPaise} />
         </div>
       </div>
-
-      <PaymentScannerDialog open={isScannerOpen} onOpenChange={setIsScannerOpen} />
     </div>
   );
 }
