@@ -16,6 +16,10 @@ import {
   FulfilRowButton,
   isOpenPreorder,
 } from "~/components/admin/orders/fulfil-pre-order-sheet";
+import {
+  CancelPreOrderButton,
+  CancelPreOrderDialog,
+} from "~/components/admin/orders/cancel-pre-order-dialog";
 import { isFulfilDue } from "~/lib/is-preorder-pending";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { SalesmanLabel } from "~/components/admin/orders/salesman-label";
@@ -107,6 +111,7 @@ export function OrderList({ customerId }: OrderListProps) {
   // A snapshot, not an id: after fulfil (or a refusal) the list refetches and a Status filter may
   // drop the row, but the sheet must stay to show the success or the refusal.
   const [fulfilRow, setFulfilRow] = useState<OrderListRow | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const debouncedPhone = useDebouncedValue(filters.customerPhone.trim(), 350);
   const pageSize = 20;
   const showFilters = !customerId;
@@ -235,7 +240,7 @@ export function OrderList({ customerId }: OrderListProps) {
         </p>
       ) : (
         <>
-          <OrderTable rows={ordersPage.items} onSelect={openRow} />
+          <OrderTable rows={ordersPage.items} onSelect={openRow} onCancel={setCancellingOrderId} />
           <div className="flex flex-col gap-2 md:hidden">
             {ordersPage.items.map((row) => (
               <OrderCard key={row.id} row={row} onSelect={openRow} />
@@ -260,8 +265,17 @@ export function OrderList({ customerId }: OrderListProps) {
             setSelectedOrderId(fulfilRow.id);
             setFulfilRow(null);
           }}
+          onCancelPreOrder={() => {
+            setCancellingOrderId(fulfilRow.id);
+            setFulfilRow(null);
+          }}
         />
       )}
+
+      <CancelPreOrderDialog
+        orderId={cancellingOrderId}
+        onClose={() => setCancellingOrderId(null)}
+      />
     </div>
   );
 }
@@ -275,13 +289,28 @@ function OrderTypeBadge({ type }: { type: OrderType }) {
   );
 }
 
-function BillCell({ row, onFulfil }: { row: OrderListRow; onFulfil?: () => void }) {
+function BillCell({
+  row,
+  onFulfil,
+  onCancel,
+}: {
+  row: OrderListRow;
+  onFulfil?: () => void;
+  onCancel?: () => void;
+}) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
 
   if (isOpenPreorder(row)) {
-    if (onFulfil) return <FulfilRowButton row={row} onFulfil={onFulfil} />;
+    if (onFulfil) {
+      return (
+        <div className="flex items-center justify-end gap-2">
+          {onCancel && <CancelPreOrderButton size="sm" onClick={onCancel} />}
+          <FulfilRowButton row={row} onFulfil={onFulfil} />
+        </div>
+      );
+    }
     // Inside a tappable card: the card opens the Fulfil sheet.
     return (
       <span className="text-xs font-medium text-brand">
@@ -330,9 +359,11 @@ function PlacedCell({ row }: { row: OrderListRow }) {
 function OrderTable({
   rows,
   onSelect,
+  onCancel,
 }: {
   rows: OrderListRow[];
   onSelect: (row: OrderListRow) => void;
+  onCancel: (orderId: string) => void;
 }) {
   const tx = useTranslate();
 
@@ -389,7 +420,11 @@ function OrderTable({
                 <PlacedCell row={row} />
               </TableCell>
               <TableCell className="text-right">
-                <BillCell row={row} onFulfil={() => onSelect(row)} />
+                <BillCell
+                  row={row}
+                  onFulfil={() => onSelect(row)}
+                  onCancel={() => onCancel(row.id)}
+                />
               </TableCell>
             </TableRow>
           ))}

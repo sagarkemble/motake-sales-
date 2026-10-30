@@ -3,34 +3,24 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import {
   DUE_CHIP,
   LedgerBackHeader,
   PaperLoadFailed,
-  ReasonField,
-  RefusalAlert,
 } from "~/components/admin/ledger/ledger-shared";
+import {
+  CancelPreOrderButton,
+  CancelPreOrderDialog,
+} from "~/components/admin/orders/cancel-pre-order-dialog";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import { Spinner } from "~/components/ui/spinner";
 import { useBillPaper } from "~/hooks/use-ledger";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
-import { useOrders } from "~/hooks/use-orders";
 import { useTranslate } from "~/hooks/use-translate";
-import { refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 
 export default function AdminPreOrderPaperPage() {
@@ -39,24 +29,8 @@ export default function AdminPreOrderPaperPage() {
   const { formatPaise } = useFormatMoney();
   const { orderId } = useParams<{ orderId: string }>();
   const { preOrderPaper, isPreOrderPaperLoading, refetchPreOrderPaper } = useBillPaper({ orderId });
-  const { cancelOrderAsync, isCancellingOrder } = useOrders();
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [refusal, setRefusal] = useState<string | null>(null);
   const customerId = preOrderPaper?.customer.id;
-
-  async function handleCancel() {
-    if (reason.trim() === "" || isCancellingOrder) return;
-    setRefusal(null);
-    try {
-      await cancelOrderAsync({ id: orderId, reason: reason.trim() });
-      toast.success(tx("admin.ledger.preorder.done"));
-      setCancelOpen(false);
-      setReason("");
-    } catch (error) {
-      setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
-    }
-  }
 
   const back = (
     <LedgerBackHeader customerId={customerId} shopName={preOrderPaper?.customer.shopName} />
@@ -138,51 +112,14 @@ export default function AdminPreOrderPaperPage() {
         )}
         {preOrderPaper.actions.canCancel && (
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <Button
-              variant="outline"
-              className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setCancelOpen(true)}
-            >
-              {tx("admin.ledger.preorder.cancel")}
-            </Button>
+            <CancelPreOrderButton onClick={() => setCancelOpen(true)} />
           </div>
         )}
       </div>
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{tx("admin.ledger.preorder.cancel")}</DialogTitle>
-            <DialogDescription>{tx("admin.ledger.preorder.cancelBody")}</DialogDescription>
-          </DialogHeader>
-          <ReasonField
-            id="preorder-reason"
-            value={reason}
-            onChange={setReason}
-            disabled={isCancellingOrder}
-            placeholder={tx("admin.ledger.preorder.placeholder")}
-          />
-          {refusal && <RefusalAlert message={refusal} />}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="rounded-full"
-              disabled={isCancellingOrder}
-              onClick={() => setCancelOpen(false)}
-            >
-              {tx("common.actions.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              className="rounded-full"
-              disabled={reason.trim() === "" || isCancellingOrder}
-              onClick={handleCancel}
-            >
-              {isCancellingOrder && <Spinner />}
-              {tx("admin.ledger.preorder.cancel")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CancelPreOrderDialog
+        orderId={cancelOpen ? orderId : null}
+        onClose={() => setCancelOpen(false)}
+      />
     </div>
   );
 }

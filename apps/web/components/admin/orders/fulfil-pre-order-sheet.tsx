@@ -3,6 +3,7 @@
 import type { RouterOutputs } from "@repo/trpc/client";
 import { BuildingIcon, FileTextIcon } from "lucide-react";
 
+import { CancelPreOrderButton } from "~/components/admin/orders/cancel-pre-order-dialog";
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
 import { FulfilPayment, LockedLines } from "~/components/shared/checkout/fulfil-pre-order-panel";
 import { Badge } from "~/components/ui/badge";
@@ -71,13 +72,20 @@ interface FulfilPreOrderSheetProps {
   onClose: () => void;
   // The order detail dialog, which an open Pre-order row no longer opens.
   onViewDetails: () => void;
+  // Closes the sheet and opens the reason dialog: on a phone the row has no Cancel button.
+  onCancelPreOrder: () => void;
 }
 
 /**
  * Admin fulfils a Pre-order from the Orders list: no GatePass, no stock change, the Bill from the
  * terms locked at place, and the same Payment block and success summary as the salesman.
  */
-export function FulfilPreOrderSheet({ row, onClose, onViewDetails }: FulfilPreOrderSheetProps) {
+export function FulfilPreOrderSheet({
+  row,
+  onClose,
+  onViewDetails,
+  onCancelPreOrder,
+}: FulfilPreOrderSheetProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const scheduledDate = row.scheduledDate ?? "";
@@ -163,6 +171,7 @@ export function FulfilPreOrderSheet({ row, onClose, onViewDetails }: FulfilPreOr
             >
               {fulfil.isFulfilling ? tx("common.status.pleaseWait") : tx("checkout.fulfil.cta")}
             </Button>
+            <CancelPreOrderButton onClick={onCancelPreOrder} />
           </SheetFooter>
         )}
       </SheetContent>
