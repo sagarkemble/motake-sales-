@@ -161,7 +161,7 @@ class SettingsService {
     input: SetUpSellerSettingsInput,
     actorProfileId: string,
   ): Promise<SelectSellerSettings> {
-    const { reason, ...fields } = setUpSellerSettingsInputSchema.parse(input);
+    const fields = setUpSellerSettingsInputSchema.parse(input);
     assertGstinMatchesState(fields.gstin, fields.state);
     assertPanMatchesGstin(fields.pan, fields.gstin);
     return runInTransaction(async (transaction) => {
@@ -180,7 +180,6 @@ class SettingsService {
           action: "created",
           entityType: "seller_settings",
           entityId: settings.id,
-          reason,
           payload: createdFields(fields),
         },
         transaction,
@@ -195,7 +194,7 @@ class SettingsService {
     input: UpdateSellerSettingsInput,
     actorProfileId: string,
   ): Promise<SelectSellerSettings> {
-    const { reason, ...patch } = updateSellerSettingsInputSchema.parse(input);
+    const patch = updateSellerSettingsInputSchema.parse(input);
     return runInTransaction(async (transaction) => {
       const before = onlySellerRow(await lockSellerSettingsRows(transaction));
       if (!before) throw screenRefusal("seller_master_missing", "Seller master not set up");
@@ -222,7 +221,6 @@ class SettingsService {
           action: "updated",
           entityType: "seller_settings",
           entityId: before.id,
-          reason,
           payload: oldNewPayload(changes),
         },
         transaction,

@@ -53,11 +53,9 @@ const sellerFieldsSchema = z.object({
   place: z.string().max(120).nullable().optional(),
 });
 
-export const setUpSellerSettingsInputSchema = sellerFieldsSchema.extend({ reason: reasonSchema });
+export const setUpSellerSettingsInputSchema = sellerFieldsSchema;
 
-export const updateSellerSettingsInputSchema = sellerFieldsSchema
-  .partial()
-  .extend({ reason: reasonSchema });
+export const updateSellerSettingsInputSchema = sellerFieldsSchema.partial();
 
 export const settingsHistoryEntrySchema = z.object({
   id: z.string(),
