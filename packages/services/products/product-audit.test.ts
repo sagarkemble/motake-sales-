@@ -5,12 +5,19 @@ import { buildProfile } from "../test/builders";
 import ProductService from "./index";
 
 const productService = new ProductService();
+const butterImage = {
+  imageKey: "products/admin/butter.png",
+  imageUrl: "https://cdn.test/butter.png",
+};
 
 describe("ProductService audit", () => {
   it("records each Product write once with the actor and changed fields only", async () => {
     const admin = await buildProfile();
 
-    const product = await productService.createProduct({ name: "Butter" }, admin.id);
+    const product = await productService.createProduct(
+      { name: "Butter", imageKey: butterImage.imageKey, imageUrl: butterImage.imageUrl },
+      admin.id,
+    );
     await productService.updateProduct(product.id, { name: "Salted Butter" }, admin.id);
     await productService.deactivateProduct(product.id, admin.id);
     await productService.reactivateProduct(product.id, admin.id);
@@ -22,14 +29,21 @@ describe("ProductService audit", () => {
       ["activated", "created", "deactivated", "deleted", "updated"].sort(),
     );
     expect(rows.every((row) => row.actorId === admin.id && row.reason === null)).toBe(true);
-    expect(byAction.created?.payload).toEqual({ name: "Butter" });
+    expect(byAction.created?.payload).toEqual({ name: "Butter", ...butterImage });
     expect(byAction.updated?.payload).toEqual({ name: { from: "Butter", to: "Salted Butter" } });
     expect(rows.every((row) => row.customerId === null)).toBe(true);
   });
 
   it("records Variety create, update, deactivate and reactivate under product_variety", async () => {
     const admin = await buildProfile();
-    const product = await productService.createProduct({ name: "Lassi" }, admin.id);
+    const product = await productService.createProduct(
+      {
+        name: "Lassi",
+        imageKey: "products/admin/lassi.png",
+        imageUrl: "https://cdn.test/lassi.png",
+      },
+      admin.id,
+    );
 
     const variety = await productService.createProductVariety(
       { productId: product.id, name: "200 ml", unit: "cup" },

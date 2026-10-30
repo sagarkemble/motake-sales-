@@ -20,7 +20,7 @@ The field-sales person who sells against an Active GatePass.
 The generated unique key of a Salesman. Admin does not type or edit it.
 
 **Product**:
-The named group a Variety belongs to (for example milk). Not billed by itself.
+The named group a Variety belongs to (for example milk). Not billed by itself. Always has an image: a Product cannot be created or saved without one, and its image can be replaced but not removed.
 *Avoid*: treating Product name as a SKU
 
 **Variety SKU**:

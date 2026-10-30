@@ -33,9 +33,6 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
   }
 
   const createImageUploadUrlMutation = trpc.products.createImageUploadUrl.useMutation();
-  const deleteProductImageMutation = trpc.products.deleteImage.useMutation({
-    onSuccess: () => utils.products.invalidate(),
-  });
 
   const createProductMutation = trpc.products.create.useMutation({
     onSuccess: invalidateProductAndRouteViews,
@@ -86,11 +83,6 @@ export function useProducts({ listFilters, productId, enabled = true }: UseProdu
     createImageUploadUrlAsync: createImageUploadUrlMutation.mutateAsync,
     isCreatingImageUploadUrl: createImageUploadUrlMutation.isPending,
     createImageUploadUrlError: createImageUploadUrlMutation.error ?? null,
-
-    deleteProductImage: deleteProductImageMutation.mutate,
-    deleteProductImageAsync: deleteProductImageMutation.mutateAsync,
-    isDeletingProductImage: deleteProductImageMutation.isPending,
-    deleteProductImageError: deleteProductImageMutation.error ?? null,
 
     createProduct: createProductMutation.mutate,
     createProductAsync: createProductMutation.mutateAsync,

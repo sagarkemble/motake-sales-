@@ -231,7 +231,8 @@
       "empty": "No products yet",
       "newAria": "New product",
       "validation": {
-        "nameRequired": "Enter a product name"
+        "nameRequired": "Enter a product name",
+        "imageRequired": "Add a product image"
       },
       "createSuccess": "Product created",
       "createFailed": "Could not create product. Try again.",

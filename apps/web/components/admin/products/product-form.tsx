@@ -23,8 +23,8 @@ import { useTranslate } from "~/hooks/use-translate";
 export type ProductFormValues = {
   name: string;
   description?: string;
-  imageKey?: string;
-  imageUrl?: string;
+  imageKey: string;
+  imageUrl: string;
 };
 
 interface ProductFormProps {
@@ -43,15 +43,16 @@ export function ProductForm({
   onSubmit,
 }: ProductFormProps) {
   const tx = useTranslate();
-  const { createImageUploadUrlAsync, deleteProductImageAsync } = useProducts();
+  const { createImageUploadUrlAsync } = useProducts();
 
   const productFormSchema = useMemo(
     () =>
       z.object({
         name: z.string().min(1, tx("admin.products.validation.nameRequired")).max(200),
         description: z.string().optional(),
-        imageKey: z.string().optional(),
-        imageUrl: z.string().optional(),
+        // A Product always has an image; the server refuses one without it too.
+        imageKey: z.string().min(1),
+        imageUrl: z.string().min(1, tx("admin.products.validation.imageRequired")),
       }),
     [tx],
   );
@@ -84,12 +85,10 @@ export function ProductForm({
                     uploadButtonLabel={tx("admin.products.uploadImage")}
                     onUploaded={(result) => {
                       form.setValue("imageKey", result.imageKey);
-                      form.setValue("imageUrl", result.imageUrl);
+                      form.setValue("imageUrl", result.imageUrl, { shouldValidate: true });
                     }}
+                    // Only clears the form: Save needs a new image, and the server then drops the old one.
                     onDelete={async () => {
-                      if (productId) {
-                        await deleteProductImageAsync({ id: productId });
-                      }
                       form.setValue("imageKey", "");
                       form.setValue("imageUrl", "");
                     }}
