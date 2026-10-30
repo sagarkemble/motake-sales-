@@ -1149,7 +1149,8 @@
           "cancel": "Cancel Bill",
           "download": "Download PDF",
           "opening": "Opening…",
-          "pdf": "PDF"
+          "pdf": "PDF",
+          "print": "Print"
         },
         "editing": "Correcting version {version}. Saving makes version {next}.",
         "buyerText": "Buyer text",

@@ -1,6 +1,6 @@
 "use client";
 
-import { DownloadIcon, LockIcon } from "lucide-react";
+import { DownloadIcon, LockIcon, PrinterIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ import { useFormatDate } from "~/hooks/use-format-date";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useDocumentDownloadLink, type BillPaper } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
+import { printElement } from "~/lib/print-element";
 import { refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 
@@ -133,6 +134,28 @@ export function DownloadPdfButton({
       {isOpening
         ? tx("admin.ledger.paper.actions.opening")
         : (label ?? tx("admin.ledger.paper.actions.download"))}
+    </Button>
+  );
+}
+
+/** Prints the on-screen paper with the browser's print dialog; the PDF stays on Download. */
+export function PrintPaperButton({
+  paperElementId,
+  className,
+}: {
+  paperElementId: string;
+  className?: string;
+}) {
+  const tx = useTranslate();
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={cn("rounded-full", className)}
+      onClick={() => printElement(paperElementId)}
+    >
+      <PrinterIcon className="size-4" />
+      {tx("admin.ledger.paper.actions.print")}
     </Button>
   );
 }

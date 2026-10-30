@@ -20,6 +20,7 @@ import {
 } from "~/components/admin/ledger/bill-paper-forms";
 import {
   DownloadPdfButton,
+  PrintPaperButton,
   LockNotice,
   NotesList,
   StatusBadges,
@@ -58,6 +59,9 @@ function BackLink({ paper }: { paper: BillPaper | null }) {
     />
   );
 }
+
+// The on-screen Bill that Print sends to the browser's print dialog.
+const PAPER_ELEMENT_ID = "bill-paper";
 
 function PaperView({ paper }: { paper: BillPaper }) {
   const tx = useTranslate();
@@ -136,14 +140,16 @@ function PaperView({ paper }: { paper: BillPaper }) {
               })}
             </p>
           )}
-          <BillPaperDocument
-            paper={paper}
-            edit={
-              editing
-                ? toCorrectEdit(correctState, correctPreview, correct.isCorrectingBill)
-                : undefined
-            }
-          />
+          <div id={PAPER_ELEMENT_ID}>
+            <BillPaperDocument
+              paper={paper}
+              edit={
+                editing
+                  ? toCorrectEdit(correctState, correctPreview, correct.isCorrectingBill)
+                  : undefined
+              }
+            />
+          </div>
           <h2 className="text-sm font-medium">{tx("admin.ledger.paper.notesTitle")}</h2>
           <NotesList paper={paper} />
         </div>
@@ -191,6 +197,10 @@ function PaperView({ paper }: { paper: BillPaper }) {
                     target={{ billVersionId: paper.version.id }}
                   />
                 )}
+                <PrintPaperButton
+                  className="col-span-2 lg:col-span-1"
+                  paperElementId={PAPER_ELEMENT_ID}
+                />
                 <BillGateReasons paper={paper} className="col-span-2 lg:col-span-1" />
               </div>
             ) : (
