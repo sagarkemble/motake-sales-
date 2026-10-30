@@ -576,7 +576,9 @@
       "notFound": "Salesman not found",
       "showDeleted": "Show deleted salesmen",
       "title": "Salesmen",
-      "unnamed": "Unnamed"
+      "unnamed": "Unnamed",
+      "noActiveRoute": "Unassigned",
+      "activeRouteAria": "Active GatePass Route"
     },
     "orders": {
       "tab": {

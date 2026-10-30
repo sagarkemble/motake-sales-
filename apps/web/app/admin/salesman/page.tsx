@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MoreVerticalIcon, PlusIcon } from "lucide-react";
+import { MapPinIcon, MoreVerticalIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -107,7 +107,7 @@ function SalesmanPageContent() {
             {tx("admin.salesmen.empty")}
           </p>
         ) : (
-          salesmenPage.items.map(({ salesman, profile }) => {
+          salesmenPage.items.map(({ salesman, profile, activeRouteName }) => {
             const isDeleted = Boolean(profile.deletedAt);
 
             return (
@@ -141,6 +141,17 @@ function SalesmanPageContent() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {salesman.salesmanCode} · {profile.phone ?? profile.email}
+                  </p>
+                  <p
+                    aria-label={tx("admin.salesmen.activeRouteAria")}
+                    className={`mt-0.5 flex items-center gap-1 truncate text-xs font-medium ${
+                      activeRouteName ? "text-brand" : "text-muted-foreground"
+                    }`}
+                  >
+                    <MapPinIcon className="size-3 shrink-0" />
+                    <span className="truncate">
+                      {activeRouteName ?? tx("admin.salesmen.noActiveRoute")}
+                    </span>
                   </p>
                 </div>
 

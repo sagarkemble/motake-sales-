@@ -30,7 +30,7 @@ export const salesmanWithProfileSchema = z.object({
 });
 
 export const paginatedSalesmenSchema = z.object({
-  items: z.array(salesmanWithProfileSchema),
+  items: z.array(salesmanWithProfileSchema.extend({ activeRouteName: z.string().nullable() })),
   totalCount: z.number(),
   page: z.number(),
   pageSize: z.number(),

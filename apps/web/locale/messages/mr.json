@@ -576,7 +576,9 @@
       "notFound": "विक्रेता सापडला नाही",
       "showDeleted": "हटवलेले विक्रेते दाखवा",
       "title": "विक्रेते",
-      "unnamed": "नाव नाही"
+      "unnamed": "नाव नाही",
+      "noActiveRoute": "अनियुक्त",
+      "activeRouteAria": "सक्रिय गेटपास रूट"
     },
     "orders": {
       "tab": {
