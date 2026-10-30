@@ -1038,7 +1038,21 @@
         "no_active_gatepass": "You have no Active GatePass today, so you cannot see or resend WhatsApp messages.",
         "customer_not_on_route": "This Customer is not on your Active GatePass Route.",
         "notification_unavailable": "WhatsApp messages are not set up on this server.",
-        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded."
+        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded.",
+        "superseded_version": "This Bill was corrected. Download its latest version.",
+        "irn_not_recorded": "This Bill has no IRN recorded yet, so this file cannot be made.",
+        "irn_not_pending": "This Bill is not waiting for an IRN. Download its PDF instead.",
+        "not_posted_event": "Could not open this receipt. Refresh the page and try again.",
+        "nothing_kept": "This Payment has no receipt because nothing was kept.",
+        "bad_image": "The QR image must be a PNG or JPG under 1 MB.",
+        "forbidden": "Only an Admin can do this.",
+        "template_superseded": "This message cannot be resent because its wording has changed. Use Send latest Bill.",
+        "token_not_working": "WhatsApp is paused. The Admin needs to fix the access token.",
+        "template_not_found": "WhatsApp couldn't be sent right now. Try again later.",
+        "template_not_verified": "WhatsApp couldn't be sent right now. Try again later.",
+        "template_values_mismatch": "WhatsApp couldn't be sent right now. Try again later.",
+        "attachment_mismatch": "WhatsApp couldn't be sent right now. Try again later.",
+        "provider_not_supported": "WhatsApp couldn't be sent right now. Try again later."
       },
       "paper": {
         "back": "{shopName} Ledger",
