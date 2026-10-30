@@ -1630,7 +1630,10 @@
       "searchPlaceholder": "Search products",
       "noMatch": "No products match \"{term}\"",
       "noSizes": "No sizes are set up for this product yet.",
-      "selected": "Selected"
+      "selected": "Selected",
+      "inGatepass": "{count} in GatePass",
+      "showAll": "All",
+      "emptyGatepass": "Nothing left on your GatePass. Switch on All to see every product."
     },
     "cart": {
       "emptyTitle": "Your cart is empty",
