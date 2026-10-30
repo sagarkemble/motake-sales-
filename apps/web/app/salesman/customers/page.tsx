@@ -1,10 +1,11 @@
 "use client";
 
 import { businessDateOf } from "@repo/trpc/client";
-import { ChevronRightIcon, SearchIcon, SearchXIcon, XIcon } from "lucide-react";
+import { ChevronRightIcon, SearchIcon, SearchXIcon, UserPlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
+import { AddCustomerDrawer } from "~/components/salesman/customers/add-customer-drawer";
 import { RouteCustomerDrawer } from "~/components/salesman/customers/route-customer-drawer";
 import { BalanceChip } from "~/components/shared/checkout/balance-text";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
@@ -25,6 +26,7 @@ export default function SalesmanRouteCustomersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [openedCustomerId, setOpenedCustomerId] = useState<string | null>(null);
+  const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 350);
 
   const { myGatepass, isMyGatepassLoading } = useGatepasses({
@@ -45,13 +47,27 @@ export default function SalesmanRouteCustomersPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4 md:px-6">
-      <div>
-        <p className="text-base font-semibold">{tx("salesman.customers.title")}</p>
-        <p className="text-sm text-muted-foreground">
-          {activeRouteName
-            ? tx("salesman.checkout.customer.routeHint", { route: activeRouteName })
-            : tx("salesman.customers.hint")}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-base font-semibold">{tx("salesman.customers.title")}</p>
+          <p className="text-sm text-muted-foreground">
+            {activeRouteName
+              ? tx("salesman.checkout.customer.routeHint", { route: activeRouteName })
+              : tx("salesman.customers.hint")}
+          </p>
+        </div>
+        {/* A salesman's Customer goes on their Active GatePass Route, so none can be added without one. */}
+        {activeRouteName && (
+          <Button
+            type="button"
+            size="sm"
+            className="shrink-0 gap-1.5 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+            onClick={() => setIsAddingCustomer(true)}
+          >
+            <UserPlusIcon className="size-4" />
+            {tx("salesman.customers.add")}
+          </Button>
+        )}
       </div>
 
       {isMyGatepassLoading ? (
@@ -142,6 +158,10 @@ export default function SalesmanRouteCustomersPage() {
             onPageChange={setPage}
           />
         </>
+      )}
+
+      {isAddingCustomer && activeRouteName && (
+        <AddCustomerDrawer routeName={activeRouteName} onClose={() => setIsAddingCustomer(false)} />
       )}
 
       {openedCustomerId && (

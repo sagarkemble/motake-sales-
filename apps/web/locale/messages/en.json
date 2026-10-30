@@ -1892,7 +1892,10 @@
       "noPurchase": "{shop} · no purchase",
       "recordFailed": "Could not record the Payment",
       "startOrder": "Start an order for this shop",
-      "startOrderToast": "Add products to the cart; checkout will be for {shop}."
+      "startOrderToast": "Add products to the cart; checkout will be for {shop}.",
+      "add": "Add customer",
+      "addHint": "Shop name, phone, address and shop photo are required.",
+      "addSuccess": "{shop} added on {route}"
     },
     "account": {
       "avatarTitle": "Update avatar",
