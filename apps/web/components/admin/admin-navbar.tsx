@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, MenuIcon, SmartphoneIcon, UserIcon } from "lucide-react";
+import { LogOutIcon, MenuIcon, SettingsIcon, SmartphoneIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -169,6 +169,12 @@ export function AdminNavbar() {
             <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
               <SmartphoneIcon className="size-4" />
               {tx("common.nav.updatePhone")}
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/settings">
+                <SettingsIcon className="size-4" />
+                {tx("admin.settings.title")}
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={handleLogout}>
               <LogOutIcon className="size-4" />

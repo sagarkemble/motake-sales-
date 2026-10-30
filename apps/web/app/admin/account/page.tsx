@@ -1,7 +1,5 @@
 "use client";
 
-import { ChevronRightIcon, SettingsIcon } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -156,22 +154,6 @@ export default function AdminAccountPage() {
           </div>
         </div>
       </section>
-
-      <Link
-        href="/admin/settings"
-        className="flex items-center gap-3 rounded-2xl border bg-card p-4 outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-      >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-          <SettingsIcon className="size-5" />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-sm font-medium">{tx("admin.settings.accountEntry.title")}</span>
-          <span className="text-xs text-muted-foreground">
-            {tx("admin.settings.accountEntry.description")}
-          </span>
-        </span>
-        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-      </Link>
 
       <InstallAppButton />
 

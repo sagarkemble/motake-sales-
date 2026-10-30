@@ -725,10 +725,6 @@
     },
     "settings": {
       "title": "Settings",
-      "accountEntry": {
-        "title": "Settings",
-        "description": "Seller details, number prefixes and GST Credit Note deadline"
-      },
       "tabs": {
         "seller": "Seller",
         "prefixes": "Prefixes",
