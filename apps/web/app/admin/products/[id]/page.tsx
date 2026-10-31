@@ -1,5 +1,6 @@
 "use client";
 
+import { PackageIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
@@ -99,10 +101,19 @@ export default function EditProductPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4">
       <BackHeader href="/admin/products" title={tx("admin.products.editTitle")} />
 
-      <div className="flex items-center justify-between rounded-2xl border bg-card p-4">
-        <div>
-          <p className="text-sm font-medium">{product.name}</p>
-          <p className="text-xs text-muted-foreground">{tx("admin.products.statusLabel")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted-soft">
+            {product.imageUrl ? (
+              <img src={product.imageUrl} alt="" className="size-full object-contain p-1" />
+            ) : (
+              <PackageIcon className="size-5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{product.name}</p>
+            <p className="text-xs text-muted-foreground">{tx("admin.products.statusLabel")}</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={product.status} />
@@ -147,20 +158,35 @@ export default function EditProductPage() {
         </div>
       </div>
 
-      <ProductForm
-        productId={productId}
-        defaultValues={{
-          name: product.name,
-          description: product.description ?? "",
-          imageKey: product.imageKey ?? "",
-          imageUrl: product.imageUrl ?? "",
-        }}
-        isSubmitting={isUpdatingProduct}
-        submitLabel={tx("admin.products.saveChanges")}
-        onSubmit={handleSubmit}
-      />
-
-      <VarietyTable productId={productId} productName={product.name} />
+      {/* Varieties open first: right after creating a Product, adding its Varieties is the next step. */}
+      <Tabs defaultValue="varieties" className="gap-4">
+        <TabsList className="grid h-10 w-full grid-cols-2 rounded-full sm:w-96">
+          <TabsTrigger value="varieties" className="rounded-full">
+            {tx("admin.products.tabs.varieties")}
+          </TabsTrigger>
+          <TabsTrigger value="details" className="rounded-full">
+            {tx("admin.products.tabs.details")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="varieties">
+          <VarietyTable productId={productId} productName={product.name} />
+        </TabsContent>
+        {/* Kept mounted so unsaved edits survive a look at the Varieties tab. */}
+        <TabsContent value="details" forceMount className="data-[state=inactive]:hidden">
+          <ProductForm
+            productId={productId}
+            defaultValues={{
+              name: product.name,
+              description: product.description ?? "",
+              imageKey: product.imageKey ?? "",
+              imageUrl: product.imageUrl ?? "",
+            }}
+            isSubmitting={isUpdatingProduct}
+            submitLabel={tx("admin.products.saveChanges")}
+            onSubmit={handleSubmit}
+          />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={isDeactivateConfirmOpen} onOpenChange={setIsDeactivateConfirmOpen}>
         <AlertDialogContent>

@@ -313,7 +313,7 @@
         "nameRequired": "Enter a product name",
         "imageRequired": "Add a product image"
       },
-      "createSuccess": "Product created",
+      "createSuccess": "Product created. Now add its Varieties.",
       "createFailed": "Could not create product. Try again.",
       "updateSuccess": "Product updated",
       "updateFailed": "Could not update product. Try again.",
@@ -338,6 +338,10 @@
       "descriptionPlaceholder": "Short description",
       "edit": "Edit",
       "editTitle": "Edit product",
+      "tabs": {
+        "varieties": "Varieties",
+        "details": "Photo and details"
+      },
       "imageAlt": "Product",
       "namePlaceholder": "Product name",
       "noMatch": "No products match \"{term}\"",
