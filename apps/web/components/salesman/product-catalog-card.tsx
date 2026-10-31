@@ -11,7 +11,8 @@ interface ProductCatalogCardProps {
   productName: string;
   productImageUrl: string | null;
   varietyCount: number;
-  onAddToCart: () => void;
+  // Left out without an Active GatePass: the card is browse-only.
+  onAddToCart?: () => void;
 }
 
 export function ProductCatalogCard({
@@ -53,13 +54,15 @@ export function ProductCatalogCard({
         </p>
       </div>
 
-      <Button
-        type="button"
-        onClick={onAddToCart}
-        className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
-      >
-        {tx("salesman.catalog.addToCart")}
-      </Button>
+      {onAddToCart && (
+        <Button
+          type="button"
+          onClick={onAddToCart}
+          className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          {tx("salesman.catalog.addToCart")}
+        </Button>
+      )}
     </div>
   );
 }

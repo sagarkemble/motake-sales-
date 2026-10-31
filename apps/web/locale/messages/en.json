@@ -1689,6 +1689,7 @@
         "title": "No Active GatePass",
         "customers": "Customer list is not available.",
         "addCustomer": "You cannot add a Customer.",
+        "catalog": "You can look at the products, but you cannot add to cart.",
         "handedOver": "You handed over today's GatePass on Route {route}. Selling is closed for today.",
         "none": "You have no GatePass today. Ask the admin to allot stock to you on a Route."
       },
