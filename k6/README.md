@@ -78,7 +78,7 @@ These low-frequency branches send intentionally invalid input and assert the rej
 |-----------|------|----------|------------------|
 | `customer_shop_photo_bad_type` | Salesman / Admin | 400 | Unsupported content type (`image/gif`) is rejected |
 | `customer_shop_photo_too_large` | Salesman / Admin | 400 | File over the 5 MB cap is rejected |
-| `customer_create_no_photo` | Salesman | 400 | Create without `shopPhotoKey` is rejected (photo required) |
+| `customer_create_no_city` | Salesman | 400 | Create without `cityId` is rejected (City required; the shop photo is optional) |
 | `customer_create_forged_key` | Salesman | 403 | A `shopPhotoKey` owned by another user is rejected |
 | `customer_update_forbidden` | Salesman | 403 | Salesman cannot `PATCH` a customer photo (admin only) |
 | `customer_delete_photo_forbidden` | Salesman | 403 | Salesman cannot delete a customer photo (admin only) |
