@@ -17,7 +17,9 @@ import { badRequest, internalError, notFound, screenRefusal, unauthorized } from
 import GatepassService from "../gatepass";
 import SalesmanService from "../salesman";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
+import { deleteObject } from "../uploads/r2-client";
 import {
+  adminUploadedAvatar,
   createProfileAvatarUploadUrl,
   deleteProfileAvatar,
   updateProfileNameAndAvatar,
@@ -119,6 +121,9 @@ class AuthService {
   ): Promise<{ salesman: SelectSalesman; supabaseUserId: string }> {
     const parsedInput = createSalesmanAccountInputSchema.parse(input);
     const salesmanRole: AppRole = "salesman";
+    const avatar = parsedInput.avatarKey
+      ? adminUploadedAvatar(parsedInput.avatarKey, actorProfileId)
+      : undefined;
 
     const { data, error } = await supabaseAdminClient.auth.admin.createUser({
       email: parsedInput.email,
@@ -143,6 +148,7 @@ class AuthService {
             email: parsedInput.email,
             name: parsedInput.name,
             phone: parsedInput.phone,
+            ...avatar,
           },
           transaction,
         );
@@ -160,6 +166,7 @@ class AuthService {
               email: parsedInput.email,
               name: parsedInput.name,
               phone: parsedInput.phone,
+              avatarKey: avatar?.avatarKey,
               salesmanCode: createdSalesman.salesmanCode,
             }),
           },
@@ -203,6 +210,9 @@ class AuthService {
     actorProfileId: string,
   ): Promise<SelectProfile> {
     const parsedChanges = updateSalesmanAccountInputSchema.parse(changes);
+    const avatar = parsedChanges.avatarKey
+      ? adminUploadedAvatar(parsedChanges.avatarKey, actorProfileId)
+      : parsedChanges.avatarKey;
 
     if (parsedChanges.email || parsedChanges.password) {
       const { error } = await supabaseAdminClient.auth.admin.updateUserById(profileId, {
@@ -221,10 +231,12 @@ class AuthService {
     if (parsedChanges.name !== undefined) profileChanges.name = parsedChanges.name;
     if (parsedChanges.phone !== undefined) profileChanges.phone = parsedChanges.phone;
     if (parsedChanges.email !== undefined) profileChanges.email = parsedChanges.email;
+    if (avatar === null) Object.assign(profileChanges, { avatarKey: null, avatarUrl: null });
+    else if (avatar !== undefined) Object.assign(profileChanges, avatar);
 
     const profileBefore = await getProfileById(profileId);
     if (!profileBefore) throw notFound("Profile not found");
-    return runInTransaction(async (transaction) => {
+    const profileAfter = await runInTransaction(async (transaction) => {
       const updatedProfile =
         Object.keys(profileChanges).length > 0
           ? await updateProfile(profileId, profileChanges, transaction)
@@ -238,7 +250,12 @@ class AuthService {
           entityType: "salesman",
           entityId: profileId,
           payload: {
-            ...changedFields(profileBefore, updatedProfile, ["name", "phone", "email"]),
+            ...changedFields(profileBefore, updatedProfile, [
+              "name",
+              "phone",
+              "email",
+              "avatarKey",
+            ]),
             ...(parsedChanges.password ? { passwordReset: true } : {}),
           },
         },
@@ -246,6 +263,12 @@ class AuthService {
       );
       return updatedProfile;
     });
+
+    // The old photo goes once the new one (or none) is saved, as for the salesman's own avatar.
+    if (profileBefore.avatarKey && profileBefore.avatarKey !== profileAfter.avatarKey) {
+      await deleteObject(profileBefore.avatarKey);
+    }
+    return profileAfter;
   }
 
   public async updateMyProfile(

@@ -146,7 +146,8 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Add a salesman",
-        description: "Create a salesman account and profile. Admin only.",
+        description:
+          "Create a salesman account and profile, with an optional photo the Admin uploaded through /auth/me/avatar-upload-url. Admin only.",
       },
     })
     .input(createSalesmanAccountInputSchema)
@@ -222,7 +223,8 @@ export const salesmanRouter = router({
         tags: ["Salesmen"],
         protect: true,
         summary: "Update a salesman account",
-        description: "Change the name, phone, email, or password of a salesman. Admin only.",
+        description:
+          "Change the name, phone, email, password, or photo of a salesman (avatarKey from /auth/me/avatar-upload-url; null removes it). Admin only.",
       },
     })
     .input(salesmanIdInputSchema.extend(updateSalesmanAccountInputSchema.shape))
