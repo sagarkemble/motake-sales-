@@ -99,13 +99,6 @@ export function CustomerForm({
             ),
         })
         .superRefine((values, context) => {
-          if (isCreate && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: tx("admin.customers.validation.shopPhoto"),
-              path: ["shopPhotoUrl"],
-            });
-          }
           if (isCreate && !values.routeId) {
             context.addIssue({
               code: z.ZodIssueCode.custom,

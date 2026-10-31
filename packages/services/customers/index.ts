@@ -154,14 +154,18 @@ class CustomerService {
   }
 
   private async insertCustomer(
-    newCustomer: Omit<InsertCustomer, "createdBy" | "shopPhotoUrl"> & { shopPhotoKey: string },
+    newCustomer: Omit<InsertCustomer, "createdBy" | "shopPhotoKey" | "shopPhotoUrl"> & {
+      shopPhotoKey?: string;
+    },
     actorProfileId: string,
     transaction: DbExecutor,
   ): Promise<SelectCustomer> {
-    assertShopPhotoKeyBelongsToCreator(newCustomer.shopPhotoKey, actorProfileId);
+    const { shopPhotoKey } = newCustomer;
+    if (shopPhotoKey) assertShopPhotoKeyBelongsToCreator(shopPhotoKey, actorProfileId);
     const values = {
       ...newCustomer,
-      shopPhotoUrl: buildPublicUrl(newCustomer.shopPhotoKey),
+      shopPhotoKey: shopPhotoKey ?? null,
+      shopPhotoUrl: shopPhotoKey ? buildPublicUrl(shopPhotoKey) : null,
       createdBy: actorProfileId,
     };
     const customer = await createCustomer(values, transaction);

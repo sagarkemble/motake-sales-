@@ -23,7 +23,8 @@ const customerDetailsSchema = z.object({
   phone: z.string().min(1).max(20),
   address: z.string().min(1),
   notes: z.string().optional(),
-  shopPhotoKey: z.string().min(1),
+  // Optional: a Customer can be added without a shop photo.
+  shopPhotoKey: z.string().min(1).optional(),
   // Fixed once the Customer is added.
   preferredLanguage: preferredLanguageSchema.default("mr"),
 });

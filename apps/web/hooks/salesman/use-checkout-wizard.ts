@@ -304,7 +304,7 @@ export function useCheckoutWizard() {
         shopName: newCustomerForm.shopName.trim(),
         phone: newCustomerForm.phone.trim(),
         address: newCustomerForm.address.trim(),
-        shopPhotoKey: newCustomerForm.shopPhotoKey,
+        shopPhotoKey: newCustomerForm.shopPhotoKey || undefined,
         preferredLanguage: newCustomerForm.preferredLanguage,
       });
       const createdCustomer: CheckoutCustomer = {

@@ -30,13 +30,12 @@ export const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
   preferredLanguage: "mr",
 };
 
-/** Shop name, phone, address and shop photo are all required to save a Customer. */
+/** Shop name, phone and address are required to save a Customer; the shop photo is optional. */
 export function isNewCustomerFormFilled(form: NewCustomerFormValues): boolean {
   return (
     form.shopName.trim().length > 0 &&
     form.phone.trim().length > 0 &&
-    form.address.trim().length > 0 &&
-    form.shopPhotoKey.trim().length > 0
+    form.address.trim().length > 0
   );
 }
 

@@ -53,6 +53,18 @@ afterEach(() => {
 });
 
 describe("CustomerService Admin add", () => {
+  it("adds a Customer with no shop photo", async () => {
+    const admin = await buildProfile();
+    const route = await buildRoute();
+
+    const customer = await customerService.createCustomerAsAdmin(
+      { ...shopDetails(admin.id, { shopPhotoKey: undefined }), routeId: route.id },
+      admin.id,
+    );
+
+    expect(customer).toMatchObject({ shopPhotoKey: null, shopPhotoUrl: null });
+  });
+
   it("saves the Customer on the picked Route and records the add", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();

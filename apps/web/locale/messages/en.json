@@ -425,7 +425,6 @@
         "shopName": "Enter a shop name",
         "phone": "Enter a phone number",
         "address": "Enter an address",
-        "shopPhoto": "Add a shop photo",
         "gstin": "GSTIN must be 15 letters or digits",
         "route": "Pick a Route"
       },
@@ -1574,7 +1573,7 @@
         "clearSelected": "Clear selected customer",
         "noMatch": "No customer matches \"{term}\"",
         "orEnterNew": "Or enter new customer details",
-        "shopPhoto": "Shop photo *",
+        "shopPhoto": "Shop photo (optional)",
         "uploadPhoto": "Upload shop photo",
         "shopName": "Shop name",
         "shopNamePlaceholder": "Enter shop name",

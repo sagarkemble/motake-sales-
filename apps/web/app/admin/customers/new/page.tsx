@@ -26,7 +26,7 @@ export default function NewCustomerPage() {
         phone: values.phone,
         address: values.address,
         notes: values.notes || undefined,
-        shopPhotoKey: values.shopPhotoKey,
+        shopPhotoKey: values.shopPhotoKey || undefined,
         routeId: values.routeId,
         preferredLanguage: values.preferredLanguage,
         gstin: normalizeGstin(values.gstin) || null,

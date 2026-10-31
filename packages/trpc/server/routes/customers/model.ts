@@ -48,7 +48,7 @@ export const createCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20),
   address: z.string().min(1),
   notes: z.string().optional(),
-  shopPhotoKey: z.string().min(1),
+  shopPhotoKey: z.string().min(1).optional(),
   preferredLanguage: preferredLanguageSchema.optional(),
   // Admin only, and required for Admin. A salesman's Customer goes on their Active GatePass Route.
   routeId: z.string().uuid().optional(),
