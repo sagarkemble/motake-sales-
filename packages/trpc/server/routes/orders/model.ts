@@ -186,6 +186,18 @@ export const placePreOrderInputSchema = z.object({
   notes: z.string().trim().max(1000).optional(),
 });
 
+// Admin New order: an advance taken when the office places a Pre-order, posted as an office
+// Payment (all kept, nothing returned).
+export const officeAdvanceInputSchema = z.object({
+  mode: paymentModeSchema,
+  keptPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
+  reference: z.string().trim().max(128).optional(),
+});
+
+export const placeOfficePreOrderInputSchema = placePreOrderInputSchema.extend({
+  advance: officeAdvanceInputSchema.optional(),
+});
+
 export const fulfilPreOrderInputSchema = orderIdInputSchema.extend({
   idempotencyKey: idempotencyKeySchema,
   payment: checkoutPaymentInputSchema,
@@ -221,6 +233,13 @@ export const preOrderResultSchema = z.object({
   scheduledDate: z.string(),
   indicativeTotalPaise: z.number().int(),
   balancePaise: z.number().int(),
+});
+
+export const officePreOrderResultSchema = preOrderResultSchema.extend({
+  // The advance Payment, when one was taken; balancePaise is then the Balance after it.
+  advance: z
+    .object({ paymentId: z.string(), number: z.string(), keptPaise: z.number().int() })
+    .nullable(),
 });
 
 export const balanceSchema = z.object({

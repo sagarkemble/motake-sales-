@@ -1,4 +1,4 @@
-import { adminBillService, orderService } from "../../services";
+import { adminBillService, orderService, paymentService } from "../../services";
 import { z, zodUndefinedModel } from "../../schema";
 import {
   adminOrSalesmanProcedure,
@@ -18,9 +18,11 @@ import {
   orderDetailSchema,
   orderIdInputSchema,
   orderSchema,
+  officePreOrderResultSchema,
   orderWithItemsSchema,
   paginatedOrdersSchema,
   placeBookNowInputSchema,
+  placeOfficePreOrderInputSchema,
   placePreOrderInputSchema,
   preOrderResultSchema,
   quoteInputSchema,
@@ -66,6 +68,54 @@ export const ordersRouter = router({
     .mutation(async ({ ctx, input }) =>
       apiResponse(await orderService.placePreOrder(ctx.user.id, input)),
     ),
+
+  placeOfficeBookNow: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/office/book-now"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "Place an office Book Now",
+        description:
+          "Admin New order: bill a Customer at once on the Route they are on now, with no GatePass and no stock. Same pricing, tax, Bill (MB), Ledger debit and optional checkout Payment (MP) as a salesman Book Now. Placed by shows the office. A retry with the same idempotency key returns the first result.",
+      },
+    })
+    .input(placeBookNowInputSchema)
+    .output(apiResponseSchema(billedCheckoutResultSchema))
+    .mutation(async ({ ctx, input }) =>
+      apiResponse(await orderService.placeOfficeBookNow(ctx.user.id, input)),
+    ),
+
+  placeOfficePreOrder: adminProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: path("/office/pre-order"),
+        tags: ["Orders"],
+        protect: true,
+        summary: "Place an office Pre-order",
+        description:
+          "Admin New order: book a Customer on the Route they are on now for today or a later date, at today's Route price and tax classification, with no GatePass. An optional advance is posted as an office Payment (MP) under the key `{idempotencyKey}:pay`. A retry with the same key returns the first Pre-order and Payment.",
+      },
+    })
+    .input(placeOfficePreOrderInputSchema)
+    .output(apiResponseSchema(officePreOrderResultSchema))
+    .mutation(async ({ ctx, input: { advance, ...preOrderInput } }) => {
+      const placed = await orderService.placeOfficePreOrder(ctx.user.id, preOrderInput);
+      if (!advance) return apiResponse({ ...placed, advance: null });
+      const paid = await paymentService.addPayment(ctx.user.id, {
+        customerId: preOrderInput.customerId,
+        ...advance,
+        reason: `Advance for Pre-order on ${placed.scheduledDate}`,
+        idempotencyKey: `${preOrderInput.idempotencyKey}:pay`,
+      });
+      return apiResponse({
+        ...placed,
+        advance: { paymentId: paid.paymentId, number: paid.number, keptPaise: paid.keptPaise },
+        balancePaise: paid.balancePaise,
+      });
+    }),
 
   fulfilPreOrder: adminOrSalesmanProcedure
     .meta({
