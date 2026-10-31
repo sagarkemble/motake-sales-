@@ -136,6 +136,7 @@
       "gatepass_not_awaiting_verification": "This GatePass is no longer waiting for verification. Refresh the page.",
       "duplicate_variety_in_allotment": "Each variety can be added only once.",
       "salesman_has_gatepass": "This salesman already has a GatePass for {date}.",
+      "salesman_has_active_gatepass": "This salesman has an Active GatePass. Hand it over or close it, then delete.",
       "route_price_missing": "Set a price on Route {route} for: {varieties}.",
       "gatepass_not_active": "This GatePass is already closed. Refresh the page.",
       "returned_qty_out_of_range": "Returned quantity cannot be more than {max}.",
@@ -160,7 +161,8 @@
       "prefix_frozen": "This prefix cannot change because numbers have already been issued with it.",
       "prefix_taken": "This prefix is already used for another paper this year.",
       "deadline_too_early": "The deadline must be after {date}.",
-      "deadline_changed": "Someone else just changed this. Refresh and try again."
+      "deadline_changed": "Someone else just changed this. Refresh and try again.",
+      "account_deleted": "This account was removed. Sign in is no longer possible."
     }
   },
   "auth": {
@@ -180,7 +182,8 @@
       "error": {
         "wrongCredentials": "Wrong email or password. Try again."
       },
-      "brandTitle": "Motake"
+      "brandTitle": "Motake",
+      "accountRemoved": "This account was removed. Contact the admin if this is a mistake."
     },
     "otp": {
       "codeSent": "Code sent by SMS",

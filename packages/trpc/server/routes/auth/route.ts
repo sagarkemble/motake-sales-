@@ -80,13 +80,14 @@ export const authRouter = router({
       return apiResponse({ id: authenticatedUser.id, role: authenticatedUser.role });
     }),
 
-  logout: protectedProcedure
+  // Public: a removed account must still be able to clear its cookie.
+  logout: publicProcedure
     .meta({
       openapi: {
         method: "POST",
         path: path("/logout"),
         tags: ["Auth"],
-        protect: true,
+        protect: false,
         summary: "End the current session",
         description: "Clear the session cookie. The user must sign in again to make new requests.",
       },

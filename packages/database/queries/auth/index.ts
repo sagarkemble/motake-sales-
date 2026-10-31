@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import { profilesTable, type InsertProfile, type SelectProfile } from "../../schema";
@@ -59,4 +59,14 @@ export async function softDeleteProfile(
     .where(eq(profilesTable.id, profileId))
     .returning();
   return deactivatedProfile;
+}
+
+// Ends every Supabase Auth session of the user, so no refresh token works any more. A database
+// without Supabase's `auth` schema (local tests) has no sessions to end.
+export async function deleteAuthSessions(userId: string, executor: DbExecutor = db): Promise<void> {
+  const { rows } = await executor.execute<{ exists: boolean }>(
+    sql`select to_regclass('auth.sessions') is not null as exists`,
+  );
+  if (!rows[0]?.exists) return;
+  await executor.execute(sql`delete from auth.sessions where user_id = ${userId}::uuid`);
 }

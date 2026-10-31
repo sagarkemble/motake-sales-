@@ -300,6 +300,7 @@ export const customerMessageRefused = (
 // `details`, so a screen never shows server text.
 export type ScreenRefusalReason =
   | "account_deactivated"
+  | "account_deleted"
   | "variety_name_taken"
   | "gst_exempt_rate_not_zero"
   | "gst_rate_required"
@@ -318,6 +319,7 @@ export type ScreenRefusalReason =
   | "gatepass_not_awaiting_verification"
   | "duplicate_variety_in_allotment"
   | "salesman_has_gatepass"
+  | "salesman_has_active_gatepass"
   | "route_price_missing"
   | "gatepass_not_active"
   | "returned_qty_out_of_range"
@@ -352,6 +354,7 @@ export type ScreenRefusalReason =
 // Each reason keeps the HTTP code its error had before it carried a reason.
 const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   account_deactivated: "FORBIDDEN",
+  account_deleted: "UNAUTHORIZED",
   variety_name_taken: "CONFLICT",
   gst_exempt_rate_not_zero: "BAD_REQUEST",
   gst_rate_required: "BAD_REQUEST",
@@ -370,6 +373,7 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   gatepass_not_awaiting_verification: "CONFLICT",
   duplicate_variety_in_allotment: "BAD_REQUEST",
   salesman_has_gatepass: "CONFLICT",
+  salesman_has_active_gatepass: "CONFLICT",
   route_price_missing: "BAD_REQUEST",
   gatepass_not_active: "CONFLICT",
   returned_qty_out_of_range: "BAD_REQUEST",
