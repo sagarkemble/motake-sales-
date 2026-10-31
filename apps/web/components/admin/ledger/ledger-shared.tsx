@@ -98,6 +98,7 @@ export function ReasonField({
         placeholder={placeholder}
         className="rounded-xl bg-muted-soft"
       />
+      <p className="text-xs text-muted-foreground">{tx("admin.ledger.reason.hint")}</p>
     </div>
   );
 }

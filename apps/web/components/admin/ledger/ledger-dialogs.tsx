@@ -180,6 +180,7 @@ export function OpeningBalanceDialog({
                   onChange={(event) => setReason(event.target.value)}
                   className="rounded-xl bg-muted-soft"
                 />
+                <p className="text-xs text-muted-foreground">{tx("admin.ledger.reason.hint")}</p>
               </div>
               <p className="text-sm">
                 {tx("admin.ledger.opening.preview", {

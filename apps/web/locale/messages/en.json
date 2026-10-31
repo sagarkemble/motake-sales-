@@ -574,6 +574,7 @@
         "approveCta": "Approve & Close",
         "flagTitle": "Flag as discrepancy",
         "flagBody": "This closes the gate pass and marks it for follow-up with the salesman. Add a reason so it's clear what went wrong.",
+        "flagReasonLabel": "Reason (required)",
         "flagPlaceholder": "e.g. Returned count doesn't match the reported shortfall…",
         "flagging": "Flagging...",
         "flagConfirm": "Flag & Close"
@@ -1139,7 +1140,7 @@
         "amount": "Amount (₹)",
         "date": "As of",
         "dateHint": "Today or an earlier date.",
-        "reason": "Reason",
+        "reason": "Reason (required)",
         "reasonPlaceholder": "For example, balance from the old register",
         "preview": "{side} {amount} on {date}",
         "submit": "Add opening balance",
@@ -1156,7 +1157,8 @@
         "loadError": "Could not load this Customer's Bills"
       },
       "reason": {
-        "label": "Reason"
+        "label": "Reason (required)",
+        "hint": "Kept on the Ledger and in the history, so anyone can see why this was done."
       },
       "notSaved": "Not saved",
       "close": "Close",
@@ -1345,7 +1347,7 @@
         "reference": "Reference",
         "optional": "(optional)",
         "referencePlaceholder": "Bank or UPI transaction id",
-        "reasonLabel": "Reason (on the Ledger row and the history)",
+        "reasonLabel": "Reason (required, kept on the Ledger row and the history)",
         "amountDecimals": "At most two decimals (paise).",
         "amountAboveZero": "Must be above ₹0.",
         "nowBalance": "{shopName} · now {balance}",

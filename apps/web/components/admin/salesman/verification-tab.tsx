@@ -17,6 +17,7 @@ import { getErrorMessage } from "~/lib/get-error-message";
 import { sumGatepassQuantities } from "~/lib/gatepass-quantities";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useGatepasses } from "~/hooks/use-gatepasses";
@@ -161,7 +162,11 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
             <AlertDialogTitle>{tx("admin.salesmen.verify.flagTitle")}</AlertDialogTitle>
             <AlertDialogDescription>{tx("admin.salesmen.verify.flagBody")}</AlertDialogDescription>
           </AlertDialogHeader>
+          <Label htmlFor="flag-gatepass-reason">
+            {tx("admin.salesmen.verify.flagReasonLabel")}
+          </Label>
           <Textarea
+            id="flag-gatepass-reason"
             rows={3}
             value={flagReason}
             onChange={(event) => setFlagReason(event.target.value)}
