@@ -10,7 +10,7 @@ const notificationKindSchema = z.enum([
 ]);
 const notificationStatusSchema = z.enum(["pending", "delivered", "read", "failed", "skipped"]);
 const notificationProviderSchema = z.enum(["whatsapp", "sms"]);
-const messageLanguageSchema = z.enum(["mr", "hi", "en"]);
+const messageLanguageSchema = z.enum(["mr", "en"]);
 const failureCategorySchema = z.enum([
   "invalid_recipient",
   "window_closed",

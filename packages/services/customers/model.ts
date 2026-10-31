@@ -3,7 +3,7 @@ import { z } from "zod";
 export const allowedShopPhotoContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 export const maxShopPhotoContentLengthBytes = 5 * 1024 * 1024;
 
-export const preferredLanguageSchema = z.enum(["mr", "hi", "en"]);
+export const preferredLanguageSchema = z.enum(["mr", "en"]);
 
 // Trimmed and upper-cased; empty means no GSTIN. Otherwise exactly 15 letters or digits.
 export const gstinSchema = z

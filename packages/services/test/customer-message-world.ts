@@ -168,7 +168,7 @@ export class RecordingNotificationGateway implements NotificationMessageGateway 
   public async resolveTemplate(input: {
     provider: "whatsapp" | "sms";
     templateId: string;
-    language: "mr" | "hi" | "en";
+    language: "mr" | "en";
   }) {
     return {
       id: randomUUID(),

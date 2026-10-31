@@ -145,19 +145,19 @@ describe("Book Now", () => {
     expect(harness.gateway.instructions.map((instruction) => instruction.kind)).toEqual(["bill"]);
   });
 
-  it("a Hindi or English Customer gets that language, labels and month; digits stay Latin", async () => {
+  it("a Marathi or English Customer gets that language, labels and month; digits stay Latin", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    await setCustomer(world, { preferredLanguage: "hi" });
+    await setCustomer(world, { preferredLanguage: "mr" });
     await bookNow(world, 5_000);
 
     const [bill, receipt] = harness.gateway.instructions;
     expect(bill).toMatchObject({
-      language: "hi",
-      values: { bill_date: "25 अक्टूबर 2026", balance_line: "बिल के बाद बकाया राशि: ₹119.00" },
+      language: "mr",
+      values: { bill_date: "25 ऑक्टोबर 2026", balance_line: "बिलानंतरची बाकी रक्कम: ₹119.00" },
     });
     expect(receipt).toMatchObject({
-      language: "hi",
-      values: { payment_mode: "नकद", balance_line: "बकाया राशि: ₹69.00" },
+      language: "mr",
+      values: { payment_mode: "रोख", balance_line: "बाकी रक्कम: ₹69.00" },
     });
 
     await setCustomer(world, { preferredLanguage: "en" });

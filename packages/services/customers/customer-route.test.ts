@@ -141,26 +141,24 @@ describe("CustomerService Admin add", () => {
     }
   });
 
-  it("accepts Hindi and English as Preferred language and refuses anything else", async () => {
+  it("accepts English as Preferred language and refuses anything else, Hindi included", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
 
-    const hindi = await customerService.createCustomerAsAdmin(
-      { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "hi" },
-      admin.id,
-    );
     const english = await customerService.createCustomerAsAdmin(
       { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "en" },
       admin.id,
     );
 
-    expect([hindi.preferredLanguage, english.preferredLanguage]).toEqual(["hi", "en"]);
-    await expect(
-      customerService.createCustomerAsAdmin(
-        { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "fr" as never },
-        admin.id,
-      ),
-    ).rejects.toThrow();
+    expect(english.preferredLanguage).toBe("en");
+    for (const language of ["hi", "fr"]) {
+      await expect(
+        customerService.createCustomerAsAdmin(
+          { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: language as never },
+          admin.id,
+        ),
+      ).rejects.toThrow();
+    }
   });
 });
 
@@ -169,14 +167,14 @@ describe("CustomerService Admin edit", () => {
     const admin = await buildProfile();
     const route = await buildRoute();
     const otherRoute = await buildRoute();
-    const customer = await buildCustomer(admin.id, { routeId: route.id, preferredLanguage: "hi" });
+    const customer = await buildCustomer(admin.id, { routeId: route.id, preferredLanguage: "en" });
 
     const updated = await customerService.updateCustomer(
       customer.id,
       {
         gstin: "27abcde1234f1z5",
         einvoicingRequired: true,
-        preferredLanguage: "en",
+        preferredLanguage: "mr",
         routeId: otherRoute.id,
       } as never,
       admin.id,
@@ -185,7 +183,7 @@ describe("CustomerService Admin edit", () => {
     expect(updated).toMatchObject({
       gstin: "27ABCDE1234F1Z5",
       einvoicingRequired: false,
-      preferredLanguage: "hi",
+      preferredLanguage: "en",
       routeId: route.id,
     });
     const [row] = await listAuditLogsForEntity("customer", customer.id);
@@ -249,8 +247,8 @@ describe("CustomerService salesman", () => {
       shopDetails(salesman.id),
       salesman.id,
     );
-    const hindi = await customerService.createCustomerAsSalesman(
-      shopDetails(salesman.id, { preferredLanguage: "hi" }),
+    const english = await customerService.createCustomerAsSalesman(
+      shopDetails(salesman.id, { preferredLanguage: "en" }),
       salesman.id,
     );
 
@@ -261,7 +259,7 @@ describe("CustomerService salesman", () => {
       einvoicingRequired: false,
       preferredLanguage: "mr",
     });
-    expect(hindi.preferredLanguage).toBe("hi");
+    expect(english.preferredLanguage).toBe("en");
   });
 
   it("refuses add and list with no Active GatePass, including after handover", async () => {

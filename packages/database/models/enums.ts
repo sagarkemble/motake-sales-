@@ -83,7 +83,7 @@ export const notificationStatusEnum = pgEnum("notification_status", [
 
 export const notificationProviderEnum = pgEnum("notification_provider", ["whatsapp", "sms"]);
 
-export const messageLanguageEnum = pgEnum("message_language", ["mr", "hi", "en"]);
+export const messageLanguageEnum = pgEnum("message_language", ["mr", "en"]);
 
 export const templateDocumentTypeEnum = pgEnum("template_document_type", ["none", "image", "pdf"]);
 

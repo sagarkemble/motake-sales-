@@ -103,10 +103,10 @@ describe("sendAttempt", () => {
   it("sends body params in template order, the language code, and no header for a plain template", async () => {
     await buildNotificationTemplate({
       templateId: "motake_bill",
-      language: "hi",
+      language: "en",
       templateVariables: ["shop_name", "bill_number"],
     });
-    const { notificationId } = await harness.service.enqueue(instruction({ language: "hi" }));
+    const { notificationId } = await harness.service.enqueue(instruction({ language: "en" }));
 
     await harness.service.sendAttempt(notificationId, firstTry);
 
@@ -114,7 +114,7 @@ describe("sendAttempt", () => {
       {
         to: "+919800000001",
         templateName: "motake_bill",
-        language: "hi",
+        language: "en",
         bodyParams: ["Shree Dairy", "MB-26-27-000123"],
         header: null,
       },

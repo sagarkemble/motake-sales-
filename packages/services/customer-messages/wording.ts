@@ -50,20 +50,6 @@ const MONTH_NAMES: Record<MessageLanguage, readonly string[]> = {
     "नोव्हेंबर",
     "डिसेंबर",
   ],
-  hi: [
-    "जनवरी",
-    "फ़रवरी",
-    "मार्च",
-    "अप्रैल",
-    "मई",
-    "जून",
-    "जुलाई",
-    "अगस्त",
-    "सितंबर",
-    "अक्टूबर",
-    "नवंबर",
-    "दिसंबर",
-  ],
 };
 
 // A YYYY-MM-DD business date as `28 October 2026`, the month in the Customer's language.
@@ -85,22 +71,18 @@ const BALANCE_LABELS: Record<
   bill: {
     en: ["Pending Balance", "Advance Balance"],
     mr: ["बिलानंतरची बाकी रक्कम", "बिलानंतरची शिल्लक आगाऊ रक्कम"],
-    hi: ["बिल के बाद बकाया राशि", "बिल के बाद शेष अग्रिम राशि"],
   },
   receipt: {
     en: ["Pending Balance", "Advance Balance"],
     mr: ["बाकी रक्कम", "शिल्लक आगाऊ रक्कम"],
-    hi: ["बकाया राशि", "शेष अग्रिम राशि"],
   },
   now: {
     en: ["Pending Balance", "Advance Balance"],
     mr: ["आता बाकी रक्कम", "आता शिल्लक आगाऊ रक्कम"],
-    hi: ["अब बकाया राशि", "अब शेष अग्रिम राशि"],
   },
   remaining: {
     en: ["Pending Balance", "Remaining Advance"],
     mr: ["बाकी रक्कम", "शिल्लक आगाऊ रक्कम"],
-    hi: ["बकाया राशि", "शेष अग्रिम राशि"],
   },
 };
 
@@ -117,7 +99,6 @@ export function balanceLine(
 const MODE_WORDS: Record<MessageLanguage, Record<PaymentMode, string>> = {
   en: { cash: "Cash", upi: "UPI", bank: "Bank" },
   mr: { cash: "रोख", upi: "UPI", bank: "बँक" },
-  hi: { cash: "नकद", upi: "UPI", bank: "बैंक" },
 };
 
 export function modeWord(mode: PaymentMode, language: MessageLanguage): string {
@@ -133,15 +114,12 @@ export function balanceAdjustment(differencePaise: number, language: MessageLang
       return reduced ? `Reduced by ${amount}` : `Increased by ${amount}`;
     case "mr":
       return reduced ? `${amount} ने घट` : `${amount} ने वाढ`;
-    case "hi":
-      return reduced ? `${amount} की कमी` : `${amount} की बढ़ोतरी`;
   }
 }
 
 const NOTE_STATUS_WORDS: Record<MessageLanguage, { credit: string; debit: string }> = {
   en: { credit: "Credit Note Issued", debit: "Debit Note Issued" },
   mr: { credit: "क्रेडिट नोट दिली", debit: "डेबिट नोट दिली" },
-  hi: { credit: "क्रेडिट नोट जारी", debit: "डेबिट नोट जारी" },
 };
 
 // GST and Commercial Credit Notes are both Credit Notes to the Customer.

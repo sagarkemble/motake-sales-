@@ -18,7 +18,7 @@ import type {
   SuppressResult,
 } from "../notification/model";
 
-export type MessageLanguage = "mr" | "hi" | "en";
+export type MessageLanguage = "mr" | "en";
 
 // --- Templates (v2): code constants that must match the hand-entered notification_templates rows
 // (db-decisions/0014). Values are sent by these names, in this order.

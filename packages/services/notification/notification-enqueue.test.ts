@@ -380,7 +380,7 @@ describe("template reads", () => {
       harness.service.resolveTemplate({
         provider: "whatsapp",
         templateId: "motake_bill",
-        language: "hi",
+        language: "en",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(await db.select().from(notificationTemplatesTable)).toHaveLength(2);

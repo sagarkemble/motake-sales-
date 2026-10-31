@@ -1,6 +1,6 @@
 import { z } from "../../schema";
 
-export const preferredLanguageSchema = z.enum(["mr", "hi", "en"]);
+export const preferredLanguageSchema = z.enum(["mr", "en"]);
 
 // Empty = no GSTIN; otherwise 15 letters or digits (checked again by the service).
 const gstinInputSchema = z.string().max(20).nullable();

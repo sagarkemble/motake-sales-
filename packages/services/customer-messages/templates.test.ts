@@ -27,14 +27,14 @@ describe("notification-templates-v2.sql", () => {
     );
 
     const expected = Object.values(customerMessageTemplates).flatMap((template) =>
-      (["en", "mr", "hi"] as const).map((language) => ({
+      (["en", "mr"] as const).map((language) => ({
         templateId: template.templateId,
         language,
         values: [...template.values],
         documentType: template.pdf ? "pdf" : "none",
       })),
     );
-    expect(rows).toHaveLength(27);
+    expect(rows).toHaveLength(18);
     expect(rows).toEqual(expected);
   });
 });

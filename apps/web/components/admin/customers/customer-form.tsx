@@ -90,7 +90,7 @@ export function CustomerForm({
           shopPhotoKey: z.string(),
           shopPhotoUrl: z.string(),
           routeId: z.string(),
-          preferredLanguage: z.enum(["mr", "hi", "en"]),
+          preferredLanguage: z.enum(["mr", "en"]),
           gstin: z
             .string()
             .refine(

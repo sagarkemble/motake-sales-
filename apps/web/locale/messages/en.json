@@ -100,7 +100,6 @@
     "preferredLanguage": {
       "label": "Preferred language",
       "mr": "Marathi",
-      "hi": "Hindi",
       "en": "English",
       "fixedHint": "Messages to this Customer go in this language. It cannot be changed later."
     },
