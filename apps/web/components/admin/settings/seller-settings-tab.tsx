@@ -290,7 +290,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             <FormItem>
               <FormLabel>{tx("admin.settings.fields.legalName")}</FormLabel>
               <FormControl>
-                <Input {...field} className="rounded-xl bg-muted/40" />
+                <Input {...field} className="rounded-xl bg-muted-soft" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -304,7 +304,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             <FormItem>
               <FormLabel>{tx("admin.settings.fields.address")}</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={2} className="min-h-16 rounded-xl bg-muted/40" />
+                <Textarea {...field} rows={2} className="min-h-16 rounded-xl bg-muted-soft" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -320,7 +320,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                 <FormLabel>{tx("admin.settings.fields.state")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger className="w-full rounded-xl bg-muted/40">
+                    <SelectTrigger className="w-full rounded-xl bg-muted-soft">
                       <SelectValue placeholder={tx("admin.settings.seller.statePlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
@@ -348,7 +348,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                     {...field}
                     maxLength={15}
                     autoCapitalize="characters"
-                    className="rounded-xl bg-muted/40 font-mono uppercase"
+                    className="rounded-xl bg-muted-soft font-mono uppercase"
                     onChange={(event) => field.onChange(event.target.value.toUpperCase())}
                   />
                 </FormControl>
@@ -370,7 +370,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
                     {...field}
                     inputMode="tel"
                     maxLength={20}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -385,7 +385,7 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
               <FormItem>
                 <FormLabel>{tx("admin.settings.seller.emailOptional")}</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" className="rounded-xl bg-muted/40" />
+                  <Input {...field} type="email" className="rounded-xl bg-muted-soft" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

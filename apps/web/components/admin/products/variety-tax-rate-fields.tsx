@@ -47,7 +47,7 @@ export function VarietyTaxRateFields() {
                 inputMode="numeric"
                 maxLength={8}
                 placeholder="0401"
-                className="rounded-xl bg-muted/40"
+                className="rounded-xl bg-muted-soft"
                 {...field}
                 onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
               />
@@ -93,7 +93,7 @@ export function VarietyTaxRateFields() {
                 inputMode="decimal"
                 placeholder="5"
                 disabled={exempt}
-                className="rounded-xl bg-muted/40"
+                className="rounded-xl bg-muted-soft"
                 {...field}
                 value={exempt ? "0" : field.value}
                 onBlur={() => {

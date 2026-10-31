@@ -249,7 +249,9 @@ export function VarietyFormDialog({
               <div className="flex flex-col gap-4 px-1 pb-1">
                 <div className="flex flex-col gap-2">
                   <Label>{tx("admin.varieties.product")}</Label>
-                  <p className="rounded-xl border bg-muted/20 px-3 py-2 text-sm">{productName}</p>
+                  <p className="rounded-xl border bg-muted-faint px-3 py-2 text-sm">
+                    {productName}
+                  </p>
                 </div>
 
                 <FormField
@@ -261,7 +263,7 @@ export function VarietyFormDialog({
                       <FormControl>
                         <Input
                           placeholder={tx("admin.varieties.namePlaceholder")}
-                          className="rounded-xl bg-muted/40"
+                          className="rounded-xl bg-muted-soft"
                           {...field}
                         />
                       </FormControl>
@@ -285,7 +287,7 @@ export function VarietyFormDialog({
                             <Input
                               inputMode="decimal"
                               placeholder={tx("admin.varieties.sizePlaceholder")}
-                              className="rounded-xl bg-muted/40"
+                              className="rounded-xl bg-muted-soft"
                               {...field}
                             />
                           </FormControl>
@@ -308,7 +310,7 @@ export function VarietyFormDialog({
                             }}
                           >
                             <FormControl>
-                              <SelectTrigger className="w-full rounded-xl bg-muted/40">
+                              <SelectTrigger className="w-full rounded-xl bg-muted-soft">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -331,7 +333,7 @@ export function VarietyFormDialog({
                     />
                   </div>
                   {shownName && (
-                    <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    <p className="rounded-xl bg-muted-soft px-3 py-2 text-xs text-muted-foreground">
                       {tx("admin.varieties.showsAs", { name: shownName })}
                     </p>
                   )}
@@ -339,7 +341,7 @@ export function VarietyFormDialog({
 
                 {editing && <LockedSku sku={editing.sku} />}
 
-                <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3">
+                <div className="flex flex-col gap-3 rounded-xl border bg-muted-faint p-3">
                   <div>
                     <p className="text-sm font-medium">
                       {tx(

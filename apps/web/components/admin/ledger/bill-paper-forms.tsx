@@ -59,14 +59,13 @@ export type CorrectState = ReturnType<typeof useCorrectState>;
 
 /** The server's word on the edit, for the paper's live totals. */
 export function useCorrectPreview(paper: BillPaper, state: CorrectState) {
-  const previewInput =
-    state.hasChanges
-      ? {
-          billId: paper.bill.id,
-          expectedVersionNumber: paper.bill.latestVersionNumber,
-          lines: state.changedLines,
-        }
-      : null;
+  const previewInput = state.hasChanges
+    ? {
+        billId: paper.bill.id,
+        expectedVersionNumber: paper.bill.latestVersionNumber,
+        lines: state.changedLines,
+      }
+    : null;
   const debouncedInput = useDebouncedPreviewInput(previewInput);
   return useLedgerPreviews({ correct: debouncedInput });
 }
@@ -107,10 +106,7 @@ export function CorrectPanel({
   const { correctBillAsync, isCorrectingBill } = correct;
   const { correctPreview, correctPreviewError, isCorrectPreviewFetching } = preview;
   const canSave =
-    state.hasChanges &&
-    reason.trim() !== "" &&
-    correctPreviewError == null &&
-    !isCorrectingBill;
+    state.hasChanges && reason.trim() !== "" && correctPreviewError == null && !isCorrectingBill;
 
   async function handleSave() {
     if (!canSave) return;
@@ -131,7 +127,7 @@ export function CorrectPanel({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-2 rounded-xl border bg-muted/40 p-3 text-sm">
+      <div className="space-y-2 rounded-xl border bg-muted-soft p-3 text-sm">
         {!state.hasChanges ? (
           <p className="text-muted-foreground">{tx("admin.ledger.paper.preview.nothingYet")}</p>
         ) : correctPreviewError ? (
@@ -253,7 +249,7 @@ export function CancelForm({ paper, onDone }: { paper: BillPaper; onDone: () => 
 
   return (
     <div className="space-y-4 text-sm">
-      <div className="space-y-1 rounded-xl border bg-muted/40 p-3">
+      <div className="space-y-1 rounded-xl border bg-muted-soft p-3">
         <p>{tx("admin.ledger.paper.cancel.body")}</p>
         {paper.balance && (
           <p className="text-muted-foreground">
@@ -380,7 +376,7 @@ export function RaiseNoteForm({
         {NOTE_KINDS.map((value) => (
           <Label
             key={value}
-            className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent/50"
+            className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent"
           >
             <RadioGroupItem value={value} className="mt-0.5" disabled={isRaisingNote} />
             <span>{tx(`admin.ledger.rowTypes.${value}`)}</span>

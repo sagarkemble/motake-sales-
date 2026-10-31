@@ -67,10 +67,7 @@ export function GatepassDayList({
             (gatepass) => gatepass.salesmanId === salesman.id,
           );
           return (
-            <div
-              key={salesman.id}
-              className="flex flex-col gap-2 rounded-2xl border bg-card/60 p-3"
-            >
+            <div key={salesman.id} className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
               <p className="text-sm font-semibold">
                 <SalesmanNameLink salesmanId={salesman.id}>{salesman.name}</SalesmanNameLink>
               </p>
@@ -86,7 +83,7 @@ export function GatepassDayList({
                       key={gatepass.id}
                       type="button"
                       onClick={() => setOpenGatepassId(gatepass.id)}
-                      className="flex w-full flex-col gap-1.5 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent/50"
+                      className="flex w-full flex-col gap-1.5 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
                     >
                       <div className="flex w-full items-start justify-between gap-2">
                         <p className="text-xs text-muted-foreground">

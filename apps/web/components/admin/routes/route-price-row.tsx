@@ -138,9 +138,31 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
   return (
     <div className="flex items-start gap-3 border-b py-3 last:border-b-0">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="text-sm font-medium">{variety.varietyName}</p>
-          {!variety.varietyActive && <StatusBadge status="inactive" />}
+        {/* Sellable sits on the name's line; it wraps under the name on a narrow phone. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="text-sm font-medium">{variety.varietyName}</p>
+            {!variety.varietyActive && <StatusBadge status="inactive" />}
+          </div>
+          <div
+            className="flex items-center gap-2"
+            onPointerDown={() => {
+              if (!isSaving) isPressingSwitchRef.current = true;
+            }}
+          >
+            <Switch
+              id={switchId}
+              checked={isSellable}
+              disabled={isSaving}
+              className="data-[state=checked]:bg-brand"
+              onCheckedChange={handleSellableChange}
+            />
+            <Label htmlFor={switchId} className="text-xs font-medium">
+              {isSellable
+                ? tx("admin.routes.prices.sellable")
+                : tx("admin.routes.prices.unsellable")}
+            </Label>
+          </div>
         </div>
         <p className="font-mono text-[11px] text-muted-foreground">{variety.sku}</p>
         {!variety.pricedOnAnyRoute && (
@@ -148,23 +170,6 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
             {tx("admin.routes.prices.unsellableUntilPriced")}
           </p>
         )}
-        <div
-          className="mt-2 flex items-center gap-2"
-          onPointerDown={() => {
-            if (!isSaving) isPressingSwitchRef.current = true;
-          }}
-        >
-          <Switch
-            id={switchId}
-            checked={isSellable}
-            disabled={isSaving}
-            className="data-[state=checked]:bg-brand"
-            onCheckedChange={handleSellableChange}
-          />
-          <Label htmlFor={switchId} className="text-xs font-medium">
-            {isSellable ? tx("admin.routes.prices.sellable") : tx("admin.routes.prices.unsellable")}
-          </Label>
-        </div>
       </div>
       <div className="relative w-32 shrink-0 sm:w-40">
         {isEdited && (
@@ -223,7 +228,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
               if (event.key === "Enter" && isEdited) handleSaveClick();
               if (event.key === "Escape" && isEdited) handleCancelClick();
             }}
-            className="rounded-xl bg-muted/40 pl-7 text-right"
+            className="rounded-xl bg-muted-soft pl-7 text-right"
           />
         </div>
         {errorMessage ? (

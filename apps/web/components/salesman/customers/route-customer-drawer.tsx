@@ -140,7 +140,7 @@ export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawer
                           size="lg"
                           shape="rounded"
                         />
-                        <div className="rounded-2xl bg-muted/40 px-4 py-3 text-center">
+                        <div className="rounded-2xl bg-muted-soft px-4 py-3 text-center">
                           <p className="text-xs text-muted-foreground">
                             {tx("salesman.customers.balance")}
                           </p>

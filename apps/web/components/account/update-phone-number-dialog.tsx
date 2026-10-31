@@ -192,7 +192,7 @@ export function UpdatePhoneNumberDialog({ open, onOpenChange }: UpdatePhoneNumbe
           <form onSubmit={handleSendPasscode} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone-update-contact">{tx("account.phone.newLabel")}</Label>
-              <div className="flex h-10 items-center rounded-xl border border-input bg-muted/40 pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
+              <div className="flex h-10 items-center rounded-xl border border-input bg-muted-soft pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
                 <span className="text-sm text-muted-foreground">+91</span>
                 <Input
                   id="phone-update-contact"

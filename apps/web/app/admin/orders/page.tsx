@@ -15,18 +15,19 @@ export default function AdminOrdersPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4">
       <Tabs defaultValue="orders">
-        <div className="flex items-center gap-2">
-          <TabsList className="min-w-0 flex-1 sm:flex-none">
-            <TabsTrigger value="orders" className="flex-1 sm:flex-none">
+        {/* Two equal halves: full width beside New order on a phone, a fixed width from sm up. */}
+        <div className="flex items-center gap-3">
+          <TabsList className="grid h-10 min-w-0 flex-1 grid-cols-2 rounded-full sm:w-72 sm:flex-none">
+            <TabsTrigger value="orders" className="rounded-full">
               {tx("admin.orders.tab.orders")}
             </TabsTrigger>
-            <TabsTrigger value="bills" className="flex-1 sm:flex-none">
+            <TabsTrigger value="bills" className="rounded-full">
               {tx("admin.orders.tab.bills")}
             </TabsTrigger>
           </TabsList>
           <Button
             asChild
-            className="ml-auto shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+            className="ml-auto h-10 shrink-0 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           >
             <Link href="/admin/orders/new">
               <PlusIcon className="size-4" />

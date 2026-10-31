@@ -290,7 +290,7 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
                       maxLength={MAX_LENGTH.pan}
                       autoCapitalize="characters"
                       placeholder={panOfGstin ?? "ABCDE1234F"}
-                      className="rounded-xl bg-muted/40 font-mono uppercase"
+                      className="rounded-xl bg-muted-soft font-mono uppercase"
                       onChange={(event) => field.onChange(event.target.value.toUpperCase())}
                     />
                   </FormControl>
@@ -330,7 +330,7 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
                       {...field}
                       maxLength={MAX_LENGTH.place}
                       placeholder={tx("admin.settings.documents.placePlaceholder")}
-                      className="rounded-xl bg-muted/40"
+                      className="rounded-xl bg-muted-soft"
                     />
                   </FormControl>
                   <FormDescription className="text-xs">
@@ -354,7 +354,7 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
                     rows={5}
                     maxLength={MAX_LENGTH.terms}
                     placeholder={tx("admin.settings.documents.termsPlaceholder")}
-                    className="min-h-28 rounded-xl bg-muted/40"
+                    className="min-h-28 rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormDescription className="text-xs">
@@ -476,7 +476,7 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
                 inputMode={options.numeric ? "numeric" : undefined}
                 autoCapitalize={name === "bankIfsc" ? "characters" : undefined}
                 placeholder={options.placeholder}
-                className={cn("rounded-xl bg-muted/40", options.mono && "font-mono uppercase")}
+                className={cn("rounded-xl bg-muted-soft", options.mono && "font-mono uppercase")}
                 onChange={(event) =>
                   field.onChange(
                     name === "bankIfsc" ? event.target.value.toUpperCase() : event.target.value,

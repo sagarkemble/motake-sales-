@@ -22,7 +22,8 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
   const tx = useTranslate();
   const { createRouteAsync, isCreatingRoute } = useRoutes();
   const [name, setName] = useState("");
-  const [deliveryState, setDeliveryState] = useState<IndianStateName | "">("");
+  // Most Routes deliver inside Maharashtra, where the seller is.
+  const [deliveryState, setDeliveryState] = useState<IndianStateName | "">("Maharashtra");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -63,7 +64,7 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
             setName(event.target.value);
             setErrorMessage(null);
           }}
-          className="rounded-xl bg-muted/40"
+          className="rounded-xl bg-muted-soft"
         />
       </div>
       <div className="flex flex-col gap-1.5">

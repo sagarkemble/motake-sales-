@@ -74,7 +74,7 @@ export function AddUnitDialog({ open, onOpenChange, onAdded }: AddUnitDialogProp
               placeholder={tx("admin.settings.units.codePlaceholder")}
               aria-invalid={!isOneWord}
               onChange={(event) => setCode(event.target.value)}
-              className="rounded-xl bg-muted/40"
+              className="rounded-xl bg-muted-soft"
             />
             {!isOneWord && (
               <p className="text-xs text-destructive">{tx("admin.settings.units.oneWord")}</p>

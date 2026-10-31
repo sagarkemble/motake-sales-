@@ -39,7 +39,7 @@ export function CitiesTab() {
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={tx("common.cities.search")}
             aria-label={tx("common.cities.search")}
-            className="rounded-xl bg-muted/40 pl-9"
+            className="rounded-xl bg-muted-soft pl-9"
           />
         </div>
         <Button

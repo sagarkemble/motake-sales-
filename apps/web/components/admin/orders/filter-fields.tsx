@@ -50,7 +50,7 @@ export function CustomerFilterSelect({ value, onValueChange }: FilterSelectProps
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full rounded-full bg-muted/40">
+      <SelectTrigger className="w-full rounded-full bg-muted-soft">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -73,7 +73,7 @@ export function SalesmanFilterSelect({ value, onValueChange }: FilterSelectProps
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full rounded-full bg-muted/40">
+      <SelectTrigger className="w-full rounded-full bg-muted-soft">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

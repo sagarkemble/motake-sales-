@@ -88,7 +88,7 @@ function SalesmanOrdersContent() {
           {isBookNowLoading || (isReloading && isBookNowFetching) ? (
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
               <ClipboardListIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">{tx("salesman.orders.empty.orders")}</p>
             </div>
@@ -143,7 +143,7 @@ function SalesmanOrdersContent() {
           {isMyPreordersLoading || (isReloading && isMyPreordersFetching) ? (
             <ListItemSkeleton count={5} />
           ) : visiblePreorderRows.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
               <CalendarCheckIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">
                 {preorderStatusFilter === "pending"

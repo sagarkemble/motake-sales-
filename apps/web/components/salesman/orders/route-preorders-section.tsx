@@ -76,7 +76,7 @@ export function RoutePreordersSection() {
         className={cn(
           "flex items-center gap-3 rounded-2xl border bg-card p-3",
           isOverdue && "border-destructive/40",
-          isUpcoming && "bg-muted/30",
+          isUpcoming && "bg-muted-faint",
         )}
       >
         <div className="min-w-0 flex-1">
@@ -212,7 +212,7 @@ export function RoutePreordersSection() {
 
 function EmptyRoutePreorders({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
       <CalendarCheckIcon className="size-6 text-muted-foreground" />
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>

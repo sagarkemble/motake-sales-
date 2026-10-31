@@ -117,7 +117,10 @@ export function LedgerTable({
                   key={row.id}
                   data-row-id={row.id}
                   tabIndex={opens ? 0 : undefined}
-                  className={cn(opens && "cursor-pointer", row.id === highlightedId && HIGHLIGHT)}
+                  className={cn(
+                    opens && "cursor-pointer hover:bg-accent",
+                    row.id === highlightedId && HIGHLIGHT,
+                  )}
                   onClick={() => open(row)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -166,7 +169,7 @@ export function LedgerTable({
             <button
               type="button"
               disabled={openHref(row, customerId) === null}
-              className="flex w-full items-start justify-between gap-3 p-3 text-left transition-colors hover:bg-accent/50 disabled:cursor-default disabled:hover:bg-transparent"
+              className="flex w-full items-start justify-between gap-3 p-3 text-left transition-colors hover:bg-accent disabled:cursor-default disabled:hover:bg-transparent"
               onClick={() => open(row)}
             >
               <span className="min-w-0">

@@ -94,7 +94,7 @@ export function CustomerDetailsStep({
           />
         </>
       ) : selectedCustomer ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand bg-accent/50 p-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-brand bg-accent p-3">
           <ShopPhotoThumbnail
             shopPhotoUrl={selectedCustomer.shopPhotoUrl}
             shopName={selectedCustomer.shopName}
@@ -138,7 +138,7 @@ export function CustomerDetailsStep({
               value={customerSearchTerm}
               onChange={(event) => onCustomerSearchTermChange(event.target.value)}
               placeholder={tx("salesman.checkout.customer.searchPlaceholder")}
-              className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
+              className="h-11 rounded-full bg-muted-soft pl-9 pr-11"
             />
             {customerSearchTerm && (
               <Button
@@ -201,7 +201,7 @@ export function CustomerDetailsStep({
                 {customerOptions.map((customer) => (
                   <div
                     key={customer.id}
-                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50"
+                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent"
                   >
                     <Button
                       type="button"

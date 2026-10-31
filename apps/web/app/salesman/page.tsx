@@ -5,6 +5,7 @@ import { Suspense, useMemo, useState } from "react";
 import { PackageSearchIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { AddToCartDrawer } from "~/components/salesman/add-to-cart-drawer";
+import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
 import { ProductCatalogCard } from "~/components/salesman/product-catalog-card";
 import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
 import { Button } from "~/components/ui/button";
@@ -25,16 +26,19 @@ function SalesmanCatalogContent() {
   const [openProductId, setOpenProductId] = useState<string | null>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
 
-  // What is left on the Active GatePass, by Variety; null without one (then every product shows).
-  const { myGatepass, refetchMyGatepass, isMyGatepassFetching } = useGatepasses({
-    businessDate: businessDateOf(new Date()),
-    includeMyGatepass: true,
-  });
+  // What is left on the Active GatePass, by Variety; null without one (then every product shows,
+  // browse-only).
+  const { myGatepass, isMyGatepassLoading, refetchMyGatepass, isMyGatepassFetching } =
+    useGatepasses({
+      businessDate: businessDateOf(new Date()),
+      includeMyGatepass: true,
+    });
   const sellableByVarietyId = useMemo(() => {
     if (myGatepass?.gatepass.status !== "active") return null;
     return new Map(myGatepass.items.map((item) => [item.varietyId, item.sellableQty]));
   }, [myGatepass]);
   const onlyGatepassProducts = sellableByVarietyId !== null && !showAllProducts;
+  const canAddToCart = sellableByVarietyId !== null;
 
   const { productsPage, isProductsListLoading, refetchProductsList, isProductsListFetching } =
     useProducts({
@@ -70,7 +74,7 @@ function SalesmanCatalogContent() {
             placeholder={tx("salesman.catalog.searchPlaceholder")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
+            className="h-11 rounded-full bg-muted-soft pl-9 pr-11"
           />
           {searchTerm && (
             <Button
@@ -99,11 +103,18 @@ function SalesmanCatalogContent() {
         )}
       </div>
 
+      {!isMyGatepassLoading && !canAddToCart && (
+        <NoActiveGatepassNotice
+          handedOverRouteName={myGatepass ? myGatepass.gatepass.routeName : null}
+          context="catalog"
+        />
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : catalogItems.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
             <PackageSearchIcon className="size-6 text-muted-foreground" />
             <p className="text-sm font-medium">
               {debouncedSearchTerm
@@ -121,13 +132,13 @@ function SalesmanCatalogContent() {
               productName={product.name}
               productImageUrl={product.imageUrl}
               varietyCount={varieties.length}
-              onAddToCart={() => setOpenProductId(product.id)}
+              onAddToCart={canAddToCart ? () => setOpenProductId(product.id) : undefined}
             />
           ))
         )}
       </div>
 
-      {openProduct && (
+      {canAddToCart && openProduct && (
         <AddToCartDrawer
           open={Boolean(openProductId)}
           onOpenChange={(open) => setOpenProductId(open ? openProduct.product.id : null)}

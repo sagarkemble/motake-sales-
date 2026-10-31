@@ -91,7 +91,7 @@ export function AddCityDialog({
               maxLength={120}
               placeholder={tx("common.cities.namePlaceholder")}
               onChange={(event) => setName(event.target.value)}
-              className="rounded-xl bg-muted/40"
+              className="rounded-xl bg-muted-soft"
             />
           </div>
           <DialogFooter>

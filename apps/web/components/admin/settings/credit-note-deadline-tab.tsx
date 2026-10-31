@@ -166,7 +166,7 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
           placeholder={tx("admin.settings.reasonPlaceholder")}
           maxLength={500}
           value={reason}
-          className="rounded-xl bg-muted/40"
+          className="rounded-xl bg-muted-soft"
           onChange={(event) => setReason(event.target.value)}
         />
       </div>

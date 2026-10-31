@@ -166,7 +166,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
             value={flagReason}
             onChange={(event) => setFlagReason(event.target.value)}
             placeholder={tx("admin.salesmen.verify.flagPlaceholder")}
-            className="resize-none rounded-xl bg-muted/40 text-sm"
+            className="resize-none rounded-xl bg-muted-soft text-sm"
           />
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isFlaggingGatepass}>

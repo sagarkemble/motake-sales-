@@ -45,7 +45,7 @@ export function GstError({ onRetry }: { onRetry: () => void }) {
 
 function GstEmpty({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
+    <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
       <p className="text-sm font-medium">{title}</p>
       <p className="text-sm text-muted-foreground">{body}</p>
     </div>
@@ -79,7 +79,7 @@ export function FilingsList({
           <li key={filing.id}>
             <button
               type="button"
-              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent"
               onClick={() => onCorrect(filing)}
             >
               <span className="min-w-0">

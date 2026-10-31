@@ -8,11 +8,11 @@ import { useTranslate } from "~/hooks/use-translate";
 interface NoActiveGatepassNoticeProps {
   // The Route of today's GatePass when it was handed over or closed; null when none was allotted.
   handedOverRouteName: string | null;
-  context: "customers" | "addCustomer";
+  context: "customers" | "addCustomer" | "catalog";
   compact?: boolean;
 }
 
-/** Without an Active GatePass a salesman sees no Customers and cannot add one. */
+/** Without an Active GatePass a salesman sees no Customers, cannot add one and cannot add to cart. */
 export function NoActiveGatepassNotice({
   handedOverRouteName,
   context,
@@ -28,9 +28,7 @@ export function NoActiveGatepassNotice({
       </AlertTitle>
       <AlertDescription>
         <p className="font-medium text-foreground">
-          {context === "customers"
-            ? tx("salesman.checkout.noActiveGatepass.customers")
-            : tx("salesman.checkout.noActiveGatepass.addCustomer")}
+          {tx(`salesman.checkout.noActiveGatepass.${context}`)}
         </p>
         {!compact && (
           <p>

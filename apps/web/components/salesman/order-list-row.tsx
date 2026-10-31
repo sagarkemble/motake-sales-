@@ -46,14 +46,14 @@ export function OrderListRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-[color,background-color,box-shadow] hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:bg-muted/40",
+        "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-[color,background-color,box-shadow] hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:bg-muted-soft",
         isCancelled && "opacity-70",
       )}
     >
       {shopPhotoUrl !== undefined ? (
         <ShopPhotoThumbnail shopPhotoUrl={shopPhotoUrl} shopName={primaryLabel} size="md" />
       ) : (
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/40">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted-soft">
           <ClipboardListIcon className="size-5 text-muted-foreground" />
         </div>
       )}

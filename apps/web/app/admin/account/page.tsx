@@ -107,7 +107,7 @@ export default function AdminAccountPage() {
               value={nameInputValue}
               onChange={(event) => setNameInputValue(event.target.value)}
               placeholder={tx("account.profile.namePlaceholder")}
-              className="rounded-xl bg-muted/40"
+              className="rounded-xl bg-muted-soft"
             />
             <Button
               type="button"
@@ -129,7 +129,7 @@ export default function AdminAccountPage() {
             value={signedInUser.email}
             readOnly
             disabled
-            className="rounded-xl bg-muted/40"
+            className="rounded-xl bg-muted-soft"
           />
         </div>
 
@@ -141,7 +141,7 @@ export default function AdminAccountPage() {
               value={signedInUser.phone ?? tx("common.status.notSet")}
               readOnly
               disabled
-              className="rounded-xl bg-muted/40"
+              className="rounded-xl bg-muted-soft"
             />
             <Button
               type="button"

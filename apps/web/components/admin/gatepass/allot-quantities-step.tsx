@@ -72,7 +72,7 @@ export function AllotQuantitiesStep({
           placeholder={tx("admin.gatepass.allot.searchItems")}
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          className="rounded-full bg-muted/40 pl-9 pr-9"
+          className="rounded-full bg-muted-soft pl-9 pr-9"
         />
         {searchTerm && (
           <button
@@ -181,10 +181,10 @@ function VarietyRow({
     <div
       className={cn(
         "flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-3",
-        isUnpriced && "border-dashed bg-muted/30",
+        isUnpriced && "border-dashed bg-muted-faint",
       )}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/40">
+      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted-soft">
         {item.productImageUrl ? (
           <img
             src={item.productImageUrl}

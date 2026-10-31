@@ -103,7 +103,7 @@ export function SalesmanEditDialog({
                   <FormControl>
                     <Input
                       placeholder={tx("admin.salesmen.form.namePlaceholder")}
-                      className="rounded-xl bg-muted/40"
+                      className="rounded-xl bg-muted-soft"
                       {...field}
                     />
                   </FormControl>
@@ -121,7 +121,7 @@ export function SalesmanEditDialog({
                   <FormControl>
                     <Input
                       placeholder={tx("common.fields.phone")}
-                      className="rounded-xl bg-muted/40"
+                      className="rounded-xl bg-muted-soft"
                       {...field}
                     />
                   </FormControl>
@@ -140,7 +140,7 @@ export function SalesmanEditDialog({
                     <Input
                       type="email"
                       placeholder={tx("admin.salesmen.form.emailPlaceholder")}
-                      className="rounded-xl bg-muted/40"
+                      className="rounded-xl bg-muted-soft"
                       {...field}
                     />
                   </FormControl>
@@ -164,7 +164,7 @@ export function SalesmanEditDialog({
                       <Input
                         type="password"
                         placeholder={tx("admin.salesmen.form.passwordKeepPlaceholder")}
-                        className="rounded-xl bg-muted/40"
+                        className="rounded-xl bg-muted-soft"
                         {...field}
                       />
                     </FormControl>

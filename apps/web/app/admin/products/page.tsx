@@ -38,7 +38,7 @@ function ProductsPageContent() {
             placeholder={tx("admin.products.searchPlaceholder")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="rounded-full bg-muted/40 pl-9 pr-9"
+            className="rounded-full bg-muted-soft pl-9 pr-9"
           />
           {searchTerm && (
             <button
@@ -89,11 +89,11 @@ function ProductsPageContent() {
             return (
               <div
                 key={product.id}
-                className={`flex flex-col gap-2.5 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50 ${
+                className={`flex flex-col gap-2.5 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent ${
                   product.deletedAt ? "opacity-60" : ""
                 }`}
               >
-                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted/40">
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted-soft">
                   {product.imageUrl ? (
                     <img
                       src={product.imageUrl}

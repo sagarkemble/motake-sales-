@@ -252,7 +252,7 @@ export function CustomerForm({
                   <Input
                     {...field}
                     placeholder={tx("salesman.checkout.customer.shopNamePlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -270,7 +270,7 @@ export function CustomerForm({
                   <Input
                     {...field}
                     placeholder={tx("admin.customers.form.contactName")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -289,7 +289,7 @@ export function CustomerForm({
                     {...field}
                     type="tel"
                     placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -327,7 +327,7 @@ export function CustomerForm({
                   <Textarea
                     {...field}
                     placeholder={tx("salesman.checkout.customer.addressPlaceholder")}
-                    className="min-h-20 rounded-xl bg-muted/40"
+                    className="min-h-20 rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -345,7 +345,7 @@ export function CustomerForm({
                   <Textarea
                     {...field}
                     placeholder={tx("admin.customers.form.notesPlaceholder")}
-                    className="min-h-20 rounded-xl bg-muted/40"
+                    className="min-h-20 rounded-xl bg-muted-soft"
                   />
                 </FormControl>
                 <FormMessage />
@@ -371,7 +371,7 @@ export function CustomerForm({
                     placeholder="27AABCS1234F1Z5"
                     autoCapitalize="characters"
                     maxLength={20}
-                    className="rounded-xl bg-muted/40 font-mono uppercase"
+                    className="rounded-xl bg-muted-soft font-mono uppercase"
                   />
                 </FormControl>
                 <FormDescription>{tx("admin.customers.form.gstinHint")}</FormDescription>

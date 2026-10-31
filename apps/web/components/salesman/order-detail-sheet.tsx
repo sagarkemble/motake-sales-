@@ -132,7 +132,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                 </Alert>
               ) : (
                 <>
-                  <div className="flex items-start gap-3 rounded-2xl border bg-muted/30 p-3">
+                  <div className="flex items-start gap-3 rounded-2xl border bg-muted-faint p-3">
                     <ShopPhotoThumbnail
                       shopPhotoUrl={orderDetail.customer.shopPhotoUrl}
                       shopName={orderDetail.customer.shopName}
@@ -313,7 +313,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                           key={item.varietyId}
                           className="flex items-start gap-3 rounded-2xl border p-3 text-sm"
                         >
-                          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
+                          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted-soft">
                             {item.imageUrl ? (
                               <img
                                 src={item.imageUrl}

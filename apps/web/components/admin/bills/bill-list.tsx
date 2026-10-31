@@ -182,7 +182,7 @@ export function BillList() {
       {isBillsListLoading || (isReloading && isBillsListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : billsPage.items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed bg-card py-10 text-center text-sm text-muted-foreground">
           {tx("admin.bills.empty")}
         </p>
       ) : (
@@ -265,7 +265,11 @@ function BillTable({ rows, onSelect }: { rows: BillListRow[]; onSelect: (id: str
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id} onClick={() => onSelect(row.id)} className="cursor-pointer">
+            <TableRow
+              key={row.id}
+              onClick={() => onSelect(row.id)}
+              className="cursor-pointer hover:bg-accent"
+            >
               <TableCell>
                 <BillNumber row={row} />
               </TableCell>
@@ -295,7 +299,7 @@ function BillCard({ row, onSelect }: { row: BillListRow; onSelect: (id: string) 
     <button
       type="button"
       onClick={() => onSelect(row.id)}
-      className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+      className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent"
     >
       <div className="min-w-0">
         <BillNumber row={row} />
