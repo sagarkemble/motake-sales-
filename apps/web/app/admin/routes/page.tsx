@@ -2,6 +2,7 @@
 
 import { Suspense, useRef, useState } from "react";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { NewRouteForm } from "~/components/admin/routes/new-route-form";
 import { RouteDetail } from "~/components/admin/routes/route-detail";
@@ -22,7 +23,9 @@ function RoutesPageContent() {
   const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeHidden, setIncludeHidden] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  // ?route= opens that Route, e.g. from Allot GatePass to set a missing price.
+  const requestedRouteId = useSearchParams().get("route");
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(requestedRouteId);
   const detailRef = useRef<HTMLElement>(null);
 
   const { routes, isRoutesListLoading, refetchRoutesList, isRoutesListFetching } = useRoutes({

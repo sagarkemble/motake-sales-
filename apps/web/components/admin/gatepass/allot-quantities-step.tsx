@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PackageIcon, SearchIcon, XIcon } from "lucide-react";
 
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
 
@@ -19,6 +20,7 @@ export interface AllotCatalogItem {
 }
 
 interface AllotQuantitiesStepProps {
+  routeId: string;
   routeName: string;
   catalogItems: AllotCatalogItem[];
   isCatalogLoading: boolean;
@@ -28,10 +30,11 @@ interface AllotQuantitiesStepProps {
 }
 
 /**
- * Step 3: quantities for varieties priced on the chosen Route. Varieties with no price there are
- * listed apart, marked, and cannot be given a quantity.
+ * Step 3: every active variety in one scrolling list about ten rows tall. Those priced on the
+ * chosen Route take a quantity; the server refuses the others, so they link to the Route's prices.
  */
 export function AllotQuantitiesStep({
+  routeId,
   routeName,
   catalogItems,
   isCatalogLoading,
@@ -41,7 +44,6 @@ export function AllotQuantitiesStep({
 }: AllotQuantitiesStepProps) {
   const tx = useTranslate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [showUnpriced, setShowUnpriced] = useState(false);
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const visibleItems = catalogItems.filter(
@@ -49,11 +51,11 @@ export function AllotQuantitiesStep({
       !normalizedSearchTerm ||
       `${item.productName} ${item.varietyName}`.toLowerCase().includes(normalizedSearchTerm),
   );
-  const pricedItems = visibleItems.filter((item) => pricedVarietyIds.has(item.varietyId));
-  const unpricedItems = visibleItems.filter((item) => !pricedVarietyIds.has(item.varietyId));
-  const selectedItemCount = pricedItems.filter(
-    (item) => (quantitiesByVarietyId[item.varietyId] ?? 0) > 0,
+  const selectedItemCount = visibleItems.filter(
+    (item) =>
+      pricedVarietyIds.has(item.varietyId) && (quantitiesByVarietyId[item.varietyId] ?? 0) > 0,
   ).length;
+  const unpricedCount = catalogItems.filter((item) => !pricedVarietyIds.has(item.varietyId)).length;
 
   return (
     <div className="flex flex-col gap-3">
@@ -86,45 +88,31 @@ export function AllotQuantitiesStep({
         )}
       </div>
 
+      {unpricedCount > 0 && !isCatalogLoading && (
+        <p className="text-xs text-muted-foreground">
+          {tx("admin.gatepass.allot.unpricedHint", { count: unpricedCount, route: routeName })}
+        </p>
+      )}
+
       {isCatalogLoading ? (
         <ListItemSkeleton count={6} />
+      ) : visibleItems.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {tx("admin.gatepass.allot.noItems")}
+        </p>
       ) : (
-        <>
-          <ProductGroups
-            items={pricedItems}
-            quantitiesByVarietyId={quantitiesByVarietyId}
-            onQuantityChange={onQuantityChange}
-          />
-
-          {unpricedItems.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setShowUnpriced((isShown) => !isShown)}
-                className="h-auto self-start p-0 text-xs text-brand"
-              >
-                {showUnpriced
-                  ? tx("admin.gatepass.allot.hideUnpriced", {
-                      count: unpricedItems.length,
-                      route: routeName,
-                    })
-                  : tx("admin.gatepass.allot.showUnpriced", {
-                      count: unpricedItems.length,
-                      route: routeName,
-                    })}
-              </Button>
-              {showUnpriced &&
-                unpricedItems.map((item) => <VarietyRow key={item.varietyId} item={item} />)}
-            </div>
-          )}
-
-          {visibleItems.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {tx("admin.gatepass.allot.noItems")}
-            </p>
-          )}
-        </>
+        // About ten rows tall; the list scrolls inside it.
+        <ScrollArea className="flex flex-col rounded-2xl border bg-muted-faint [&>[data-slot=scroll-area-viewport]]:max-h-[36rem]">
+          <div className="p-2">
+            <ProductGroups
+              items={visibleItems}
+              routeId={routeId}
+              pricedVarietyIds={pricedVarietyIds}
+              quantitiesByVarietyId={quantitiesByVarietyId}
+              onQuantityChange={onQuantityChange}
+            />
+          </div>
+        </ScrollArea>
       )}
     </div>
   );
@@ -132,20 +120,24 @@ export function AllotQuantitiesStep({
 
 function ProductGroups({
   items,
+  routeId,
+  pricedVarietyIds,
   quantitiesByVarietyId,
   onQuantityChange,
 }: {
   items: AllotCatalogItem[];
+  routeId: string;
+  pricedVarietyIds: Set<string>;
   quantitiesByVarietyId: Record<string, number>;
   onQuantityChange: (varietyId: string, quantity: number) => void;
 }) {
   const productNames = [...new Set(items.map((item) => item.productName))];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {productNames.map((productName) => (
-        <div key={productName} className="flex flex-col gap-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div key={productName} className="flex flex-col gap-1.5">
+          <p className="px-1 pt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {productName}
           </p>
           {items
@@ -154,8 +146,13 @@ function ProductGroups({
               <VarietyRow
                 key={item.varietyId}
                 item={item}
+                routeId={routeId}
                 quantity={quantitiesByVarietyId[item.varietyId] ?? 0}
-                onQuantityChange={(quantity) => onQuantityChange(item.varietyId, quantity)}
+                onQuantityChange={
+                  pricedVarietyIds.has(item.varietyId)
+                    ? (quantity) => onQuantityChange(item.varietyId, quantity)
+                    : undefined
+                }
               />
             ))}
         </div>
@@ -166,10 +163,12 @@ function ProductGroups({
 
 function VarietyRow({
   item,
+  routeId,
   quantity,
   onQuantityChange,
 }: {
   item: AllotCatalogItem;
+  routeId: string;
   quantity?: number;
   // Absent for a variety with no price on the Route: it cannot be given a quantity.
   onQuantityChange?: (quantity: number) => void;
@@ -180,11 +179,11 @@ function VarietyRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-3",
+        "flex flex-wrap items-center gap-3 rounded-xl border bg-card px-3 py-2",
         isUnpriced && "border-dashed bg-muted-faint",
       )}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted-soft">
+      <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted-soft">
         {item.productImageUrl ? (
           <img
             src={item.productImageUrl}
@@ -206,9 +205,17 @@ function VarietyRow({
           <QuantityStepper quantity={quantity ?? 0} onQuantityChange={onQuantityChange} />
         </div>
       ) : (
-        <Badge variant="outline" className="ml-auto border-dashed text-muted-foreground">
-          {tx("admin.gatepass.allot.noPriceOnRoute")}
-        </Badge>
+        <div className="ml-auto flex items-center gap-2">
+          <Badge variant="outline" className="border-dashed text-muted-foreground">
+            {tx("admin.gatepass.allot.noPriceOnRoute")}
+          </Badge>
+          <Link
+            href={`/admin/routes?route=${routeId}`}
+            className="text-xs font-medium text-brand underline-offset-4 hover:underline"
+          >
+            {tx("admin.gatepass.allot.setPrice")}
+          </Link>
+        </div>
       )}
     </div>
   );

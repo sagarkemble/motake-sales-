@@ -305,6 +305,7 @@ function GatepassPageContent() {
               <div className="flex flex-col gap-3">
                 <RouteTag name={selectedRoute.name} code={selectedRoute.code} />
                 <AllotQuantitiesStep
+                  routeId={selectedRoute.id}
                   routeName={selectedRoute.name}
                   catalogItems={catalogItems}
                   // Until the Route's prices arrive every variety would look unpriced.
