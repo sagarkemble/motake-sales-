@@ -135,7 +135,7 @@ class AuthService {
           transaction,
         );
         const createdSalesman = await this.salesmanService.createSalesman(
-          { id: supabaseUserId, salesmanCode: parsedInput.salesmanCode },
+          { id: supabaseUserId, name: parsedInput.name, phone: parsedInput.phone },
           transaction,
         );
         await recordAudit(
@@ -148,7 +148,7 @@ class AuthService {
               email: parsedInput.email,
               name: parsedInput.name,
               phone: parsedInput.phone,
-              salesmanCode: parsedInput.salesmanCode,
+              salesmanCode: createdSalesman.salesmanCode,
             }),
           },
           transaction,

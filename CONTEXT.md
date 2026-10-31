@@ -17,7 +17,7 @@ The generated unique key of a Route (`rt-{slug}-{nnn}`). Never edited. Name is t
 The field-sales person who sells against an Active GatePass.
 
 **Salesman code**:
-The generated unique key of a Salesman. Admin does not type or edit it.
+The generated unique key of a Salesman: the first three letters of the name, the last four phone digits and the day they were added (`RAV-4321-261031`), with `-2`, `-3` … if already taken. Made once when the Salesman is added and never changed, even when name or phone change. Admin does not type or edit it.
 
 **Product**:
 The named group a Variety belongs to (for example milk). Not billed by itself. Always has an image: a Product cannot be created or saved without one, and its image can be replaced but not removed.
