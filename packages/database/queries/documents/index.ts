@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, max, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
@@ -120,29 +120,7 @@ export async function listBillVersionSnapshots(
   return rows.map(toSnapshot);
 }
 
-export async function getLatestBillVersionNumber(
-  billId: string,
-  executor: DbExecutor = db,
-): Promise<number | undefined> {
-  const [row] = await executor
-    .select({ latest: max(billVersionsTable.versionNumber) })
-    .from(billVersionsTable)
-    .where(eq(billVersionsTable.billId, billId));
-  return row?.latest ?? undefined;
-}
-
-export type BillDocumentState = Pick<
-  SelectBill,
-  | "id"
-  | "number"
-  | "legalType"
-  | "irn"
-  | "irnAckNumber"
-  | "irnAckDate"
-  | "signedQrText"
-  | "signedQrImageKey"
-  | "irnRecordedAt"
-> & {
+export type BillDocumentState = Pick<SelectBill, "id" | "number" | "legalType"> & {
   // Through the Ledger Bill debit; null only for a ₹0 Bill with no order.
   customerId: string | null;
   cancelled: boolean;
@@ -151,8 +129,7 @@ export type BillDocumentState = Pick<
   salesmanName: string | null;
 };
 
-// The live Bill fields a Document needs: the IRN block, legal type, the Customer for the
-// e-invoicing rule and who dispatched it.
+// The live Bill fields a Document needs: legal type, the Customer and who dispatched it.
 export async function getBillDocumentState(
   billId: string,
   executor: DbExecutor = db,
@@ -162,12 +139,6 @@ export async function getBillDocumentState(
       id: billsTable.id,
       number: billsTable.number,
       legalType: billsTable.legalType,
-      irn: billsTable.irn,
-      irnAckNumber: billsTable.irnAckNumber,
-      irnAckDate: billsTable.irnAckDate,
-      signedQrText: billsTable.signedQrText,
-      signedQrImageKey: billsTable.signedQrImageKey,
-      irnRecordedAt: billsTable.irnRecordedAt,
       customerId: billCustomerId,
       cancelled: sql<boolean>`${billIsCancelled()}`,
       salesmanName: sql<
@@ -201,18 +172,6 @@ export async function setBillVersionPdfKeyIfUnset(
     .from(billVersionsTable)
     .where(eq(billVersionsTable.id, billVersionId));
   return current?.pdfKey ?? null;
-}
-
-// Correct IRN only: the one write that replaces a set key (db-decisions/0014).
-export async function replaceBillVersionPdfKey(
-  billVersionId: string,
-  pdfKey: string,
-  executor: DbExecutor = db,
-): Promise<void> {
-  await executor
-    .update(billVersionsTable)
-    .set({ pdfKey })
-    .where(eq(billVersionsTable.id, billVersionId));
 }
 
 export async function getNoteById(

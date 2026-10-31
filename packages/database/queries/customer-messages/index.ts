@@ -19,8 +19,6 @@ import type { DbExecutor } from "../shared/executor";
 export interface MessageBill {
   billId: string;
   latestVersionNumber: number;
-  // Part of the latest Bill message's idempotency key once an IRN is recorded.
-  irnRecordedAt: Date | null;
 }
 
 export interface MessageEvent {
@@ -42,7 +40,6 @@ async function listMessageBills(billIds: string[], executor: DbExecutor): Promis
     .select({
       billId: billsTable.id,
       latestVersionNumber: max(billVersionsTable.versionNumber),
-      irnRecordedAt: billsTable.irnRecordedAt,
     })
     .from(billsTable)
     .innerJoin(billVersionsTable, eq(billVersionsTable.billId, billsTable.id))
@@ -52,7 +49,7 @@ async function listMessageBills(billIds: string[], executor: DbExecutor): Promis
   return rows.map((row) => ({ ...row, latestVersionNumber: row.latestVersionNumber ?? 1 }));
 }
 
-// One Bill with its latest version and IRN stamp, or undefined when it does not exist.
+// One Bill with its latest version, or undefined when it does not exist.
 export async function getMessageBill(
   billId: string,
   executor: DbExecutor = db,

@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import { db, eq } from "@repo/database";
-import { customersTable, sellerSettingsTable } from "@repo/database/schema";
+import { customersTable } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import DocumentService from "../documents";
-import { refusalOf as documentRefusalOf } from "../errors";
 import OrderService from "../orders";
 import type { BillLockHook } from "../shared/bill-events";
 import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
@@ -70,7 +69,6 @@ describe("AdminBillService.getBillPaper", () => {
       orderId: placed.orderId,
       billNote: "Leave at the back door",
       cancelled: false,
-      irn: null,
       latestVersionNumber: 2,
     });
     expect(paper.customer).toEqual({
@@ -139,7 +137,11 @@ describe("AdminBillService.getBillPaper", () => {
     const placed = await placeBookNowBill(world);
     const lockHook: BillLockHook = async ({ action }) =>
       action === "correct"
-        ? { allowed: false, reason: "irn_recorded", message: "Correct the IRN on the portal." }
+        ? {
+            allowed: false,
+            reason: "month_filed",
+            message: "The month is filed. Raise Note instead.",
+          }
         : { allowed: true };
 
     const paper = await new AdminBillService(undefined, lockHook).getBillPaper({
@@ -148,8 +150,8 @@ describe("AdminBillService.getBillPaper", () => {
 
     expect(paper.lock!.correct).toEqual({
       allowed: false,
-      reason: "irn_recorded",
-      message: "Correct the IRN on the portal.",
+      reason: "month_filed",
+      message: "The month is filed. Raise Note instead.",
     });
     expect(paper.actions).toEqual({ canCorrect: false, canCancel: true, canRaiseNote: true });
   });
@@ -197,31 +199,6 @@ describe("Spec L draws Spec G's papers", () => {
     const paper = await adminBillService.getBillPaper({ billId: placed.billId });
     expect(paper.version.hasPdf).toBe(true);
     expect(paper.notes.every((note) => note.hasPdf)).toBe(true);
-  });
-
-  it("refuses a Tax Invoice download with irn_missing while it waits for its IRN", async () => {
-    const world = await buildCheckoutWorld({ businessDate: today });
-    await db
-      .update(customersTable)
-      .set({ einvoicingRequired: true })
-      .where(eq(customersTable.id, world.customer.id));
-    await db.update(sellerSettingsTable).set({ einvoicingRequired: true });
-    const raised = await adminBillService.raiseBill(world.admin.id, {
-      idempotencyKey: randomUUID(),
-      customerId: world.customer.id,
-      lines: [{ varietyId: world.milk.id, quantity: 1 }],
-      reason: "Office sale",
-    });
-
-    const refused = await documentRefusalOf(
-      await new DocumentService(new MemoryDocumentStore())
-        .getDownloadLink(world.admin.id, { billVersionId: raised.billVersionId })
-        .then(
-          () => undefined,
-          (error: unknown) => error,
-        ),
-    );
-    expect(refused).toMatchObject({ reason: "irn_missing" });
   });
 });
 

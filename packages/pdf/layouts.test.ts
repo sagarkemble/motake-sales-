@@ -96,16 +96,13 @@ function taxInvoice(overrides: Partial<TaxInvoiceValues> = {}): TaxInvoiceValues
       roundOffPaise: -50,
       totalPaise: 94_450,
     },
-    draft: false,
-    irn: null,
     ...overrides,
   } as TaxInvoiceValues;
 }
 
 const pdfImageMarker = "/Subtype /Image";
 
-// Image objects in the file: the logo is the only one on a paper without an IRN; the QR adds its
-// own (with an alpha mask).
+// Image objects in the file: the logo is the only one.
 function imageCount(bytes: Uint8Array): number {
   return Buffer.from(bytes).toString("latin1").split(pdfImageMarker).length - 1;
 }
@@ -305,38 +302,18 @@ describe("tax_invoice", () => {
     );
   });
 
-  it("prints the IRN block with a QR image when the IRN is recorded", async () => {
-    const values = taxInvoice({
-      irn: {
-        irn: "8f3a2c9b5e1d47f0a6b3c2d1e0f9a8b7",
-        ackNumber: "112610250012345",
-        ackDate: "2026-10-26",
-        signedQrText: "eyJhbGciOiJSUzI1NiJ9.signed-qr-payload.signature",
-      },
-    });
-
-    const bytes = await renderDocument("tax_invoice", values);
-    const text = await printed(bytes);
-
-    expect(text).toContain("8f3a2c9b5e1d47f0a6b3c2d1e0f9a8b7");
-    expect(text).toContain("112610250012345");
-    expect(text).toContain("26/10/2026");
-    expect(imageCount(bytes)).toBeGreaterThan(1);
-  });
-
-  it("prints Draft — IRN pending on every page of a long draft, repeats the line header, and has no IRN block", async () => {
+  it("repeats the line header and the page count on every page of a long Bill", async () => {
     const lines = Array.from({ length: 70 }, (_, index) => ({
       ...paneer,
       name: `Variety ${index + 1}`,
     }));
-    const values = taxInvoice({ lines, draft: true, irn: null });
+    const values = taxInvoice({ lines });
 
     const bytes = await renderDocument("tax_invoice", values);
     const pages = await printedPages(bytes);
 
     expect(pages.length).toBeGreaterThan(1);
     for (const [index, page] of pages.entries()) {
-      expect(page).toContain("Draft — IRN pending");
       expect(page).toContain(`Page ${index + 1} of ${pages.length}`);
       // Column headings only the repeated line header prints, on every page that carries lines.
       if (page.includes("Variety")) {
@@ -345,18 +322,7 @@ describe("tax_invoice", () => {
       }
     }
     expect(pages[1]).toContain("Tax Invoice MB/26-27/000123 (continued)");
-    expect(pages.join("\n")).not.toContain("Ack No.");
     expect(imageCount(bytes)).toBe(1);
-  });
-
-  it("refuses a draft that carries an IRN", async () => {
-    const values = {
-      ...taxInvoice(),
-      draft: true,
-      irn: { irn: "x", ackNumber: "1", ackDate: "2026-10-26", signedQrText: "q" },
-    } as unknown as TaxInvoiceValues;
-
-    await expect(renderDocument("tax_invoice", values)).rejects.toThrow(/cannot carry an IRN/);
   });
 
   it("prints the logo and the computer generated line with the page count", async () => {

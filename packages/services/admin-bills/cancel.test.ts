@@ -317,7 +317,7 @@ describe("AdminBillService.cancelBill", () => {
       const asked: string[] = [];
       const lockHook: BillLockHook = async ({ action }) => {
         asked.push(action);
-        return { allowed: false, reason: "irn_recorded", message: "Cancel the IRN on the portal." };
+        return { allowed: false, reason: "month_filed", message: "The month is filed." };
       };
 
       expect(
@@ -328,7 +328,7 @@ describe("AdminBillService.cancelBill", () => {
             reason: "Wrong shop",
           }),
         ),
-      ).toEqual({ reason: "bill_locked", details: { lockReason: "irn_recorded" } });
+      ).toEqual({ reason: "bill_locked", details: { lockReason: "month_filed" } });
       expect(asked).toEqual(["cancel"]);
       expect(await notesOf(placed.billId)).toEqual([]);
       expect(await soldQtyByVariety(world.gatepass.id)).toEqual({
@@ -357,7 +357,7 @@ describe("AdminBillService.cancelBill", () => {
     });
   });
 
-  it("runs in the caller's transaction for Spec I's portal cancellation, asking the hook with portal_cancel", async () => {
+  it("runs in the caller's transaction, asking the hook with cancel", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const placed = await placeBookNowBill(world);
     const asked: string[] = [];
@@ -369,12 +369,12 @@ describe("AdminBillService.cancelBill", () => {
     const run = await db.transaction((transaction) =>
       service.cancelBillInTransaction(
         world.admin.id,
-        { billId: placed.billId, reason: "IRN cancelled on the portal", action: "portal_cancel" },
+        { billId: placed.billId, reason: "Wrong shop" },
         transaction,
       ),
     );
 
-    expect(asked).toEqual(["portal_cancel"]);
+    expect(asked).toEqual(["cancel"]);
     expect(run.outcome).toMatchObject({ kind: "bill_cancelled", billId: placed.billId });
     expect(await billNetLedgerPaise(placed.billId)).toBe(0);
   });

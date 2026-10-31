@@ -130,26 +130,12 @@ export const whatsAppTokenRefused = (
 ) => refused(whatsAppTokenRefusalCodes[reason], reason, message, details);
 
 // Why a Document call was refused, for callers that branch on it (Specs G, I, J).
-export type DocumentRefusalReason =
-  | "irn_missing"
-  | "irn_not_recorded"
-  | "irn_not_pending"
-  | "superseded_version"
-  | "not_found"
-  | "not_posted_event"
-  | "nothing_kept"
-  | "bad_image"
-  | "forbidden";
+export type DocumentRefusalReason = "not_found" | "not_posted_event" | "nothing_kept" | "forbidden";
 
 const documentRefusalCodes: Record<DocumentRefusalReason, TRPCError["code"]> = {
-  irn_missing: "BAD_REQUEST",
-  irn_not_recorded: "BAD_REQUEST",
-  irn_not_pending: "BAD_REQUEST",
-  superseded_version: "BAD_REQUEST",
   not_found: "NOT_FOUND",
   not_posted_event: "BAD_REQUEST",
   nothing_kept: "BAD_REQUEST",
-  bad_image: "BAD_REQUEST",
   forbidden: "FORBIDDEN",
 };
 
@@ -288,7 +274,6 @@ export type CustomerMessageRefusalReason =
   | "message_pending"
   | "not_latest_bill"
   | "bill_cancelled"
-  | "irn_pending"
   | "phone_unusable"
   | "template_superseded"
   | "notification_unavailable";
@@ -299,7 +284,6 @@ const customerMessageRefusalCodes: Record<CustomerMessageRefusalReason, TRPCErro
   message_pending: "CONFLICT",
   not_latest_bill: "CONFLICT",
   bill_cancelled: "CONFLICT",
-  irn_pending: "CONFLICT",
   phone_unusable: "BAD_REQUEST",
   template_superseded: "CONFLICT",
   notification_unavailable: "SERVICE_UNAVAILABLE",
@@ -346,9 +330,7 @@ export type ScreenRefusalReason =
   | "already_posted"
   | "amount_not_positive"
   | "opening_balance_exists"
-  | "irn_taken"
   | "nothing_changed"
-  | "cancel_ack_in_future"
   | "gstr1_already_filed"
   | "filing_month_not_started"
   | "filing_date_before_month"
@@ -400,9 +382,7 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   already_posted: "CONFLICT",
   amount_not_positive: "BAD_REQUEST",
   opening_balance_exists: "CONFLICT",
-  irn_taken: "CONFLICT",
   nothing_changed: "BAD_REQUEST",
-  cancel_ack_in_future: "BAD_REQUEST",
   gstr1_already_filed: "CONFLICT",
   filing_month_not_started: "BAD_REQUEST",
   filing_date_before_month: "BAD_REQUEST",

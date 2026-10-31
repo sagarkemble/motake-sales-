@@ -4,12 +4,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 import { Suspense, useState } from "react";
 
 import { BillPaperDocument } from "~/components/admin/ledger/bill-paper-document";
-import {
-  BillGateReasons,
-  GstCard,
-  GstDialog,
-  type GstDialogKind,
-} from "~/components/admin/ledger/bill-paper-gst";
+import { BillGateReasons, GstCard } from "~/components/admin/ledger/bill-paper-gst";
 import {
   CancelForm,
   CorrectPanel,
@@ -48,16 +43,7 @@ import { useTranslate } from "~/hooks/use-translate";
 type SheetKind = "cancel" | "note";
 
 function BackLink({ paper }: { paper: BillPaper | null }) {
-  const searchParams = useSearchParams();
-  // Opened from the GST page's IRN pending list: Back returns there.
-  const fromGst = searchParams.get("from") === "gst";
-  return (
-    <LedgerBackHeader
-      customerId={paper?.customer?.id}
-      shopName={paper?.customer?.shopName}
-      href={fromGst ? "/admin/gst?tab=irn" : undefined}
-    />
-  );
+  return <LedgerBackHeader customerId={paper?.customer?.id} shopName={paper?.customer?.shopName} />;
 }
 
 // The on-screen Bill that Print sends to the browser's print dialog.
@@ -75,7 +61,6 @@ function PaperView({ paper }: { paper: BillPaper }) {
   const [sheet, setSheet] = useState<SheetKind | null>(
     searchParams.get("action") === "note" && paper.actions.canRaiseNote ? "note" : null,
   );
-  const [gstDialog, setGstDialog] = useState<GstDialogKind | null>(null);
   const { billGstState, isBillGstStateLoading, isBillGstStateError, refetchBillGstState } =
     useBillGst({ billId: paper.bill.id });
   const correctState = useCorrectState(paper);
@@ -101,7 +86,6 @@ function PaperView({ paper }: { paper: BillPaper }) {
         version: paper.bill.latestVersionNumber,
         balanceText: paper.balance ? balanceText(paper.balance) : "",
         cancelled: paper.bill.cancelled,
-        irnPending: billGstState?.irnPending ?? false,
       }}
       // The Bill's list also has its Notes' messages; each shows the Note's number.
       detailOf={(row) => {
@@ -190,13 +174,10 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 >
                   {tx("admin.ledger.paper.actions.cancel")}
                 </Button>
-                {/* While IRN pending the final PDF is not drawn; the GST card has the Draft PDF. */}
-                {!billGstState?.allowed.draft && (
-                  <DownloadPdfButton
-                    className="col-span-2 lg:col-span-1"
-                    target={{ billVersionId: paper.version.id }}
-                  />
-                )}
+                <DownloadPdfButton
+                  className="col-span-2 lg:col-span-1"
+                  target={{ billVersionId: paper.version.id }}
+                />
                 <PrintPaperButton
                   className="col-span-2 lg:col-span-1"
                   paperElementId={PAPER_ELEMENT_ID}
@@ -219,7 +200,6 @@ function PaperView({ paper }: { paper: BillPaper }) {
             isLoading={isBillGstStateLoading}
             isError={isBillGstStateError}
             onRetry={() => void refetchBillGstState()}
-            onOpen={setGstDialog}
           />
         </aside>
       </div>
@@ -246,12 +226,6 @@ function PaperView({ paper }: { paper: BillPaper }) {
           </div>
         </SheetContent>
       </Sheet>
-      <GstDialog
-        kind={gstDialog}
-        gst={billGstState}
-        paper={paper}
-        onClose={() => setGstDialog(null)}
-      />
     </div>
   );
 }

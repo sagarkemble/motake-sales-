@@ -1,36 +1,28 @@
-import { and, asc, count, desc, eq, ne, sql, type SQL } from "drizzle-orm";
+import { count, desc, eq, sql, type SQL } from "drizzle-orm";
 
 import { db } from "../../index";
 import {
   billsTable,
   gstr1FilingsTable,
   profilesTable,
-  type InsertBill,
   type InsertGstr1Filing,
   type SelectBill,
   type SelectGstr1Filing,
 } from "../../schema";
-import { billCustomerId, type BillLetterhead } from "../bills";
-import { billIsCancelled, billIsNotCancelled } from "../bills/cancelled";
+import { billIsCancelled } from "../bills/cancelled";
 import { firstOrThrow } from "../shared/assertions";
 import type { DbExecutor } from "../shared/executor";
-import {
-  buildPaginationOffsets,
-  toPaginatedResult,
-  type PaginatedResult,
-  type PaginationParams,
-} from "../shared/pagination";
 
-// GSTR-1 filings, the derived month lock and IRN pending (Spec I, #43). Nothing is stamped on a
-// Bill: Filed month comes from gstr1_filings + bills.bill_date, IRN pending from the live flags.
+// GSTR-1 filings and the derived month lock (Spec I, #43). Nothing is stamped on a Bill: Filed
+// month comes from gstr1_filings + bills.bill_date.
 
 // First key of the two-key advisory lock; the second is the month as YYYYMM.
 const FILING_MONTH_LOCK_NAMESPACE = 4_301_043;
 
 // --- Month lock.
 
-// Record filing takes the exclusive form; Correct, Cancel and portal cancellation take the shared
-// form for their Bill's month, so a Bill change either commits before the filing or sees it.
+// Record filing takes the exclusive form; Correct and Cancel take the shared form for their Bill's
+// month, so a Bill change either commits before the filing or sees it.
 export async function lockFilingMonth(
   periodMonth: string,
   mode: "exclusive" | "shared",
@@ -48,35 +40,6 @@ export async function lockFilingMonth(
   }
 }
 
-// --- The one IRN pending rule, over a `bills` row (used unaliased).
-
-// The seller flag defaults to on while the Seller master is not set up.
-const sellerEinvoicingRequired = sql<boolean>`coalesce(
-  (SELECT bool_and("seller_settings"."einvoicing_required") FROM "seller_settings"),
-  true
-)`;
-
-// The Bill's Customer (Ledger debit Customer), read live: flipping it moves old Bills.
-const customerEinvoicingRequired = sql<boolean>`coalesce(
-  (SELECT "customers"."einvoicing_required" FROM "customers" WHERE "customers"."id" = ${billCustomerId}),
-  false
-)`;
-
-export function billEinvoicingApplies(): SQL {
-  return sql`("bills"."legal_type" = 'tax_invoice' AND ${sellerEinvoicingRequired} AND ${customerEinvoicingRequired})`;
-}
-
-// The Bill's Customer is active (not deactivated); a deactivated Customer's Bills are read-only.
-const customerActive = sql<boolean>`coalesce(
-  (SELECT "customers"."status" = 'active' AND "customers"."deleted_at" IS NULL
-   FROM "customers" WHERE "customers"."id" = ${billCustomerId}),
-  false
-)`;
-
-export function billIrnPending(): SQL {
-  return sql`(${billEinvoicingApplies()} AND "bills"."irn" IS NULL AND ${billIsNotCancelled()})`;
-}
-
 export function billInFiledMonth(): SQL {
   return sql`EXISTS (
     SELECT 1 FROM "gstr1_filings"
@@ -84,33 +47,9 @@ export function billInFiledMonth(): SQL {
   )`;
 }
 
-export type BillGstFacts = Pick<
-  SelectBill,
-  | "id"
-  | "number"
-  | "billDate"
-  | "legalType"
-  | "irn"
-  | "irnAckNumber"
-  | "irnAckDate"
-  | "signedQrText"
-  | "signedQrImageKey"
-  | "irnRecordedAt"
-  | "irnRecordedBy"
-  | "irnCorrectReason"
-  | "portalCancelAckNumber"
-  | "portalCancelAckDate"
-  | "portalCancelNotes"
-> & {
-  customerId: string | null;
-  customerShopName: string | null;
-  // A deactivated Customer allows reads only, so no IRN write.
-  customerActive: boolean;
-  irnRecordedByName: string | null;
+export type BillGstFacts = Pick<SelectBill, "id" | "number" | "billDate"> & {
   cancelled: boolean;
   filedMonth: boolean;
-  einvoicingApplies: boolean;
-  irnPending: boolean;
 };
 
 // Everything the GST gates decide on for one Bill, read in the caller's transaction.
@@ -123,104 +62,24 @@ export async function getBillGstFacts(
       id: billsTable.id,
       number: billsTable.number,
       billDate: billsTable.billDate,
-      legalType: billsTable.legalType,
-      irn: billsTable.irn,
-      irnAckNumber: billsTable.irnAckNumber,
-      irnAckDate: billsTable.irnAckDate,
-      signedQrText: billsTable.signedQrText,
-      signedQrImageKey: billsTable.signedQrImageKey,
-      irnRecordedAt: billsTable.irnRecordedAt,
-      irnRecordedBy: billsTable.irnRecordedBy,
-      irnCorrectReason: billsTable.irnCorrectReason,
-      portalCancelAckNumber: billsTable.portalCancelAckNumber,
-      portalCancelAckDate: billsTable.portalCancelAckDate,
-      portalCancelNotes: billsTable.portalCancelNotes,
-      customerId: billCustomerId,
-      customerShopName: sql<string | null>`(
-        SELECT "customers"."shop_name" FROM "customers" WHERE "customers"."id" = ${billCustomerId}
-      )`,
-      customerActive: sql<boolean>`${customerActive}`,
-      irnRecordedByName: profilesTable.name,
       cancelled: sql<boolean>`${billIsCancelled()}`,
       filedMonth: sql<boolean>`${billInFiledMonth()}`,
-      einvoicingApplies: sql<boolean>`${billEinvoicingApplies()}`,
-      irnPending: sql<boolean>`${billIrnPending()}`,
     })
     .from(billsTable)
-    .leftJoin(profilesTable, eq(billsTable.irnRecordedBy, profilesTable.id))
     .where(eq(billsTable.id, billId));
   return row;
 }
 
-export interface IrnPendingRow {
-  billId: string;
-  number: string;
-  customerId: string | null;
-  customerShopName: string | null;
-  routeName: string;
-  routeCode: string;
-  billDate: string;
-  totalPaise: number;
-  filedMonth: boolean;
-}
-
-// Oldest first: Bill date, then number.
-export async function listIrnPendingBills(
-  pagination: PaginationParams,
-): Promise<PaginatedResult<IrnPendingRow>> {
-  const { limit, offset } = buildPaginationOffsets(pagination);
-  const [rows, totalCount] = await Promise.all([
-    db
-      .select({
-        billId: billsTable.id,
-        number: billsTable.number,
-        customerId: billCustomerId,
-        customerShopName: sql<string | null>`(
-          SELECT "customers"."shop_name" FROM "customers" WHERE "customers"."id" = ${billCustomerId}
-        )`,
-        letterhead: billsTable.letterhead,
-        billDate: billsTable.billDate,
-        totalPaise: billsTable.totalPaise,
-        filedMonth: sql<boolean>`${billInFiledMonth()}`,
-      })
-      .from(billsTable)
-      .where(billIrnPending())
-      .orderBy(asc(billsTable.billDate), asc(billsTable.number))
-      .limit(limit)
-      .offset(offset),
-    countIrnPendingBills(),
-  ]);
-  return toPaginatedResult(
-    rows.map(({ letterhead, ...row }) => {
-      const { route } = letterhead as BillLetterhead;
-      return { ...row, routeName: route.name, routeCode: route.code };
-    }),
-    totalCount,
-    pagination,
-  );
-}
-
-export async function countIrnPendingBills(executor: DbExecutor = db): Promise<number> {
-  const [row] = await executor.select({ total: count() }).from(billsTable).where(billIrnPending());
-  return row?.total ?? 0;
-}
-
-// Bills dated in the month and how many of them are IRN pending.
+// Bills dated in the month.
 export async function countBillsInMonth(
   periodMonth: string,
   executor: DbExecutor = db,
-): Promise<{ billsDatedInMonth: number; irnPendingInMonth: number }> {
+): Promise<{ billsDatedInMonth: number }> {
   const [row] = await executor
-    .select({
-      billsDatedInMonth: count(),
-      irnPendingInMonth: sql<number>`count(*) FILTER (WHERE ${billIrnPending()})::int`,
-    })
+    .select({ billsDatedInMonth: count() })
     .from(billsTable)
     .where(sql`date_trunc('month', ${billsTable.billDate})::date = ${periodMonth}::date`);
-  return {
-    billsDatedInMonth: row?.billsDatedInMonth ?? 0,
-    irnPendingInMonth: row?.irnPendingInMonth ?? 0,
-  };
+  return { billsDatedInMonth: row?.billsDatedInMonth ?? 0 };
 }
 
 // --- GSTR-1 filings.
@@ -282,55 +141,4 @@ export async function listGstr1Filings(executor: DbExecutor = db): Promise<Gstr1
     .leftJoin(profilesTable, eq(gstr1FilingsTable.filerId, profilesTable.id))
     .orderBy(desc(gstr1FilingsTable.periodMonth));
   return rows.map((row) => ({ ...row.filing, filerName: row.filerName }));
-}
-
-// --- IRN and portal cancellation writes on the bills row.
-
-// Another Bill already holding this IRN.
-export async function getOtherBillByIrn(
-  irn: string,
-  billId: string,
-  executor: DbExecutor = db,
-): Promise<Pick<SelectBill, "id" | "number"> | undefined> {
-  const [bill] = await executor
-    .select({ id: billsTable.id, number: billsTable.number })
-    .from(billsTable)
-    .where(and(eq(billsTable.irn, irn), ne(billsTable.id, billId)));
-  return bill;
-}
-
-export async function setBillIrn(
-  billId: string,
-  changes: Pick<
-    InsertBill,
-    | "irn"
-    | "irnAckNumber"
-    | "irnAckDate"
-    | "signedQrText"
-    | "signedQrImageKey"
-    | "irnRecordedAt"
-    | "irnRecordedBy"
-    | "irnCorrectReason"
-  >,
-  executor: DbExecutor = db,
-): Promise<SelectBill> {
-  const updatedRows = await executor
-    .update(billsTable)
-    .set(changes)
-    .where(eq(billsTable.id, billId))
-    .returning();
-  return firstOrThrow(updatedRows, "setBillIrn");
-}
-
-export async function setBillPortalCancelAck(
-  billId: string,
-  changes: Pick<InsertBill, "portalCancelAckNumber" | "portalCancelAckDate" | "portalCancelNotes">,
-  executor: DbExecutor = db,
-): Promise<SelectBill> {
-  const updatedRows = await executor
-    .update(billsTable)
-    .set(changes)
-    .where(eq(billsTable.id, billId))
-    .returning();
-  return firstOrThrow(updatedRows, "setBillPortalCancelAck");
 }

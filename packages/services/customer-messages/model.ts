@@ -163,13 +163,10 @@ export interface NotificationMessageGateway {
 // Spec L's draws; injected so tests can fake them.
 export type MessageDocuments = Pick<
   DocumentService,
-  | "ensureBillVersionDocument"
-  | "replaceBillDocumentAfterIrnCorrect"
-  | "ensureNoteDocument"
-  | "drawPaymentReceipt"
+  "ensureBillVersionDocument" | "ensureNoteDocument" | "drawPaymentReceipt"
 >;
 
-// Spec I's IRN pending and cancelled predicates.
+// Spec I's cancelled predicate.
 export type MessageGstState = Pick<GstService, "getBillGstState">;
 
 // How often a delegate or PDF step is tried, and the wait before each retry.

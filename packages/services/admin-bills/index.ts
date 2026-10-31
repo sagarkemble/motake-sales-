@@ -309,7 +309,7 @@ class AdminBillService {
   private readonly settingsService = new SettingsService();
   private readonly varietyTaxPeriodService = new VarietyTaxPeriodService();
 
-  // Spec J's listener, called once after each successful commit; Spec I's month and IRN lock.
+  // Spec J's listener, called once after each successful commit; Spec I's month lock.
   public constructor(
     private readonly afterCommit: AdminBillListener = noAdminBillListener,
     private readonly lockHook: BillLockHook = gstBillLockHook,
@@ -668,9 +668,9 @@ class AdminBillService {
   }
 
   // The Cancel core in the caller's transaction, returning the outcome for the caller to fire
-  // after its own commit (Spec I's portal cancellation passes action portal_cancel). Restores
-  // stock only to a Book Now's GatePass that is still active, capped at the order line's qty;
-  // marks the order cancelled with a new order version; writes the one bill/cancelled audit row.
+  // after its own commit. Restores stock only to a Book Now's GatePass that is still active,
+  // capped at the order line's qty; marks the order cancelled with a new order version; writes
+  // the one bill/cancelled audit row.
   public async cancelBillInTransaction(
     actorProfileId: string,
     input: CancelBillCoreInput,
@@ -682,7 +682,7 @@ class AdminBillService {
     if (await isBillCancelled(bill.id, transaction)) {
       throw ledgerRefusal("already_cancelled", `Bill ${bill.number} is already cancelled.`);
     }
-    await this.assertLockAllows(bill, parsedInput.action, transaction);
+    await this.assertLockAllows(bill, "cancel", transaction);
     const customerId = await this.activeCustomerOf(bill, transaction);
     const state = await this.loadBillState(bill, transaction);
     if (parsedInput.expectedVersionNumber !== undefined) {
@@ -1002,7 +1002,6 @@ class AdminBillService {
         placedAt: orderWithItems?.order.placedAt ?? bill.createdAt,
         billNote: orderWithItems?.order.notes ?? null,
         cancelled,
-        irn: bill.irn,
         latestVersionNumber: state.latest.versionNumber,
       },
       customer: customer

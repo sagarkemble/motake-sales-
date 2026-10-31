@@ -8,13 +8,7 @@ import {
   notoSansDevanagariBoldBase64,
   notoSansDevanagariRegularBase64,
 } from "../fonts/noto-sans-devanagari";
-import {
-  DRAFT_MARK,
-  amountInWords,
-  formatPaise,
-  formatRateBps,
-  formatSignedPaise,
-} from "../format";
+import { amountInWords, formatPaise, formatRateBps, formatSignedPaise } from "../format";
 import type { BankValues, SellerValues, SupplyType } from "../types";
 
 // Embedded fonts, so neither the ₹ sign nor Marathi text ever prints as a blank box. Noto Sans
@@ -36,7 +30,7 @@ Font.register({
     { src: `data:font/ttf;base64,${notoSansDevanagariBoldBase64}`, fontWeight: 700 },
   ],
 });
-// Words are never split with a hyphen; a long IRN or reference wraps at any character instead.
+// Words are never split with a hyphen; a long reference wraps at any character instead.
 Font.registerHyphenationCallback((word) => (word.length > 24 ? Array.from(word) : [word]));
 
 const INK = "#1a1a1a";
@@ -131,27 +125,6 @@ export const styles = StyleSheet.create({
     fontSize: 7,
     color: MUTED,
   },
-  watermark: {
-    position: "absolute",
-    top: 360,
-    left: -40,
-    right: -40,
-    textAlign: "center",
-    fontSize: 54,
-    fontWeight: 700,
-    color: "#d9d9d9",
-    transform: "rotate(-35deg)",
-  },
-  draftBanner: {
-    borderWidth: 1,
-    borderColor: INK,
-    backgroundColor: FILL,
-    textAlign: "center",
-    fontWeight: 700,
-    fontSize: 10,
-    paddingVertical: 3,
-    marginBottom: 6,
-  },
 });
 
 export function PaperDocument(props: { title: string; seller: SellerValues; children: ReactNode }) {
@@ -168,20 +141,14 @@ export function PaperDocument(props: { title: string; seller: SellerValues; chil
 }
 
 // A4 portrait: the title on the first page, "(continued)" above later pages, and the footer on
-// every page (computer generated, page x of y). A draft prints its mark across every page.
+// every page (computer generated, page x of y).
 export function PaperPage(props: {
   paperName: string;
   documentNumber: string;
-  draft?: boolean;
   children: ReactNode;
 }) {
   return (
     <Page size="A4" orientation="portrait" style={styles.page}>
-      {props.draft ? (
-        <Text style={styles.watermark} fixed>
-          {DRAFT_MARK}
-        </Text>
-      ) : null}
       <Text
         style={styles.continued}
         fixed
