@@ -18,7 +18,7 @@ describe("BillService reads", () => {
     const admin = await buildProfile();
     const route = await buildRoute({ name: "Sangli West", code: "rt-sangli-west" });
     const customer = await buildCustomer(admin.id, { routeId: route.id, shopName: "Laxmi Dairy" });
-    const milk = await buildVariety({ name: "1 L", unit: "pouch" });
+    const milk = await buildVariety({ name: "1 L" });
     const { order, bill } = await buildBookNowWithBill({
       customer,
       actorId: admin.id,
@@ -51,7 +51,7 @@ describe("BillService reads", () => {
     expect(opened.items).toEqual([
       expect.objectContaining({
         varietyId: milk.id,
-        stamp: { name: "1 L", unit: "pouch", hsn: "0401" },
+        stamp: { name: "1 L", unit: "", hsn: "0401" },
         quantity: 3,
         routePricePaise: 5_000,
         exempt: false,
