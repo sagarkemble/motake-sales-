@@ -306,6 +306,35 @@ export interface BillPaper {
   balance: Balance | null;
 }
 
+export const notePaperInputSchema = z.object({
+  noteId: z.string().uuid(),
+});
+export type NotePaperInput = z.input<typeof notePaperInputSchema>;
+
+// A Note line in the Bill's line order, named from the Bill version it points at.
+export interface NotePaperLine {
+  id: string;
+  name: string;
+  unit: string;
+  hsn: string;
+  exempt: boolean;
+  gstRateBps: number;
+  quantity: number;
+  // Before tax; the tax is on its own fields (zero on a Commercial Credit Note).
+  amountPaise: number;
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+}
+
+export interface NotePaper {
+  note: PaperNote & { cgstPaise: number; sgstPaise: number; igstPaise: number };
+  bill: { id: string; number: string; billDate: string; cancelled: boolean };
+  customer: Pick<SelectCustomer, "id" | "shopName" | "status"> | null;
+  lines: NotePaperLine[];
+  balance: Balance | null;
+}
+
 export interface PreOrderPaper {
   order: Pick<
     SelectOrder,

@@ -30,6 +30,8 @@ import {
   customerIdInputSchema,
   ledgerSummarySchema,
   listLedgerRowsInputSchema,
+  notePaperInputSchema,
+  notePaperSchema,
   openPreorderSchema,
   openingBalanceResultSchema,
   openingPaperSchema,
@@ -195,6 +197,22 @@ export const ledgerRouter = router({
     .input(billPaperInputSchema)
     .output(apiResponseSchema(billPaperSchema))
     .query(async ({ input }) => apiResponse(await adminBillService.getBillPaper(input))),
+
+  notePaper: adminProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: path("/notes/{noteId}"),
+        tags: ["Ledger"],
+        protect: true,
+        summary: "Get the Note paper",
+        description:
+          "Return a Credit or Debit Note: number, kind, issue date, reason, lines with qty and tax, the Bill it was raised on and the Customer's Balance. Notes are never edited.",
+      },
+    })
+    .input(notePaperInputSchema)
+    .output(apiResponseSchema(notePaperSchema))
+    .query(async ({ input }) => apiResponse(await adminBillService.getNotePaper(input))),
 
   previewCorrect: adminProcedure
     .meta({

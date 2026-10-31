@@ -455,6 +455,51 @@ export const billPaperSchema = z.object({
   balance: balanceSchema.nullable(),
 });
 
+export const notePaperInputSchema = z.object({
+  noteId: z.string().uuid(),
+});
+
+export const notePaperSchema = z.object({
+  note: z.object({
+    id: z.string(),
+    kind: noteKindSchema,
+    number: z.string(),
+    issuedOn: z.string(),
+    amountPaise: z.number().int(),
+    cgstPaise: z.number().int(),
+    sgstPaise: z.number().int(),
+    igstPaise: z.number().int(),
+    reason: z.string(),
+    returnOrDamageOn: z.string().nullable(),
+    hasPdf: z.boolean(),
+  }),
+  bill: z.object({
+    id: z.string(),
+    number: z.string(),
+    billDate: z.string(),
+    cancelled: z.boolean(),
+  }),
+  customer: z
+    .object({ id: z.string(), shopName: z.string(), status: customerStatusSchema })
+    .nullable(),
+  lines: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      unit: z.string(),
+      hsn: z.string(),
+      exempt: z.boolean(),
+      gstRateBps: z.number().int(),
+      quantity: z.number().int(),
+      amountPaise: z.number().int(),
+      cgstPaise: z.number().int(),
+      sgstPaise: z.number().int(),
+      igstPaise: z.number().int(),
+    }),
+  ),
+  balance: balanceSchema.nullable(),
+});
+
 export const orderIdInputSchema = z.object({ orderId: z.string().uuid() });
 
 export const preOrderPaperSchema = z.object({

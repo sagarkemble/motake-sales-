@@ -180,6 +180,47 @@ describe("AdminBillService.getBillPaper", () => {
   });
 });
 
+describe("AdminBillService.getNotePaper", () => {
+  it("shows the Note with its lines named from the Bill, the Bill and the Balance", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const { placed, milkLine } = await correctedBill(world);
+    const [credit] = await notesOf(placed.billId);
+
+    const paper = await adminBillService.getNotePaper({ noteId: credit!.id });
+
+    expect(paper.note).toMatchObject({
+      id: credit!.id,
+      kind: "gst_credit_note",
+      number: "MC/26-27/000001",
+      issuedOn: today,
+      reason: "One Milk leaked",
+      returnOrDamageOn: today,
+      hasPdf: false,
+    });
+    expect(paper.bill).toEqual({
+      id: placed.billId,
+      number: placed.billNumber,
+      billDate: today,
+      cancelled: false,
+    });
+    expect(paper.customer).toEqual({
+      id: world.customer.id,
+      shopName: world.customer.shopName,
+      status: "active",
+    });
+    expect(paper.lines).toHaveLength(1);
+    expect(paper.lines[0]).toMatchObject({ name: "Milk 1 L", quantity: 1 });
+    expect(paper.lines[0]!.amountPaise).toBe(milkLine.taxablePaise / milkLine.quantity);
+    expect(paper.balance!.balancePaise).toBeGreaterThan(0);
+  });
+
+  it("refuses a Note that does not exist", async () => {
+    await expect(adminBillService.getNotePaper({ noteId: randomUUID() })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
+
 describe("Spec L draws Spec G's papers", () => {
   it("prints a Raise Bill, a corrected version and its Notes (lines pointing at the replaced version)", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });

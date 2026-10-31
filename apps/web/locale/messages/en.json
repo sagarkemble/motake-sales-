@@ -1162,6 +1162,15 @@
         "notesTitle": "Notes on this Bill",
         "notesEmpty": "No notes on this Bill.",
         "returnedOn": "returned {date}",
+        "notePage": {
+          "loadError": "Could not load this Note",
+          "ofBill": "On Bill {number} of {date}",
+          "openBill": "Open Bill",
+          "issuedOn": "Issued {date}",
+          "reason": "Reason",
+          "noLines": "This Note has no lines.",
+          "cancelledBill": "The Bill this Note was raised on is cancelled."
+        },
         "actions": {
           "correct": "Correct",
           "raiseNote": "Raise Note",

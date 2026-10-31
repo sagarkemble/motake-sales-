@@ -1162,6 +1162,15 @@
         "notesTitle": "या बिलावरील नोट्स",
         "notesEmpty": "या बिलावर नोट्स नाहीत.",
         "returnedOn": "{date} रोजी परत",
+        "notePage": {
+          "loadError": "ही नोट लोड झाली नाही",
+          "ofBill": "{date} च्या बिल {number} वर",
+          "openBill": "बिल उघडा",
+          "issuedOn": "{date} रोजी दिली",
+          "reason": "कारण",
+          "noLines": "या नोटवर ओळी नाहीत.",
+          "cancelledBill": "ही नोट ज्या बिलावर दिली ते बिल रद्द झाले आहे."
+        },
         "actions": {
           "correct": "दुरुस्त करा",
           "raiseNote": "नोट करा",

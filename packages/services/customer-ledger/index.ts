@@ -41,7 +41,7 @@ const ROW_LABELS: Record<LedgerRowType, { detailsTitle: string; typeLabel: strin
   debit_note: { detailsTitle: "Debit Note", typeLabel: "Debit Note" },
 };
 
-// Payment adjusted and Refund adjusted rows open the Payment or Refund they adjust.
+// Each row opens the paper it posts: a Note, a Bill, a Payment, a Refund or the Opening balance.
 function openTargetOf(row: LedgerRowRecord): LedgerOpenTarget {
   if (row.noteId && row.noteBillId) {
     return { kind: "note", billId: row.noteBillId, noteId: row.noteId };
