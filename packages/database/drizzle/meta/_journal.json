@@ -57,6 +57,13 @@
       "when": 1793422659152,
       "tag": "0007_remove_hindi",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793423614383,
+      "tag": "0008_cities",
+      "breakpoints": true
     }
   ]
 }

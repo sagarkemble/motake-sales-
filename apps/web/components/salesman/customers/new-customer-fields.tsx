@@ -3,6 +3,7 @@
 import { RouteIcon } from "lucide-react";
 import { useId } from "react";
 
+import { CityPicker } from "~/components/shared/city-picker";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
 import { Input } from "~/components/ui/input";
@@ -16,6 +17,7 @@ export interface NewCustomerFormValues {
   shopName: string;
   phone: string;
   address: string;
+  cityId: string;
   shopPhotoKey: string;
   shopPhotoUrl: string;
   preferredLanguage: PreferredLanguage;
@@ -25,17 +27,19 @@ export const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
   shopName: "",
   phone: "",
   address: "",
+  cityId: "",
   shopPhotoKey: "",
   shopPhotoUrl: "",
   preferredLanguage: "mr",
 };
 
-/** Shop name, phone and address are required to save a Customer; the shop photo is optional. */
+/** Shop name, phone, address and city are required to save a Customer; the shop photo is optional. */
 export function isNewCustomerFormFilled(form: NewCustomerFormValues): boolean {
   return (
     form.shopName.trim().length > 0 &&
     form.phone.trim().length > 0 &&
-    form.address.trim().length > 0
+    form.address.trim().length > 0 &&
+    form.cityId.length > 0
   );
 }
 
@@ -120,6 +124,15 @@ export function NewCustomerFields({
           value={newCustomerForm.address}
           onChange={(event) => onNewCustomerFormChange({ address: event.target.value })}
           className="rounded-xl"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${idPrefix}-new-customer-city`}>{tx("common.cities.label")}</Label>
+        <CityPicker
+          id={`${idPrefix}-new-customer-city`}
+          value={newCustomerForm.cityId}
+          onValueChange={(cityId) => onNewCustomerFormChange({ cityId })}
         />
       </div>
 

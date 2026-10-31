@@ -1,6 +1,7 @@
 "use client";
 
 import { BackHeader } from "~/components/admin/products/back-header";
+import { CitiesTab } from "~/components/admin/settings/cities-tab";
 import { CreditNoteDeadlineTab } from "~/components/admin/settings/credit-note-deadline-tab";
 import { NumberSeriesTab } from "~/components/admin/settings/number-series-tab";
 import { SellerSettingsTab } from "~/components/admin/settings/seller-settings-tab";
@@ -31,6 +32,7 @@ export default function AdminSettingsPage() {
           <TabsTrigger value="seller">{tx("admin.settings.tabs.seller")}</TabsTrigger>
           <TabsTrigger value="prefixes">{tx("admin.settings.tabs.prefixes")}</TabsTrigger>
           <TabsTrigger value="deadline">{tx("admin.settings.tabs.deadline")}</TabsTrigger>
+          <TabsTrigger value="cities">{tx("admin.settings.tabs.cities")}</TabsTrigger>
         </TabsList>
         <TabsContent value="seller" className="mt-4">
           <SellerSettingsTab />
@@ -56,6 +58,9 @@ export default function AdminSettingsPage() {
           ) : (
             <CreditNoteDeadlineTab deadlines={creditNoteDeadlines} />
           )}
+        </TabsContent>
+        <TabsContent value="cities" className="mt-4">
+          <CitiesTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -141,6 +141,16 @@ export default function CustomerDetailPage() {
                 )}
               </dd>
             </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">{tx("common.cities.label")}</dt>
+              <dd className="min-w-0 break-words">
+                {customer.cityName ? (
+                  `${customer.cityName}, ${customer.cityState}`
+                ) : (
+                  <span className="text-muted-foreground">{tx("admin.customers.noCity")}</span>
+                )}
+              </dd>
+            </div>
           </dl>
         </div>
 

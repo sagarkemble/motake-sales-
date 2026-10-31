@@ -35,8 +35,12 @@ One salesman's stock allotment for a business date, tied to exactly one route ch
 The single GatePass a salesman is currently selling against; its route decides which customers and prices they see. The salesman app does not list Customers off that Route. Server still refuses Book Now, place Pre-order, and field Payment for a Customer not on that Route. If the GatePass is closed or handed over, there is no Active GatePass; salesman Book Now, place Pre-order, and field Payment refuse and show that. Salesman fulfil needs a new Active GatePass on that Route; Admin fulfil does not.
 
 **Customer**:
-One outlet on exactly one route; the record a salesman bills. A real-world owner with outlets on two routes is two Customers.
+One outlet on exactly one route, in one City; the record a salesman bills. Shop photo is optional. A real-world owner with outlets on two routes is two Customers.
 *Avoid*: Shop, outlet, client
+
+**City**:
+The town a Customer is in, under one Indian state. Admin keeps the list in Settings > Cities; Admin or a salesman can also add a missing city from the Customer form. Unique by name within its state in any letter case; never edited or deleted. Every Customer added or edited picks one; Customers from before cities have none until an Admin edit sets it. Not printed on Documents.
+*Avoid*: free-typed city, Route as a city
 
 **Deactivated Customer**:
 A Customer an Admin has switched off. Its Balance, Ledger and papers stay readable and its profile can still be updated (including Move to Route); every other write (Book Now, Pre-order, fulfil, Payment, Bill, Note, Opening balance) is refused. Deactivation is refused while the Customer has an open Pre-order; the Pre-order must be fulfilled or cancelled first.

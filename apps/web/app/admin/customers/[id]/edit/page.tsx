@@ -33,6 +33,7 @@ export default function EditCustomerPage() {
         phone: values.phone,
         address: values.address,
         notes: values.notes || undefined,
+        cityId: values.cityId,
         shopPhotoKey: values.shopPhotoKey || null,
         gstin: normalizeGstin(values.gstin) || null,
       });
@@ -65,6 +66,7 @@ export default function EditCustomerPage() {
           phone: customer.phone,
           address: customer.address,
           notes: customer.notes ?? "",
+          cityId: customer.cityId ?? "",
           shopPhotoKey: customer.shopPhotoKey ?? "",
           shopPhotoUrl: customer.shopPhotoUrl ?? "",
           gstin: customer.gstin ?? "",

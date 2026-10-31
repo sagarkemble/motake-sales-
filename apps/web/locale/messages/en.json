@@ -161,7 +161,24 @@
       "prefix_taken": "This prefix is already used for another paper this year.",
       "deadline_too_early": "The deadline must be after {date}.",
       "deadline_changed": "Someone else just changed this. Refresh and try again.",
-      "account_deleted": "This account was removed. Sign in is no longer possible."
+      "account_deleted": "This account was removed. Sign in is no longer possible.",
+      "city_name_taken": "{name} is already a city in {state}."
+    },
+    "cities": {
+      "label": "City",
+      "placeholder": "Pick a city",
+      "search": "Search city or state",
+      "empty": "No city matches.",
+      "add": "Add city",
+      "addNamed": "Add \"{name}\" as a city",
+      "addTitle": "Add a city",
+      "addHint": "Pick the state, then type the city name.",
+      "state": "State",
+      "name": "City name",
+      "namePlaceholder": "e.g. Kolhapur",
+      "added": "{name} added under {state}.",
+      "addFailed": "Could not add the city. Try again.",
+      "required": "Pick a city"
     }
   },
   "auth": {
@@ -488,7 +505,8 @@
         "totalOrders": "Total orders",
         "lifetimeValue": "Lifetime value",
         "lastOrder": "Last order"
-      }
+      },
+      "noCity": "Not set"
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -726,7 +744,8 @@
       "tabs": {
         "seller": "Seller",
         "prefixes": "Prefixes",
-        "deadline": "CN deadline"
+        "deadline": "CN deadline",
+        "cities": "Cities"
       },
       "loadFailed": "Could not load settings.",
       "reasonLabel": "Reason (optional)",
@@ -855,6 +874,12 @@
         "saveSuccess": "Deadline saved",
         "saveFailed": "Could not save the deadline. Try again.",
         "invalid": "Pick a date after {date}."
+      },
+      "cities": {
+        "intro": "Customers pick their city from this list. A missing city can also be added from the Customer form.",
+        "none": "No cities yet. Add the first one.",
+        "countOne": "{count} city",
+        "countOther": "{count} cities"
       }
     },
     "routes": {

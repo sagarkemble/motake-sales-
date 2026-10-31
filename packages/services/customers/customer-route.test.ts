@@ -1,9 +1,10 @@
 import { db, eq } from "@repo/database";
 import { listAuditLogsForEntity } from "@repo/database/queries/audit";
 import { customersTable, gatepassesTable } from "@repo/database/schema";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  buildCity,
   buildCustomer,
   buildGatepass,
   buildOrder,
@@ -17,11 +18,18 @@ import CustomerService from "./index";
 const customerService = new CustomerService();
 const today = "2026-10-25";
 
+// One city for every Customer this file adds.
+let cityId: string;
+beforeAll(async () => {
+  cityId = (await buildCity((await buildProfile()).id, { name: "Kolhapur" })).id;
+});
+
 function shopDetails(creatorId: string, overrides: Record<string, unknown> = {}) {
   return {
     shopName: "Ganesh Stores",
     phone: "9876543210",
     address: "12 Market Road",
+    cityId,
     shopPhotoKey: `customers/${creatorId}/shop.jpg`,
     ...overrides,
   };
@@ -63,6 +71,32 @@ describe("CustomerService Admin add", () => {
     );
 
     expect(customer).toMatchObject({ shopPhotoKey: null, shopPhotoUrl: null });
+  });
+
+  it("saves the picked city, reads it back with its state, and refuses an unknown city", async () => {
+    const admin = await buildProfile();
+    const route = await buildRoute();
+
+    const customer = await customerService.createCustomerAsAdmin(
+      { ...shopDetails(admin.id), routeId: route.id },
+      admin.id,
+    );
+
+    expect(customer.cityId).toBe(cityId);
+    expect(await customerService.getCustomerById(customer.id)).toMatchObject({
+      cityName: "Kolhapur",
+      cityState: "Maharashtra",
+    });
+    await expect(
+      customerService.createCustomerAsAdmin(
+        {
+          ...shopDetails(admin.id),
+          routeId: route.id,
+          cityId: "00000000-0000-4000-8000-000000000000",
+        },
+        admin.id,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("saves the Customer on the picked Route and records the add", async () => {
@@ -175,6 +209,17 @@ describe("CustomerService Admin add", () => {
 });
 
 describe("CustomerService Admin edit", () => {
+  it("sets the city of a Customer that had none, with an audit", async () => {
+    const admin = await buildProfile();
+    const customer = await buildCustomer(admin.id);
+
+    const updated = await customerService.updateCustomer(customer.id, { cityId }, admin.id);
+
+    expect(updated?.cityId).toBe(cityId);
+    const [row] = await listAuditLogsForEntity("customer", customer.id);
+    expect(row?.payload).toEqual({ cityId: { from: null, to: cityId } });
+  });
+
   it("changes the GSTIN with an audit, never the Preferred language or Route", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();

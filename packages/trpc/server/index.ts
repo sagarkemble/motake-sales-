@@ -3,6 +3,7 @@ import { router } from "./trpc";
 import { adminRouter } from "./routes/admin/route";
 import { authRouter } from "./routes/auth/route";
 import { billsRouter } from "./routes/bills/route";
+import { citiesRouter } from "./routes/cities/route";
 import { customerMessagesRouter } from "./routes/customer-messages/route";
 import { customersRouter } from "./routes/customers/route";
 import { documentsRouter } from "./routes/documents/route";
@@ -22,6 +23,7 @@ export const serverRouter = router({
   health: healthRouter,
   auth: authRouter,
   bills: billsRouter,
+  cities: citiesRouter,
   admin: adminRouter,
   customerMessages: customerMessagesRouter,
   customers: customersRouter,

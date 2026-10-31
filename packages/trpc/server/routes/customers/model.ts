@@ -14,6 +14,8 @@ export const customerSchema = z.object({
   notes: z.string().nullable(),
   shopPhotoKey: z.string().nullable(),
   shopPhotoUrl: z.string().nullable(),
+  // Null only on a Customer added before cities, until an Admin edit sets it.
+  cityId: z.string().nullable(),
   routeId: z.string(),
   gstin: z.string().nullable(),
   // Fixed once the Customer is added.
@@ -31,6 +33,8 @@ export const customerWithRouteSchema = customerSchema.extend({
   routeName: z.string(),
   routeCode: z.string(),
   routeHidden: z.boolean(),
+  cityName: z.string().nullable(),
+  cityState: z.string().nullable(),
   balancePaise: z.number().int(),
 });
 
@@ -48,6 +52,7 @@ export const createCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20),
   address: z.string().min(1),
   notes: z.string().optional(),
+  cityId: z.string().uuid(),
   shopPhotoKey: z.string().min(1).optional(),
   preferredLanguage: preferredLanguageSchema.optional(),
   // Admin only, and required for Admin. A salesman's Customer goes on their Active GatePass Route.
@@ -62,6 +67,7 @@ export const updateCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20).optional(),
   address: z.string().min(1).optional(),
   notes: z.string().optional(),
+  cityId: z.string().uuid().optional(),
   shopPhotoKey: z.string().min(1).nullable().optional(),
   gstin: gstinInputSchema.optional(),
 });

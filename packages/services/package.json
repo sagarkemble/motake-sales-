@@ -7,6 +7,7 @@
     "./auth": "./auth/index.ts",
     "./bills": "./bills/index.ts",
     "./business-date": "./business-date/index.ts",
+    "./cities": "./cities/index.ts",
     "./clients": "./clients/index.ts",
     "./customer-ledger": "./customer-ledger/index.ts",
     "./customer-messages": "./customer-messages/index.ts",

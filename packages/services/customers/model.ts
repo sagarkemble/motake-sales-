@@ -23,6 +23,7 @@ const customerDetailsSchema = z.object({
   phone: z.string().min(1).max(20),
   address: z.string().min(1),
   notes: z.string().optional(),
+  cityId: z.string().uuid(),
   // Optional: a Customer can be added without a shop photo.
   shopPhotoKey: z.string().min(1).optional(),
   // Fixed once the Customer is added.
@@ -45,6 +46,8 @@ export const updateCustomerInputSchema = z.object({
   phone: z.string().min(1).max(20).optional(),
   address: z.string().min(1).optional(),
   notes: z.string().optional(),
+  // Set or changed, never cleared.
+  cityId: z.string().uuid().optional(),
   shopPhotoKey: z.string().min(1).nullable().optional(),
   gstin: gstinSchema.optional(),
 });

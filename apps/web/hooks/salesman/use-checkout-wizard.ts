@@ -304,6 +304,7 @@ export function useCheckoutWizard() {
         shopName: newCustomerForm.shopName.trim(),
         phone: newCustomerForm.phone.trim(),
         address: newCustomerForm.address.trim(),
+        cityId: newCustomerForm.cityId,
         shopPhotoKey: newCustomerForm.shopPhotoKey || undefined,
         preferredLanguage: newCustomerForm.preferredLanguage,
       });

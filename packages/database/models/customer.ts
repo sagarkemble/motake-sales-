@@ -1,5 +1,15 @@
-import { bigint, boolean, index, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
+import { citiesTable } from "./city";
 import { entityStatusEnum, messageLanguageEnum } from "./enums";
 import { profilesTable } from "./profile";
 import { routesTable } from "./route";
@@ -31,6 +41,10 @@ export const customersTable = pgTable(
       .notNull()
       .references(() => routesTable.id, { onDelete: "restrict" }),
 
+    // Required by the Admin and salesman Customer forms; null only on Customers added before
+    // cities existed, until an Admin edit sets it.
+    cityId: uuid("city_id").references(() => citiesTable.id, { onDelete: "restrict" }),
+
     // Empty = normal Customer; 15 characters when present.
     gstin: varchar("gstin", { length: 15 }),
 
@@ -55,7 +69,10 @@ export const customersTable = pgTable(
       .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (table) => [index("customers_route_id_idx").on(table.routeId)],
+  (table) => [
+    index("customers_route_id_idx").on(table.routeId),
+    index("customers_city_id_idx").on(table.cityId),
+  ],
 );
 
 export type SelectCustomer = typeof customersTable.$inferSelect;

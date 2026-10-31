@@ -15,6 +15,7 @@ import {
 import { db } from "../../index";
 import {
   billsTable,
+  citiesTable,
   customersTable,
   ordersTable,
   routesTable,
@@ -37,6 +38,9 @@ export type CustomerWithRoute = SelectCustomer & {
   routeName: string;
   routeCode: string;
   routeHidden: boolean;
+  // Null while the Customer has no city.
+  cityName: string | null;
+  cityState: string | null;
 };
 
 const customerWithRouteColumns = {
@@ -44,6 +48,8 @@ const customerWithRouteColumns = {
   routeName: routesTable.name,
   routeCode: routesTable.code,
   routeHidden: sql<boolean>`${routesTable.deletedAt} IS NOT NULL`,
+  cityName: citiesTable.name,
+  cityState: citiesTable.state,
 };
 
 export async function createCustomer(
@@ -62,6 +68,7 @@ export async function getCustomerWithRouteById(
     .select(customerWithRouteColumns)
     .from(customersTable)
     .innerJoin(routesTable, eq(customersTable.routeId, routesTable.id))
+    .leftJoin(citiesTable, eq(customersTable.cityId, citiesTable.id))
     .where(eq(customersTable.id, customerId));
   return customer;
 }
@@ -143,6 +150,7 @@ export async function searchCustomers(
       .select(customerWithRouteColumns)
       .from(customersTable)
       .innerJoin(routesTable, eq(customersTable.routeId, routesTable.id))
+      .leftJoin(citiesTable, eq(customersTable.cityId, citiesTable.id))
       .where(whereClause)
       .orderBy(asc(customersTable.shopName))
       .limit(limit)
