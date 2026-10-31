@@ -155,7 +155,7 @@ export type CheckoutRefusalReason =
   | "bad_lines"
   | "short_stock"
   | "price_field_refused"
-  | "scheduled_date_not_after_today"
+  | "scheduled_date_in_past"
   | "fulfil_too_early"
   | "already_fulfilled"
   | "pre_order_cancelled"
@@ -179,7 +179,7 @@ const checkoutRefusalCodes: Record<CheckoutRefusalReason, TRPCError["code"]> = {
   bad_lines: "BAD_REQUEST",
   short_stock: "CONFLICT",
   price_field_refused: "BAD_REQUEST",
-  scheduled_date_not_after_today: "BAD_REQUEST",
+  scheduled_date_in_past: "BAD_REQUEST",
   fulfil_too_early: "CONFLICT",
   already_fulfilled: "CONFLICT",
   pre_order_cancelled: "CONFLICT",

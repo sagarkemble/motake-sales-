@@ -19,7 +19,7 @@ interface OrderTypeStepProps {
   bookNowBlockReasons: BookNowBlockReason[];
   scheduledDate: string;
   onScheduledDateChange: (scheduledDate: string) => void;
-  // The first day a Pre-order may be for (tomorrow); there is no last day.
+  // The first day a Pre-order may be for (today); there is no last day.
   earliestDate: string;
 }
 

@@ -83,7 +83,7 @@ const REFUSAL_STEP: Partial<Record<CheckoutRefusalReason, CheckoutStep>> = {
   short_stock: "cart",
   bill_total_zero: "cart",
   idempotency_key_reused: "cart",
-  scheduled_date_not_after_today: "type",
+  scheduled_date_in_past: "type",
   customer_inactive: "customer",
   customer_not_on_route: "customer",
   overpay_choice_required: "payment",
@@ -461,6 +461,7 @@ export function useCheckoutWizard() {
     scheduledDate,
     setScheduledDate,
     tomorrowDateKey,
+    todayDateKey: businessDateKey,
 
     myGatepass,
     isMyGatepassLoading,

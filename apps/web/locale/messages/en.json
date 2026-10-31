@@ -1563,7 +1563,7 @@
         "preOrderHint": "Deliver on {date} at today's price. No Bill and no stock used now.",
         "preOrder": "Pre-order",
         "deliveryDate": "Delivery date",
-        "dateHint": "Only days after today. Default is tomorrow.",
+        "dateHint": "Today or later. Default is tomorrow.",
         "gatepassNotActive": "Your GatePass on {route} is not active. Selling is closed for today.",
         "shortLine": "{name}: need {need}, GatePass has {left}"
       },
@@ -1949,9 +1949,9 @@
         "title": "Prices come from the Route",
         "message": "The app sent a price. Prices are set by the Route on the server. Update the app and try again."
       },
-      "scheduled_date_not_after_today": {
-        "title": "Pick a later date",
-        "message": "A Pre-order must be for a day after today. For today, use Book Now.",
+      "scheduled_date_in_past": {
+        "title": "Pick another date",
+        "message": "A Pre-order cannot be for a day before today.",
         "action": "Change date"
       },
       "fulfil_too_early": {

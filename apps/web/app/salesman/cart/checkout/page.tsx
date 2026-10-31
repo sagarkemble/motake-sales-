@@ -66,7 +66,7 @@ export default function SalesmanCheckoutPage() {
         bookNowBlockReasons={wizard.bookNowBlockReasons}
         scheduledDate={wizard.scheduledDate}
         onScheduledDateChange={wizard.setScheduledDate}
-        earliestDate={wizard.tomorrowDateKey}
+        earliestDate={wizard.todayDateKey}
       />
     ) : wizard.currentStep === "customer" ? (
       <CustomerDetailsStep
