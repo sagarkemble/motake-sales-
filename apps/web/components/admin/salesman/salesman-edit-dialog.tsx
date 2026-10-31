@@ -17,7 +17,9 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { ImageUpload } from "~/components/shared/image-upload";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { useAuth } from "~/hooks/use-auth";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useTranslate } from "~/hooks/use-translate";
 
@@ -28,13 +30,16 @@ type SalesmanEditFormValues = {
   phone: string;
   email: string;
   password?: string;
+  // Set only when a new photo was uploaded here.
+  avatarKey: string;
+  avatarUrl: string;
 };
 
 interface SalesmanEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   salesmanId: string;
-  defaultValues: { name: string; phone: string; email: string };
+  defaultValues: { name: string; phone: string; email: string; avatarUrl: string | null };
 }
 
 export function SalesmanEditDialog({
@@ -45,6 +50,8 @@ export function SalesmanEditDialog({
 }: SalesmanEditDialogProps) {
   const tx = useTranslate();
   const { updateSalesmanAccountAsync, isUpdatingSalesmanAccount } = useSalesmen();
+  // The Admin's own avatar upload URL; the server takes the photo from that folder.
+  const { createAvatarUploadUrlAsync } = useAuth();
 
   const salesmanEditFormSchema = useMemo(
     () =>
@@ -56,20 +63,31 @@ export function SalesmanEditDialog({
           .min(1, tx("admin.salesmen.validation.email"))
           .email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.union([z.string().length(0), z.string().min(minPasswordLength)]).optional(),
+        avatarKey: z.string(),
+        avatarUrl: z.string(),
       }),
     [tx],
   );
 
+  const { name, phone, email, avatarUrl } = defaultValues;
+  const formDefaults = useMemo(
+    () => ({ name, phone, email, password: "", avatarKey: "", avatarUrl: avatarUrl ?? "" }),
+    [name, phone, email, avatarUrl],
+  );
+
   const form = useForm<SalesmanEditFormValues>({
     resolver: zodResolver(salesmanEditFormSchema),
-    defaultValues: { ...defaultValues, password: "" },
+    defaultValues: formDefaults,
   });
 
   useEffect(() => {
-    if (open) form.reset({ ...defaultValues, password: "" });
-  }, [open, defaultValues, form]);
+    if (open) form.reset(formDefaults);
+  }, [open, formDefaults, form]);
 
   async function handleSubmit(values: SalesmanEditFormValues) {
+    // A new upload replaces the photo; a removed one is sent as null; otherwise it stays.
+    const photoRemoved = Boolean(defaultValues.avatarUrl) && !values.avatarUrl;
+    const avatarKey = values.avatarKey ? values.avatarKey : photoRemoved ? null : undefined;
     try {
       await updateSalesmanAccountAsync({
         id: salesmanId,
@@ -77,6 +95,7 @@ export function SalesmanEditDialog({
         phone: values.phone,
         email: values.email,
         password: values.password ? values.password : undefined,
+        avatarKey,
       });
       toast.success(tx("admin.salesmen.updateSuccess"));
       onOpenChange(false);
@@ -87,13 +106,33 @@ export function SalesmanEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{tx("admin.salesmen.editAria")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm font-medium">{tx("admin.salesmen.form.photoOptional")}</p>
+              <ImageUpload
+                imageUrl={form.watch("avatarUrl") || null}
+                requestUploadUrl={createAvatarUploadUrlAsync}
+                altText={tx("admin.salesmen.form.photoAlt")}
+                shape="circle"
+                uploadButtonLabel={tx("admin.salesmen.form.uploadPhoto")}
+                onUploaded={(result) => {
+                  form.setValue("avatarKey", result.imageKey);
+                  form.setValue("avatarUrl", result.imageUrl);
+                }}
+                // Only clears the form; Save removes the photo.
+                onDelete={async () => {
+                  form.setValue("avatarKey", "");
+                  form.setValue("avatarUrl", "");
+                }}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="name"

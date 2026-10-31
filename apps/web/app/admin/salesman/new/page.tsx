@@ -16,7 +16,13 @@ export default function NewSalesmanPage() {
 
   async function handleSubmit(values: SalesmanFormValues) {
     try {
-      const response = await createSalesmanAccountAsync(values);
+      const response = await createSalesmanAccountAsync({
+        name: values.name,
+        phone: values.phone,
+        email: values.email,
+        password: values.password,
+        avatarKey: values.avatarKey || undefined,
+      });
       toast.success(tx("admin.salesmen.createSuccess"));
       router.push(`/admin/salesman/${response.data.id}`);
     } catch (error) {

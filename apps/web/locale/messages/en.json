@@ -593,6 +593,9 @@
       "createCta": "Create salesman",
       "deleteConfirmPrompt": "Are you sure you want to delete this salesman?",
       "form": {
+        "photoAlt": "Salesman photo",
+        "uploadPhoto": "Upload photo",
+        "photoOptional": "Photo (optional)",
         "emailPlaceholder": "Email address",
         "namePlaceholder": "Full name",
         "passwordKeepPlaceholder": "Leave blank to keep current password",

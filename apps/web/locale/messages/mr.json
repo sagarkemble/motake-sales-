@@ -593,6 +593,9 @@
       "createCta": "विक्रेता तयार करा",
       "deleteConfirmPrompt": "तुम्हाला हा विक्रेता नक्की हटवायचा आहे का?",
       "form": {
+        "photoAlt": "सेल्समनचा फोटो",
+        "uploadPhoto": "फोटो अपलोड करा",
+        "photoOptional": "फोटो (ऐच्छिक)",
         "emailPlaceholder": "ईमेल पत्ता",
         "namePlaceholder": "पूर्ण नाव",
         "passwordKeepPlaceholder": "सध्याचा पासवर्ड ठेवण्यासाठी रिकामे सोडा",

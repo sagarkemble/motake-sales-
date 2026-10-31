@@ -15,6 +15,8 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { ImageUpload } from "~/components/shared/image-upload";
+import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 
 const minPasswordLength = 8;
@@ -24,6 +26,9 @@ export type SalesmanFormValues = {
   phone: string;
   email: string;
   password: string;
+  // Optional: empty when no photo was uploaded.
+  avatarKey: string;
+  avatarUrl: string;
 };
 
 interface SalesmanFormProps {
@@ -34,6 +39,8 @@ interface SalesmanFormProps {
 
 export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFormProps) {
   const tx = useTranslate();
+  // The Admin's own avatar upload URL; the server takes the photo from that folder.
+  const { createAvatarUploadUrlAsync } = useAuth();
 
   const salesmanFormSchema = useMemo(
     () =>
@@ -45,6 +52,8 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
           .min(1, tx("admin.salesmen.validation.email"))
           .email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.string().min(minPasswordLength, tx("admin.salesmen.validation.passwordMin")),
+        avatarKey: z.string(),
+        avatarUrl: z.string(),
       }),
     [tx],
   );
@@ -56,12 +65,34 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
       phone: "",
       email: "",
       password: "",
+      avatarKey: "",
+      avatarUrl: "",
     },
   });
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border bg-card p-4">
+          <p className="text-sm font-medium">{tx("admin.salesmen.form.photoOptional")}</p>
+          <ImageUpload
+            imageUrl={form.watch("avatarUrl") || null}
+            requestUploadUrl={createAvatarUploadUrlAsync}
+            altText={tx("admin.salesmen.form.photoAlt")}
+            shape="circle"
+            uploadButtonLabel={tx("admin.salesmen.form.uploadPhoto")}
+            onUploaded={(result) => {
+              form.setValue("avatarKey", result.imageKey);
+              form.setValue("avatarUrl", result.imageUrl);
+            }}
+            // Only clears the form; nothing is saved until Create.
+            onDelete={async () => {
+              form.setValue("avatarKey", "");
+              form.setValue("avatarUrl", "");
+            }}
+          />
+        </div>
+
         <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
           <FormField
             control={form.control}

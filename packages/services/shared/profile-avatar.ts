@@ -66,6 +66,18 @@ export async function updateProfileNameAndAvatar(
   return updatedProfile;
 }
 
+// The Admin uploads a salesman's photo through the Admin's own avatar upload URL, so the key sits in
+// the Admin's folder; any other key did not come from that upload.
+export function adminUploadedAvatar(
+  avatarKey: string,
+  adminProfileId: string,
+): { avatarKey: string; avatarUrl: string } {
+  if (!avatarKey.startsWith(`${avatarImageFolderName}/${adminProfileId}/`)) {
+    throw screenRefusal("photo_upload_invalid", "This avatar image was not uploaded by this Admin");
+  }
+  return { avatarKey, avatarUrl: buildPublicUrl(avatarKey) };
+}
+
 export async function deleteProfileAvatar(profileId: string): Promise<SelectProfile | undefined> {
   const existingProfile = await getProfileById(profileId);
   const updatedProfile = await updateProfile(profileId, { avatarKey: null, avatarUrl: null });

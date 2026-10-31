@@ -95,6 +95,7 @@ export default function SalesmanDetailPage() {
           name: profile.name ?? "",
           phone: profile.phone ?? "",
           email: profile.email,
+          avatarUrl: profile.avatarUrl,
         }}
       />
     </div>
