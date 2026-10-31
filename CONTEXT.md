@@ -59,7 +59,7 @@ An order placed for a later date at the route price of the moment it was placed;
 ### Money
 
 **Bill**:
-A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill) when it is issued: at Book Now, Pre-order fulfil, or Admin Raise Bill. An unfulfilled Pre-order has no Bill. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed, and after IRN is recorded.
+A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill) when it is issued: at Book Now, Pre-order fulfil, or Admin Raise Bill. An unfulfilled Pre-order has no Bill. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed.
 *Avoid*: Invoice
 
 **Tax Invoice**:
@@ -116,19 +116,9 @@ An admin fix to a wrongly recorded Payment (kept amount, mode, or reference), ke
 **GST**:
 Tax added on top of the Route price per Bill line. Actual delivery state determines CGST + SGST versus IGST; the Route supplies the default state. Bills, Pending and Payments are tax-inclusive.
 
-**E-invoicing required**:
-A per-Customer Admin setting. When yes, that Customer's Tax Invoice Bills need an IRN and signed QR before the final Bill is delivered. A Bill of Supply does not wait for IRN.
-*Avoid*: org-wide e-invoice mode
-
-**IRN**:
-The Invoice Reference Number from the government e-invoice portal, stored on the Bill with acknowledgement number, acknowledgement date, and signed QR. Admin may Correct those fields with a reason; that does not unlock line Correct.
-*Avoid*: an IRN history table
-
-**Signed QR**:
-The portal's signed QR for that IRN. Text is required; an image file is optional.
-
-**IRN pending**:
-A billed Tax Invoice (Book Now or fulfilled Pre-order, not cancelled) whose Customer has E-invoicing required and which has no IRN yet. Sale, Ledger, and Payment have committed; final Tax Invoice PDF and Bill WhatsApp wait.
+**E-invoicing**:
+Not done in Motake. No Bill waits for an IRN: every Tax Invoice PDF is drawn and sent at once. IRNs, signed QRs and portal cancellations are not recorded; the old columns stay unused (`docs/adr/0004-no-e-invoicing.md`).
+*Avoid*: IRN pending, Enter IRN, portal cancellation, Draft PDF
 
 **GSTR-1 filing**:
 Admin's record that Motake's monthly GSTR-1 for one calendar month is done on the government portal. One filing per month. Filer is the signed-in Admin. Correcting ack, filing date, or notes does not unlock the month. There is no unfile.
@@ -136,9 +126,6 @@ Admin's record that Motake's monthly GSTR-1 for one calendar month is done on th
 
 **Filed month**:
 A calendar month that has a GSTR-1 filing. Bills whose Bill date falls in that month cannot be line-Corrected; Notes still work. Bill date is Book Now day or Pre-order fulfil day, in Asia/Kolkata.
-
-**Portal cancellation**:
-Admin records that they already cancelled an IRN Bill on the government portal, then Cancels the Motake Bill (number kept). Refused once that Bill's month is filed; Raise Note instead. The app does not time the government window.
 
 **Paisa**:
 The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise. Rupee decimals are only a display format.
@@ -154,14 +141,14 @@ A one-time starting Balance entered for a Customer to carry over what was owed b
 
 **Receipt**:
 The WhatsApp sent because a Payment was kept above ₹0. Names Customer and Route, kept amount, mode, and Balance after that Payment. Carries the Payment receipt Document, which also shows cash returned if any.
-*Avoid*: Bill message, invoice; a second Receipt when IRN is later recorded
+*Avoid*: Bill message, invoice
 
 **Account update**:
 The WhatsApp sent when Balance changed because of a Bill edit, Credit/Debit Note, Payment adjustment, or Refund. Names the change, reason, and new Balance. Not used when a Bill is cancelled.
 *Avoid*: sending this together with the cancellation message
 
 **Cancellation message**:
-The dedicated WhatsApp when a Motake Bill is cancelled (including portal cancellation). Bill number, reason, reversed amount, new Balance. No cancelled Bill PDF.
+The dedicated WhatsApp when a Motake Bill is cancelled. Bill number, reason, reversed amount, new Balance. No cancelled Bill PDF.
 
 **Statutory Note message**:
 The WhatsApp of a GST Credit Note or GST Debit Note to a GSTIN Customer, with the Note PDF. A Commercial Credit Note is account update only. A Customer without GSTIN never gets this message.
