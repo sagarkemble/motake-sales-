@@ -9,7 +9,7 @@ export const notificationKindSchema = z.enum([
   "cancellation",
 ]);
 export const notificationProviderSchema = z.enum(["whatsapp", "sms"]);
-export const messageLanguageSchema = z.enum(["mr", "hi", "en"]);
+export const messageLanguageSchema = z.enum(["mr", "en"]);
 export const attachmentTypeSchema = z.enum(["pdf", "image"]);
 
 export const notificationIdSchema = z.string().uuid();
@@ -154,7 +154,7 @@ export interface NotificationTemplateView {
   id: string;
   provider: "whatsapp" | "sms";
   templateId: string;
-  language: "mr" | "hi" | "en";
+  language: "mr" | "en";
   version: number;
   templateVariables: string[];
   documentType: "none" | "image" | "pdf";

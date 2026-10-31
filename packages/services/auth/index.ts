@@ -1,5 +1,6 @@
 import {
   createProfile,
+  deleteAuthSessions,
   getProfileById,
   softDeleteProfile,
   updateProfile,
@@ -10,7 +11,8 @@ import { supabaseAdminClient } from "../clients/supabase-admin";
 import { env } from "../env";
 import { runInTransaction } from "@repo/database/queries/shared/executor";
 
-import { badRequest, notFound, screenRefusal, unauthorized } from "../errors";
+import { badRequest, internalError, notFound, screenRefusal, unauthorized } from "../errors";
+import GatepassService from "../gatepass";
 import SalesmanService from "../salesman";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
@@ -49,6 +51,7 @@ function supabaseAccountRefusal(message: string, code: string | undefined) {
 
 class AuthService {
   private readonly salesmanService = new SalesmanService();
+  private readonly gatepassService = new GatepassService();
 
   public async verifyAccessToken(accessToken: string): Promise<AuthenticatedUser> {
     const { data, error } = await supabaseAdminClient.auth.getUser(accessToken);
@@ -132,7 +135,7 @@ class AuthService {
           transaction,
         );
         const createdSalesman = await this.salesmanService.createSalesman(
-          { id: supabaseUserId, salesmanCode: parsedInput.salesmanCode },
+          { id: supabaseUserId, name: parsedInput.name, phone: parsedInput.phone },
           transaction,
         );
         await recordAudit(
@@ -145,7 +148,7 @@ class AuthService {
               email: parsedInput.email,
               name: parsedInput.name,
               phone: parsedInput.phone,
-              salesmanCode: parsedInput.salesmanCode,
+              salesmanCode: createdSalesman.salesmanCode,
             }),
           },
           transaction,
@@ -266,8 +269,21 @@ class AuthService {
     });
   }
 
+  // Removes every way in: refused while the salesman holds an Active GatePass (hand it over or
+  // close it first); the login is banned, every session ended, and the profile soft-deleted, so
+  // each later request is refused as account_deleted.
   public async deleteSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
-    await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "876000h" });
+    if (await this.gatepassService.getActiveGatepassForSalesman(profileId)) {
+      throw screenRefusal(
+        "salesman_has_active_gatepass",
+        "This salesman has an Active GatePass. Hand it over or close it, then delete.",
+      );
+    }
+    const { error } = await supabaseAdminClient.auth.admin.updateUserById(profileId, {
+      ban_duration: "876000h",
+    });
+    if (error) throw internalError(`The salesman login could not be blocked: ${error.message}`);
+    await deleteAuthSessions(profileId);
     await runInTransaction(async (transaction) => {
       await softDeleteProfile(profileId, transaction);
       await recordAudit(

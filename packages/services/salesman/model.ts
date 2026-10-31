@@ -1,15 +1,12 @@
 import { z } from "zod";
 
+// The Salesman code is generated from the name and phone; Admin never types it.
 export const createSalesmanInputSchema = z.object({
   id: z.uuid(),
-  salesmanCode: z.string().min(1).max(32),
+  name: z.string().min(1).max(120),
+  phone: z.string().min(1).max(20),
 });
 export type CreateSalesmanInput = z.infer<typeof createSalesmanInputSchema>;
-
-export const updateSalesmanCodeInputSchema = z.object({
-  salesmanCode: z.string().min(1).max(32),
-});
-export type UpdateSalesmanCodeInput = z.infer<typeof updateSalesmanCodeInputSchema>;
 
 export {
   updateProfileNameAndAvatarInputSchema as updateSalesmanProfileInputSchema,

@@ -230,15 +230,15 @@ describe("OrderService.placePreOrder", () => {
   });
 
   describe("refuses, writing nothing", () => {
-    it("for a date of today or before", async () => {
+    it("for a date before today", async () => {
       const world = await buildCheckoutWorld({ businessDate: today });
-      for (const scheduledDate of [today, "2026-10-01"]) {
+      for (const scheduledDate of ["2026-10-24", "2026-10-01"]) {
         expect(
           await refusalOf(
             orderService.placePreOrder(world.salesman.id, preOrderInput(world, { scheduledDate })),
           ),
         ).toEqual({
-          reason: "scheduled_date_not_after_today",
+          reason: "scheduled_date_in_past",
           details: { scheduledDate, today },
         });
       }
@@ -418,6 +418,21 @@ describe("OrderService.fulfilPreOrder", () => {
     );
 
     expect(result.billNumber).toBe("MB/27-28/000001");
+  });
+
+  it("places a Pre-order for today and fulfils it the same day", async () => {
+    const world = await buildCheckoutWorld({ businessDate: today });
+    const placed = await orderService.placePreOrder(
+      world.salesman.id,
+      preOrderInput(world, { scheduledDate: today }),
+    );
+
+    const result = await orderService.fulfilPreOrder(
+      salesmanActor(world),
+      fulfilInput(placed.orderId),
+    );
+
+    expect(result.billNumber).toBe("MB/26-27/000001");
   });
 
   it("refuses before the scheduled date, for salesman and Admin alike", async () => {

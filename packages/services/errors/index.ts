@@ -155,7 +155,7 @@ export type CheckoutRefusalReason =
   | "bad_lines"
   | "short_stock"
   | "price_field_refused"
-  | "scheduled_date_not_after_today"
+  | "scheduled_date_in_past"
   | "fulfil_too_early"
   | "already_fulfilled"
   | "pre_order_cancelled"
@@ -179,7 +179,7 @@ const checkoutRefusalCodes: Record<CheckoutRefusalReason, TRPCError["code"]> = {
   bad_lines: "BAD_REQUEST",
   short_stock: "CONFLICT",
   price_field_refused: "BAD_REQUEST",
-  scheduled_date_not_after_today: "BAD_REQUEST",
+  scheduled_date_in_past: "BAD_REQUEST",
   fulfil_too_early: "CONFLICT",
   already_fulfilled: "CONFLICT",
   pre_order_cancelled: "CONFLICT",
@@ -300,6 +300,7 @@ export const customerMessageRefused = (
 // `details`, so a screen never shows server text.
 export type ScreenRefusalReason =
   | "account_deactivated"
+  | "account_deleted"
   | "variety_name_taken"
   | "gst_exempt_rate_not_zero"
   | "gst_rate_required"
@@ -307,6 +308,7 @@ export type ScreenRefusalReason =
   | "route_required"
   | "route_deleted"
   | "route_name_taken"
+  | "city_name_taken"
   | "route_has_open_work"
   | "photo_upload_invalid"
   | "customer_has_open_pre_orders"
@@ -318,6 +320,7 @@ export type ScreenRefusalReason =
   | "gatepass_not_awaiting_verification"
   | "duplicate_variety_in_allotment"
   | "salesman_has_gatepass"
+  | "salesman_has_active_gatepass"
   | "route_price_missing"
   | "gatepass_not_active"
   | "returned_qty_out_of_range"
@@ -332,8 +335,8 @@ export type ScreenRefusalReason =
   | "opening_balance_exists"
   | "nothing_changed"
   | "gstr1_already_filed"
-  | "filing_month_not_started"
-  | "filing_date_before_month"
+  | "filing_month_not_ended"
+  | "filing_date_before_month_end"
   | "filing_date_after_today"
   | "message_pending"
   | "phone_unusable"
@@ -352,6 +355,7 @@ export type ScreenRefusalReason =
 // Each reason keeps the HTTP code its error had before it carried a reason.
 const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   account_deactivated: "FORBIDDEN",
+  account_deleted: "UNAUTHORIZED",
   variety_name_taken: "CONFLICT",
   gst_exempt_rate_not_zero: "BAD_REQUEST",
   gst_rate_required: "BAD_REQUEST",
@@ -359,6 +363,7 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   route_required: "BAD_REQUEST",
   route_deleted: "BAD_REQUEST",
   route_name_taken: "CONFLICT",
+  city_name_taken: "CONFLICT",
   route_has_open_work: "CONFLICT",
   photo_upload_invalid: "FORBIDDEN",
   customer_has_open_pre_orders: "CONFLICT",
@@ -370,6 +375,7 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   gatepass_not_awaiting_verification: "CONFLICT",
   duplicate_variety_in_allotment: "BAD_REQUEST",
   salesman_has_gatepass: "CONFLICT",
+  salesman_has_active_gatepass: "CONFLICT",
   route_price_missing: "BAD_REQUEST",
   gatepass_not_active: "CONFLICT",
   returned_qty_out_of_range: "BAD_REQUEST",
@@ -384,8 +390,8 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   opening_balance_exists: "CONFLICT",
   nothing_changed: "BAD_REQUEST",
   gstr1_already_filed: "CONFLICT",
-  filing_month_not_started: "BAD_REQUEST",
-  filing_date_before_month: "BAD_REQUEST",
+  filing_month_not_ended: "BAD_REQUEST",
+  filing_date_before_month_end: "BAD_REQUEST",
   filing_date_after_today: "BAD_REQUEST",
   message_pending: "CONFLICT",
   phone_unusable: "BAD_REQUEST",

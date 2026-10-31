@@ -128,6 +128,9 @@ export function salesmanFlow() {
     name: 'due_preorders',
   });
 
+  // Every new Customer needs a City; the load-test database must have at least one.
+  const cityId = parseData(apiGet(`${base}/api/cities/`, { role: 'salesman', name: 'cities_list' }))?.[0]?.id;
+
   const actionRoll = randomIntBetween(1, 100);
   let createdCustomerId = null;
 
@@ -153,6 +156,7 @@ export function salesmanFlow() {
           phone: `9${unique.padStart(9, '0').slice(-9)}`,
           address: `${unique} Test Street`,
           notes: 'k6 load test customer',
+          cityId,
           shopPhotoKey,
         },
         { role: 'salesman', name: 'customer_create' },
@@ -182,19 +186,19 @@ export function salesmanFlow() {
     );
   }
 
-  // 32–34% — create without a shop photo is rejected (photo required, expect 400)
+  // 32–34% — create without a City is rejected (City required, expect 400)
   if (actionRoll > 31 && actionRoll <= 34) {
     const unique = `${__VU}${__ITER}${Date.now()}`.slice(-10);
     apiPost(
       `${base}/api/customers/`,
       {
-        shopName: `No Photo Shop ${unique}`,
+        shopName: `No City Shop ${unique}`,
         contactName: `Salesman ${__VU}`,
         phone: `7${unique.padStart(9, '0').slice(-9)}`,
         address: `${unique} Test Street`,
-        notes: 'k6 missing photo',
+        notes: 'k6 missing city',
       },
-      { role: 'salesman', name: 'customer_create_no_photo' },
+      { role: 'salesman', name: 'customer_create_no_city' },
       [400],
     );
   }
@@ -210,6 +214,7 @@ export function salesmanFlow() {
         phone: `6${unique.padStart(9, '0').slice(-9)}`,
         address: `${unique} Test Street`,
         notes: 'k6 forged key',
+        cityId,
         shopPhotoKey: `customers/00000000-0000-0000-0000-000000000000/forged-${unique}.jpg`,
       },
       { role: 'salesman', name: 'customer_create_forged_key' },

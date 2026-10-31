@@ -1,6 +1,7 @@
 import AdminBillService from "@repo/services/admin-bills";
 import AuthService from "@repo/services/auth";
 import BillService from "@repo/services/bills";
+import CityService from "@repo/services/cities";
 import CustomerLedgerService from "@repo/services/customer-ledger";
 import CustomerMessageService from "@repo/services/customer-messages";
 import CustomerService from "@repo/services/customers";
@@ -23,6 +24,7 @@ import { createNotificationTokenGateway } from "../notification/token-gateway";
 
 export const authService = new AuthService();
 export const billService = new BillService();
+export const cityService = new CityService();
 export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();

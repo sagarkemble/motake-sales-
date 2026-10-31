@@ -57,7 +57,7 @@ class GstService {
   public async previewGstr1Filing(input: PreviewGstr1FilingInput): Promise<Gstr1FilingPreview> {
     const parsedInput = previewGstr1FilingInputSchema.parse(input);
     const periodMonth = `${parsedInput.month}-01`;
-    this.assertMonthStarted(periodMonth, businessDateOf(new Date()));
+    this.assertMonthEnded(periodMonth, businessDateOf(new Date()));
     const [filing, counts] = await Promise.all([
       getGstr1FilingByMonth(periodMonth),
       countBillsInMonth(periodMonth),
@@ -65,7 +65,7 @@ class GstService {
     return { month: parsedInput.month, alreadyFiled: Boolean(filing), ...counts };
   }
 
-  // One filing per month; the current month is allowed, a future one is not.
+  // One filing per month, only once the month is over: the current and future months are refused.
   public async recordGstr1Filing(
     actorProfileId: string,
     input: RecordGstr1FilingInput,
@@ -73,7 +73,7 @@ class GstService {
     const parsedInput = recordGstr1FilingInputSchema.parse(input);
     const periodMonth = `${parsedInput.month}-01`;
     const today = businessDateOf(new Date());
-    this.assertMonthStarted(periodMonth, today);
+    this.assertMonthEnded(periodMonth, today);
     this.assertFiledOn(parsedInput.filedOn, periodMonth, today);
     const notes = parsedInput.notes || null;
     try {
@@ -190,28 +190,39 @@ class GstService {
 
   // --- Internals.
 
-  private assertMonthStarted(periodMonth: string, today: string): void {
-    if (periodMonth > periodMonthOf(today)) {
+  // GSTR-1 for a month is filed in a later month: from the 1st of the next month.
+  private assertMonthEnded(periodMonth: string, today: string): void {
+    if (periodMonth >= periodMonthOf(today)) {
+      const from = `1 ${monthLabelOf(nextMonthOf(periodMonth))}`;
       throw screenRefusal(
-        "filing_month_not_started",
-        `${monthLabelOf(periodMonth)} has not started yet. A future month cannot be filed.`,
-        { month: monthLabelOf(periodMonth) },
+        "filing_month_not_ended",
+        `GSTR-1 for ${monthLabelOf(periodMonth)} can be filed from ${from}, once the month is over.`,
+        { month: monthLabelOf(periodMonth), from },
       );
     }
   }
 
   private assertFiledOn(filedOn: string, periodMonth: string, today: string): void {
-    if (filedOn < periodMonth) {
+    const nextMonth = nextMonthOf(periodMonth);
+    if (filedOn < nextMonth) {
+      const from = `1 ${monthLabelOf(nextMonth)}`;
       throw screenRefusal(
-        "filing_date_before_month",
-        `The filing date cannot be before ${monthLabelOf(periodMonth)} starts (${periodMonth}).`,
-        { month: monthLabelOf(periodMonth) },
+        "filing_date_before_month_end",
+        `The filing date must be on or after ${from}, after ${monthLabelOf(periodMonth)} ends.`,
+        { month: monthLabelOf(periodMonth), from },
       );
     }
     if (filedOn > today) {
       throw screenRefusal("filing_date_after_today", "The filing date cannot be after today.");
     }
   }
+}
+
+// `2026-10-01` → `2026-11-01`.
+function nextMonthOf(periodMonth: string): string {
+  const year = Number(periodMonth.slice(0, 4));
+  const month = Number(periodMonth.slice(5, 7));
+  return month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
 }
 
 export default GstService;

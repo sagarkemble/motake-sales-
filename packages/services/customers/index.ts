@@ -23,6 +23,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { InsertCustomer, SelectCustomer } from "@repo/database/schema";
 
+import CityService from "../cities";
 import { notFound, screenRefusal } from "../errors";
 import GatepassService from "../gatepass";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
@@ -55,6 +56,7 @@ const customerAuditedFields = [
   "phone",
   "address",
   "notes",
+  "cityId",
   "shopPhotoKey",
   "gstin",
 ] as const;
@@ -89,6 +91,7 @@ function assertShopPhotoKeyInCustomersFolder(shopPhotoKey: string): void {
 
 class CustomerService {
   private readonly gatepassService = new GatepassService();
+  private readonly cityService = new CityService();
 
   public async createShopPhotoUploadUrl(
     uploaderId: string,
@@ -154,14 +157,19 @@ class CustomerService {
   }
 
   private async insertCustomer(
-    newCustomer: Omit<InsertCustomer, "createdBy" | "shopPhotoUrl"> & { shopPhotoKey: string },
+    newCustomer: Omit<InsertCustomer, "createdBy" | "shopPhotoKey" | "shopPhotoUrl"> & {
+      shopPhotoKey?: string;
+    },
     actorProfileId: string,
     transaction: DbExecutor,
   ): Promise<SelectCustomer> {
-    assertShopPhotoKeyBelongsToCreator(newCustomer.shopPhotoKey, actorProfileId);
+    const { shopPhotoKey, cityId } = newCustomer;
+    if (shopPhotoKey) assertShopPhotoKeyBelongsToCreator(shopPhotoKey, actorProfileId);
+    if (cityId) await this.cityService.assertCityExists(cityId, transaction);
     const values = {
       ...newCustomer,
-      shopPhotoUrl: buildPublicUrl(newCustomer.shopPhotoKey),
+      shopPhotoKey: shopPhotoKey ?? null,
+      shopPhotoUrl: shopPhotoKey ? buildPublicUrl(shopPhotoKey) : null,
       createdBy: actorProfileId,
     };
     const customer = await createCustomer(values, transaction);
@@ -293,6 +301,7 @@ class CustomerService {
     if (parsedChanges.shopPhotoKey) {
       assertShopPhotoKeyInCustomersFolder(parsedChanges.shopPhotoKey);
     }
+    if (parsedChanges.cityId) await this.cityService.assertCityExists(parsedChanges.cityId);
 
     const updatePayload: Parameters<typeof updateCustomer>[1] = { ...parsedChanges };
     if (parsedChanges.shopPhotoKey === null) {

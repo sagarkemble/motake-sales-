@@ -45,6 +45,14 @@ export const protectedProcedure = tRPCContext.procedure.use(async ({ ctx, next }
   } catch {
     throw unauthorized("Invalid or expired session");
   }
+  // A deleted account (soft-deleted profile) gets nothing, reads included; the app signs it out.
+  const profile = await authService.getProfileById(authenticatedUser.id);
+  if (!profile || profile.deletedAt) {
+    throw screenRefusal(
+      "account_deleted",
+      "This account was removed. Sign in is no longer possible.",
+    );
+  }
 
   return next({
     ctx: {

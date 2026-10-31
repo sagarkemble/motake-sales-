@@ -38,6 +38,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
 import { useAuth } from "~/hooks/use-auth";
+import { useFormatDate } from "~/hooks/use-format-date";
 import { useGst, type Gstr1Filing } from "~/hooks/use-gst";
 import { useTranslate } from "~/hooks/use-translate";
 import { refusalMessage } from "~/lib/refusal";
@@ -49,13 +50,21 @@ const MAX_NOTES_LENGTH = 1000;
 
 type FieldErrors = Partial<Record<"filedOn" | "reference" | "reason", string>>;
 
-// The 12 months up to the current Asia/Kolkata month, newest first. Future months are not offered.
+// The 12 months before the current Asia/Kolkata month, newest first. A month is filed only once it
+// is over, so the current and future months are not offered.
 function monthOptions(): string[] {
   const [year, month] = businessToday().split("-").map(Number);
   return Array.from({ length: 12 }, (_, index) => {
-    const date = new Date(Date.UTC(year!, month! - 1 - index, 1));
+    const date = new Date(Date.UTC(year!, month! - 2 - index, 1));
     return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
   });
+}
+
+// `2026-10` → `2026-11`.
+function nextMonthOf(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year!, monthNumber!, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -124,6 +133,7 @@ function FilingForm({
 }) {
   const tx = useTranslate();
   const monthLabel = useMonthLabel();
+  const formatDate = useFormatDate();
   const { signedInUser } = useAuth();
   const correcting = existing != null;
   const filedMonths = new Set(filings.map((filing) => filing.periodMonth.slice(0, 7)));
@@ -153,11 +163,14 @@ function FilingForm({
 
   function check(): boolean {
     const today = businessToday();
-    const monthStart = `${month}-01`;
+    const nextMonth = nextMonthOf(month);
     const next: FieldErrors = {};
     if (!filedOn) next.filedOn = tx("admin.gst.form.errors.filedOnRequired");
-    else if (filedOn < monthStart)
-      next.filedOn = tx("admin.gst.form.errors.filedOnBeforeMonth", { month: monthLabel(month) });
+    else if (filedOn < `${nextMonth}-01`)
+      next.filedOn = tx("admin.gst.form.errors.filedOnBeforeMonthEnd", {
+        month: monthLabel(month),
+        from: formatDate(`${nextMonth}-01`, "d MMM yyyy"),
+      });
     else if (filedOn > today) next.filedOn = tx("admin.gst.form.errors.filedOnFuture");
     if (!reference.trim()) next.reference = tx("admin.gst.form.errors.referenceRequired");
     if (correcting && !reason.trim()) next.reason = tx("admin.gst.form.errors.reasonRequired");
@@ -179,7 +192,10 @@ function FilingForm({
       toast.success(tx("admin.gst.form.recorded", { month: monthLabel(month) }));
       onClose();
     } catch (error) {
-      setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
+      const message = refusalMessage(tx, error, tx("admin.ledger.refusals.generic"));
+      // A month that is not over yet (or any other refusal) also shows as a toast.
+      toast.error(message);
+      setRefusal(message);
     }
   }
 
@@ -197,7 +213,10 @@ function FilingForm({
       toast.success(tx("admin.gst.form.corrected", { month: monthLabel(existing.periodMonth) }));
       onClose();
     } catch (error) {
-      setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
+      const message = refusalMessage(tx, error, tx("admin.ledger.refusals.generic"));
+      // A month that is not over yet (or any other refusal) also shows as a toast.
+      toast.error(message);
+      setRefusal(message);
     }
   }
 

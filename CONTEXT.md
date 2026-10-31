@@ -17,7 +17,7 @@ The generated unique key of a Route (`rt-{slug}-{nnn}`). Never edited. Name is t
 The field-sales person who sells against an Active GatePass.
 
 **Salesman code**:
-The generated unique key of a Salesman. Admin does not type or edit it.
+The generated unique key of a Salesman: the first three letters of the name, the last four phone digits and the day they were added (`RAV-4321-261031`), with `-2`, `-3` … if already taken. Made once when the Salesman is added and never changed, even when name or phone change. Admin does not type or edit it.
 
 **Product**:
 The named group a Variety belongs to (for example milk). Not billed by itself. Always has an image: a Product cannot be created or saved without one, and its image can be replaced but not removed.
@@ -35,8 +35,12 @@ One salesman's stock allotment for a business date, tied to exactly one route ch
 The single GatePass a salesman is currently selling against; its route decides which customers and prices they see. The salesman app does not list Customers off that Route. Server still refuses Book Now, place Pre-order, and field Payment for a Customer not on that Route. If the GatePass is closed or handed over, there is no Active GatePass; salesman Book Now, place Pre-order, and field Payment refuse and show that. Salesman fulfil needs a new Active GatePass on that Route; Admin fulfil does not.
 
 **Customer**:
-One outlet on exactly one route; the record a salesman bills. A real-world owner with outlets on two routes is two Customers.
+One outlet on exactly one route, in one City; the record a salesman bills. Shop photo is optional. A real-world owner with outlets on two routes is two Customers.
 *Avoid*: Shop, outlet, client
+
+**City**:
+The town a Customer is in, under one Indian state. Admin keeps the list in Settings > Cities; Admin or a salesman can also add a missing city from the Customer form. Unique by name within its state in any letter case; never edited or deleted. Every Customer added or edited picks one; Customers from before cities have none until an Admin edit sets it. Not printed on Documents.
+*Avoid*: free-typed city, Route as a city
 
 **Deactivated Customer**:
 A Customer an Admin has switched off. Its Balance, Ledger and papers stay readable and its profile can still be updated (including Move to Route); every other write (Book Now, Pre-order, fulfil, Payment, Bill, Note, Opening balance) is refused. Deactivation is refused while the Customer has an open Pre-order; the Pre-order must be fulfilled or cancelled first.
@@ -53,7 +57,7 @@ The current tax-exclusive price of one variety on one Route. There is no company
 An order placed and billed on the spot, deducting stock from the Active GatePass. It remembers that GatePass so cancel can restore stock only there. The salesman app sends Variety SKU and qty only; the server snapshots Route price and tax. Qty is a positive integer count of that Variety SKU (packs), not a free-typed kg or L. Short stock or a bad line refuses the whole Bill; the app shows what was short. No partial basket.
 
 **Pre-order**:
-An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST classification and rate snapshotted at placement. Scheduled date is after today. Place creates no Bill, no number, no Payment, no stock change and no Ledger row; fulfil issues the Bill and its `MB/{FY}/{seq}` number. Fulfil uses the Route state copied onto the Pre-order when it was placed. Salesman or Admin uses the same fulfil procedure; Admin has no GatePass. Fulfil before the scheduled date, or after another fulfil, is refused and shown; first writer wins.
+An order placed for a later date at the route price of the moment it was placed; belongs to the route, not to a salesman or GatePass, and is billed only when fulfilled using the GST classification and rate snapshotted at placement. Scheduled date is today or later. Place creates no Bill, no number, no Payment, no stock change and no Ledger row; fulfil issues the Bill and its `MB/{FY}/{seq}` number. Fulfil uses the Route state copied onto the Pre-order when it was placed. Salesman or Admin uses the same fulfil procedure; Admin has no GatePass. Fulfil before the scheduled date, or after another fulfil, is refused and shown; first writer wins.
 *Avoid*: Booking, advance order
 
 ### Money
@@ -121,7 +125,7 @@ Not done in Motake. No Bill waits for an IRN: every Tax Invoice PDF is drawn and
 *Avoid*: IRN pending, Enter IRN, portal cancellation, Draft PDF
 
 **GSTR-1 filing**:
-Admin's record that Motake's monthly GSTR-1 for one calendar month is done on the government portal. One filing per month. Filer is the signed-in Admin. Correcting ack, filing date, or notes does not unlock the month. There is no unfile.
+Admin's record that Motake's monthly GSTR-1 for one calendar month is done on the government portal. A month is filed only once it is over: from the 1st of the next month, with a filing date on or after that day. One filing per month. Filer is the signed-in Admin. Correcting ack, filing date, or notes does not unlock the month. There is no unfile.
 *Avoid*: generating GSTR-1 from the app; a second filing for the same month
 
 **Filed month**:
@@ -181,7 +185,7 @@ A numbered revision of one Message template for one provider and language. A mes
 *Avoid*: falling back to an older verified version
 
 **Preferred language**:
-The language a Customer receives messages in: Marathi, Hindi or English, chosen when the Customer is added (Marathi unless chosen otherwise) and never changed afterwards. Documents are always English.
+The language a Customer receives messages in: Marathi or English, chosen when the Customer is added (Marathi unless chosen otherwise) and never changed afterwards. Documents are always English.
 
 **Document**:
 A PDF of a Bill (Tax Invoice or Bill of Supply), Note, or Payment receipt, drawn from a fixed layout kept in the app. Stored privately; never reachable by a public link. Its file name is `Motake <paper> <number>.pdf` with `/` replaced by `-`, e.g. `Motake Bill MB-26-27-000123.pdf`.

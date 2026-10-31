@@ -7,6 +7,7 @@ import {
   billItemsTable,
   billsTable,
   billVersionsTable,
+  citiesTable,
   customersTable,
   gatepassItemsTable,
   gatepassesTable,
@@ -192,6 +193,17 @@ export async function buildVarietyTaxPeriod(
     })
     .returning();
   return taxPeriod!;
+}
+
+export async function buildCity(
+  createdBy: string,
+  overrides: Partial<typeof citiesTable.$inferInsert> = {},
+): Promise<typeof citiesTable.$inferSelect> {
+  const [city] = await db
+    .insert(citiesTable)
+    .values({ name: `City ${nextUnique()}`, state: "Maharashtra", createdBy, ...overrides })
+    .returning();
+  return city!;
 }
 
 export async function buildCustomer(

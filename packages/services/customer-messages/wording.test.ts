@@ -38,9 +38,7 @@ describe("formatMessageDate", () => {
   it("writes the month in the Customer's language with Latin digits", () => {
     expect(formatMessageDate("2026-10-28", "en")).toBe("28 October 2026");
     expect(formatMessageDate("2026-10-28", "mr")).toBe("28 ऑक्टोबर 2026");
-    expect(formatMessageDate("2026-10-28", "hi")).toBe("28 अक्टूबर 2026");
     expect(formatMessageDate("2027-01-05", "mr")).toBe("5 जानेवारी 2027");
-    expect(formatMessageDate("2027-02-09", "hi")).toBe("9 फ़रवरी 2027");
   });
 });
 
@@ -49,22 +47,16 @@ describe("balanceLine", () => {
     expect(balanceLine("bill", 300_000, "en")).toBe("Pending Balance: ₹3,000.00");
     expect(balanceLine("bill", 300_000, "mr")).toBe("बिलानंतरची बाकी रक्कम: ₹3,000.00");
     expect(balanceLine("bill", -50_000, "mr")).toBe("बिलानंतरची शिल्लक आगाऊ रक्कम: ₹500.00");
-    expect(balanceLine("bill", 300_000, "hi")).toBe("बिल के बाद बकाया राशि: ₹3,000.00");
-    expect(balanceLine("bill", -50_000, "hi")).toBe("बिल के बाद शेष अग्रिम राशि: ₹500.00");
     expect(balanceLine("bill", -50_000, "en")).toBe("Advance Balance: ₹500.00");
 
     expect(balanceLine("receipt", 800_000, "mr")).toBe("बाकी रक्कम: ₹8,000.00");
-    expect(balanceLine("receipt", -100, "hi")).toBe("शेष अग्रिम राशि: ₹1.00");
 
     expect(balanceLine("now", 280_000, "mr")).toBe("आता बाकी रक्कम: ₹2,800.00");
     expect(balanceLine("now", -280_000, "mr")).toBe("आता शिल्लक आगाऊ रक्कम: ₹2,800.00");
-    expect(balanceLine("now", 280_000, "hi")).toBe("अब बकाया राशि: ₹2,800.00");
-    expect(balanceLine("now", -280_000, "hi")).toBe("अब शेष अग्रिम राशि: ₹2,800.00");
 
     expect(balanceLine("remaining", -200_000, "en")).toBe("Remaining Advance: ₹2,000.00");
     expect(balanceLine("remaining", 0, "en")).toBe("Pending Balance: ₹0.00");
     expect(balanceLine("remaining", -200_000, "mr")).toBe("शिल्लक आगाऊ रक्कम: ₹2,000.00");
-    expect(balanceLine("remaining", -200_000, "hi")).toBe("शेष अग्रिम राशि: ₹2,000.00");
   });
 });
 
@@ -80,24 +72,15 @@ describe("words", () => {
       "UPI",
       "बँक",
     ]);
-    expect([modeWord("cash", "hi"), modeWord("upi", "hi"), modeWord("bank", "hi")]).toEqual([
-      "नकद",
-      "UPI",
-      "बैंक",
-    ]);
 
     expect(balanceAdjustment(-20_000, "en")).toBe("Reduced by ₹200.00");
     expect(balanceAdjustment(20_000, "en")).toBe("Increased by ₹200.00");
     expect(balanceAdjustment(-20_000, "mr")).toBe("₹200.00 ने घट");
     expect(balanceAdjustment(20_000, "mr")).toBe("₹200.00 ने वाढ");
-    expect(balanceAdjustment(-20_000, "hi")).toBe("₹200.00 की कमी");
-    expect(balanceAdjustment(20_000, "hi")).toBe("₹200.00 की बढ़ोतरी");
 
     expect(noteStatusWord("gst_credit_note", "en")).toBe("Credit Note Issued");
     expect(noteStatusWord("commercial_credit_note", "mr")).toBe("क्रेडिट नोट दिली");
     expect(noteStatusWord("debit_note", "mr")).toBe("डेबिट नोट दिली");
-    expect(noteStatusWord("gst_credit_note", "hi")).toBe("क्रेडिट नोट जारी");
-    expect(noteStatusWord("debit_note", "hi")).toBe("डेबिट नोट जारी");
     expect(noteStatusWord("debit_note", "en")).toBe("Debit Note Issued");
   });
 

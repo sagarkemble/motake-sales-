@@ -1,9 +1,10 @@
 import { db, eq } from "@repo/database";
 import { listAuditLogsForEntity } from "@repo/database/queries/audit";
 import { customersTable, gatepassesTable } from "@repo/database/schema";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  buildCity,
   buildCustomer,
   buildGatepass,
   buildOrder,
@@ -17,11 +18,18 @@ import CustomerService from "./index";
 const customerService = new CustomerService();
 const today = "2026-10-25";
 
+// One city for every Customer this file adds.
+let cityId: string;
+beforeAll(async () => {
+  cityId = (await buildCity((await buildProfile()).id, { name: "Kolhapur" })).id;
+});
+
 function shopDetails(creatorId: string, overrides: Record<string, unknown> = {}) {
   return {
     shopName: "Ganesh Stores",
     phone: "9876543210",
     address: "12 Market Road",
+    cityId,
     shopPhotoKey: `customers/${creatorId}/shop.jpg`,
     ...overrides,
   };
@@ -53,6 +61,44 @@ afterEach(() => {
 });
 
 describe("CustomerService Admin add", () => {
+  it("adds a Customer with no shop photo", async () => {
+    const admin = await buildProfile();
+    const route = await buildRoute();
+
+    const customer = await customerService.createCustomerAsAdmin(
+      { ...shopDetails(admin.id, { shopPhotoKey: undefined }), routeId: route.id },
+      admin.id,
+    );
+
+    expect(customer).toMatchObject({ shopPhotoKey: null, shopPhotoUrl: null });
+  });
+
+  it("saves the picked city, reads it back with its state, and refuses an unknown city", async () => {
+    const admin = await buildProfile();
+    const route = await buildRoute();
+
+    const customer = await customerService.createCustomerAsAdmin(
+      { ...shopDetails(admin.id), routeId: route.id },
+      admin.id,
+    );
+
+    expect(customer.cityId).toBe(cityId);
+    expect(await customerService.getCustomerById(customer.id)).toMatchObject({
+      cityName: "Kolhapur",
+      cityState: "Maharashtra",
+    });
+    await expect(
+      customerService.createCustomerAsAdmin(
+        {
+          ...shopDetails(admin.id),
+          routeId: route.id,
+          cityId: "00000000-0000-4000-8000-000000000000",
+        },
+        admin.id,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("saves the Customer on the picked Route and records the add", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
@@ -141,42 +187,51 @@ describe("CustomerService Admin add", () => {
     }
   });
 
-  it("accepts Hindi and English as Preferred language and refuses anything else", async () => {
+  it("accepts English as Preferred language and refuses anything else, Hindi included", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
 
-    const hindi = await customerService.createCustomerAsAdmin(
-      { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "hi" },
-      admin.id,
-    );
     const english = await customerService.createCustomerAsAdmin(
       { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "en" },
       admin.id,
     );
 
-    expect([hindi.preferredLanguage, english.preferredLanguage]).toEqual(["hi", "en"]);
-    await expect(
-      customerService.createCustomerAsAdmin(
-        { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: "fr" as never },
-        admin.id,
-      ),
-    ).rejects.toThrow();
+    expect(english.preferredLanguage).toBe("en");
+    for (const language of ["hi", "fr"]) {
+      await expect(
+        customerService.createCustomerAsAdmin(
+          { ...shopDetails(admin.id), routeId: route.id, preferredLanguage: language as never },
+          admin.id,
+        ),
+      ).rejects.toThrow();
+    }
   });
 });
 
 describe("CustomerService Admin edit", () => {
+  it("sets the city of a Customer that had none, with an audit", async () => {
+    const admin = await buildProfile();
+    const customer = await buildCustomer(admin.id);
+
+    const updated = await customerService.updateCustomer(customer.id, { cityId }, admin.id);
+
+    expect(updated?.cityId).toBe(cityId);
+    const [row] = await listAuditLogsForEntity("customer", customer.id);
+    expect(row?.payload).toEqual({ cityId: { from: null, to: cityId } });
+  });
+
   it("changes the GSTIN with an audit, never the Preferred language or Route", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
     const otherRoute = await buildRoute();
-    const customer = await buildCustomer(admin.id, { routeId: route.id, preferredLanguage: "hi" });
+    const customer = await buildCustomer(admin.id, { routeId: route.id, preferredLanguage: "en" });
 
     const updated = await customerService.updateCustomer(
       customer.id,
       {
         gstin: "27abcde1234f1z5",
         einvoicingRequired: true,
-        preferredLanguage: "en",
+        preferredLanguage: "mr",
         routeId: otherRoute.id,
       } as never,
       admin.id,
@@ -185,7 +240,7 @@ describe("CustomerService Admin edit", () => {
     expect(updated).toMatchObject({
       gstin: "27ABCDE1234F1Z5",
       einvoicingRequired: false,
-      preferredLanguage: "hi",
+      preferredLanguage: "en",
       routeId: route.id,
     });
     const [row] = await listAuditLogsForEntity("customer", customer.id);
@@ -249,8 +304,8 @@ describe("CustomerService salesman", () => {
       shopDetails(salesman.id),
       salesman.id,
     );
-    const hindi = await customerService.createCustomerAsSalesman(
-      shopDetails(salesman.id, { preferredLanguage: "hi" }),
+    const english = await customerService.createCustomerAsSalesman(
+      shopDetails(salesman.id, { preferredLanguage: "en" }),
       salesman.id,
     );
 
@@ -261,7 +316,7 @@ describe("CustomerService salesman", () => {
       einvoicingRequired: false,
       preferredLanguage: "mr",
     });
-    expect(hindi.preferredLanguage).toBe("hi");
+    expect(english.preferredLanguage).toBe("en");
   });
 
   it("refuses add and list with no Active GatePass, including after handover", async () => {

@@ -10,7 +10,7 @@ interface PreferredLanguagePickerProps {
   onValueChange: (language: PreferredLanguage) => void;
 }
 
-/** Marathi, Hindi or English. Only offered when a Customer is added; fixed afterwards. */
+/** Marathi or English. Only offered when a Customer is added; fixed afterwards. */
 export function PreferredLanguagePicker({
   id,
   value,

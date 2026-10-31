@@ -100,7 +100,6 @@
     "preferredLanguage": {
       "label": "Preferred language",
       "mr": "Marathi",
-      "hi": "Hindi",
       "en": "English",
       "fixedHint": "Messages to this Customer go in this language. It cannot be changed later."
     },
@@ -136,6 +135,7 @@
       "gatepass_not_awaiting_verification": "This GatePass is no longer waiting for verification. Refresh the page.",
       "duplicate_variety_in_allotment": "Each variety can be added only once.",
       "salesman_has_gatepass": "This salesman already has a GatePass for {date}.",
+      "salesman_has_active_gatepass": "This salesman has an Active GatePass. Hand it over or close it, then delete.",
       "route_price_missing": "Set a price on Route {route} for: {varieties}.",
       "gatepass_not_active": "This GatePass is already closed. Refresh the page.",
       "returned_qty_out_of_range": "Returned quantity cannot be more than {max}.",
@@ -148,8 +148,8 @@
       "already_posted": "This was already saved. Refresh the page.",
       "amount_not_positive": "Enter an amount above ₹0.",
       "gstr1_already_filed": "GSTR-1 for {month} is already filed. Use Correct to change it.",
-      "filing_month_not_started": "{month} has not started yet, so it cannot be filed.",
-      "filing_date_before_month": "The filing date cannot be before {month} starts.",
+      "filing_month_not_ended": "GSTR-1 for {month} can be filed from {from}, once the month is over.",
+      "filing_date_before_month_end": "The filing date must be on or after {from}, after {month} ends.",
       "filing_date_after_today": "The filing date cannot be after today.",
       "gstin_state_mismatch": "This GSTIN is not from {state}. Check the GSTIN or the state.",
       "pan_gstin_mismatch": "The PAN does not match the GSTIN.",
@@ -160,7 +160,25 @@
       "prefix_frozen": "This prefix cannot change because numbers have already been issued with it.",
       "prefix_taken": "This prefix is already used for another paper this year.",
       "deadline_too_early": "The deadline must be after {date}.",
-      "deadline_changed": "Someone else just changed this. Refresh and try again."
+      "deadline_changed": "Someone else just changed this. Refresh and try again.",
+      "account_deleted": "This account was removed. Sign in is no longer possible.",
+      "city_name_taken": "{name} is already a city in {state}."
+    },
+    "cities": {
+      "label": "City",
+      "placeholder": "Pick a city",
+      "search": "Search city or state",
+      "empty": "No city matches.",
+      "add": "Add city",
+      "addNamed": "Add \"{name}\" as a city",
+      "addTitle": "Add a city",
+      "addHint": "Pick the state, then type the city name.",
+      "state": "State",
+      "name": "City name",
+      "namePlaceholder": "e.g. Kolhapur",
+      "added": "{name} added under {state}.",
+      "addFailed": "Could not add the city. Try again.",
+      "required": "Pick a city"
     }
   },
   "auth": {
@@ -180,7 +198,8 @@
       "error": {
         "wrongCredentials": "Wrong email or password. Try again."
       },
-      "brandTitle": "Motake"
+      "brandTitle": "Motake",
+      "accountRemoved": "This account was removed. Contact the admin if this is a mistake."
     },
     "otp": {
       "codeSent": "Code sent by SMS",
@@ -423,7 +442,6 @@
         "shopName": "Enter a shop name",
         "phone": "Enter a phone number",
         "address": "Enter an address",
-        "shopPhoto": "Add a shop photo",
         "gstin": "GSTIN must be 15 letters or digits",
         "route": "Pick a Route"
       },
@@ -487,7 +505,8 @@
         "totalOrders": "Total orders",
         "lifetimeValue": "Lifetime value",
         "lastOrder": "Last order"
-      }
+      },
+      "noCity": "Not set"
     },
     "salesmen": {
       "empty": "No salesmen yet",
@@ -504,8 +523,7 @@
         "phone": "Enter a phone number",
         "email": "Enter an email",
         "emailInvalid": "Enter a valid email",
-        "passwordMin": "Password must be at least 8 characters",
-        "code": "Enter a salesman code"
+        "passwordMin": "Password must be at least 8 characters"
       },
       "createSuccess": "Salesman created",
       "createFailed": "Could not create salesman. Try again.",
@@ -563,7 +581,6 @@
       "createCta": "Create salesman",
       "deleteConfirmPrompt": "Are you sure you want to delete this salesman?",
       "form": {
-        "codePlaceholder": "Unique code",
         "emailPlaceholder": "Email address",
         "namePlaceholder": "Full name",
         "passwordKeepPlaceholder": "Leave blank to keep current password",
@@ -727,7 +744,8 @@
       "tabs": {
         "seller": "Seller",
         "prefixes": "Prefixes",
-        "deadline": "CN deadline"
+        "deadline": "CN deadline",
+        "cities": "Cities"
       },
       "loadFailed": "Could not load settings.",
       "reasonLabel": "Reason (optional)",
@@ -856,6 +874,12 @@
         "saveSuccess": "Deadline saved",
         "saveFailed": "Could not save the deadline. Try again.",
         "invalid": "Pick a date after {date}."
+      },
+      "cities": {
+        "intro": "Customers pick their city from this list. A missing city can also be added from the Customer form.",
+        "none": "No cities yet. Add the first one.",
+        "countOne": "{count} city",
+        "countOther": "{count} cities"
       }
     },
     "routes": {
@@ -1420,7 +1444,7 @@
         "correctHint": "Correct changes the date, reference and notes only. The month stays filed; there is no unfile.",
         "errors": {
           "filedOnRequired": "The filing date is required.",
-          "filedOnBeforeMonth": "The filing date cannot be before {month} starts.",
+          "filedOnBeforeMonthEnd": "The filing date must be on or after {from}, after {month} ends.",
           "filedOnFuture": "The filing date cannot be after today.",
           "referenceRequired": "The reference is required.",
           "reasonRequired": "A reason is required."
@@ -1563,7 +1587,7 @@
         "preOrderHint": "Deliver on {date} at today's price. No Bill and no stock used now.",
         "preOrder": "Pre-order",
         "deliveryDate": "Delivery date",
-        "dateHint": "Only days after today. Default is tomorrow.",
+        "dateHint": "Today or later. Default is tomorrow.",
         "gatepassNotActive": "Your GatePass on {route} is not active. Selling is closed for today.",
         "shortLine": "{name}: need {need}, GatePass has {left}"
       },
@@ -1574,7 +1598,7 @@
         "clearSelected": "Clear selected customer",
         "noMatch": "No customer matches \"{term}\"",
         "orEnterNew": "Or enter new customer details",
-        "shopPhoto": "Shop photo *",
+        "shopPhoto": "Shop photo (optional)",
         "uploadPhoto": "Upload shop photo",
         "shopName": "Shop name",
         "shopNamePlaceholder": "Enter shop name",
@@ -1790,7 +1814,7 @@
       "startOrder": "Start an order for this shop",
       "startOrderToast": "Add products to the cart; checkout will be for {shop}.",
       "add": "Add customer",
-      "addHint": "Shop name, phone, address and shop photo are required.",
+      "addHint": "Shop name, phone, address and city are required. The shop photo is optional.",
       "addSuccess": "{shop} added on {route}"
     },
     "account": {
@@ -1949,9 +1973,9 @@
         "title": "Prices come from the Route",
         "message": "The app sent a price. Prices are set by the Route on the server. Update the app and try again."
       },
-      "scheduled_date_not_after_today": {
-        "title": "Pick a later date",
-        "message": "A Pre-order must be for a day after today. For today, use Book Now.",
+      "scheduled_date_in_past": {
+        "title": "Pick another date",
+        "message": "A Pre-order cannot be for a day before today.",
         "action": "Change date"
       },
       "fulfil_too_early": {

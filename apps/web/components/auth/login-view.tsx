@@ -1,12 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { LanguageSwitcher } from "~/components/shared/language-switcher";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { useTranslate } from "~/hooks/use-translate";
 
 import { PasswordLoginForm } from "./password-login-form";
 
 export function LoginView() {
   const tx = useTranslate();
+  // Set when a removed account was signed out (`/login?removed=1`).
+  const [removed, setRemoved] = useState(false);
+  useEffect(() => {
+    setRemoved(new URLSearchParams(window.location.search).get("removed") === "1");
+  }, []);
 
   return (
     <main className="bg-dairy-doodle relative flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-10 sm:px-6">
@@ -24,6 +32,11 @@ export function LoginView() {
           <p className="mt-1 text-sm text-muted-foreground">{tx("auth.login.title")}</p>
         </div>
 
+        {removed && (
+          <Alert variant="destructive" className="mb-4 rounded-xl">
+            <AlertDescription>{tx("auth.login.accountRemoved")}</AlertDescription>
+          </Alert>
+        )}
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <PasswordLoginForm />
         </div>

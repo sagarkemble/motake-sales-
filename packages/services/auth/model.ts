@@ -16,7 +16,6 @@ export const createSalesmanAccountInputSchema = z.object({
   password: z.string().min(8),
   name: z.string().min(1).max(120),
   phone: z.string().min(1).max(20),
-  salesmanCode: z.string().min(1).max(32),
 });
 export type CreateSalesmanAccountInput = z.infer<typeof createSalesmanAccountInputSchema>;
 

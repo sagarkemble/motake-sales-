@@ -55,12 +55,9 @@ export async function getSalesmanById(
   return salesman;
 }
 
-export async function getSalesmanByCode(salesmanCode: string): Promise<SelectSalesman | undefined> {
-  const [salesman] = await db
-    .select()
-    .from(salesmenTable)
-    .where(eq(salesmenTable.salesmanCode, salesmanCode));
-  return salesman;
+export async function listSalesmanCodes(executor: DbExecutor = db): Promise<string[]> {
+  const rows = await executor.select({ code: salesmenTable.salesmanCode }).from(salesmenTable);
+  return rows.map((row) => row.code);
 }
 
 export async function getSalesmanWithProfileById(
@@ -122,19 +119,6 @@ export async function reactivateSalesman(salesmanId: string): Promise<SelectProf
     .where(eq(profilesTable.id, salesmanId))
     .returning();
   return reactivatedProfile;
-}
-
-export async function updateSalesmanCode(
-  salesmanId: string,
-  salesmanCode: string,
-  executor: DbExecutor = db,
-): Promise<SelectSalesman | undefined> {
-  const [updatedSalesman] = await executor
-    .update(salesmenTable)
-    .set({ salesmanCode })
-    .where(eq(salesmenTable.id, salesmanId))
-    .returning();
-  return updatedSalesman;
 }
 
 export interface SalesmanDayWiseHistoryRow {

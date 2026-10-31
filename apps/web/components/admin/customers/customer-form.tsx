@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { CityPicker } from "~/components/shared/city-picker";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
 import { RouteTag } from "~/components/shared/route-tag";
@@ -36,6 +37,7 @@ export type CustomerFormValues = {
   phone: string;
   address: string;
   notes?: string;
+  cityId: string;
   shopPhotoKey: string;
   shopPhotoUrl: string;
   routeId: string;
@@ -87,10 +89,11 @@ export function CustomerForm({
           phone: z.string().min(1, tx("admin.customers.validation.phone")).max(20),
           address: z.string().min(1, tx("admin.customers.validation.address")),
           notes: z.string().optional(),
+          cityId: z.string().min(1, tx("common.cities.required")),
           shopPhotoKey: z.string(),
           shopPhotoUrl: z.string(),
           routeId: z.string(),
-          preferredLanguage: z.enum(["mr", "hi", "en"]),
+          preferredLanguage: z.enum(["mr", "en"]),
           gstin: z
             .string()
             .refine(
@@ -99,13 +102,6 @@ export function CustomerForm({
             ),
         })
         .superRefine((values, context) => {
-          if (isCreate && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: tx("admin.customers.validation.shopPhoto"),
-              path: ["shopPhotoUrl"],
-            });
-          }
           if (isCreate && !values.routeId) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
@@ -125,6 +121,7 @@ export function CustomerForm({
       phone: defaultValues?.phone ?? "",
       address: defaultValues?.address ?? "",
       notes: defaultValues?.notes ?? "",
+      cityId: defaultValues?.cityId ?? "",
       shopPhotoKey: defaultValues?.shopPhotoKey ?? "",
       shopPhotoUrl: defaultValues?.shopPhotoUrl ?? "",
       routeId: defaultValues?.routeId ?? "",
@@ -293,6 +290,26 @@ export function CustomerForm({
                     type="tel"
                     placeholder={tx("salesman.checkout.customer.phonePlaceholder")}
                     className="rounded-xl bg-muted/40"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cityId"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel>{tx("common.cities.label")}</FormLabel>
+                <FormControl>
+                  <CityPicker
+                    value={field.value}
+                    onValueChange={(cityId) =>
+                      form.setValue("cityId", cityId, { shouldValidate: true, shouldDirty: true })
+                    }
+                    invalid={Boolean(fieldState.error)}
                   />
                 </FormControl>
                 <FormMessage />

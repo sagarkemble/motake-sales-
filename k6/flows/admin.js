@@ -171,6 +171,9 @@ export function adminFlow() {
     });
   }
 
+  // Every new Customer needs a City; the load-test database must have at least one.
+  const cityId = parseData(apiGet(`${base}/api/cities/`, { role: 'admin', name: 'cities_list' }))?.[0]?.id;
+
   const actionRoll = randomIntBetween(1, 100);
   let touchedCustomerId = null;
 
@@ -196,6 +199,7 @@ export function adminFlow() {
           phone: `8${unique.padStart(9, '0').slice(-9)}`,
           address: `${unique} Admin Street`,
           notes: 'k6 admin create',
+          cityId,
           shopPhotoKey,
         },
         { role: 'admin', name: 'customer_admin_create' },

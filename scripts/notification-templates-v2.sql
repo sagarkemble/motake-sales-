@@ -1,7 +1,7 @@
--- Spec J (#45): the 27 notification_templates rows for the v2 WhatsApp templates (9 templates x
--- en / mr / hi) on the Motake Dairy WABA, as the developer inserts them by hand (db-decisions/0014).
+-- Spec J (#45): the 18 notification_templates rows for the v2 WhatsApp templates (9 templates x
+-- en / mr) on the Motake Dairy WABA, as the developer inserts them by hand (db-decisions/0014).
 --
--- Run it only after Meta shows every one of the 27 templates as APPROVED: rows go in verified, and
+-- Run it only after Meta shows every one of the 18 templates as APPROVED: rows go in verified, and
 -- K refuses nothing it would otherwise send. Idempotent: an existing (provider, template_id,
 -- language, version) row is left as it is, so re-running inserts nothing.
 --
@@ -30,15 +30,6 @@
 --   बिलाची रक्कम: {{5}}
 --   {{6}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_bill_v2 (hi) + PDF header:
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   बिल नंबर: {{3}}
---   बिल दिनांक: {{4}}
---   बिल राशि: {{5}}
---   {{6}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_receipt_v2 (en) + PDF header:
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -55,14 +46,6 @@
 --   मिळालेली रक्कम: {{4}} ({{5}})
 --   {{6}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_receipt_v2 (hi) + PDF header:
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   रसीद नंबर: {{3}}
---   प्राप्त राशि: {{4}} ({{5}})
---   {{6}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_bill_corrected_v2 (en):
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -83,16 +66,6 @@
 --   बाकी रकमेतील बदल: {{5}}
 --   {{6}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_bill_corrected_v2 (hi):
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   बिल नंबर: {{3}}
---   स्थिति: बिल सुधारा गया
---   कारण: {{4}}
---   बकाया राशि में बदलाव: {{5}}
---   {{6}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_payment_corrected_v2 (en):
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -117,18 +90,6 @@
 --   कारण: {{7}}
 --   {{8}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_payment_corrected_v2 (hi):
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   रसीद नंबर: {{3}}
---   स्थिति: भुगतान सुधारा गया
---   पिछली राशि: {{4}}
---   सही राशि: {{5}}
---   अंतर: {{6}}
---   कारण: {{7}}
---   {{8}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_refund_v2 (en):
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -145,14 +106,6 @@
 --   परत केलेली रक्कम: {{4}} ({{5}})
 --   {{6}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_refund_v2 (hi):
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   रिफंड नंबर: {{3}}
---   वापस की गई राशि: {{4}} ({{5}})
---   {{6}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_cancellation_v2 (en):
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -175,17 +128,6 @@
 --   {{6}}
 --   आधी जमा केलेली पेमेंट रक्कम रद्द केलेली नाही.
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_cancellation_v2 (hi):
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   बिल नंबर: {{3}}
---   स्थिति: बिल रद्द किया गया
---   कारण: {{4}}
---   रद्द की गई बिल राशि: {{5}}
---   {{6}}
---   पहले जमा किया गया भुगतान रद्द नहीं किया गया है।
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_gst_credit_note_v2 (en) + PDF header:
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -206,16 +148,6 @@
 --   क्रेडिट रक्कम: {{6}} (GST सहित)
 --   {{7}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_gst_credit_note_v2 (hi) + PDF header:
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   क्रेडिट नोट नंबर: {{3}}
---   संबंधित बिल नंबर: {{4}}
---   कारण: {{5}}
---   क्रेडिट राशि: {{6}} (GST सहित)
---   {{7}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_gst_debit_note_v2 (en) + PDF header:
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -236,16 +168,6 @@
 --   अतिरिक्त रक्कम: {{6}} (GST सहित)
 --   {{7}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_gst_debit_note_v2 (hi) + PDF header:
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   डेबिट नोट नंबर: {{3}}
---   संबंधित बिल नंबर: {{4}}
---   कारण: {{5}}
---   अतिरिक्त राशि: {{6}} (GST सहित)
---   {{7}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 -- motake_note_update_v2 (en):
 --   🥛 Motake Dairy Farm
 --   Customer: {{1}}
@@ -268,46 +190,26 @@
 --   बाकी रकमेतील बदल: {{7}}
 --   {{8}}
 --   मोटके डेअरी फार्मसोबत व्यवसाय केल्याबद्दल धन्यवाद! 🙏
--- motake_note_update_v2 (hi):
---   🥛 मोटके डेयरी फार्म
---   ग्राहक: {{1}}
---   रूट: {{2}}
---   नोट नंबर: {{3}}
---   संबंधित बिल नंबर: {{4}}
---   स्थिति: {{5}}
---   कारण: {{6}}
---   बकाया राशि में बदलाव: {{7}}
---   {{8}}
---   मोटके डेयरी फार्म के साथ व्यापार करने के लिए धन्यवाद! 🙏
 
 INSERT INTO notification_templates
   (provider, template_id, language, version, template_variables, document_type, verified)
 VALUES
   ('whatsapp', 'motake_bill_v2', 'en', 1, '["customer", "route_name", "bill_number", "bill_date", "bill_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_bill_v2', 'mr', 1, '["customer", "route_name", "bill_number", "bill_date", "bill_amount", "balance_line"]'::jsonb, 'pdf', true),
-  ('whatsapp', 'motake_bill_v2', 'hi', 1, '["customer", "route_name", "bill_number", "bill_date", "bill_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_receipt_v2', 'en', 1, '["customer", "route_name", "receipt_number", "amount_received", "payment_mode", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_receipt_v2', 'mr', 1, '["customer", "route_name", "receipt_number", "amount_received", "payment_mode", "balance_line"]'::jsonb, 'pdf', true),
-  ('whatsapp', 'motake_receipt_v2', 'hi', 1, '["customer", "route_name", "receipt_number", "amount_received", "payment_mode", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_bill_corrected_v2', 'en', 1, '["customer", "route_name", "bill_number", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_bill_corrected_v2', 'mr', 1, '["customer", "route_name", "bill_number", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_bill_corrected_v2', 'hi', 1, '["customer", "route_name", "bill_number", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_payment_corrected_v2', 'en', 1, '["customer", "route_name", "receipt_number", "previous_amount", "corrected_amount", "difference", "reason", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_payment_corrected_v2', 'mr', 1, '["customer", "route_name", "receipt_number", "previous_amount", "corrected_amount", "difference", "reason", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_payment_corrected_v2', 'hi', 1, '["customer", "route_name", "receipt_number", "previous_amount", "corrected_amount", "difference", "reason", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_refund_v2', 'en', 1, '["customer", "route_name", "refund_number", "refund_amount", "refund_mode", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_refund_v2', 'mr', 1, '["customer", "route_name", "refund_number", "refund_amount", "refund_mode", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_refund_v2', 'hi', 1, '["customer", "route_name", "refund_number", "refund_amount", "refund_mode", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_cancellation_v2', 'en', 1, '["customer", "route_name", "bill_number", "reason", "amount_reversed", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_cancellation_v2', 'mr', 1, '["customer", "route_name", "bill_number", "reason", "amount_reversed", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_cancellation_v2', 'hi', 1, '["customer", "route_name", "bill_number", "reason", "amount_reversed", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_gst_credit_note_v2', 'en', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "credit_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_gst_credit_note_v2', 'mr', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "credit_amount", "balance_line"]'::jsonb, 'pdf', true),
-  ('whatsapp', 'motake_gst_credit_note_v2', 'hi', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "credit_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_gst_debit_note_v2', 'en', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "additional_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_gst_debit_note_v2', 'mr', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "additional_amount", "balance_line"]'::jsonb, 'pdf', true),
-  ('whatsapp', 'motake_gst_debit_note_v2', 'hi', 1, '["customer", "route_name", "note_number", "bill_number", "reason", "additional_amount", "balance_line"]'::jsonb, 'pdf', true),
   ('whatsapp', 'motake_note_update_v2', 'en', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_note_update_v2', 'mr', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
-  ('whatsapp', 'motake_note_update_v2', 'hi', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true)
+  ('whatsapp', 'motake_note_update_v2', 'mr', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true)
 ON CONFLICT (provider, template_id, language, version) DO NOTHING;

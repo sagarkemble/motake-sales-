@@ -10,7 +10,7 @@ export const CHECKOUT_REFUSAL_REASONS = [
   "bad_lines",
   "short_stock",
   "price_field_refused",
-  "scheduled_date_not_after_today",
+  "scheduled_date_in_past",
   "fulfil_too_early",
   "already_fulfilled",
   "pre_order_cancelled",

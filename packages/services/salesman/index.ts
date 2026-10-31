@@ -1,53 +1,52 @@
 import {
   createSalesman,
-  getSalesmanByCode,
   getSalesmanById,
   getSalesmanDayWiseHistory,
   getSalesmanWithProfileById,
+  listSalesmanCodes,
   listSalesmenWithProfiles,
-  updateSalesmanCode,
   type SalesmanDayWiseHistoryRow,
   type SalesmanListRow,
   type SalesmanWithProfile,
 } from "@repo/database/queries/salesman";
 import { db } from "@repo/database";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
-import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
+import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProfile, SelectSalesman } from "@repo/database/schema";
 
-import { conflict } from "../errors";
-import { changedFields, recordAudit } from "../shared/audit";
 import {
   createProfileAvatarUploadUrl,
   deleteProfileAvatar,
   updateProfileNameAndAvatar,
   type ProfileAvatarUploadUrlResult,
 } from "../shared/profile-avatar";
+import { nextSalesmanCode } from "./code";
 import {
   createSalesmanInputSchema,
   listSalesmenInputSchema,
   salesmanHistoryRangeInputSchema,
-  updateSalesmanCodeInputSchema,
   type CreateAvatarUploadUrlInput,
   type CreateSalesmanInput,
   type ListSalesmenInput,
   type SalesmanHistoryRangeInput,
-  type UpdateSalesmanCodeInput,
   type UpdateSalesmanProfileInput,
 } from "./model";
 
 class SalesmanService {
+  // Generates the Salesman code once, from the name, phone and today's date; it never changes.
   public async createSalesman(
     input: CreateSalesmanInput,
     executor: DbExecutor = db,
   ): Promise<SelectSalesman> {
     const parsedInput = createSalesmanInputSchema.parse(input);
-    const existingSalesmanWithCode = await getSalesmanByCode(parsedInput.salesmanCode);
-    if (existingSalesmanWithCode) {
-      throw conflict(`Salesman code ${parsedInput.salesmanCode} already in use`);
-    }
-    return createSalesman(parsedInput, executor);
+    const salesmanCode = nextSalesmanCode(
+      parsedInput.name,
+      parsedInput.phone,
+      businessDateOf(new Date()),
+      await listSalesmanCodes(executor),
+    );
+    return createSalesman({ id: parsedInput.id, salesmanCode }, executor);
   }
 
   public async getSalesmanById(salesmanId: string): Promise<SelectSalesman | undefined> {
@@ -60,44 +59,13 @@ class SalesmanService {
     return getSalesmanWithProfileById(salesmanId);
   }
 
-  public async listSalesmen(
-    input: ListSalesmenInput,
-  ): Promise<PaginatedResult<SalesmanListRow>> {
+  public async listSalesmen(input: ListSalesmenInput): Promise<PaginatedResult<SalesmanListRow>> {
     const parsedInput = listSalesmenInputSchema.parse(input);
     return listSalesmenWithProfiles(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
       businessDateOf(new Date()),
       parsedInput.includeDeleted,
     );
-  }
-
-  public async updateSalesmanCode(
-    salesmanId: string,
-    changes: UpdateSalesmanCodeInput,
-    actorProfileId: string,
-  ): Promise<SelectSalesman | undefined> {
-    const parsedChanges = updateSalesmanCodeInputSchema.parse(changes);
-    const existingSalesmanWithCode = await getSalesmanByCode(parsedChanges.salesmanCode);
-    if (existingSalesmanWithCode && existingSalesmanWithCode.id !== salesmanId) {
-      throw conflict(`Salesman code ${parsedChanges.salesmanCode} already in use`);
-    }
-    return runInTransaction(async (transaction) => {
-      const before = await getSalesmanById(salesmanId, transaction);
-      const after = await updateSalesmanCode(salesmanId, parsedChanges.salesmanCode, transaction);
-      if (before && after) {
-        await recordAudit(
-          {
-            actorId: actorProfileId,
-            action: "updated",
-            entityType: "salesman",
-            entityId: salesmanId,
-            payload: changedFields(before, after, ["salesmanCode"]),
-          },
-          transaction,
-        );
-      }
-      return after;
-    });
   }
 
   public async updateSalesmanProfile(

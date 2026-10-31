@@ -24,7 +24,6 @@ export type SalesmanFormValues = {
   phone: string;
   email: string;
   password: string;
-  salesmanCode: string;
 };
 
 interface SalesmanFormProps {
@@ -46,7 +45,6 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
           .min(1, tx("admin.salesmen.validation.email"))
           .email(tx("admin.salesmen.validation.emailInvalid")),
         password: z.string().min(minPasswordLength, tx("admin.salesmen.validation.passwordMin")),
-        salesmanCode: z.string().min(1, tx("admin.salesmen.validation.code")).max(32),
       }),
     [tx],
   );
@@ -58,7 +56,6 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
       phone: "",
       email: "",
       password: "",
-      salesmanCode: "",
     },
   });
 
@@ -152,24 +149,6 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
                 </FormItem>
               );
             }}
-          />
-
-          <FormField
-            control={form.control}
-            name="salesmanCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{tx("account.profile.salesmanCode")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={tx("admin.salesmen.form.codePlaceholder")}
-                    className="rounded-xl bg-muted/40"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
           />
         </div>
 

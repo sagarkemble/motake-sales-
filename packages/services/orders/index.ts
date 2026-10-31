@@ -353,10 +353,10 @@ class OrderService {
     if (firstOrder) return this.preOrderResultOf(firstOrder);
     assertBasketNotEmpty(parsedInput.lines);
     const today = businessDateOf(new Date());
-    if (parsedInput.scheduledDate <= today) {
+    if (parsedInput.scheduledDate < today) {
       throw checkoutRefusal(
-        "scheduled_date_not_after_today",
-        "A Pre-order date must be after today. Sell today's goods with Book Now.",
+        "scheduled_date_in_past",
+        "A Pre-order date cannot be before today.",
         { scheduledDate: parsedInput.scheduledDate, today },
       );
     }
