@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { sumGatepassQuantities } from "~/lib/gatepass-quantities";
 import { Badge } from "~/components/ui/badge";
@@ -63,9 +64,11 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
 
   if (!pendingGatepass) {
     return (
-      <p className="py-16 text-center text-sm text-muted-foreground">
-        {tx("admin.salesmen.verify.nothingPending")}
-      </p>
+      <EmptyStateCard
+        media="none"
+        title={tx("empty.verification.title")}
+        body={tx("empty.verification.body")}
+      />
     );
   }
 

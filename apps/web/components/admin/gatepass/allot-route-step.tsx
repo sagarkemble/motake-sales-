@@ -2,6 +2,7 @@
 
 import { CheckIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { StatusBadge } from "~/components/admin/products/status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Progress } from "~/components/ui/progress";
@@ -41,9 +42,13 @@ export function AllotRouteStep({
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">{tx("admin.gatepass.allot.routeHint")}</p>
       {routeChoices.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
-          {tx("admin.routes.noChoices")}
-        </p>
+        <EmptyStateCard
+          compact
+          media="none"
+          title={tx("empty.allotRoutes.title")}
+          body={tx("empty.allotRoutes.body")}
+          action={{ label: tx("empty.actions.newRoute"), href: "/admin/routes" }}
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {routeChoices.map((route) => {

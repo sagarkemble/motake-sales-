@@ -1,9 +1,9 @@
 "use client";
 
 import { format } from "date-fns";
-import { HistoryIcon, TicketXIcon } from "lucide-react";
 import { useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { GatepassDetailDrawer } from "~/components/salesman/gatepass-detail-drawer";
 import { GatepassHistoryCard } from "~/components/salesman/gatepass-history-card";
 import { sumGatepassQuantities, type GatepassLine } from "~/lib/gatepass-quantities";
@@ -102,10 +102,11 @@ export default function SalesmanGatepassPage() {
           {isMyGatepassLoading || (isReloading && isMyGatepassFetching) ? (
             <ListItemSkeleton count={4} />
           ) : !myGatepass ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-              <TicketXIcon className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">{tx("salesman.gatepass.emptyToday")}</p>
-            </div>
+            <EmptyStateCard
+              media="none"
+              title={tx("empty.gatepassToday.title")}
+              body={tx("empty.gatepassToday.body")}
+            />
           ) : (
             <>
               <div className="md:hidden">
@@ -138,10 +139,11 @@ export default function SalesmanGatepassPage() {
           {isMyHistoryLoading || (isReloading && isMyHistoryFetching) ? (
             <ListItemSkeleton count={5} />
           ) : myHistory.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-              <HistoryIcon className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">{tx("salesman.gatepass.emptyHistory")}</p>
-            </div>
+            <EmptyStateCard
+              media="none"
+              title={tx("empty.gatepassHistory.title")}
+              body={tx("empty.gatepassHistory.body")}
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {myHistory.map((historyRow) => (

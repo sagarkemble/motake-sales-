@@ -1,9 +1,10 @@
 "use client";
 
 import { businessDateOf } from "@repo/trpc/client";
-import { ChevronRightIcon, SearchIcon, SearchXIcon, UserPlusIcon, XIcon } from "lucide-react";
+import { ChevronRightIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
 import { AddCustomerDrawer } from "~/components/salesman/customers/add-customer-drawer";
 import { RouteCustomerDrawer } from "~/components/salesman/customers/route-customer-drawer";
@@ -119,20 +120,31 @@ export default function SalesmanRouteCustomersPage() {
           {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
             <ListItemSkeleton count={5} />
           ) : customersPage.items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-              <SearchXIcon className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">
-                {debouncedSearchTerm
-                  ? tx("salesman.checkout.customer.noMatchOnRoute", {
+            <EmptyStateCard
+              title={
+                debouncedSearchTerm
+                  ? tx("empty.routeCustomersNoMatch.title", {
                       route: activeRouteName,
                       term: debouncedSearchTerm,
                     })
-                  : tx("salesman.checkout.customer.noneOnRoute", { route: activeRouteName })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {tx("salesman.checkout.customer.onlyRouteListed")}
-              </p>
-            </div>
+                  : tx("empty.routeCustomers.title", { route: activeRouteName })
+              }
+              body={
+                debouncedSearchTerm
+                  ? tx("empty.routeCustomersNoMatch.body")
+                  : tx("empty.routeCustomers.body")
+              }
+              action={{
+                label: tx("empty.actions.addCustomer"),
+                icon: UserPlusIcon,
+                onClick: () => setIsAddingCustomer(true),
+              }}
+              secondaryAction={
+                debouncedSearchTerm
+                  ? { label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }
+                  : undefined
+              }
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {customersPage.items.map((customer) => (

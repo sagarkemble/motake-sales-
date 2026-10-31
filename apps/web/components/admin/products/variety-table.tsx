@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { SkuChip } from "~/components/admin/products/sku-chip";
 import { StatusBadge } from "~/components/admin/products/status-badge";
@@ -166,9 +167,18 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
         {isProductVarietiesLoading ? (
           <ListItemSkeleton count={4} />
         ) : productVarieties.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {tx("admin.varieties.empty")}
-          </p>
+          <EmptyStateCard
+            compact
+            media="square"
+            className="bg-muted-faint"
+            title={tx("empty.varieties.title")}
+            body={tx("empty.varieties.body")}
+            action={{
+              label: tx("empty.actions.addVariety"),
+              icon: PlusIcon,
+              onClick: openAddDialog,
+            }}
+          />
         ) : (
           productVarieties.map((variety) => {
             const isInactive = variety.status === "inactive";

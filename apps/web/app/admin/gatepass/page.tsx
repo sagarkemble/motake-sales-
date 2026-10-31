@@ -176,9 +176,9 @@ function GatepassPageContent() {
     }
   }
 
-  function startAnotherAllotment() {
+  function startAnotherAllotment(salesmanId = "") {
     setAllottedGatepass(null);
-    setSelectedSalesmanId("");
+    setSelectedSalesmanId(salesmanId);
     setSelectedRouteId("");
     setQuantitiesByVarietyId({});
     setStepIndex(0);
@@ -232,7 +232,7 @@ function GatepassPageContent() {
                 type="button"
                 variant="outline"
                 className="rounded-full"
-                onClick={startAnotherAllotment}
+                onClick={() => startAnotherAllotment()}
               >
                 {tx("admin.gatepass.allot.another")}
               </Button>
@@ -368,6 +368,10 @@ function GatepassPageContent() {
         dayGatepasses={dayGatepasses}
         allotmentMatrix={allotmentMatrix}
         isLoading={isGatepassesLoading || isAllotmentMatrixLoading || isSalesmenListLoading}
+        onAllot={(salesmanId) => {
+          startAnotherAllotment(salesmanId);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { PackageIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -77,11 +78,25 @@ function ProductsPageContent() {
         {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm
-              ? tx("admin.products.noMatch", { term: debouncedSearchTerm })
-              : tx("admin.products.empty")}
-          </p>
+          debouncedSearchTerm ? (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+              body={tx("empty.noMatch.body")}
+              action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+            />
+          ) : (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.products.title")}
+              body={tx("empty.products.body")}
+              action={{
+                label: tx("empty.actions.addProduct"),
+                icon: PlusIcon,
+                href: "/admin/products/new",
+              }}
+            />
+          )
         ) : (
           productsPage.items.map(({ product, varieties }) => {
             const activeVarieties = varieties.filter((variety) => variety.status === "active");

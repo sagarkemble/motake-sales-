@@ -2,6 +2,7 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Button } from "~/components/ui/button";
 import {
@@ -44,12 +45,7 @@ export function GstError({ onRetry }: { onRetry: () => void }) {
 }
 
 function GstEmpty({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
-      <p className="text-sm font-medium">{title}</p>
-      <p className="text-sm text-muted-foreground">{body}</p>
-    </div>
-  );
+  return <EmptyStateCard media="none" title={title} body={body} />;
 }
 
 /** Filed months, newest first: one card per month on phones, a table from `md` up. */

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -136,11 +137,23 @@ function CustomersPageContent() {
         {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : customersPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm
-              ? tx("admin.customers.noMatch", { term: debouncedSearchTerm })
-              : tx("admin.customers.empty")}
-          </p>
+          debouncedSearchTerm ? (
+            <EmptyStateCard
+              title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+              body={tx("empty.noMatch.body")}
+              action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+            />
+          ) : (
+            <EmptyStateCard
+              title={tx("empty.customers.title")}
+              body={tx("empty.customers.body")}
+              action={{
+                label: tx("empty.actions.addCustomer"),
+                icon: PlusIcon,
+                href: "/admin/customers/new",
+              }}
+            />
+          )
         ) : (
           customersPage.items.map((customer) => (
             <div

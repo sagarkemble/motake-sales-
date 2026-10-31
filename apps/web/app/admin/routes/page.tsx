@@ -4,6 +4,7 @@ import { Suspense, useRef, useState } from "react";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { NewRouteForm } from "~/components/admin/routes/new-route-form";
 import { RouteDetail } from "~/components/admin/routes/route-detail";
 import { StatusBadge } from "~/components/admin/products/status-badge";
@@ -101,11 +102,28 @@ function RoutesPageContent() {
           {isRoutesListLoading || (isReloading && isRoutesListFetching) ? (
             <ListItemSkeleton count={4} />
           ) : routes.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {debouncedSearchTerm
-                ? tx("admin.routes.noMatch", { term: debouncedSearchTerm })
-                : tx("admin.routes.empty")}
-            </p>
+            debouncedSearchTerm ? (
+              <EmptyStateCard
+                media="none"
+                title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+                body={tx("empty.noMatch.body")}
+                action={{
+                  label: tx("empty.actions.clearSearch"),
+                  onClick: () => setSearchTerm(""),
+                }}
+              />
+            ) : (
+              <EmptyStateCard
+                media="none"
+                title={tx("empty.routes.title")}
+                body={tx("empty.routes.body")}
+                action={{
+                  label: tx("empty.actions.newRoute"),
+                  icon: PlusIcon,
+                  onClick: () => setIsCreating(true),
+                }}
+              />
+            )
           ) : (
             routes.map((route) => (
               <button

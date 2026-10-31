@@ -1,13 +1,14 @@
 "use client";
 
 import type { RouterOutputs } from "@repo/trpc/client";
-import { AlertTriangleIcon, CalendarCheckIcon, LockIcon, TicketXIcon } from "lucide-react";
+import { AlertTriangleIcon, LockIcon, TicketXIcon } from "lucide-react";
 import { useState } from "react";
 
 import {
   FulfilPreOrderDrawer,
   type FulfilTarget,
 } from "~/components/salesman/orders/fulfil-pre-order-drawer";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
@@ -179,14 +180,22 @@ export function RoutePreordersSection() {
           </TabsList>
           <TabsContent value="due" className="flex flex-col gap-2 pt-1">
             {dueRows.length === 0 ? (
-              <EmptyRoutePreorders label={tx("salesman.orders.route.emptyDue")} />
+              <EmptyStateCard
+                compact
+                title={tx("empty.routeDue.title")}
+                body={tx("empty.routeDue.body")}
+              />
             ) : (
               dueRows.map(renderRow)
             )}
           </TabsContent>
           <TabsContent value="upcoming" className="flex flex-col gap-2 pt-1">
             {upcoming.length === 0 ? (
-              <EmptyRoutePreorders label={tx("salesman.orders.route.emptyUpcoming")} />
+              <EmptyStateCard
+                compact
+                title={tx("empty.routeUpcoming.title")}
+                body={tx("empty.routeUpcoming.body")}
+              />
             ) : (
               <>
                 <p className="px-1 text-[11px] text-muted-foreground">
@@ -207,14 +216,5 @@ export function RoutePreordersSection() {
         />
       )}
     </section>
-  );
-}
-
-function EmptyRoutePreorders({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-      <CalendarCheckIcon className="size-6 text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">{label}</p>
-    </div>
   );
 }

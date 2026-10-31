@@ -289,9 +289,6 @@
         "discrepancies": "Discrepancies",
         "vsYesterday": "vs yesterday"
       },
-      "orders": {
-        "empty": "No orders yet"
-      },
       "greeting": "Hello, {name} 👋",
       "greetingFallbackName": "Admin",
       "subtitle": "Here is what is happening with your business today.",
@@ -315,7 +312,6 @@
       }
     },
     "products": {
-      "empty": "No products yet",
       "newAria": "New product",
       "validation": {
         "nameRequired": "Enter a product name",
@@ -352,7 +348,6 @@
       },
       "imageAlt": "Product",
       "namePlaceholder": "Product name",
-      "noMatch": "No products match \"{term}\"",
       "notFound": "Product not found",
       "reactivate": "Reactivate",
       "saveChanges": "Save changes",
@@ -457,7 +452,6 @@
       "deleteFailed": "Could not delete the GST period. Try again."
     },
     "customers": {
-      "empty": "No customers yet",
       "newAria": "New customer",
       "validation": {
         "shopName": "Enter a shop name",
@@ -480,7 +474,6 @@
       "allRoutes": "All Routes",
       "showInactive": "Show inactive customers",
       "totalCount": "{count} total",
-      "noMatch": "No customers match \"{term}\"",
       "notFound": "Customer not found",
       "editTitle": "Edit customer",
       "edit": "Edit",
@@ -530,7 +523,6 @@
       "noCity": "Not set"
     },
     "salesmen": {
-      "empty": "No salesmen yet",
       "newAria": "New salesman",
       "actionsAria": "Salesman actions",
       "editAria": "Edit salesman",
@@ -570,7 +562,6 @@
         "closeFailed": "Could not close gate pass",
         "flagged": "Gate pass flagged as a discrepancy",
         "flagFailed": "Could not flag gate pass",
-        "nothingPending": "Nothing pending verification.",
         "awaitingApproval": "Awaiting your approval",
         "submittedAt": "Submitted {time}",
         "submitted": "Submitted for verification",
@@ -590,7 +581,6 @@
         "handedOverReturned": "Handed over · {count} items returned",
         "notHandedOver": "Not handed over yet",
         "salesmanDeleted": "Salesman deleted",
-        "noItemsToday": "No items allocated today",
         "footnote": "Only orders deduct from Gate Pass. Left = issued − sold; returned does not change it.",
         "variety": "Variety",
         "noReason": "No reason",
@@ -623,7 +613,6 @@
         "orders": "Orders",
         "bills": "Bills"
       },
-      "empty": "No orders yet",
       "office": "Office",
       "detailTitle": "Order details",
       "bill": "Bill",
@@ -653,8 +642,7 @@
         "anyStatus": "Any status",
         "customerPhone": "Customer phone",
         "placedFrom": "Placed from",
-        "placedTo": "Placed to",
-        "noMatch": "No orders match these filters."
+        "placedTo": "Placed to"
       },
       "placedFor": "Placed · for",
       "forDate": "for {date}",
@@ -686,7 +674,6 @@
         "itemsTitle": "Items",
         "itemsHint": "Prices for {route}, excl. GST. No GatePass stock is taken.",
         "search": "Search products",
-        "noMatch": "No product matches.",
         "add": "Add",
         "remove": "Remove",
         "catalogEmpty": "No Variety has a price on {route} yet. Set prices in Routes.",
@@ -719,7 +706,6 @@
         "backToOrders": "Back to Orders",
         "placeFailed": "Could not place the order. Try again.",
         "customerSearch": "Search shop name or phone",
-        "noCustomer": "No active Customer matches.",
         "customerDefaults": "A few Customers. Search to find others.",
         "balanceNow": "Balance now",
         "advanceKept": "Advance",
@@ -768,7 +754,6 @@
       "list": {
         "title": "GatePasses",
         "hint": "GatePasses on {date}. Tap one to open it.",
-        "none": "No GatePass on {date}",
         "issuedSold": "{time} · issued {issued} · sold {sold}",
         "allottedAt": "{date} · allotted {time}"
       }
@@ -804,7 +789,6 @@
       "numberSearch": "Bill number contains",
       "billDateFrom": "Bill date from",
       "billDateTo": "Bill date to",
-      "empty": "No Bills match.",
       "customer": "Customer",
       "allCustomers": "All Customers",
       "salesman": "Salesman",
@@ -854,7 +838,6 @@
       "history": {
         "title": "History",
         "sellerTitle": "Change history",
-        "empty": "No changes yet.",
         "loadFailed": "Could not load the history.",
         "created": "created",
         "updated": "updated",
@@ -963,7 +946,6 @@
       },
       "cities": {
         "intro": "Customers pick their city from this list. A missing city can also be added from the Customer form.",
-        "none": "No cities yet. Add the first one.",
         "countOne": "{count} city",
         "countOther": "{count} cities"
       },
@@ -997,8 +979,6 @@
       },
       "showDeleted": "Show deleted Routes",
       "deleted": "Deleted",
-      "empty": "No Routes yet. Add one with the plus button.",
-      "noMatch": "No Routes match \"{term}\"",
       "pricedCount": "{count} priced",
       "selectHint": "Select a Route.",
       "notFound": "Route not found",
@@ -1012,7 +992,6 @@
       "prices": {
         "title": "Route prices",
         "hint": "Tax-exclusive rupees. A saved price makes the variety Sellable on this Route; switching it to Unsellable removes the price. Placed orders keep their price.",
-        "empty": "No varieties in the catalog yet.",
         "sellable": "Sellable",
         "unsellable": "Unsellable",
         "price": "Price",
@@ -1615,18 +1594,15 @@
       "customers": "Route Customers"
     },
     "catalog": {
-      "empty": "No products yet",
       "inCart": "in cart",
       "size": "size",
       "sizes": "sizes",
       "addToCart": "Add to cart",
       "searchPlaceholder": "Search products",
-      "noMatch": "No products match \"{term}\"",
       "noSizes": "No sizes are set up for this product yet.",
       "selected": "Selected",
       "inGatepass": "{count} in GatePass",
-      "showAll": "All",
-      "emptyGatepass": "Nothing left on your GatePass. Switch on All to see every product."
+      "showAll": "All"
     },
     "cart": {
       "emptyTitle": "Your cart is empty",
@@ -1744,11 +1720,6 @@
         "orders": "Orders",
         "preOrders": "Pre-orders"
       },
-      "empty": {
-        "orders": "You have not placed any orders yet.",
-        "preOrdersPending": "No pre-orders are pending right now.",
-        "preOrdersFulfilled": "No pre-orders have been fulfilled yet."
-      },
       "qty": "{count} qty",
       "row": {
         "noBill": "No Bill",
@@ -1807,8 +1778,6 @@
         "anotherSalesman": "Another salesman",
         "fulfil": "Fulfil",
         "drawerDescription": "{qty} qty · placed by {by}",
-        "emptyDue": "Nothing due today.",
-        "emptyUpcoming": "No upcoming Pre-orders.",
         "upcomingReadOnly": "Upcoming Pre-orders can be fulfilled on their day.",
         "noGatepass": "Route Pre-orders show for the Route of your Active GatePass. You have none today.",
         "loadFailed": "Could not load Route Pre-orders."
@@ -1823,7 +1792,6 @@
         "today": "Today",
         "history": "History"
       },
-      "emptyToday": "No gate pass has been given to you for today yet.",
       "col": {
         "item": "Item",
         "sold": "Sold",
@@ -1852,7 +1820,6 @@
       "issuedAt": "Issued at",
       "issuedBy": "Issued by",
       "productFallback": "Product",
-      "emptyHistory": "No past gate passes yet.",
       "viewDetails": "View details",
       "detailTitle": "Gate pass details",
       "closedBy": "Completed by",
@@ -2221,6 +2188,142 @@
       "retry": "Retry",
       "noReceipt": "No Receipt: nothing was kept.",
       "empty": "Nothing has gone out yet. This updates by itself."
+    }
+  },
+  "empty": {
+    "noMatch": {
+      "title": "Nothing matches \"{term}\"",
+      "body": "Check the spelling, or search for something else."
+    },
+    "filtered": {
+      "title": "Nothing matches these filters",
+      "body": "Change or clear the filters to see more."
+    },
+    "actions": {
+      "clearSearch": "Clear search",
+      "clearFilters": "Clear filters",
+      "newOrder": "New order",
+      "addProduct": "Add product",
+      "addCustomer": "Add customer",
+      "addSalesman": "Add salesman",
+      "newRoute": "New Route",
+      "addVariety": "Add variety",
+      "allot": "Allot GatePass",
+      "showAll": "Show all products",
+      "goToProducts": "Go to Products",
+      "addCity": "Add city"
+    },
+    "salesmen": {
+      "title": "No salesmen yet",
+      "body": "Add your first salesman. They sign in with their email and sell from the stock on their GatePass."
+    },
+    "products": {
+      "title": "No products yet",
+      "body": "Add a product with its photo, then add its Varieties (sizes) to start selling it."
+    },
+    "customers": {
+      "title": "No customers yet",
+      "body": "Add a shop and pick its Route, so salesmen on that Route can sell to it."
+    },
+    "routes": {
+      "title": "No Routes yet",
+      "body": "A Route is an area your salesmen cover, with its own prices. Add one to start."
+    },
+    "orders": {
+      "title": "No orders yet",
+      "body": "Orders placed by salesmen or by the office show up here."
+    },
+    "bills": {
+      "title": "No Bills yet",
+      "body": "A Bill is made when a Book Now order is placed or a Pre-order is delivered."
+    },
+    "gatepassDay": {
+      "title": "No GatePass on {date}",
+      "body": "Give this salesman stock for the day."
+    },
+    "dashboardOrders": {
+      "title": "No orders yet",
+      "body": "New orders and Pre-orders show up here as they come in."
+    },
+    "catalog": {
+      "title": "No products yet",
+      "body": "The office adds products. Check again a little later."
+    },
+    "catalogGatepass": {
+      "title": "Nothing left on your GatePass",
+      "body": "Everything on it is sold. You can still look at all products."
+    },
+    "salesmanOrders": {
+      "title": "No orders yet",
+      "body": "Orders you place for your Customers show up here."
+    },
+    "preordersPending": {
+      "title": "No Pre-orders waiting",
+      "body": "Pre-orders you take for a later date show up here."
+    },
+    "preordersFulfilled": {
+      "title": "No Pre-orders delivered yet",
+      "body": "Pre-orders you deliver show up here."
+    },
+    "gatepassToday": {
+      "title": "No GatePass for today yet",
+      "body": "Ask the office to give you stock on a Route. It shows up here once they do."
+    },
+    "gatepassHistory": {
+      "title": "No past GatePasses yet",
+      "body": "Your earlier GatePasses show up here after they end."
+    },
+    "routeCustomers": {
+      "title": "No Customers on {route} yet",
+      "body": "Add a shop on this Route to start selling to it."
+    },
+    "routeCustomersNoMatch": {
+      "title": "No Customer on {route} matches \"{term}\"",
+      "body": "Check the spelling, or add the shop if it's new."
+    },
+    "routeDue": {
+      "title": "Nothing due today",
+      "body": "Pre-orders to deliver on your Route today show up here."
+    },
+    "routeUpcoming": {
+      "title": "No upcoming Pre-orders",
+      "body": "Pre-orders for later dates on your Route show up here."
+    },
+    "varieties": {
+      "title": "No Varieties yet",
+      "body": "A Variety is one size of this product, like 500 ml or 1 L. Add one to sell it."
+    },
+    "routePrices": {
+      "title": "No products to price yet",
+      "body": "Add products first, then set what they cost on this Route."
+    },
+    "salesmanItems": {
+      "title": "Nothing allotted today",
+      "body": "Allot a GatePass above to give this salesman stock to sell."
+    },
+    "verification": {
+      "title": "Nothing to verify",
+      "body": "When this salesman hands over their GatePass, you check the returns here."
+    },
+    "allotRoutes": {
+      "title": "No Routes yet",
+      "body": "Create a Route and set its prices before giving out a GatePass."
+    },
+    "allotItems": {
+      "title": "No products yet",
+      "body": "Add products and their Varieties before giving out a GatePass."
+    },
+    "newOrderCustomers": {
+      "title": "No active Customer matches",
+      "body": "Check the spelling, or add the shop first."
+    },
+    "cities": {
+      "title": "No cities yet",
+      "body": "Customers pick their city from this list. Add the first one."
+    },
+    "history": {
+      "title": "No changes yet",
+      "body": "Each change made here is listed with who made it and why."
     }
   }
 }

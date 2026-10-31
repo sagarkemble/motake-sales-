@@ -3,6 +3,7 @@
 import { CheckIcon, PlusIcon, SearchIcon, StoreIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { InactiveBanner, PreorderItem } from "~/components/admin/ledger/ledger-parts";
 import {
   AmountField,
@@ -104,9 +105,17 @@ function CustomerList({ order }: { order: OfficeOrder }) {
           <ListItemSkeleton count={3} />
         </div>
       ) : customersPage.items.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
-          {tx("admin.orders.new.noCustomer")}
-        </p>
+        <EmptyStateCard
+          compact
+          title={tx("empty.newOrderCustomers.title")}
+          body={tx("empty.newOrderCustomers.body")}
+          action={{ label: tx("empty.actions.addCustomer"), href: "/admin/customers/new" }}
+          secondaryAction={
+            searchTerm
+              ? { label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }
+              : undefined
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-1.5">
           {!debouncedSearchTerm && (
@@ -247,8 +256,24 @@ function ItemList({ order }: { order: OfficeOrder }) {
       <ScrollArea className="flex flex-col [&>[data-slot=scroll-area-viewport]]:max-h-[28rem]">
         <ul className="divide-y">
           {found.length === 0 && (
-            <li className="p-6 text-center text-sm text-muted-foreground">
-              {tx("admin.orders.new.noMatch")}
+            <li className="p-2">
+              {query.trim() ? (
+                <EmptyStateCard
+                  compact
+                  media="square"
+                  title={tx("empty.noMatch.title", { term: query.trim() })}
+                  body={tx("empty.noMatch.body")}
+                  action={{ label: tx("empty.actions.clearSearch"), onClick: () => setQuery("") }}
+                />
+              ) : (
+                <EmptyStateCard
+                  compact
+                  media="square"
+                  title={tx("empty.products.title")}
+                  body={tx("empty.products.body")}
+                  action={{ label: tx("empty.actions.addProduct"), href: "/admin/products/new" }}
+                />
+              )}
             </li>
           )}
           {found.map((row) => {

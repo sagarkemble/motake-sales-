@@ -10,6 +10,7 @@ import {
   sumGatepassQuantities,
   type GatepassQuantityTotals,
 } from "~/lib/gatepass-quantities";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { RouteTag } from "~/components/shared/route-tag";
 import { StatGridSkeleton } from "~/components/shared/stat-grid-skeleton";
@@ -115,9 +116,13 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
 
       <div className="rounded-2xl border bg-card p-2">
         {allocatedItems.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {tx("admin.salesmen.gatepass.noItemsToday")}
-          </p>
+          <EmptyStateCard
+            compact
+            media="square"
+            className="border-0"
+            title={tx("empty.salesmanItems.title")}
+            body={tx("empty.salesmanItems.body")}
+          />
         ) : (
           <GatepassLinesTable rows={allocatedItems} handedOver={handedOver} />
         )}

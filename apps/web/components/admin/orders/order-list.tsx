@@ -20,6 +20,7 @@ import {
   CancelPreOrderButton,
   CancelPreOrderDialog,
 } from "~/components/admin/orders/cancel-pre-order-dialog";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { isFulfilDue } from "~/lib/is-preorder-pending";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { SalesmanLabel } from "~/components/admin/orders/salesman-label";
@@ -238,9 +239,22 @@ export function OrderList({ customerId }: OrderListProps) {
       {isOrdersListLoading || (isReloading && isOrdersListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : ordersPage.items.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">
-          {activeCount > 0 ? tx("admin.orders.filters.noMatch") : tx("admin.orders.empty")}
-        </p>
+        activeCount > 0 ? (
+          <EmptyStateCard
+            title={tx("empty.filtered.title")}
+            body={tx("empty.filtered.body")}
+            action={{
+              label: tx("empty.actions.clearFilters"),
+              onClick: () => setFilters(EMPTY_FILTERS),
+            }}
+          />
+        ) : (
+          <EmptyStateCard
+            title={tx("empty.orders.title")}
+            body={tx("empty.orders.body")}
+            action={{ label: tx("empty.actions.newOrder"), href: "/admin/orders/new" }}
+          />
+        )
       ) : (
         <>
           <OrderTable rows={ordersPage.items} onSelect={openRow} onCancel={setCancellingOrderId} />

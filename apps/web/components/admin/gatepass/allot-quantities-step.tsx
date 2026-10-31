@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PackageIcon, SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Badge } from "~/components/ui/badge";
@@ -97,9 +98,23 @@ export function AllotQuantitiesStep({
       {isCatalogLoading ? (
         <ListItemSkeleton count={6} />
       ) : visibleItems.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          {tx("admin.gatepass.allot.noItems")}
-        </p>
+        normalizedSearchTerm ? (
+          <EmptyStateCard
+            compact
+            media="square"
+            title={tx("empty.noMatch.title", { term: searchTerm.trim() })}
+            body={tx("empty.noMatch.body")}
+            action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+          />
+        ) : (
+          <EmptyStateCard
+            compact
+            media="square"
+            title={tx("empty.allotItems.title")}
+            body={tx("empty.allotItems.body")}
+            action={{ label: tx("empty.actions.addProduct"), href: "/admin/products/new" }}
+          />
+        )
       ) : (
         // About ten rows tall; the list scrolls inside it.
         <ScrollArea className="flex flex-col rounded-2xl border bg-muted-faint [&>[data-slot=scroll-area-viewport]]:max-h-[36rem]">

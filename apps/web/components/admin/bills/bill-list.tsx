@@ -4,6 +4,7 @@ import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { TRPCClientError, type RouterOutputs } from "@repo/trpc/client";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { BillDetailDialog } from "~/components/admin/bills/bill-detail-dialog";
 import {
   ALL,
@@ -53,6 +54,23 @@ export function BillList() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const isFiltered =
+    numberSearch.trim() !== "" ||
+    billDateFrom !== "" ||
+    billDateTo !== "" ||
+    hideCancelled ||
+    customerId !== ALL ||
+    salesmanId !== ALL;
+
+  function clearFilters() {
+    setNumberSearch("");
+    setBillDateFrom("");
+    setBillDateTo("");
+    setHideCancelled(false);
+    setCustomerId(ALL);
+    setSalesmanId(ALL);
+    setPage(1);
+  }
   const debouncedNumberSearch = useDebouncedValue(numberSearch.trim(), 350);
   const pageSize = 20;
 
@@ -182,9 +200,19 @@ export function BillList() {
       {isBillsListLoading || (isReloading && isBillsListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : billsPage.items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed bg-card py-10 text-center text-sm text-muted-foreground">
-          {tx("admin.bills.empty")}
-        </p>
+        isFiltered ? (
+          <EmptyStateCard
+            title={tx("empty.filtered.title")}
+            body={tx("empty.filtered.body")}
+            action={{ label: tx("empty.actions.clearFilters"), onClick: clearFilters }}
+          />
+        ) : (
+          <EmptyStateCard
+            title={tx("empty.bills.title")}
+            body={tx("empty.bills.body")}
+            action={{ label: tx("empty.actions.newOrder"), href: "/admin/orders/new" }}
+          />
+        )
       ) : (
         <>
           <BillTable rows={billsPage.items} onSelect={setSelectedBillId} />
