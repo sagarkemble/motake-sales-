@@ -300,6 +300,11 @@
       "recentActivity": "Recent activity",
       "orderHistory": "Order history",
       "salesmanPrefix": "Salesman {name}",
+      "verification": {
+        "title": "Waiting for verification",
+        "body": "Handed over today. Check the returns and approve or flag.",
+        "open": "Verify"
+      },
       "discrepancy": {
         "title": "Today's discrepancies",
         "flaggedCount": "{count} flagged",

@@ -300,6 +300,11 @@
       "recentActivity": "अलीकडील हालचाल",
       "orderHistory": "ऑर्डर इतिहास",
       "salesmanPrefix": "विक्रेता {name}",
+      "verification": {
+        "title": "पडताळणीची वाट",
+        "body": "आज सोपवले. परत आलेला माल तपासा आणि मंजूर करा किंवा फ्लॅग करा.",
+        "open": "पडताळा"
+      },
       "discrepancy": {
         "title": "आजच्या विसंगती",
         "flaggedCount": "{count} फ्लॅग केलेले",

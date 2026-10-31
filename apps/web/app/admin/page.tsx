@@ -14,6 +14,7 @@ import {
 import { DiscrepancyPanel } from "~/components/admin/dashboard/discrepancy-panel";
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
+import { VerificationWaitingPanel } from "~/components/admin/dashboard/verification-waiting-panel";
 import { adminQuickActions } from "~/components/admin/nav-items";
 import { QuickActionLink } from "~/components/shared/quick-action-link";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -81,6 +82,8 @@ export default function AdminDashboardPage() {
         </h1>
         <p className="text-sm text-muted-foreground">{tx("admin.dashboard.subtitle")}</p>
       </section>
+
+      <VerificationWaitingPanel />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">
