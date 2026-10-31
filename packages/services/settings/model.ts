@@ -83,7 +83,7 @@ const sellerFieldsSchema = z.object({
   place: optionalText(120),
 });
 
-// No einvoicingRequired: the seller-level flag stays at its default (true) and is not editable here.
+// No einvoicingRequired: e-invoicing is gone; the column stays at its default and is never edited.
 export const setUpSellerSettingsInputSchema = sellerFieldsSchema;
 export type SetUpSellerSettingsInput = z.input<typeof setUpSellerSettingsInputSchema>;
 

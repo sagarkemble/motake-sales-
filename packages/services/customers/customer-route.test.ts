@@ -110,7 +110,7 @@ describe("CustomerService Admin add", () => {
     expect(second.phone).toBe("9000000001");
   });
 
-  it("trims and upper-cases the GSTIN and defaults E-invoicing required from it", async () => {
+  it("trims and upper-cases the GSTIN; E-invoicing required stays off", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
 
@@ -123,30 +123,8 @@ describe("CustomerService Admin add", () => {
       admin.id,
     );
 
-    expect(withGstin).toMatchObject({ gstin: "27ABCDE1234F1Z5", einvoicingRequired: true });
+    expect(withGstin).toMatchObject({ gstin: "27ABCDE1234F1Z5", einvoicingRequired: false });
     expect(emptyGstin).toMatchObject({ gstin: null, einvoicingRequired: false });
-  });
-
-  it("lets Admin override the E-invoicing default either way", async () => {
-    const admin = await buildProfile();
-    const route = await buildRoute();
-
-    const gstinNoIrn = await customerService.createCustomerAsAdmin(
-      {
-        ...shopDetails(admin.id),
-        routeId: route.id,
-        gstin: "27ABCDE1234F1Z5",
-        einvoicingRequired: false,
-      },
-      admin.id,
-    );
-    const noGstinIrn = await customerService.createCustomerAsAdmin(
-      { ...shopDetails(admin.id), routeId: route.id, einvoicingRequired: true },
-      admin.id,
-    );
-
-    expect(gstinNoIrn.einvoicingRequired).toBe(false);
-    expect(noGstinIrn.einvoicingRequired).toBe(true);
   });
 
   it("refuses a GSTIN that is not 15 letters or digits", async () => {
@@ -187,7 +165,7 @@ describe("CustomerService Admin add", () => {
 });
 
 describe("CustomerService Admin edit", () => {
-  it("changes GSTIN and E-invoicing required with an audit, never the Preferred language or Route", async () => {
+  it("changes the GSTIN with an audit, never the Preferred language or Route", async () => {
     const admin = await buildProfile();
     const route = await buildRoute();
     const otherRoute = await buildRoute();
@@ -206,14 +184,13 @@ describe("CustomerService Admin edit", () => {
 
     expect(updated).toMatchObject({
       gstin: "27ABCDE1234F1Z5",
-      einvoicingRequired: true,
+      einvoicingRequired: false,
       preferredLanguage: "hi",
       routeId: route.id,
     });
     const [row] = await listAuditLogsForEntity("customer", customer.id);
     expect(row?.payload).toEqual({
       gstin: { from: null, to: "27ABCDE1234F1Z5" },
-      einvoicingRequired: { from: false, to: true },
     });
   });
 

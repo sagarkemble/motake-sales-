@@ -140,20 +140,20 @@ export const customersRouter = router({
         protect: true,
         summary: "Add a customer",
         description:
-          "Create a customer with a required shop photo and a Preferred language (Marathi by default, fixed afterwards). Admin picks the Route and may set GSTIN and E-invoicing required; a salesman's Customer goes on their Active GatePass Route.",
+          "Create a customer with a required shop photo and a Preferred language (Marathi by default, fixed afterwards). Admin picks the Route and may set the GSTIN; a salesman's Customer goes on their Active GatePass Route.",
       },
     })
     .input(createCustomerInputSchema)
     .output(apiResponseSchema(customerSchema))
     .mutation(async ({ ctx, input }) => {
-      const { routeId, gstin, einvoicingRequired, ...details } = input;
+      const { routeId, gstin, ...details } = input;
       if (ctx.user.role !== "admin") {
         const customer = await customerService.createCustomerAsSalesman(details, ctx.user.id);
         return apiResponse(customer);
       }
       if (!routeId) throw screenRefusal("route_required", "Pick a Route for the Customer");
       const customer = await customerService.createCustomerAsAdmin(
-        { ...details, routeId, gstin, einvoicingRequired },
+        { ...details, routeId, gstin },
         ctx.user.id,
       );
       return apiResponse(customer);
@@ -168,7 +168,7 @@ export const customersRouter = router({
         protect: true,
         summary: "Update a customer",
         description:
-          "Change the details of an existing customer, including shop photo, GSTIN and E-invoicing required. The Route (see Move to Route) and Preferred language are not changed here. Admin only.",
+          "Change the details of an existing customer, including shop photo and GSTIN. The Route (see Move to Route) and Preferred language are not changed here. Admin only.",
       },
     })
     .input(customerIdInputSchema.extend(updateCustomerInputSchema.shape))

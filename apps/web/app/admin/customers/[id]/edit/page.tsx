@@ -35,7 +35,6 @@ export default function EditCustomerPage() {
         notes: values.notes || undefined,
         shopPhotoKey: values.shopPhotoKey || null,
         gstin: normalizeGstin(values.gstin) || null,
-        einvoicingRequired: values.einvoicingRequired,
       });
       toast.success(tx("admin.customers.updateSuccess"));
       router.push(`/admin/customers/${customerId}`);
@@ -69,7 +68,6 @@ export default function EditCustomerPage() {
           shopPhotoKey: customer.shopPhotoKey ?? "",
           shopPhotoUrl: customer.shopPhotoUrl ?? "",
           gstin: customer.gstin ?? "",
-          einvoicingRequired: customer.einvoicingRequired,
         }}
         fixedDetails={{
           routeName: customer.routeName,

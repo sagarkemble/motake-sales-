@@ -30,7 +30,6 @@ export default function NewCustomerPage() {
         routeId: values.routeId,
         preferredLanguage: values.preferredLanguage,
         gstin: normalizeGstin(values.gstin) || null,
-        einvoicingRequired: values.einvoicingRequired,
       });
       toast.success(tx("admin.customers.createSuccess"));
       router.push(`/admin/customers/${response.data.id}`);

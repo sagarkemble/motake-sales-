@@ -67,8 +67,7 @@ const sellerRouter = router({
         tags: ["Settings"],
         protect: true,
         summary: "Set up the Seller master",
-        description:
-          "Create the single Seller master row. Refused once it exists. E-invoicing stays on. Admin only.",
+        description: "Create the single Seller master row. Refused once it exists. Admin only.",
       },
     })
     .input(setUpSellerSettingsInputSchema)

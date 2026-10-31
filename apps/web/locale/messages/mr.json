@@ -425,7 +425,6 @@
         "address": "पत्ता टाका",
         "shopPhoto": "दुकानाचा फोटो जोडा",
         "gstin": "GSTIN मध्ये १५ अक्षरे किंवा अंक हवेत",
-        "gstinForEinvoicing": "ई-इनव्हॉइसिंग चालू करण्यासाठी GSTIN भरा.",
         "route": "रूट निवडा"
       },
       "createSuccess": "ग्राहक तयार झाला",
@@ -460,10 +459,6 @@
         "gstin": "GSTIN (ऐच्छिक)",
         "gstinLabel": "GSTIN",
         "gstinHint": "१५ अक्षरे किंवा अंक. नसल्यास रिकामे ठेवा.",
-        "einvoicing": "ई-इनव्हॉइसिंग आवश्यक",
-        "einvoicingFollowsGstin": "GSTIN नुसार: GSTIN टाकल्यावर चालू. तुम्ही बदलू शकता.",
-        "einvoicingSetByAdmin": "तुम्ही ठरवले.",
-        "einvoicingFollowGstin": "पुन्हा GSTIN नुसार ठेवा",
         "saveCustomer": "ग्राहक जतन करा",
         "saveChanges": "बदल जतन करा"
       },

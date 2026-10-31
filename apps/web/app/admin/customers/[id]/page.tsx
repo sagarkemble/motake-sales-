@@ -141,12 +141,6 @@ export default function CustomerDetailPage() {
                 )}
               </dd>
             </div>
-            <div className="min-w-0">
-              <dt className="text-xs text-muted-foreground">
-                {tx("admin.customers.form.einvoicing")}
-              </dt>
-              <dd>{customer.einvoicingRequired ? tx("common.yes") : tx("common.no")}</dd>
-            </div>
           </dl>
         </div>
 

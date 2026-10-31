@@ -425,7 +425,6 @@
         "address": "Enter an address",
         "shopPhoto": "Add a shop photo",
         "gstin": "GSTIN must be 15 letters or digits",
-        "gstinForEinvoicing": "Enter the GSTIN to turn on e-invoicing.",
         "route": "Pick a Route"
       },
       "createSuccess": "Customer created",
@@ -460,10 +459,6 @@
         "gstin": "GSTIN (optional)",
         "gstinLabel": "GSTIN",
         "gstinHint": "15 letters or digits. Leave blank if none.",
-        "einvoicing": "E-invoicing required",
-        "einvoicingFollowsGstin": "Follows the GSTIN: on when a GSTIN is entered. You can change it.",
-        "einvoicingSetByAdmin": "Set by you.",
-        "einvoicingFollowGstin": "Follow the GSTIN again",
         "saveCustomer": "Save customer",
         "saveChanges": "Save changes"
       },

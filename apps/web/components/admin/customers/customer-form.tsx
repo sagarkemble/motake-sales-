@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUpload } from "~/components/shared/image-upload";
 import { PreferredLanguagePicker } from "~/components/shared/preferred-language-picker";
@@ -42,7 +41,6 @@ export type CustomerFormValues = {
   routeId: string;
   preferredLanguage: PreferredLanguage;
   gstin: string;
-  einvoicingRequired: boolean;
 };
 
 /** Set when the Customer was added and not editable here. */
@@ -99,7 +97,6 @@ export function CustomerForm({
               (gstin) => !normalizeGstin(gstin) || GSTIN_PATTERN.test(normalizeGstin(gstin)),
               tx("admin.customers.validation.gstin"),
             ),
-          einvoicingRequired: z.boolean(),
         })
         .superRefine((values, context) => {
           if (isCreate && (!values.shopPhotoKey || !values.shopPhotoUrl)) {
@@ -107,13 +104,6 @@ export function CustomerForm({
               code: z.ZodIssueCode.custom,
               message: tx("admin.customers.validation.shopPhoto"),
               path: ["shopPhotoUrl"],
-            });
-          }
-          if (values.einvoicingRequired && !normalizeGstin(values.gstin)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: tx("admin.customers.validation.gstinForEinvoicing"),
-              path: ["gstin"],
             });
           }
           if (isCreate && !values.routeId) {
@@ -140,23 +130,8 @@ export function CustomerForm({
       routeId: defaultValues?.routeId ?? "",
       preferredLanguage: defaultValues?.preferredLanguage ?? "mr",
       gstin: defaultValues?.gstin ?? "",
-      einvoicingRequired: defaultValues?.einvoicingRequired ?? false,
     },
   });
-
-  // E-invoicing required follows the GSTIN (on when one is entered) until the Admin sets it.
-  const [isEinvoicingSetByAdmin, setIsEinvoicingSetByAdmin] = useState(
-    () =>
-      !isCreate &&
-      (defaultValues?.einvoicingRequired ?? false) !== Boolean(defaultValues?.gstin?.trim()),
-  );
-
-  function handleGstinChange(gstin: string) {
-    form.setValue("gstin", gstin, { shouldValidate: form.formState.isSubmitted });
-    // Drops the "enter the GSTIN first" message from the e-invoicing switch once typing starts.
-    if (!form.formState.isSubmitted) form.clearErrors("gstin");
-    if (!isEinvoicingSetByAdmin) form.setValue("einvoicingRequired", gstin.trim().length > 0);
-  }
 
   return (
     <Form {...form}>
@@ -372,7 +347,6 @@ export function CustomerForm({
                 <FormControl>
                   <Input
                     {...field}
-                    onChange={(event) => handleGstinChange(event.target.value)}
                     onBlur={() => {
                       field.onBlur();
                       form.setValue("gstin", normalizeGstin(field.value));
@@ -385,59 +359,6 @@ export function CustomerForm({
                 </FormControl>
                 <FormDescription>{tx("admin.customers.form.gstinHint")}</FormDescription>
                 <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="einvoicingRequired"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <FormLabel>{tx("admin.customers.form.einvoicing")}</FormLabel>
-                  <FormDescription>
-                    {isEinvoicingSetByAdmin ? (
-                      <>
-                        {tx("admin.customers.form.einvoicingSetByAdmin")}{" "}
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="h-auto p-0 text-xs text-brand"
-                          onClick={() => {
-                            setIsEinvoicingSetByAdmin(false);
-                            form.setValue(
-                              "einvoicingRequired",
-                              form.getValues("gstin").trim().length > 0,
-                            );
-                          }}
-                        >
-                          {tx("admin.customers.form.einvoicingFollowGstin")}
-                        </Button>
-                      </>
-                    ) : (
-                      tx("admin.customers.form.einvoicingFollowsGstin")
-                    )}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    className="data-[state=checked]:bg-brand"
-                    onCheckedChange={(checked) => {
-                      // E-invoicing needs a GSTIN: point at the empty field instead of switching on.
-                      if (checked && !normalizeGstin(form.getValues("gstin"))) {
-                        form.setError("gstin", {
-                          message: tx("admin.customers.validation.gstinForEinvoicing"),
-                        });
-                        form.setFocus("gstin");
-                        return;
-                      }
-                      setIsEinvoicingSetByAdmin(true);
-                      field.onChange(checked);
-                    }}
-                  />
-                </FormControl>
               </FormItem>
             )}
           />

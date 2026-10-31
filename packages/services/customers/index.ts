@@ -57,7 +57,6 @@ const customerAuditedFields = [
   "notes",
   "shopPhotoKey",
   "gstin",
-  "einvoicingRequired",
 ] as const;
 
 const noActiveGatepass = () => screenRefusal("no_active_gatepass", "No Active GatePass");
@@ -111,7 +110,7 @@ class CustomerService {
     actorProfileId: string,
   ): Promise<SelectCustomer> {
     const parsedInput = createCustomerAsAdminInputSchema.parse(input);
-    const { einvoicingRequired, gstin, ...details } = parsedInput;
+    const { gstin, ...details } = parsedInput;
     return runInTransaction(async (transaction) => {
       const route = await getRouteById(parsedInput.routeId, transaction);
       if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
@@ -120,7 +119,8 @@ class CustomerService {
         {
           ...details,
           gstin: gstin ?? null,
-          einvoicingRequired: einvoicingRequired ?? Boolean(gstin),
+          // E-invoicing is gone; the column stays and is always false.
+          einvoicingRequired: false,
         },
         actorProfileId,
         transaction,
