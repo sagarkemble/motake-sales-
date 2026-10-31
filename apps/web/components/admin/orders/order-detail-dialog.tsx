@@ -4,6 +4,7 @@ import { FileTextIcon, PackageIcon } from "lucide-react";
 import { useState } from "react";
 
 import { BillDetailDialog } from "~/components/admin/bills/bill-detail-dialog";
+import { CustomerNameLink } from "~/components/admin/shared/name-links";
 import { GstRate } from "~/components/shared/gst-rate";
 import { SalesmanLabel } from "~/components/admin/orders/salesman-label";
 import { Badge } from "~/components/ui/badge";
@@ -77,7 +78,11 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                     size="md"
                   />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">{orderDetail.customer.shopName}</p>
+                    <p className="text-sm font-medium">
+                      <CustomerNameLink customerId={orderDetail.order.customerId}>
+                        {orderDetail.customer.shopName}
+                      </CustomerNameLink>
+                    </p>
                     {orderDetail.customer.contactName && (
                       <p className="text-xs text-muted-foreground">
                         {orderDetail.customer.contactName}
@@ -143,6 +148,7 @@ export function OrderDetailDialog({ orderId, onOpenChange }: OrderDetailDialogPr
                       <SalesmanLabel
                         salesmanCode={orderDetail.salesmanCode}
                         salesmanName={orderDetail.salesmanName}
+                        salesmanId={orderDetail.order.salesmanId}
                       />
                     </p>
                   </div>

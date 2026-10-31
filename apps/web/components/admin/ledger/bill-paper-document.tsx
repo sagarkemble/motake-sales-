@@ -1,5 +1,6 @@
 "use client";
 
+import { CustomerNameLink } from "~/components/admin/shared/name-links";
 import { GstRate } from "~/components/shared/gst-rate";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { useFormatDate } from "~/hooks/use-format-date";
@@ -160,7 +161,13 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
       <section className="grid gap-3 border-b py-3 text-sm sm:grid-cols-2">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{tx("admin.ledger.paper.billTo")}</p>
-          <p className="font-medium">{buyer.shop_name}</p>
+          <p className="font-medium">
+            {paper.customer ? (
+              <CustomerNameLink customerId={paper.customer.id}>{buyer.shop_name}</CustomerNameLink>
+            ) : (
+              buyer.shop_name
+            )}
+          </p>
           <p className="text-xs text-muted-foreground">{buyer.address}</p>
           <p className="text-xs text-muted-foreground">{buyer.phone}</p>
           {letterhead.buyer.gstin && (

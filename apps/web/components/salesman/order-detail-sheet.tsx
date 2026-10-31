@@ -15,6 +15,7 @@ import {
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { GstRate } from "~/components/shared/gst-rate";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
+import { RouteCustomerDrawer } from "~/components/salesman/customers/route-customer-drawer";
 import { OrderBillLines } from "~/components/salesman/order-bill-lines";
 import {
   FulfilPreOrderDrawer,
@@ -40,6 +41,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   const formatDate = useFormatDate();
   const { formatPaise } = useFormatMoney();
   const [fulfilTarget, setFulfilTarget] = useState<FulfilTarget | null>(null);
+  const [openedCustomerId, setOpenedCustomerId] = useState<string | null>(null);
   const [isShowingBillLines, setIsShowingBillLines] = useState(false);
 
   const { orderDetail, isOrderDetailLoading, refetchOrderDetail } = useOrders({
@@ -74,6 +76,13 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
       placedAt: new Date(orderDetail.order.placedAt),
       description: tx("salesman.orders.qty", { count: orderDetail.totalQuantity }),
     });
+    onOpenChange(false);
+  }
+
+  // The shop name opens the same Customer drawer as the Customers tab.
+  function openCustomer() {
+    if (!orderDetail) return;
+    setOpenedCustomerId(orderDetail.order.customerId);
     onOpenChange(false);
   }
 
@@ -130,7 +139,13 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                       size="md"
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">{orderDetail.customer.shopName}</p>
+                      <button
+                        type="button"
+                        onClick={openCustomer}
+                        className="text-left text-sm font-medium underline decoration-muted-foreground/40 underline-offset-4"
+                      >
+                        {orderDetail.customer.shopName}
+                      </button>
                       {orderDetail.customer.contactName && (
                         <p className="text-xs text-muted-foreground">
                           {orderDetail.customer.contactName}
@@ -384,6 +399,14 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
           key={fulfilTarget.orderId}
           target={fulfilTarget}
           onClose={() => setFulfilTarget(null)}
+        />
+      )}
+
+      {openedCustomerId && (
+        <RouteCustomerDrawer
+          key={openedCustomerId}
+          customerId={openedCustomerId}
+          onClose={() => setOpenedCustomerId(null)}
         />
       )}
     </>
