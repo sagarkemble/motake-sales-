@@ -19,6 +19,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Spinner } from "~/components/ui/spinner";
 import { Switch } from "~/components/ui/switch";
 import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
@@ -50,6 +51,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     isHidingRoute,
   } = useRoutes({ routeId });
   const [nameText, setNameText] = useState("");
+  // The picked state while it saves, so the select shows it and stays locked until the server answers.
+  const [savingDeliveryState, setSavingDeliveryState] = useState<IndianStateName | null>(null);
   const [hideRefusal, setHideRefusal] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const varietyIds = useMemo(
@@ -106,10 +109,13 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
 
   async function commitDeliveryState(deliveryState: IndianStateName) {
     if (!route || deliveryState === route.deliveryState) return;
+    setSavingDeliveryState(deliveryState);
     try {
       await updateRouteAsync({ id: route.id, deliveryState });
     } catch (error) {
       toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
+    } finally {
+      setSavingDeliveryState(null);
     }
   }
 
@@ -166,13 +172,21 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
               <Label htmlFor={`route-state-${route.id}`}>{tx("admin.routes.deliveryState")}</Label>
               <DeliveryStateSelect
                 id={`route-state-${route.id}`}
-                value={route.deliveryState as IndianStateName}
+                value={savingDeliveryState ?? (route.deliveryState as IndianStateName)}
+                disabled={savingDeliveryState != null}
                 onValueChange={(deliveryState) => void commitDeliveryState(deliveryState)}
                 className="data-[size=default]:h-11"
               />
-              <p className="text-xs text-muted-foreground">
-                {tx("admin.routes.deliveryStateHint")}
-              </p>
+              {savingDeliveryState ? (
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Spinner className="size-3" />
+                  {tx("common.status.saving")}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {tx("admin.routes.deliveryStateHint")}
+                </p>
+              )}
             </div>
             {/* A deleted Route cannot be brought back, so it has no button. */}
             {!isHidden && (
