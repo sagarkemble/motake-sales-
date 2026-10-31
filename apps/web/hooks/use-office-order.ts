@@ -1,4 +1,5 @@
 import { businessDateOf } from "@repo/trpc/client";
+import { addDays, format, parseISO } from "date-fns";
 import { useState } from "react";
 
 import { amountErrorKey } from "~/components/admin/ledger/money-paper-parts";
@@ -27,12 +28,19 @@ export interface AdvanceDraft {
 const EMPTY_ADVANCE: AdvanceDraft = { mode: "cash", amountText: "", reference: "" };
 
 // Admin New order (variant A stepper): Customer, Book now or Pre-order, items at the Customer's
-// Route price, then the checkout Payment (Book now) or an optional advance (Pre-order).
-export function useOfficeOrder(initialCustomerId: string | null) {
+// Route price, then the checkout Payment (Book now) or an optional advance (Pre-order). The items
+// list already carries each price and GST, so the server quote (GST split, round-off, Balance,
+// unsellable lines) is fetched only at checkout.
+export function useOfficeOrder(
+  initialCustomerId: string | null,
+  { isAtCheckout }: { isAtCheckout: boolean },
+) {
   const today = businessDateOf(new Date());
+  // A Pre-order defaults to tomorrow, as on the salesman's checkout.
+  const tomorrow = format(addDays(parseISO(today), 1), "yyyy-MM-dd");
   const [customerId, setCustomerIdState] = useState(initialCustomerId);
   const [orderType, setOrderType] = useState<OrderTypeChoice>("book_now");
-  const [scheduledDate, setScheduledDate] = useState(today);
+  const [scheduledDate, setScheduledDate] = useState(tomorrow);
   // Pack count per Variety SKU.
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(EMPTY_PAYMENT_DRAFT);
@@ -59,7 +67,8 @@ export function useOfficeOrder(initialCustomerId: string | null) {
     placeOfficePreOrderAsync,
     isPlacingOfficePreOrder,
   } = useOrders({
-    quoteInput: customerId && lines.length > 0 ? { customerId, lines, orderType } : undefined,
+    quoteInput:
+      isAtCheckout && customerId && lines.length > 0 ? { customerId, lines, orderType } : undefined,
     enabled: !result,
   });
 
@@ -167,7 +176,7 @@ export function useOfficeOrder(initialCustomerId: string | null) {
     attempt.reset();
     setCustomerIdState(null);
     setOrderType("book_now");
-    setScheduledDate(today);
+    setScheduledDate(tomorrow);
     setQuantities({});
     setPaymentDraft(EMPTY_PAYMENT_DRAFT);
     setAdvance(EMPTY_ADVANCE);
@@ -209,6 +218,7 @@ export function useOfficeOrder(initialCustomerId: string | null) {
     setPaymentDraft,
     advance,
     setAdvance,
+    advancePaise,
     advanceErrorKey,
     checkoutProblemKey,
     isPlacing: isPlacingOfficeBookNow || isPlacingOfficePreOrder,

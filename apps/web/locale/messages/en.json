@@ -667,7 +667,7 @@
           "checkout": "Checkout"
         },
         "customerTitle": "Who is it for?",
-        "customerHint": "Any active Customer, on any Route. Prices come from the Route they are on now.",
+        "customerHint": "Pick a Customer. Their Route and its prices come with them.",
         "openPreorders": "Open Pre-orders ({count})",
         "openPreordersHint": "Not billed yet. The Customer's Route cannot change until these are fulfilled or cancelled.",
         "itemsTitle": "Items",
@@ -684,17 +684,13 @@
           "no_route_price": "no price on this Route",
           "no_tax_period": "no GST set for today"
         },
-        "checkoutTitle": "Checkout",
         "confirmPreOrder": "Confirm Pre-order",
         "paymentTitle": "Payment",
         "preOrderNote": "Pre-order for {date}. No Bill now; the total is indicative. The Bill is issued when it is fulfilled.",
         "advanceTitle": "Advance (optional)",
         "advanceHint": "Taken now as an office Payment and kept as Advance. Leave empty for none.",
         "advanceAmount": "Advance received",
-        "totalLine": "{count} qty · {amount}",
-        "back": "Back",
         "next": "Next",
-        "placing": "Placing…",
         "placeBookNow": "Place order & issue Bill",
         "placePreOrder": "Place Pre-order",
         "problem": {
@@ -708,7 +704,15 @@
         "openPreOrder": "Open Pre-order",
         "another": "New order",
         "backToOrders": "Back to Orders",
-        "placeFailed": "Could not place the order. Try again."
+        "placeFailed": "Could not place the order. Try again.",
+        "customerSearch": "Search shop name or phone",
+        "noCustomer": "No active Customer matches.",
+        "customerDefaults": "A few Customers. Search to find others.",
+        "balanceNow": "Balance now",
+        "advanceKept": "Advance",
+        "balanceAfterAdvance": "Balance after advance",
+        "billTitle": "Bill",
+        "placeBookNowAmount": "Place order & issue Bill · {amount}"
       }
     },
     "gatepass": {

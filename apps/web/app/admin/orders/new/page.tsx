@@ -10,27 +10,41 @@ import {
   PickedCustomer,
 } from "~/components/admin/orders/new-order-steps";
 import { BackHeader } from "~/components/admin/products/back-header";
+import { CheckoutViewDesktop } from "~/components/salesman/checkout/checkout-view.desktop";
+import { CheckoutViewMobile } from "~/components/salesman/checkout/checkout-view.mobile";
+import { OrderTypeStep } from "~/components/salesman/checkout/order-type-step";
+import { StepIndicatorDesktop } from "~/components/salesman/checkout/step-indicator.desktop";
+import { StepIndicatorMobile } from "~/components/salesman/checkout/step-indicator.mobile";
 import { CheckoutSuccess } from "~/components/shared/checkout/checkout-success";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
-import { OrderTypeStep } from "~/components/salesman/checkout/order-type-step";
-import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useOfficeOrder } from "~/hooks/use-office-order";
 import { useTranslate } from "~/hooks/use-translate";
-import { cn } from "~/lib/utils";
 
-const STEPS = ["customer", "type", "items", "checkout"] as const;
+const STEP_LABELS = [
+  "admin.orders.new.steps.customer",
+  "admin.orders.new.steps.type",
+  "admin.orders.new.steps.items",
+  "admin.orders.new.steps.checkout",
+];
 
-// Variant A: the salesman's wizard, Customer first since the Route prices come from the Customer.
+// Variant A: the salesman's checkout wizard, Customer first since the Route prices come from the
+// Customer. Checkout shows the lines and totals to verify, with the Payment or advance.
 function NewOrderContent() {
   const tx = useTranslate();
   const router = useRouter();
   const { formatPaise } = useFormatMoney();
   const searchParams = useSearchParams();
   const initialCustomerId = searchParams.get("customer");
-  const order = useOfficeOrder(initialCustomerId);
-  const [step, setStep] = useState(initialCustomerId ? 1 : 0);
+  const [step, setStepState] = useState(initialCustomerId ? 1 : 0);
+  // The furthest step reached; any step up to it opens from the step indicator.
+  const [furthestStep, setFurthestStep] = useState(initialCustomerId ? 1 : 0);
+
+  function setStep(nextStep: number) {
+    setStepState(nextStep);
+    setFurthestStep((current) => Math.max(current, nextStep));
+  }
+  const order = useOfficeOrder(initialCustomerId, { isAtCheckout: step === 3 });
 
   if (order.result) {
     const { result } = order;
@@ -38,37 +52,41 @@ function NewOrderContent() {
     const preOrderId = result.kind === "preorder" ? result.result.orderId : null;
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-4 py-4">
-        <CheckoutSuccess
-          input={result}
-          actions={[
-            billId
-              ? {
-                  label: tx("admin.orders.new.openBill"),
-                  onClick: () => router.push(`/admin/ledger/bills/${billId}`),
-                  primary: true,
-                }
-              : {
-                  label: tx("admin.orders.new.openPreOrder"),
-                  onClick: () => router.push(`/admin/ledger/pre-orders/${preOrderId}`),
-                  primary: true,
+        <div className="w-full rounded-2xl border bg-card p-4">
+          <CheckoutSuccess
+            input={result}
+            actions={[
+              billId
+                ? {
+                    label: tx("admin.orders.new.openBill"),
+                    onClick: () => router.push(`/admin/ledger/bills/${billId}`),
+                    primary: true,
+                  }
+                : {
+                    label: tx("admin.orders.new.openPreOrder"),
+                    onClick: () => router.push(`/admin/ledger/pre-orders/${preOrderId}`),
+                    primary: true,
+                  },
+              {
+                label: tx("admin.orders.new.another"),
+                onClick: () => {
+                  order.reset();
+                  setStepState(0);
+                  setFurthestStep(0);
                 },
-            {
-              label: tx("admin.orders.new.another"),
-              onClick: () => {
-                order.reset();
-                setStep(0);
               },
-            },
-            {
-              label: tx("admin.orders.new.backToOrders"),
-              onClick: () => router.push("/admin/orders"),
-            },
-          ]}
-        />
+              {
+                label: tx("admin.orders.new.backToOrders"),
+                onClick: () => router.push("/admin/orders"),
+              },
+            ]}
+          />
+        </div>
       </div>
     );
   }
 
+  const isLastStep = step === STEP_LABELS.length - 1;
   const quoteReady = Boolean(order.quote) && !order.isQuoteFetching;
   const stepProblemKey =
     step === 0
@@ -77,50 +95,32 @@ function NewOrderContent() {
         : order.inactive
           ? "admin.orders.new.problem.inactive"
           : null
-      : step === 2 || step === 3
+      : step === 2
         ? order.lines.length === 0
           ? "admin.orders.new.problem.addItem"
-          : (order.quote?.badLines.length ?? 0) > 0
-            ? "admin.orders.new.problem.removeBad"
-            : !quoteReady
-              ? "admin.orders.new.problem.checking"
-              : step === 3
-                ? order.checkoutProblemKey
-                : null
-        : null;
-  const isLastStep = step === STEPS.length - 1;
+          : null
+        : isLastStep
+          ? order.lines.length === 0
+            ? "admin.orders.new.problem.addItem"
+            : (order.quote?.badLines.length ?? 0) > 0
+              ? "admin.orders.new.problem.removeBad"
+              : !quoteReady
+                ? "admin.orders.new.problem.checking"
+                : order.checkoutProblemKey
+          : null;
+  const nextButtonLabel = !isLastStep
+    ? tx("admin.orders.new.next")
+    : order.orderType === "pre_order"
+      ? tx("admin.orders.new.placePreOrder")
+      : order.quote
+        ? tx("admin.orders.new.placeBookNowAmount", {
+            amount: formatPaise(order.quote.totals.totalPaise),
+          })
+        : tx("admin.orders.new.placeBookNow");
 
-  return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4">
-      <BackHeader href="/admin/orders" title={tx("admin.orders.new.title")} />
-
-      <ol className="grid grid-cols-4 gap-1.5">
-        {STEPS.map((label, index) => (
-          <li key={label} className="flex flex-col items-center gap-1 text-center">
-            <span
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full border text-xs font-medium",
-                index < step && "border-brand bg-brand text-brand-foreground",
-                index === step && "border-brand text-brand",
-                index > step && "text-muted-foreground",
-              )}
-            >
-              {index + 1}
-            </span>
-            <span
-              className={cn(
-                "text-[11px]",
-                index === step ? "font-medium" : "text-muted-foreground",
-              )}
-            >
-              {tx(`admin.orders.new.steps.${label}`)}
-            </span>
-          </li>
-        ))}
-      </ol>
-
+  const content = (
+    <div className="flex flex-col gap-4">
       {step > 0 && <PickedCustomer order={order} onChange={() => setStep(0)} />}
-
       {step === 0 && <CustomerStep order={order} />}
       {step === 1 && (
         <OrderTypeStep
@@ -131,53 +131,47 @@ function NewOrderContent() {
           scheduledDate={order.scheduledDate}
           onScheduledDateChange={order.setScheduledDate}
           earliestDate={order.today}
+          datePicker="popover"
         />
       )}
       {step === 2 && <ItemsStep order={order} />}
       {step === 3 && <CheckoutStep order={order} />}
+    </div>
+  );
+  const viewProps = {
+    showBackButton: step > 0,
+    isNextDisabled: Boolean(stepProblemKey),
+    isNextLoading: order.isPlacing,
+    nextButtonLabel,
+    hint: stepProblemKey ? tx(stepProblemKey) : null,
+    onBack: () => setStep(step - 1),
+    onNext: () => (isLastStep ? void order.place() : setStep(step + 1)),
+  };
 
-      <div className="sticky bottom-16 z-30 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur md:bottom-0">
-        <div className="flex flex-col gap-1.5">
-          {stepProblemKey && <p className="text-xs text-amber-700">{tx(stepProblemKey)}</p>}
-          <div className="flex items-center gap-2">
-            {step > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-full"
-                disabled={order.isPlacing}
-                onClick={() => setStep(step - 1)}
-              >
-                {tx("admin.orders.new.back")}
-              </Button>
-            )}
-            {step >= 2 && order.quote && order.lines.length > 0 && (
-              <span className="min-w-0 flex-1 truncate text-sm tabular-nums">
-                {tx("admin.orders.new.totalLine", {
-                  count: order.quote.totals.totalQuantity,
-                  amount: formatPaise(order.quote.totals.totalPaise),
-                })}
-              </span>
-            )}
-            <Button
-              type="button"
-              className="ml-auto rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
-              disabled={Boolean(stepProblemKey) || order.isPlacing}
-              onClick={() => (isLastStep ? void order.place() : setStep(step + 1))}
-            >
-              {order.isPlacing && <Spinner />}
-              {!isLastStep
-                ? tx("admin.orders.new.next")
-                : order.isPlacing
-                  ? tx("admin.orders.new.placing")
-                  : tx(
-                      order.orderType === "pre_order"
-                        ? "admin.orders.new.placePreOrder"
-                        : "admin.orders.new.placeBookNow",
-                    )}
-            </Button>
-          </div>
-        </div>
+  return (
+    <div className="mx-auto w-full max-w-5xl">
+      <div className="px-4 pt-4 md:px-6">
+        <BackHeader href="/admin/orders" title={tx("admin.orders.new.title")} />
+      </div>
+      <div className="md:hidden">
+        <StepIndicatorMobile
+          currentStepNumber={step + 1}
+          stepLabels={STEP_LABELS}
+          furthestStepNumber={furthestStep + 1}
+          onStepClick={(stepNumber) => setStep(stepNumber - 1)}
+        />
+        <CheckoutViewMobile {...viewProps}>
+          <div className="rounded-2xl border bg-card p-4">{content}</div>
+        </CheckoutViewMobile>
+      </div>
+      <div className="hidden md:block">
+        <StepIndicatorDesktop
+          currentStepNumber={step + 1}
+          stepLabels={STEP_LABELS}
+          furthestStepNumber={furthestStep + 1}
+          onStepClick={(stepNumber) => setStep(stepNumber - 1)}
+        />
+        <CheckoutViewDesktop {...viewProps}>{content}</CheckoutViewDesktop>
       </div>
     </div>
   );
