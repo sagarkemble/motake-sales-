@@ -29,7 +29,7 @@ export interface SignedLink {
 }
 
 // `downloadFileName` makes the link an attachment with that name; without it the object opens
-// inline (a signed QR image).
+// inline.
 export interface SignedLinkOptions {
   contentType: string;
   downloadFileName?: string;

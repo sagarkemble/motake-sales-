@@ -170,11 +170,9 @@ export const cancelBillInputSchema = z.object({
 });
 export type CancelBillInput = z.input<typeof cancelBillInputSchema>;
 
-// Spec I's portal cancellation and the orders cancel entry run the Cancel core in their own
-// transaction; with no expected version they cancel the latest.
+// The Cancel core's input; with no expected version it cancels the latest.
 export const cancelBillCoreInputSchema = cancelBillInputSchema.extend({
   expectedVersionNumber: versionNumberSchema.optional(),
-  action: z.enum(["cancel", "portal_cancel"]).default("cancel"),
 });
 export type CancelBillCoreInput = z.input<typeof cancelBillCoreInputSchema>;
 
@@ -285,7 +283,6 @@ export interface BillPaper {
     // The order's notes; blank for an office Bill. Read-only.
     billNote: string | null;
     cancelled: boolean;
-    irn: string | null;
     latestVersionNumber: number;
   };
   customer: Pick<SelectCustomer, "id" | "shopName" | "status"> | null;

@@ -1,12 +1,10 @@
 import { db, eq } from "@repo/database";
 import {
-  billsTable,
   billVersionsTable,
   customersTable,
   notesTable,
   paymentsTable,
   sellerSettingsTable,
-  type SelectBill,
   type SelectBillItem,
   type SelectCustomer,
 } from "@repo/database/schema";
@@ -30,7 +28,7 @@ import {
 } from "../test/builders";
 import { refusalOf } from "../errors";
 import { MemoryDocumentStore, TEST_DOCUMENTS_BUCKET } from "../test/memory-document-store";
-import { printedPages, printedText } from "../test/pdf-text";
+import { printedText } from "../test/pdf-text";
 import DocumentService from "./index";
 
 function documentsWith(store: MemoryDocumentStore) {
@@ -72,19 +70,6 @@ async function pdfKeyOf(billVersionId: string): Promise<string | null> {
     .from(billVersionsTable)
     .where(eq(billVersionsTable.id, billVersionId));
   return row!.pdfKey;
-}
-
-async function recordIrn(bill: SelectBill, irn: string, recordedAt: Date) {
-  await db
-    .update(billsTable)
-    .set({
-      irn,
-      irnAckNumber: "112610250012345",
-      irnAckDate: "2026-10-26",
-      signedQrText: `signed-qr-for-${irn}`,
-      irnRecordedAt: recordedAt,
-    })
-    .where(eq(billsTable.id, bill.id));
 }
 
 // The file shares one database: the Seller master is set up once, Routes get unique names.
@@ -221,43 +206,27 @@ describe("DocumentService.ensureBillVersionDocument", () => {
     expect(filled).toContain("For Motake Test Foods Pvt Ltd Authorised Signatory");
   });
 
-  it("refuses an e-invoiced Tax Invoice without IRN and leaves pdf_key empty", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const { version } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    const store = new MemoryDocumentStore();
-
-    const refusal = await refusalFrom(documentsWith(store).ensureBillVersionDocument(version.id));
-
-    expect(refusal).toEqual({ code: "BAD_REQUEST", reason: "irn_missing" });
-    expect(await pdfKeyOf(version.id)).toBeNull();
-    expect(store.puts).toEqual([]);
-  });
-
-  it("draws the IRN key with the IRN block once the IRN is recorded", async () => {
+  it("draws a Tax Invoice at once for a Customer flagged for e-invoicing, with no e-invoice block", async () => {
     const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
     const { bill, version } = await taxInvoiceOf(customer, admin.id, [
       { variety: paneer, quantity: 1, routePricePaise: 9_000 },
     ]);
-    const recordedAt = new Date("2026-10-26T06:30:00.000Z");
-    await recordIrn(bill, "irn-0001-abcdef", recordedAt);
 
     const result = await documentsWith(new MemoryDocumentStore()).ensureBillVersionDocument(
       version.id,
       { bytes: true },
     );
 
-    expect(result.key).toBe(`documents/bills/${bill.id}/v1-irn-${recordedAt.getTime()}.pdf`);
+    expect(result.key).toBe(`documents/bills/${bill.id}/v1.pdf`);
     expect(await pdfKeyOf(version.id)).toBe(result.key);
     const text = await printedText(result.bytes!);
-    expect(text).toContain("irn-0001-abcdef");
-    expect(text).toContain("112610250012345");
-    expect(text).toContain("26/10/2026");
+    expect(text).toContain("TAX INVOICE");
+    expect(text).not.toContain("E-invoice");
+    expect(text).not.toContain("IRN");
   });
 
-  it("draws a Bill of Supply for an e-invoiced Customer without waiting for an IRN", async () => {
-    const { admin, customer, milk } = await setup({ einvoicingRequired: true });
+  it("draws a Bill of Supply for an exempt-only Bill", async () => {
+    const { admin, customer, milk } = await setup();
     const { bill, version } = await taxInvoiceOf(customer, admin.id, [
       { variety: milk, quantity: 12, routePricePaise: 2_700, exempt: true },
     ]);
@@ -339,62 +308,6 @@ describe("DocumentService.ensureBillVersionDocument", () => {
     );
 
     expect(refusal).toEqual({ code: "NOT_FOUND", reason: "not_found" });
-  });
-});
-
-describe("DocumentService.replaceBillDocumentAfterIrnCorrect", () => {
-  it("draws under a new IRN key, replaces the latest key and keeps the old object", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const { bill, version } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    const enteredAt = new Date("2026-10-26T06:30:00.000Z");
-    await recordIrn(bill, "irn-first", enteredAt);
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-    const entered = await documents.ensureBillVersionDocument(version.id);
-
-    const correctedAt = new Date("2026-10-27T09:15:00.000Z");
-    await recordIrn(bill, "irn-corrected", correctedAt);
-    const corrected = await documents.replaceBillDocumentAfterIrnCorrect(bill.id, { bytes: true });
-
-    expect(corrected.key).toBe(`documents/bills/${bill.id}/v1-irn-${correctedAt.getTime()}.pdf`);
-    expect(corrected.key).not.toBe(entered.key);
-    expect(await pdfKeyOf(version.id)).toBe(corrected.key);
-    expect(store.objects.has(entered.key)).toBe(true);
-    expect(store.objects.has(corrected.key)).toBe(true);
-    const text = await printedText(corrected.bytes!);
-    expect(text).toContain("irn-corrected");
-    expect(text).not.toContain("irn-first");
-  });
-
-  it("is a no-op when the latest version already carries the current IRN key", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    await recordIrn(bill, "irn-once", new Date("2026-10-26T06:30:00.000Z"));
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-
-    const first = await documents.replaceBillDocumentAfterIrnCorrect(bill.id);
-    const retried = await documents.replaceBillDocumentAfterIrnCorrect(bill.id);
-
-    expect(retried.key).toBe(first.key);
-    expect(store.puts).toEqual([first.key]);
-  });
-
-  it("refuses a Bill with no IRN", async () => {
-    const { admin, customer, paneer } = await setup();
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-
-    const refusal = await refusalFrom(
-      documentsWith(new MemoryDocumentStore()).replaceBillDocumentAfterIrnCorrect(bill.id),
-    );
-
-    expect(refusal).toEqual({ code: "BAD_REQUEST", reason: "irn_not_recorded" });
   });
 });
 
@@ -626,164 +539,6 @@ describe("DocumentService.drawPaymentReceipt", () => {
   });
 });
 
-describe("DocumentService.drawDraftBill", () => {
-  it("returns draft bytes marked on every page, with no put and no pdf_key", async () => {
-    const { admin, customer } = await setup({ einvoicingRequired: true });
-    // Built side by side: one at a time takes most of the test timeout on a remote database.
-    const varieties = await Promise.all(Array.from({ length: 45 }, () => buildVariety()));
-    const lines: LineInput[] = varieties.map((variety, index) => ({
-      variety,
-      quantity: index + 1,
-      routePricePaise: 9_000,
-    }));
-    const { bill } = await buildBill({ customer, actorId: admin.id, lines });
-    const [version] = await versionsOf(bill.id);
-    const store = new MemoryDocumentStore();
-
-    const draft = await documentsWith(store).drawDraftBill(bill.id);
-
-    expect(draft.filename).toBe(
-      `Motake Bill ${bill.number.replaceAll("/", "-")} DRAFT-IRN-PENDING.pdf`,
-    );
-    expect(Object.keys(draft).sort()).toEqual(["bytes", "filename"]);
-    const pages = await printedPages(draft.bytes);
-    expect(pages.length).toBeGreaterThan(1);
-    for (const page of pages) expect(page).toContain("Draft — IRN pending");
-    expect(store.puts).toEqual([]);
-    expect(await pdfKeyOf(version!.id)).toBeNull();
-  });
-
-  it("refuses a Bill that is not IRN pending", async () => {
-    const { admin, customer, paneer } = await setup();
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-
-    const refusal = await refusalFrom(
-      documentsWith(new MemoryDocumentStore()).drawDraftBill(bill.id),
-    );
-
-    expect(refusal).toEqual({ code: "BAD_REQUEST", reason: "irn_not_pending" });
-  });
-});
-
-const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
-const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
-const GIF_BYTES = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 2, 3]);
-
-describe("DocumentService signed QR image", () => {
-  it("stores a PNG and a JPEG under the signed-qr key with their content type, writing no column", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    const recordedAt = new Date("2026-10-26T06:30:00.000Z");
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-
-    const png = await documents.putSignedQrImage({
-      billId: bill.id,
-      irnRecordedAt: recordedAt,
-      contentType: "image/png",
-      bytes: PNG_BYTES,
-    });
-    const jpeg = await documents.putSignedQrImage({
-      billId: bill.id,
-      irnRecordedAt: new Date(recordedAt.getTime() + 1_000),
-      contentType: "image/jpeg",
-      bytes: JPEG_BYTES,
-    });
-
-    expect(png.key).toBe(`documents/bills/${bill.id}/signed-qr-${recordedAt.getTime()}.png`);
-    expect(jpeg.key).toBe(
-      `documents/bills/${bill.id}/signed-qr-${recordedAt.getTime() + 1_000}.jpg`,
-    );
-    expect(store.objects.get(png.key)?.contentType).toBe("image/png");
-    expect(store.objects.get(jpeg.key)?.contentType).toBe("image/jpeg");
-    const [billAfter] = await db.select().from(billsTable).where(eq(billsTable.id, bill.id));
-    expect(billAfter!.signedQrImageKey).toBeNull();
-  });
-
-  it("refuses a GIF and an image over 1 MB without storing anything", async () => {
-    const { admin, customer, paneer } = await setup();
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-    const oversized = new Uint8Array(1024 * 1024 + 1);
-    oversized.set(PNG_BYTES);
-
-    const gif = await refusalFrom(
-      documents.putSignedQrImage({
-        billId: bill.id,
-        irnRecordedAt: new Date(),
-        contentType: "image/gif",
-        bytes: GIF_BYTES,
-      }),
-    );
-    const gifNamedPng = await refusalFrom(
-      documents.putSignedQrImage({
-        billId: bill.id,
-        irnRecordedAt: new Date(),
-        contentType: "image/png",
-        bytes: GIF_BYTES,
-      }),
-    );
-    const large = await refusalFrom(
-      documents.putSignedQrImage({
-        billId: bill.id,
-        irnRecordedAt: new Date(),
-        contentType: "image/png",
-        bytes: oversized,
-      }),
-    );
-
-    expect(gif).toEqual({ code: "BAD_REQUEST", reason: "bad_image" });
-    expect(gifNamedPng).toEqual({ code: "BAD_REQUEST", reason: "bad_image" });
-    expect(large).toEqual({ code: "BAD_REQUEST", reason: "bad_image" });
-    expect(store.puts).toEqual([]);
-  });
-
-  it("gives an Admin a 300-second inline link to the stored image, refuses a salesman and a Bill without image", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const salesman = await buildSalesman();
-    const { bill } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-    const { bill: billWithoutImage } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 2, routePricePaise: 9_000 },
-    ]);
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-    const { key } = await documents.putSignedQrImage({
-      billId: bill.id,
-      irnRecordedAt: new Date("2026-10-26T06:30:00.000Z"),
-      contentType: "image/png",
-      bytes: PNG_BYTES,
-    });
-    await db.update(billsTable).set({ signedQrImageKey: key }).where(eq(billsTable.id, bill.id));
-
-    const link = await documents.getSignedQrImageLink(admin.id, bill.id);
-    const salesmanRefusal = await refusalFrom(
-      documents.getSignedQrImageLink(salesman.profile.id, bill.id),
-    );
-    const missingRefusal = await refusalFrom(
-      documents.getSignedQrImageLink(admin.id, billWithoutImage.id),
-    );
-
-    const url = new URL(link.url);
-    expect(signedObjectOf(link.url)).toEqual({ bucket: TEST_DOCUMENTS_BUCKET, key });
-    expect(url.searchParams.get("X-Amz-Expires")).toBe("300");
-    expect(url.searchParams.get("response-content-disposition")).toBe("inline");
-    expect(url.searchParams.get("response-content-type")).toBe("image/png");
-    expect(link.expiresAt.getTime() - Date.now()).toBeGreaterThan(290_000);
-    expect(link.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(300_000);
-    expect(salesmanRefusal).toEqual({ code: "FORBIDDEN", reason: "forbidden" });
-    expect(missingRefusal).toEqual({ code: "NOT_FOUND", reason: "not_found" });
-  });
-});
-
 describe("DocumentService.getDownloadLink", () => {
   it("draws a missing PDF and gives an Admin a 300-second attachment link with the file name", async () => {
     const { admin, customer, paneer } = await setup();
@@ -812,40 +567,7 @@ describe("DocumentService.getDownloadLink", () => {
     expect(link.url).not.toContain("r2.dev");
   });
 
-  it("refuses an older version of a corrected e-invoiced Tax Invoice and opens the latest", async () => {
-    const { admin, customer, paneer, milk } = await setup({ einvoicingRequired: true });
-    const { bill, version: v1 } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 3, routePricePaise: 9_000 },
-    ]);
-    const v2 = await buildBillVersion({
-      bill,
-      actorId: admin.id,
-      versionNumber: 2,
-      lines: [{ variety: milk, quantity: 3, routePricePaise: 2_800, gstRateBps: 500 }],
-    });
-    const recordedAt = new Date("2026-10-26T06:30:00.000Z");
-    await recordIrn(bill, "irn-0002-abcdef", recordedAt);
-    const store = new MemoryDocumentStore();
-    const documents = documentsWith(store);
-
-    const linkRefusal = await refusalFrom(
-      documents.getDownloadLink(admin.id, { billVersionId: v1.id }),
-    );
-    const drawRefusal = await refusalFrom(documents.ensureBillVersionDocument(v1.id));
-    const latestLink = await documents.getDownloadLink(admin.id, { billVersionId: v2.id });
-
-    expect(linkRefusal).toEqual({ code: "BAD_REQUEST", reason: "superseded_version" });
-    expect(drawRefusal).toEqual({ code: "BAD_REQUEST", reason: "superseded_version" });
-    expect(await pdfKeyOf(v1.id)).toBeNull();
-    const latestKey = `documents/bills/${bill.id}/v2-irn-${recordedAt.getTime()}.pdf`;
-    expect(signedObjectOf(latestLink.url)).toEqual({
-      bucket: TEST_DOCUMENTS_BUCKET,
-      key: latestKey,
-    });
-    expect(store.puts).toEqual([latestKey]);
-  });
-
-  it("keeps every version of a Bill that is not e-invoiced downloadable", async () => {
+  it("keeps every version of a Bill downloadable", async () => {
     const { admin, customer, paneer, milk } = await setup();
     const { bill, version: v1 } = await taxInvoiceOf(customer, admin.id, [
       { variety: paneer, quantity: 3, routePricePaise: 9_000 },
@@ -856,7 +578,7 @@ describe("DocumentService.getDownloadLink", () => {
       versionNumber: 2,
       lines: [{ variety: milk, quantity: 3, routePricePaise: 2_800, gstRateBps: 500 }],
     });
-    const supplyCustomer = (await setup({ einvoicingRequired: true })).customer;
+    const supplyCustomer = (await setup()).customer;
     const supply = await taxInvoiceOf(supplyCustomer, admin.id, [
       { variety: milk, quantity: 12, routePricePaise: 2_700, exempt: true },
     ]);
@@ -927,19 +649,5 @@ describe("DocumentService.getDownloadLink", () => {
       key: `documents/notes/${note.id}.pdf`,
     });
     expect(salesmanRefusal).toEqual({ code: "FORBIDDEN", reason: "forbidden" });
-  });
-
-  it("refuses while a Tax Invoice waits for its IRN, pointing to the Draft PDF", async () => {
-    const { admin, customer, paneer } = await setup({ einvoicingRequired: true });
-    const { version } = await taxInvoiceOf(customer, admin.id, [
-      { variety: paneer, quantity: 1, routePricePaise: 9_000 },
-    ]);
-
-    const call = documentsWith(new MemoryDocumentStore()).getDownloadLink(admin.id, {
-      billVersionId: version.id,
-    });
-
-    await expect(call).rejects.toThrow(/Draft PDF/);
-    expect(await refusalFrom(call)).toEqual({ code: "BAD_REQUEST", reason: "irn_missing" });
   });
 });

@@ -34,7 +34,6 @@ import type {
   CheckoutOutcome,
   PaymentPostedEvent,
 } from "../shared/checkout-events";
-import type { GstListener, GstOutcome } from "../shared/gst-events";
 import type { AdminPaymentListener, AdminPaymentOutcome } from "../shared/payment-events";
 import {
   customerMessageTemplates,
@@ -88,11 +87,8 @@ const refs = {
   refund: (refundId: string, eventId: string) => `refund/${refundId}/${eventId}`,
 };
 
-// A Bill message after an IRN carries the IRN stamp, so a Correct IRN send is a new message under
-// the same ref.
-function billMessageKey(billId: string, versionNumber: number, irnRecordedAt: Date | null) {
-  const key = `bill|${refs.billVersion(billId, versionNumber)}`;
-  return irnRecordedAt ? `${key}|irn/${irnRecordedAt.getTime()}` : key;
+function billMessageKey(billId: string, versionNumber: number) {
+  return `bill|${refs.billVersion(billId, versionNumber)}`;
 }
 
 // The latest Bill key, or that key plus `|tv{n}` (Send latest Bill after a template change).
@@ -104,7 +100,7 @@ function isLatestBillKey(idempotencyKey: string, latestKey: string): boolean {
 }
 
 function latestBillKeyOf(bill: MessageBill): string {
-  return billMessageKey(bill.billId, bill.latestVersionNumber, bill.irnRecordedAt);
+  return billMessageKey(bill.billId, bill.latestVersionNumber);
 }
 
 // The document a business_ref names.
@@ -174,8 +170,8 @@ interface BillPaper {
   header: BillVersionHeader;
 }
 
-// WhatsApp messages per money event (Spec J). Turns each committed Bill, Payment, Note, Refund and
-// IRN outcome into an ordered list of template instructions and hands them, after commit, to the
+// WhatsApp messages per money event (Spec J). Turns each committed Bill, Payment, Note and Refund
+// outcome into an ordered list of template instructions and hands them, after commit, to the
 // notification app (Spec K). Never writes a money row, a notification row or a pdf_key: PDFs are
 // Spec L's, rows are K's. A failed step is logged and stops that commit's chain; the domain call
 // already returned.
@@ -190,15 +186,14 @@ class CustomerMessageService {
     private readonly retry: DeliveryRetry = DEFAULT_RETRY,
   ) {}
 
-  // --- After-commit listeners (Specs F, G, H, I). Each runs once per commit.
+  // --- After-commit listeners (Specs F, G, H). Each runs once per commit.
 
   public readonly checkoutListener: CheckoutListener = (outcome) => this.onCheckout(outcome);
   public readonly adminBillListener: AdminBillListener = (outcome) => this.onAdminBill(outcome);
   public readonly adminPaymentListener: AdminPaymentListener = (outcome) =>
     this.onAdminPayment(outcome);
-  public readonly gstListener: GstListener = (outcome) => this.onGst(outcome);
 
-  // Book Now and fulfil: Bill (unless IRN pending), then Receipt (kept > ₹0). Field Payment:
+  // Book Now and fulfil: Bill, then Receipt (kept > ₹0). Field Payment:
   // Receipt.
   private async onCheckout(outcome: CheckoutOutcome): Promise<void> {
     const customerId = outcome.bill?.customerId ?? outcome.payment?.customerId;
@@ -229,7 +224,7 @@ class CustomerMessageService {
         if (bill) plans.push(bill);
         break;
       }
-      // Latest Bill (unless IRN pending); then GST Note messages when the frozen buyer GSTIN is
+      // Latest Bill; then GST Note messages when the frozen buyer GSTIN is
       // present and the commit raised GST Notes, otherwise the Bill corrected update when the
       // Balance changed.
       case "bill_corrected": {
@@ -361,18 +356,6 @@ class CustomerMessageService {
       }
     }
     await this.deliverInOrder(plan ? [plan] : []);
-  }
-
-  // Enter IRN draws the final PDF and sends the latest Bill; Correct IRN replaces the latest
-  // version's PDF and sends it again under a new key.
-  private async onGst(outcome: GstOutcome): Promise<void> {
-    const recipient = recipientOf(await this.requireCustomer(outcome.customerId));
-    const paper = await this.billPaperByNumber(outcome.billId, outcome.versionNumber);
-    const bill = await this.billMessage(paper, outcome.balanceAfterPaise, recipient, {
-      irnRecordedAt: outcome.irnRecordedAt,
-      replacePdf: outcome.kind === "irn_corrected",
-    });
-    await this.deliverInOrder(bill ? [bill] : []);
   }
 
   // --- Resend and Send latest Bill.
@@ -521,25 +504,21 @@ class CustomerMessageService {
 
   // --- Instructions.
 
-  // Null while the Bill is withheld: IRN pending, or cancelled.
+  // Null while the Bill is withheld: cancelled.
   private async billMessage(
     paper: BillPaper,
     balancePaise: number,
     recipient: Recipient,
-    options: { irnRecordedAt?: Date; replacePdf?: boolean } = {},
   ): Promise<PlannedMessage | null> {
     const state = await this.gst.getBillGstState({ billId: paper.billId });
-    if (state.irnPending || state.cancelled) return null;
-    const irnRecordedAt = options.irnRecordedAt ?? state.irn?.recordedAt ?? null;
+    if (state.cancelled) return null;
     const instruction = {
       ...this.billInstruction(paper, balancePaise, recipient),
-      idempotencyKey: billMessageKey(paper.billId, paper.versionNumber, irnRecordedAt),
+      idempotencyKey: billMessageKey(paper.billId, paper.versionNumber),
     };
     return {
       instruction,
-      document: options.replacePdf
-        ? () => this.documents.replaceBillDocumentAfterIrnCorrect(paper.billId)
-        : () => this.documents.ensureBillVersionDocument(paper.billVersionId),
+      document: () => this.documents.ensureBillVersionDocument(paper.billVersionId),
       supersede: {
         billId: paper.billId,
         latestVersionNumber: paper.versionNumber,
@@ -726,8 +705,7 @@ class CustomerMessageService {
     }
   }
 
-  // False when the chain must stop. An IRN pending refusal from the PDF step withholds this Bill
-  // and moves on.
+  // False when the chain must stop.
   private async deliver(
     notification: NotificationMessageGateway,
     plan: PlannedMessage,
@@ -746,17 +724,7 @@ class CustomerMessageService {
         );
       }
       let attachment: EnqueueInput["attachment"];
-      if (plan.document) {
-        try {
-          attachment = pdfAttachment(await this.withRetries(plan.document));
-        } catch (documentError) {
-          if (refusalOf(documentError)?.reason !== "irn_missing") throw documentError;
-          logger.info("Bill WhatsApp withheld until the IRN is recorded", {
-            businessRef: instruction.businessRef,
-          });
-          return true;
-        }
-      }
+      if (plan.document) attachment = pdfAttachment(await this.withRetries(plan.document));
       await this.withRetries(() =>
         notification.enqueue(attachment ? { ...instruction, attachment } : instruction),
       );
@@ -930,17 +898,11 @@ class CustomerMessageService {
     }
   }
 
-  // Never a cancelled Bill or an IRN pending one (no void or draft paper reaches the Customer).
+  // Never a cancelled Bill (no void paper reaches the Customer).
   private async assertBillSendable(billId: string): Promise<void> {
     const state = await this.gst.getBillGstState({ billId });
     if (state.cancelled) {
       throw customerMessageRefused("bill_cancelled", "This Bill is cancelled and cannot be sent.");
-    }
-    if (state.irnPending) {
-      throw customerMessageRefused(
-        "irn_pending",
-        "This Bill waits for its IRN; it is sent once the IRN is recorded.",
-      );
     }
   }
 

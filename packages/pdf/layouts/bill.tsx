@@ -1,11 +1,10 @@
 // @jsxRuntime automatic
-import { Image, Text, View } from "@react-pdf/renderer";
+import { Text, View } from "@react-pdf/renderer";
 
-import { DRAFT_MARK, formatDate, formatPaise, formatRateBps } from "../format";
+import { formatDate, formatPaise, formatRateBps } from "../format";
 import type {
   BillHeaderValues,
   BillOfSupplyValues,
-  IrnValues,
   TaxInvoiceLine,
   TaxInvoiceValues,
 } from "../types";
@@ -84,29 +83,7 @@ const taxInvoiceColumns: Column[] = [
   { header: "Amount", width: 17, align: "right" },
 ];
 
-function IrnBlock({ irn, qrDataUrl }: { irn: IrnValues; qrDataUrl: string }) {
-  return (
-    <View wrap={false} style={styles.box}>
-      <View style={styles.cellBlock}>
-        <Text style={styles.heading}>E-invoice</Text>
-        <Text style={styles.label}>IRN</Text>
-        <Text style={[styles.bold, { marginBottom: 3 }]}>{irn.irn}</Text>
-        <View style={{ flexDirection: "row" }}>
-          <Text style={styles.label}>Ack No.</Text>
-          <Text style={[styles.bold, { marginRight: 14 }]}>{irn.ackNumber}</Text>
-          <Text style={styles.label}>Ack date</Text>
-          <Text style={styles.bold}>{formatDate(irn.ackDate)}</Text>
-        </View>
-      </View>
-      <View style={[{ padding: 6 }, styles.dividerLeft]}>
-        <Image src={qrDataUrl} style={{ width: 96, height: 96 }} />
-      </View>
-    </View>
-  );
-}
-
-export function TaxInvoicePaper(props: { values: TaxInvoiceValues; qrDataUrl: string | null }) {
-  const { values } = props;
+export function TaxInvoicePaper({ values }: { values: TaxInvoiceValues }) {
   const rows = values.lines.map((line, index) => [
     String(index + 1),
     line.name,
@@ -120,12 +97,7 @@ export function TaxInvoicePaper(props: { values: TaxInvoiceValues; qrDataUrl: st
   ]);
   return (
     <PaperDocument title={`Tax Invoice ${values.billNumber}`} seller={values.seller}>
-      <PaperPage paperName="Tax Invoice" documentNumber={values.billNumber} draft={values.draft}>
-        {values.draft ? (
-          <Text style={styles.draftBanner} fixed>
-            {DRAFT_MARK}
-          </Text>
-        ) : null}
+      <PaperPage paperName="Tax Invoice" documentNumber={values.billNumber}>
         <HeaderBox seller={values.seller} rows={invoiceRows(values)} />
         <BuyerBox values={values} />
         <LinesTable columns={taxInvoiceColumns} rows={rows} />
@@ -136,9 +108,6 @@ export function TaxInvoicePaper(props: { values: TaxInvoiceValues; qrDataUrl: st
           quantityText={totalQuantityText(values.lines)}
         />
         <GstSummary supplyType={values.supplyType} lines={values.lines} />
-        {values.irn && props.qrDataUrl ? (
-          <IrnBlock irn={values.irn} qrDataUrl={props.qrDataUrl} />
-        ) : null}
         <TermsFooter seller={values.seller} />
       </PaperPage>
     </PaperDocument>

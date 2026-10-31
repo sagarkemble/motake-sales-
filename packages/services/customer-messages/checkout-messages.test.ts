@@ -14,7 +14,7 @@ import CustomerMessageService from "./index";
 import { buildCheckoutWorld, type CheckoutWorld } from "../test/builders";
 import { buildMessageHarness, type MessageHarness } from "../test/customer-message-world";
 import { wipeApplicationTables } from "../test/database";
-import { buildEinvoicingWorld } from "../test/gst-world";
+import { buildGstinWorld } from "../test/gst-world";
 
 // Spec J, Spec F's events: Book Now, Pre-order fulfil and field Payment.
 
@@ -168,25 +168,18 @@ describe("Book Now", () => {
     });
   });
 
-  it("an IRN pending Bill is withheld (no PDF drawn) while its Receipt still goes", async () => {
-    const world = await buildEinvoicingWorld({ businessDate: today });
+  it("a GSTIN Customer's Tax Invoice goes at once with its PDF, then the Receipt", async () => {
+    const world = await buildGstinWorld({ businessDate: today });
 
     await bookNow(world, 5_000);
 
     expect(harness.gateway.instructions.map((instruction) => instruction.kind)).toEqual([
+      "bill",
       "receipt",
     ]);
-    expect(harness.documents.calls.map((call) => call.method)).toEqual(["drawPaymentReceipt"]);
-  });
-
-  it("an IRN refusal from the PDF step withholds the Bill and moves on to the Receipt", async () => {
-    const world = await buildCheckoutWorld({ businessDate: today });
-    harness.documents.refuseIrnMissing = true;
-
-    await bookNow(world, 5_000);
-
-    expect(harness.gateway.instructions.map((instruction) => instruction.kind)).toEqual([
-      "receipt",
+    expect(harness.documents.calls.map((call) => call.method)).toEqual([
+      "ensureBillVersionDocument",
+      "drawPaymentReceipt",
     ]);
   });
 });

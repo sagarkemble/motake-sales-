@@ -31,8 +31,6 @@ const customerDetailsSchema = z.object({
 export const createCustomerAsAdminInputSchema = customerDetailsSchema.extend({
   routeId: z.string().uuid(),
   gstin: gstinSchema.optional(),
-  // Defaults to true with a GSTIN, false without.
-  einvoicingRequired: z.boolean().optional(),
 });
 export type CreateCustomerAsAdminInput = z.input<typeof createCustomerAsAdminInputSchema>;
 
@@ -48,7 +46,6 @@ export const updateCustomerInputSchema = z.object({
   notes: z.string().optional(),
   shopPhotoKey: z.string().min(1).nullable().optional(),
   gstin: gstinSchema.optional(),
-  einvoicingRequired: z.boolean().optional(),
 });
 // No routeId (Move to Route is separate) and no preferredLanguage (fixed at add).
 export type UpdateCustomerInput = z.input<typeof updateCustomerInputSchema>;

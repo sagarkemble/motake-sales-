@@ -15,7 +15,7 @@ import {
 } from "../test/builders";
 import { buildMessageHarness, type MessageHarness } from "../test/customer-message-world";
 import { wipeApplicationTables } from "../test/database";
-import { buildEinvoicingWorld } from "../test/gst-world";
+import { buildGstinWorld } from "../test/gst-world";
 
 // Spec J, Spec G's outcomes: Raise Bill, Correct, Cancel and Raise Note.
 
@@ -37,8 +37,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// A Customer with a GSTIN (frozen on the Bill letterhead) and no E-invoicing.
-const gstinWorld = () => buildEinvoicingWorld({ businessDate: today, einvoicing: false });
+// A Customer with a GSTIN (frozen on the Bill letterhead).
+const gstinWorld = () => buildGstinWorld({ businessDate: today });
 
 async function bookNow(world: CheckoutWorld, lines?: { sku: string; qty: number }[]) {
   const placed = await harness.orderService.placeBookNow(world.salesman.id, {

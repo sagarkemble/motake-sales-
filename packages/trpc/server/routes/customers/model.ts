@@ -16,7 +16,6 @@ export const customerSchema = z.object({
   shopPhotoUrl: z.string().nullable(),
   routeId: z.string(),
   gstin: z.string().nullable(),
-  einvoicingRequired: z.boolean(),
   // Fixed once the Customer is added.
   preferredLanguage: preferredLanguageSchema,
   createdBy: z.string(),
@@ -53,9 +52,8 @@ export const createCustomerInputSchema = z.object({
   preferredLanguage: preferredLanguageSchema.optional(),
   // Admin only, and required for Admin. A salesman's Customer goes on their Active GatePass Route.
   routeId: z.string().uuid().optional(),
-  // Admin only; the salesman form does not ask for them.
+  // Admin only; the salesman form does not ask for it.
   gstin: gstinInputSchema.optional(),
-  einvoicingRequired: z.boolean().optional(),
 });
 
 export const updateCustomerInputSchema = z.object({
@@ -66,7 +64,6 @@ export const updateCustomerInputSchema = z.object({
   notes: z.string().optional(),
   shopPhotoKey: z.string().min(1).nullable().optional(),
   gstin: gstinInputSchema.optional(),
-  einvoicingRequired: z.boolean().optional(),
 });
 
 export const customerIdInputSchema = z.object({ id: z.string().uuid() });

@@ -92,9 +92,7 @@ export async function notifyAdminBillOutcome(
 
 // --- Lock hook (for Spec I): asked inside Correct and Cancel right after the bills row lock.
 
-// `portal_cancel` is Spec I's portal cancellation: it skips the IRN-recorded gate but not the
-// month lock.
-export type BillLockAction = "correct" | "cancel" | "portal_cancel";
+export type BillLockAction = "correct" | "cancel";
 
 export type BillLockDecision =
   | { allowed: true }

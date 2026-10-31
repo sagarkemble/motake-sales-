@@ -52,7 +52,7 @@ function tokenRefusalMessage(tx: Tx, error: unknown): string {
 }
 
 // One plain line of what is happening, and when a message last went out.
-function PauseSummary({ status }: { status: WhatsAppTokenSettings }) {
+export function PauseSummary({ status }: { status: WhatsAppTokenSettings }) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
   const summary =

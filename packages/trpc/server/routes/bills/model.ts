@@ -46,11 +46,6 @@ export const billDetailSchema = z.object({
   sgstPaise: z.number().int(),
   igstPaise: z.number().int(),
   roundOffPaise: z.number().int(),
-  irn: z.string().nullable(),
-  irnAckNumber: z.string().nullable(),
-  irnAckDate: z.string().nullable(),
-  signedQrText: z.string().nullable(),
-  irnRecordedAt: z.date().nullable(),
   cancelled: z.boolean(),
   items: z.array(billLineSchema),
 });

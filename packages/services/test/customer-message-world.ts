@@ -8,8 +8,8 @@ import {
 
 import AdminBillService from "../admin-bills";
 import CustomerMessageService, { type NotificationMessageGateway } from "../customer-messages";
-import DocumentService, { type DocumentResult, type DrawPaymentReceiptInput } from "../documents";
-import { conflict, documentRefused, notFound, notificationRefused } from "../errors";
+import type { DocumentResult, DrawPaymentReceiptInput } from "../documents";
+import { conflict, notFound, notificationRefused } from "../errors";
 import GstService from "../gst";
 import type {
   EnqueueInput,
@@ -22,7 +22,6 @@ import type {
 import OrderService from "../orders";
 import PaymentService from "../payments";
 import RefundService from "../refunds";
-import { MemoryDocumentStore } from "./memory-document-store";
 
 // Spec J tests: the notification app (Spec K) and the PDF draws (Spec L) are faked at their
 // seams; every domain service is wired to CustomerMessageService the way the API wires it.
@@ -207,7 +206,6 @@ export class RecordingNotificationGateway implements NotificationMessageGateway 
 
 export type DocumentCall =
   | { method: "ensureBillVersionDocument"; billVersionId: string }
-  | { method: "replaceBillDocumentAfterIrnCorrect"; billId: string }
   | { method: "ensureNoteDocument"; noteId: string }
   | { method: "drawPaymentReceipt"; input: DrawPaymentReceiptInput };
 
@@ -218,33 +216,20 @@ const NOTE_PAPER: Record<string, string> = {
 };
 
 // Spec L's draws, recorded: deterministic keys, L's file names (read from the stored numbers), and
-// a draw that fails or refuses irn_missing when told.
+// a draw that fails when told.
 export class FakeMessageDocuments {
   public readonly calls: DocumentCall[] = [];
   // The next N draws throw; `alwaysFails` makes every draw throw.
   public failures = 0;
   public alwaysFails = false;
-  public refuseIrnMissing = false;
-  private replaceCount = 0;
 
   public async ensureBillVersionDocument(billVersionId: string): Promise<DocumentResult> {
     this.calls.push({ method: "ensureBillVersionDocument", billVersionId });
     this.maybeFail();
-    if (this.refuseIrnMissing) throw documentRefused("irn_missing", "IRN not recorded yet");
     const version = await getBillVersionSnapshot(billVersionId);
     return {
       key: `documents/bill-versions/${billVersionId}.pdf`,
       filename: `Motake Bill ${version!.header.number.replaceAll("/", "-")}.pdf`,
-    };
-  }
-
-  public async replaceBillDocumentAfterIrnCorrect(billId: string): Promise<DocumentResult> {
-    this.calls.push({ method: "replaceBillDocumentAfterIrnCorrect", billId });
-    this.maybeFail();
-    this.replaceCount += 1;
-    return {
-      key: `documents/bills/${billId}/irn-${this.replaceCount}.pdf`,
-      filename: "Motake Bill replaced.pdf",
     };
   }
 
@@ -291,8 +276,8 @@ export interface MessageHarness {
 export function buildMessageHarness(): MessageHarness {
   const gateway = new RecordingNotificationGateway();
   const documents = new FakeMessageDocuments();
-  const documentService = new DocumentService(new MemoryDocumentStore());
-  const messages = new CustomerMessageService(gateway, documents, new GstService(documentService), {
+  const gstService = new GstService();
+  const messages = new CustomerMessageService(gateway, documents, gstService, {
     attempts: 3,
     backoffMs: [0, 0],
   });
@@ -304,6 +289,6 @@ export function buildMessageHarness(): MessageHarness {
     paymentService: new PaymentService(messages.checkoutListener, messages.adminPaymentListener),
     refundService: new RefundService(messages.adminPaymentListener),
     adminBillService: new AdminBillService(messages.adminBillListener),
-    gstService: new GstService(documentService, messages.gstListener, messages.adminBillListener),
+    gstService,
   };
 }

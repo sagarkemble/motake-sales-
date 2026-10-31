@@ -20,7 +20,6 @@ import {
 } from "../test/builders";
 import { buildMessageHarness, type MessageHarness } from "../test/customer-message-world";
 import { wipeApplicationTables } from "../test/database";
-import { withCustomer } from "../test/gst-world";
 
 // Spec J's Resend, Send latest Bill and status reads. No money row is ever written.
 
@@ -237,7 +236,7 @@ describe("resend", () => {
 });
 
 describe("sendLatestBill", () => {
-  it("refuses a cancelled Bill and an IRN pending Bill", async () => {
+  it("refuses a cancelled Bill", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const placed = await bookNow(world);
     await harness.adminBillService.cancelBill(world.admin.id, {
@@ -245,21 +244,11 @@ describe("sendLatestBill", () => {
       expectedVersionNumber: 1,
       reason: "Wrong shop",
     });
-    // Another Customer on the same Route (one Seller master per database), e-invoiced.
-    const einvoiced = await withCustomer(world, { einvoicing: true });
-    const pending = await bookNow(einvoiced);
 
     expect(
       (await refusalOf(harness.messages.sendLatestBill(admin(world), { billId: placed.billId })))
         .reason,
     ).toBe("bill_cancelled");
-    expect(
-      (
-        await refusalOf(
-          harness.messages.sendLatestBill(admin(einvoiced), { billId: pending.billId }),
-        )
-      ).reason,
-    ).toBe("irn_pending");
   });
 
   it("enqueues the latest Bill when it was never sent, superseding an older unsent version", async () => {

@@ -20,7 +20,6 @@ export const sellerSettingsSchema = z.object({
   bankIfsc: z.string().nullable(),
   terms: z.string().nullable(),
   place: z.string().nullable(),
-  einvoicingRequired: z.boolean(),
   updatedBy: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),

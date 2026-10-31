@@ -108,25 +108,6 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
         </LetterheadBlock>
       </section>
 
-      {bill.irn && (
-        <section className="grid gap-1 rounded-md border bg-muted/30 p-3 text-xs sm:grid-cols-[auto_1fr] sm:gap-x-4">
-          <span className="text-muted-foreground">IRN</span>
-          <span className="font-mono break-all">{bill.irn}</span>
-          {bill.irnAckNumber && (
-            <>
-              <span className="text-muted-foreground">{tx("admin.bills.ackNumber")}</span>
-              <span className="font-mono">{bill.irnAckNumber}</span>
-            </>
-          )}
-          {bill.irnAckDate && (
-            <>
-              <span className="text-muted-foreground">{tx("admin.bills.ackDate")}</span>
-              <span>{bill.irnAckDate}</span>
-            </>
-          )}
-        </section>
-      )}
-
       <ScrollArea>
         <table className="w-full min-w-[44rem] border-collapse border border-border text-sm">
           <thead>

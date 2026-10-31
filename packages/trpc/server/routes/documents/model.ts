@@ -11,15 +11,8 @@ export const downloadLinkInputSchema = z
     "Give either billVersionId or noteId",
   );
 
-export const signedQrImageLinkInputSchema = z.object({ billId: z.string().uuid() });
-
 export const downloadLinkSchema = z.object({
   url: z.string(),
   filename: z.string(),
-  expiresAt: z.date(),
-});
-
-export const signedQrImageLinkSchema = z.object({
-  url: z.string(),
   expiresAt: z.date(),
 });

@@ -17,8 +17,3 @@ function safeNumber(documentNumber: string): string {
 export function documentFileName(layout: LayoutName, documentNumber: string): string {
   return `Motake ${PAPER_BY_LAYOUT[layout]} ${safeNumber(documentNumber)}.pdf`;
 }
-
-// Same marker Spec I puts on the Portal JSON draft file name.
-export function draftBillFileName(billNumber: string): string {
-  return `Motake Bill ${safeNumber(billNumber)} DRAFT-IRN-PENDING.pdf`;
-}

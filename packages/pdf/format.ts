@@ -122,6 +122,3 @@ export function balanceWording(balancePaise: number): string {
   if (balancePaise < 0) return `Advance ${formatPaise(-balancePaise)}`;
   return "Settled";
 }
-
-// Printed across every page of a draft Tax Invoice.
-export const DRAFT_MARK = "Draft — IRN pending";

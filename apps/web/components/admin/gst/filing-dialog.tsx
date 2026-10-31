@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangleIcon, LockIcon } from "lucide-react";
+import { LockIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -170,18 +170,13 @@ function FilingForm({
     setConfirmMonth(null);
     setRefusal(null);
     try {
-      const result = await recordFilingAsync({
+      await recordFilingAsync({
         month,
         filedOn,
         reference: reference.trim(),
         notes: notes.trim() || null,
       });
-      const pending = result.data.irnPendingInMonth;
-      toast.success(
-        pending > 0
-          ? tx("admin.gst.form.recordedIrnPending", { month: monthLabel(month), count: pending })
-          : tx("admin.gst.form.recorded", { month: monthLabel(month) }),
-      );
+      toast.success(tx("admin.gst.form.recorded", { month: monthLabel(month) }));
       onClose();
     } catch (error) {
       setRefusal(refusalMessage(tx, error, tx("admin.ledger.refusals.generic")));
@@ -354,26 +349,12 @@ function FilingForm({
                     {tx("admin.gst.form.confirm.alreadyFiled", { month: monthLabel(month) })}
                   </p>
                 ) : (
-                  <>
-                    <p>
-                      {tx("admin.gst.form.confirm.bills", {
-                        count: filingPreview.billsDatedInMonth,
-                        month: monthLabel(month),
-                      })}
-                    </p>
-                    {filingPreview.irnPendingInMonth > 0 ? (
-                      <p className="flex items-start gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 text-amber-700 dark:text-amber-400">
-                        <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
-                        {tx("admin.gst.form.confirm.irnPending", {
-                          count: filingPreview.irnPendingInMonth,
-                        })}
-                      </p>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        {tx("admin.gst.form.confirm.noIrnPending")}
-                      </p>
-                    )}
-                  </>
+                  <p>
+                    {tx("admin.gst.form.confirm.bills", {
+                      count: filingPreview.billsDatedInMonth,
+                      month: monthLabel(month),
+                    })}
+                  </p>
                 )}
               </div>
             </AlertDialogDescription>

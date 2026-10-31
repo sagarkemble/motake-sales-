@@ -4,7 +4,6 @@ import {
   amountInWords,
   balanceWording,
   documentFileName,
-  draftBillFileName,
   formatDate,
   formatPaise,
   formatRateBps,
@@ -87,12 +86,6 @@ describe("file names", () => {
     );
     expect(documentFileName("payment_receipt", "MP/26-27/000010")).toBe(
       "Motake Receipt MP-26-27-000010.pdf",
-    );
-  });
-
-  it("marks the draft Bill file name", () => {
-    expect(draftBillFileName("MB/26-27/000123")).toBe(
-      "Motake Bill MB-26-27-000123 DRAFT-IRN-PENDING.pdf",
     );
   });
 });

@@ -3,26 +3,21 @@ import { getCustomerWithRouteById } from "@repo/database/queries/customers";
 import {
   getBillDocumentState,
   getBillVersionSnapshot,
-  getLatestBillVersionNumber,
   getLatestBillVersionSnapshot,
   getNoteById,
   getPaymentById,
   getPaymentEventById,
   listBillVersionSnapshots,
   listNoteLines,
-  replaceBillVersionPdfKey,
   setBillVersionPdfKeyIfUnset,
   setNotePdfKeyIfUnset,
   type BillDocumentState,
   type BillVersionSnapshot,
 } from "@repo/database/queries/documents";
-import { getBillGstFacts } from "@repo/database/queries/gst";
 import { businessDateOf, businessTimeOf } from "@repo/database/queries/shared/business-date";
 import type { SelectNote, SelectNoteLine, SelectSellerSettings } from "@repo/database/schema";
 import {
   documentFileName,
-  draftBillFileName,
-  type IrnValues,
   type LayoutName,
   type LayoutValues,
   type PartyBlocks,
@@ -42,45 +37,22 @@ import {
   drawOptionsSchema,
   drawPaymentReceiptInputSchema,
   noteIdSchema,
-  putSignedQrImageInputSchema,
   type DocumentResult,
   type DownloadLink,
   type DownloadLinkTarget,
-  type DraftBillResult,
   type DrawOptions,
   type DrawPaymentReceiptInput,
-  type PutSignedQrImageInput,
-  type SignedQrImageLink,
 } from "./model";
 
 const PDF_CONTENT_TYPE = "application/pdf";
-const MAX_SIGNED_QR_IMAGE_BYTES = 1024 * 1024;
-const SIGNED_QR_IMAGE_TYPES = {
-  "image/png": { extension: "png", magic: [0x89, 0x50, 0x4e, 0x47] },
-  "image/jpeg": { extension: "jpg", magic: [0xff, 0xd8, 0xff] },
-} as const;
-type SignedQrImageType = keyof typeof SIGNED_QR_IMAGE_TYPES;
-
 // Deterministic keys: a retried draw overwrites the same object instead of leaving an orphan.
-// Enter IRN and Correct IRN each set a new irn_recorded_at, so an IRN-stamped object is never
-// overwritten by a later correction.
 export const documentKeys = {
   billVersion: (billId: string, versionNumber: number) =>
     `documents/bills/${billId}/v${versionNumber}.pdf`,
-  billVersionWithIrn: (billId: string, versionNumber: number, irnRecordedAt: Date) =>
-    `documents/bills/${billId}/v${versionNumber}-irn-${irnRecordedAt.getTime()}.pdf`,
   note: (noteId: string) => `documents/notes/${noteId}.pdf`,
   receipt: (paymentId: string, postedPaymentEventId: string) =>
     `documents/receipts/${paymentId}/${postedPaymentEventId}.pdf`,
-  signedQrImage: (billId: string, irnRecordedAt: Date, extension: "png" | "jpg") =>
-    `documents/bills/${billId}/signed-qr-${irnRecordedAt.getTime()}.${extension}`,
 };
-
-const SUPERSEDED_VERSION_MESSAGE =
-  "This e-invoiced Tax Invoice has been corrected. Only its latest version can be downloaded.";
-
-const IRN_MISSING_MESSAGE =
-  "This Tax Invoice is waiting for its IRN. Use the Draft PDF to check it until the IRN is recorded.";
 
 type PaperFor<L extends LayoutName = LayoutName> = {
   [K in L]: { layout: K; values: LayoutValues[K] };
@@ -174,26 +146,11 @@ function sum<T>(rows: T[], pick: (row: T) => number): number {
   return rows.reduce((total, row) => total + pick(row), 0);
 }
 
-function irnValuesOf(bill: BillDocumentState): IrnValues | null {
-  if (!bill.irn) return null;
-  if (!bill.irnAckNumber || !bill.irnAckDate || !bill.signedQrText) {
-    throw internalError(`Bill ${bill.number} has an IRN without its ack number, date or signed QR`);
-  }
-  return {
-    irn: bill.irn,
-    ackNumber: bill.irnAckNumber,
-    ackDate: bill.irnAckDate,
-    signedQrText: bill.signedQrText,
-  };
-}
-
-// Bill values come only from the version snapshot; the IRN block and who dispatched it from the
-// live Bill.
+// Bill values come only from the version snapshot; who dispatched it from the live Bill.
 function billPaper(
   version: BillVersionSnapshot,
   bill: BillDocumentState,
   settings: SelectSellerSettings,
-  irn: { draft: true } | { draft: false; irn: IrnValues | null },
 ): PaperFor<"tax_invoice" | "bill_of_supply"> {
   const { header } = version;
   const seller = sellerFromStamp(
@@ -212,7 +169,7 @@ function billPaper(
     versionNumber: version.versionNumber,
     salesmanName: bill.salesmanName,
   };
-  if (header.legalType === "bill_of_supply" && !irn.draft) {
+  if (header.legalType === "bill_of_supply") {
     return {
       layout: "bill_of_supply",
       values: {
@@ -254,7 +211,6 @@ function billPaper(
         roundOffPaise: header.roundOffPaise,
         totalPaise: header.totalPaise,
       },
-      ...(irn.draft ? { draft: true, irn: null } : { draft: false, irn: irn.irn }),
     },
   };
 }
@@ -349,13 +305,6 @@ function notePaper(
   };
 }
 
-function signedQrImageTypeOf(contentType: string, bytes: Uint8Array): SignedQrImageType | null {
-  if (!(contentType in SIGNED_QR_IMAGE_TYPES)) return null;
-  const type = contentType as SignedQrImageType;
-  const { magic } = SIGNED_QR_IMAGE_TYPES[type];
-  return magic.every((byte, index) => bytes[index] === byte) ? type : null;
-}
-
 // Draws, stores and records every Document; the only writer of bill_versions.pdf_key and
 // notes.pdf_key. Runs after the domain transaction commits: a draw failure throws to the caller
 // and never undoes a sale. Every draw is safe to retry and lands on the same key.
@@ -365,7 +314,7 @@ class DocumentService {
   // Tests pass an in-memory store; the API uses the private documents bucket.
   public constructor(private readonly store: DocumentStore = defaultDocumentStore()) {}
 
-  // Spec J after Book Now, fulfil, Raise Bill, Correct and Enter IRN. A set key is returned as is.
+  // Spec J after Book Now, fulfil, Raise Bill and Correct. A set key is returned as is.
   public async ensureBillVersionDocument(
     billVersionId: string,
     options: DrawOptions = {},
@@ -373,54 +322,16 @@ class DocumentService {
     const version = await getBillVersionSnapshot(billVersionIdSchema.parse(billVersionId));
     if (!version) throw documentRefused("not_found", `Bill version ${billVersionId} not found`);
     const filename = documentFileName(billLayoutOf(version), version.header.number);
-    const bill = await this.requireBill(version.billId);
-    const isLatest = version.versionNumber === (await getLatestBillVersionNumber(version.billId));
-    // An e-invoiced Tax Invoice is only ever served as its latest version, even when an older
-    // version was drawn before; every other Bill keeps its whole version history.
-    if (!isLatest && (await this.einvoicingRequired(bill))) {
-      throw documentRefused("superseded_version", SUPERSEDED_VERSION_MESSAGE);
-    }
     if (version.pdfKey) return this.toResult(version.pdfKey, filename, options);
 
-    if (version.header.legalType === "tax_invoice" && !bill.irn) {
-      if (await this.einvoicingRequired(bill))
-        throw documentRefused("irn_missing", IRN_MISSING_MESSAGE);
-    }
-    // An IRN belongs to the latest version only: line Correct is refused after IRN.
-    const irn = isLatest ? irnValuesOf(bill) : null;
-    const key =
-      irn && bill.irnRecordedAt
-        ? documentKeys.billVersionWithIrn(bill.id, version.versionNumber, bill.irnRecordedAt)
-        : documentKeys.billVersion(bill.id, version.versionNumber);
-
+    const bill = await this.requireBill(version.billId);
+    const key = documentKeys.billVersion(bill.id, version.versionNumber);
     const settings = await this.settingsService.requireSellerSettings();
-    const bytes = await draw(billPaper(version, bill, settings, { draft: false, irn }));
+    const bytes = await draw(billPaper(version, bill, settings));
     await this.store.put(key, bytes, PDF_CONTENT_TYPE);
     const storedKey = await setBillVersionPdfKeyIfUnset(version.id, key);
     if (!storedKey) throw internalError(`Bill version ${version.id} lost its PDF key`);
     return this.toResult(storedKey, filename, options, storedKey === key ? bytes : undefined);
-  }
-
-  // Spec I after Correct IRN commits: the one path that replaces a set key. The old object stays.
-  public async replaceBillDocumentAfterIrnCorrect(
-    billId: string,
-    options: DrawOptions = {},
-  ): Promise<DocumentResult> {
-    const bill = await this.requireBill(billIdSchema.parse(billId));
-    const irn = irnValuesOf(bill);
-    if (!irn || !bill.irnRecordedAt) {
-      throw documentRefused("irn_not_recorded", `Bill ${bill.number} has no IRN recorded`);
-    }
-    const latest = await this.requireLatestVersion(bill.id);
-    const filename = documentFileName(billLayoutOf(latest), latest.header.number);
-    const key = documentKeys.billVersionWithIrn(bill.id, latest.versionNumber, bill.irnRecordedAt);
-    if (latest.pdfKey === key) return this.toResult(key, filename, options);
-
-    const settings = await this.settingsService.requireSellerSettings();
-    const bytes = await draw(billPaper(latest, bill, settings, { draft: false, irn }));
-    await this.store.put(key, bytes, PDF_CONTENT_TYPE);
-    await replaceBillVersionPdfKey(latest.id, key);
-    return this.toResult(key, filename, options, bytes);
   }
 
   // Spec J for the statutory Note message; Admin download for every Note kind.
@@ -518,55 +429,8 @@ class DocumentService {
     return this.toResult(key, filename, options, bytes);
   }
 
-  // Spec I's Draft PDF download. Bytes only: never stored, never a pdf_key, never sent.
-  public async drawDraftBill(billId: string): Promise<DraftBillResult> {
-    const bill = await this.requireBill(billIdSchema.parse(billId));
-    await this.assertDraftAllowed(bill);
-    const latest = await this.requireLatestVersion(bill.id);
-    const settings = await this.settingsService.requireSellerSettings();
-    const bytes = await draw(billPaper(latest, bill, settings, { draft: true }));
-    return { filename: draftBillFileName(bill.number), bytes };
-  }
-
-  // Spec I's Enter IRN and Correct IRN, inside its transaction. A server-side put only; Spec I
-  // writes bills.signed_qr_image_key with the returned key.
-  public async putSignedQrImage(input: PutSignedQrImageInput): Promise<{ key: string }> {
-    const parsedInput = putSignedQrImageInputSchema.parse(input);
-    const type = signedQrImageTypeOf(parsedInput.contentType, parsedInput.bytes);
-    if (!type || parsedInput.bytes.length > MAX_SIGNED_QR_IMAGE_BYTES) {
-      throw documentRefused("bad_image", "The signed QR image must be a PNG or JPEG up to 1 MB");
-    }
-    const key = documentKeys.signedQrImage(
-      parsedInput.billId,
-      parsedInput.irnRecordedAt,
-      SIGNED_QR_IMAGE_TYPES[type].extension,
-    );
-    await this.store.put(key, parsedInput.bytes, type);
-    return { key };
-  }
-
-  // Admin only: a 5-minute inline link to the stored signed QR image.
-  public async getSignedQrImageLink(
-    actorProfileId: string,
-    billId: string,
-  ): Promise<SignedQrImageLink> {
-    await this.assertAdmin(actorProfileId);
-    const bill = await this.requireBill(billIdSchema.parse(billId));
-    if (!bill.signedQrImageKey) {
-      throw documentRefused("not_found", `Bill ${bill.number} has no signed QR image`);
-    }
-    const contentType: SignedQrImageType = bill.signedQrImageKey.endsWith(".png")
-      ? "image/png"
-      : "image/jpeg";
-    const { url, expiresAt } = await this.store.signedGetLink(bill.signedQrImageKey, {
-      contentType,
-    });
-    return { url, expiresAt };
-  }
-
-  // Admin only: draws a missing PDF first, then a 5-minute attachment link. Old versions (except
-  // of an e-invoiced Tax Invoice) and a cancelled Bill's versions print as issued. The browser
-  // never sees the key.
+  // Admin only: draws a missing PDF first, then a 5-minute attachment link. Old versions and a
+  // cancelled Bill's versions print as issued. The browser never sees the key.
   public async getDownloadLink(
     actorProfileId: string,
     target: DownloadLinkTarget,
@@ -615,23 +479,6 @@ class DocumentService {
     return latest;
   }
 
-  // Spec I's "is e-invoiced" rule (queries/gst): a Tax Invoice needs an IRN when the seller and
-  // its Customer both have E-invoicing required. It decides irn_missing and superseded_version.
-  private async einvoicingRequired(bill: BillDocumentState): Promise<boolean> {
-    return Boolean((await getBillGstFacts(bill.id))?.einvoicingApplies);
-  }
-
-  // Spec I's Draft rule (the same one GstService.assertDraftAllowed applies): the Bill is IRN
-  // pending.
-  private async assertDraftAllowed(bill: BillDocumentState): Promise<void> {
-    if (!(await getBillGstFacts(bill.id))?.irnPending) {
-      throw documentRefused(
-        "irn_not_pending",
-        `Bill ${bill.number} is not waiting for an IRN; download its PDF instead`,
-      );
-    }
-  }
-
   private async assertAdmin(actorProfileId: string): Promise<void> {
     const actor = await getProfileById(actorProfileId);
     if (!actor || actor.role !== "admin" || actor.status !== "active") {
@@ -645,9 +492,6 @@ export type {
   DocumentResult,
   DownloadLink,
   DownloadLinkTarget,
-  DraftBillResult,
   DrawOptions,
   DrawPaymentReceiptInput,
-  PutSignedQrImageInput,
-  SignedQrImageLink,
 };

@@ -92,7 +92,7 @@ export const customerMessagesRouter = router({
         protect: true,
         summary: "Send the latest Bill on WhatsApp",
         description:
-          "Send the Bill's current version with its PDF, or resend the message already made for it. Refused for a cancelled or IRN pending Bill. A salesman needs an Active GatePass on the Customer's Route.",
+          "Send the Bill's current version with its PDF, or resend the message already made for it. Refused for a cancelled Bill. A salesman needs an Active GatePass on the Customer's Route.",
       },
     })
     .input(sendLatestBillInputSchema)

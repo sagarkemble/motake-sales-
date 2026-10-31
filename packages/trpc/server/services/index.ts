@@ -26,22 +26,16 @@ export const billService = new BillService();
 export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();
+export const gstService = new GstService();
 // Spec J: hands each committed money event's WhatsApp messages to the notification app with the
-// internal key; null gateway (no NOTIFICATION_URL) logs and skips them. Its GST reads use their
-// own GstService with no listeners: gstService below is built with this service's listeners, so it
-// does not exist yet here.
+// internal key; null gateway (no NOTIFICATION_URL) logs and skips them.
 export const customerMessageService = new CustomerMessageService(
   createCustomerMessageGateway(notificationClientConfig()),
   documentService,
-  new GstService(documentService),
+  gstService,
 );
-// Spec G's Correct and Cancel take Spec I's month and IRN lock hook by default.
+// Spec G's Correct and Cancel take Spec I's month lock hook by default.
 export const adminBillService = new AdminBillService(customerMessageService.adminBillListener);
-export const gstService = new GstService(
-  documentService,
-  customerMessageService.gstListener,
-  customerMessageService.adminBillListener,
-);
 export const gatepassService = new GatepassService();
 export const orderService = new OrderService(customerMessageService.checkoutListener);
 export const paymentService = new PaymentService(

@@ -57,8 +57,8 @@ class BillService {
     return isBillCancelled(billId, executor);
   }
 
-  // The Customer on the Bill's Ledger Bill debit; an office Bill has no other link (Spec I's IRN
-  // pending and audit customer_id).
+  // The Customer on the Bill's Ledger Bill debit; an office Bill has no other link (audit
+  // customer_id).
   public async getBillCustomerId(
     billId: string,
     executor: DbExecutor = db,

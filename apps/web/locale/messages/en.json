@@ -147,8 +147,6 @@
       "refund_above_advance": "A refund cannot be more than the Customer's Advance.",
       "already_posted": "This was already saved. Refresh the page.",
       "amount_not_positive": "Enter an amount above ₹0.",
-      "irn_taken": "This IRN is already recorded on another Bill. One IRN belongs to one Bill.",
-      "cancel_ack_in_future": "The cancellation ack date cannot be in the future.",
       "gstr1_already_filed": "GSTR-1 for {month} is already filed. Use Correct to change it.",
       "filing_month_not_started": "{month} has not started yet, so it cannot be filed.",
       "filing_date_before_month": "The filing date cannot be before {month} starts.",
@@ -427,7 +425,6 @@
         "address": "Enter an address",
         "shopPhoto": "Add a shop photo",
         "gstin": "GSTIN must be 15 letters or digits",
-        "gstinForEinvoicing": "Enter the GSTIN to turn on e-invoicing.",
         "route": "Pick a Route"
       },
       "createSuccess": "Customer created",
@@ -462,10 +459,6 @@
         "gstin": "GSTIN (optional)",
         "gstinLabel": "GSTIN",
         "gstinHint": "15 letters or digits. Leave blank if none.",
-        "einvoicing": "E-invoicing required",
-        "einvoicingFollowsGstin": "Follows the GSTIN: on when a GSTIN is entered. You can change it.",
-        "einvoicingSetByAdmin": "Set by you.",
-        "einvoicingFollowGstin": "Follow the GSTIN again",
         "saveCustomer": "Save customer",
         "saveChanges": "Save changes"
       },
@@ -697,8 +690,6 @@
       "buyer": "Buyer",
       "unregistered": "Unregistered",
       "deliveryState": "Delivery state",
-      "ackNumber": "Ack no.",
-      "ackDate": "Ack date",
       "particulars": "Particulars",
       "rate": "Rate",
       "taxable": "Taxable value",
@@ -1080,7 +1071,6 @@
         "customer_inactive": "This Customer is deactivated.",
         "bill_total_zero": "The Bill comes to ₹0.",
         "seller_master_missing": "Seller details are not set up. Fill them in Settings first.",
-        "irn_missing": "This Bill has no IRN yet, so its PDF cannot be drawn.",
         "not_found": "Not found. It may have been removed.",
         "pre_order_cancelled": "This Pre-order was cancelled.",
         "generic": "Something went wrong. Try again.",
@@ -1090,13 +1080,8 @@
         "no_active_gatepass": "You have no Active GatePass today, so you cannot see or resend WhatsApp messages.",
         "customer_not_on_route": "This Customer is not on your Active GatePass Route.",
         "notification_unavailable": "WhatsApp messages are not set up on this server.",
-        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded.",
-        "superseded_version": "This Bill was corrected. Download its latest version.",
-        "irn_not_recorded": "This Bill has no IRN recorded yet, so this file cannot be made.",
-        "irn_not_pending": "This Bill is not waiting for an IRN. Download its PDF instead.",
         "not_posted_event": "Could not open this receipt. Refresh the page and try again.",
         "nothing_kept": "This Payment has no receipt because nothing was kept.",
-        "bad_image": "The QR image must be a PNG or JPG under 1 MB.",
         "forbidden": "Only an Admin can do this.",
         "template_superseded": "This message cannot be resent because its wording has changed. Use Send latest Bill.",
         "token_not_working": "WhatsApp is paused. The Admin needs to fix the access token.",
@@ -1202,84 +1187,11 @@
         "pdfFailed": "Could not open the PDF.",
         "gst": {
           "title": "GST",
-          "status": {
-            "not_needed": "IRN not needed",
-            "pending": "IRN pending",
-            "recorded": "IRN recorded",
-            "portal_cancelled": "Portal-cancelled"
-          },
           "filedMonth": "Filed month",
           "filedMonthNote": "GSTR-1 for {month} filed {date} ({reference}).",
           "filedMonthPlain": "GSTR-1 for {month} is filed.",
-          "pendingBody": "Waiting for its IRN. The final Tax Invoice PDF and the Bill WhatsApp go out when the IRN is saved.",
-          "notNeeded": "This Bill needs no IRN.",
-          "loadError": "Could not load the GST state.",
-          "fields": {
-            "irn": "IRN",
-            "ackNumber": "Ack number",
-            "ackDate": "Ack date",
-            "signedQrText": "Signed QR text",
-            "recorded": "Recorded",
-            "recordedValue": "{name} · {when}",
-            "notes": "Notes"
-          },
-          "viewQr": "View signed QR image",
-          "qrFailed": "Could not open the signed QR image.",
-          "lastCorrect": "IRN corrected: “{reason}”",
-          "portalCancelled": "Cancelled on the government portal",
-          "actions": {
-            "draftPdf": "Draft PDF",
-            "drawing": "Drawing…",
-            "portalJson": "Portal JSON",
-            "enterIrn": "Enter IRN",
-            "correctIrn": "Correct IRN",
-            "portalCancel": "Record portal cancellation"
-          },
-          "draftDone": "Downloaded {filename}. Draft only, not the Tax Invoice.",
-          "draftFailed": "Could not download the draft.",
-          "irnForm": {
-            "correctBody": "Fix what was copied wrong from the portal. The old values stay in the audit log. This never unlocks line Correct or Cancel.",
-            "lateIrn": "The month is filed; a late IRN can still be entered.",
-            "image": "Signed QR image (optional, PNG or JPEG, up to 1 MB)",
-            "pickImage": "Choose image",
-            "changeImage": "Change image",
-            "removeImage": "Remove",
-            "imageAlt": "Signed QR image to upload",
-            "correctImageHint": "Leave empty to save without an image (the old one stays in storage, not shown).",
-            "reasonPlaceholder": "For example, ack number typo",
-            "errors": {
-              "irn": "IRN is required.",
-              "ackNumber": "Ack number is required.",
-              "ackNumberLength": "Ack number is at most 64 characters.",
-              "ackDate": "Ack date is required.",
-              "signedQrText": "Signed QR text is required.",
-              "imageType": "Only a PNG or JPEG image.",
-              "imageSize": "The image is over 1 MB.",
-              "imageRead": "Could not read the image. Choose it again.",
-              "reason": "A reason is required."
-            },
-            "submitEnter": "Save IRN",
-            "submitCorrect": "Save Correct IRN",
-            "entered": "IRN saved on {number}. It is now a final Tax Invoice.",
-            "corrected": "IRN corrected on {number}. Line Correct stays off."
-          },
-          "portalForm": {
-            "body": "Only after you cancelled the IRN on the government portal. This then Cancels the Motake Bill: a credit note for everything left on it, Payments kept, number kept, stock back only if the gate pass is still active.",
-            "window": "The app does not check the portal's cancellation window.",
-            "ackNumber": "Portal ack number",
-            "ackDate": "Ack date",
-            "notes": "Notes (optional)",
-            "reasonPlaceholder": "For example, billed to the wrong GSTIN",
-            "errors": {
-              "ackNumber": "Portal ack number is required.",
-              "ackDate": "Ack date is required.",
-              "ackDateFuture": "Ack date cannot be in the future."
-            },
-            "submit": "Record and Cancel Bill",
-            "done": "Portal cancellation recorded. {kind} {number} for {amount}."
-          },
-          "qrPrivate": "Private link, open for 5 minutes only. Never sent to the shop.",
-          "qrFullSize": "Open full size"
+          "openMonth": "GSTR-1 for {month} is not filed yet.",
+          "loadError": "Could not load the GST state."
         }
       },
       "preorder": {
@@ -1471,11 +1383,6 @@
     "gst": {
       "title": "GST",
       "recordFiling": "Record filing",
-      "tabs": {
-        "filings": "Filed months",
-        "irnPending": "IRN pending"
-      },
-      "filedMonth": "Filed month",
       "loadError": {
         "title": "Could not load GST",
         "body": "Check your connection and try again. Your filings are safe."
@@ -1493,20 +1400,6 @@
         },
         "filedBy": "Filed {date} · {filer}",
         "correct": "Correct"
-      },
-      "irn": {
-        "hint": "Oldest Bill first. Open a Bill to download the Draft PDF or Portal JSON and enter its IRN.",
-        "emptyTitle": "No Bill is waiting for an IRN",
-        "emptyBody": "Bills with an IRN are on their Bill paper.",
-        "columns": {
-          "bill": "Bill",
-          "customer": "Customer",
-          "route": "Route",
-          "billDate": "Bill date",
-          "total": "Total"
-        },
-        "open": "Open",
-        "count": "{count} Bills waiting for an IRN"
       },
       "form": {
         "recordTitle": "Record GSTR-1 filing",
@@ -1536,23 +1429,24 @@
         "submitRecord": "Record filing…",
         "submitCorrect": "Save Correct",
         "recorded": "{month} is filed. Correct and Cancel are now off on Bills dated in it.",
-        "recordedIrnPending": "{month} is filed. {count} Bills in it still need an IRN.",
         "corrected": "Corrected the {month} filing. The month stays filed.",
         "confirm": {
           "title": "File {month}?",
           "checking": "Checking the month…",
           "bills": "{count} Bills are dated in {month}. After filing, Correct and Cancel are off on all of them (Raise Note still works). This cannot be undone.",
-          "irnPending": "{count} Bills are still IRN pending in this month. You can file now and enter the IRNs later.",
-          "noIrnPending": "No Bill in this month is waiting for an IRN.",
           "alreadyFiled": "{month} is already filed — Correct it.",
           "previewFailed": "Could not check the month. Try again.",
           "back": "Back",
           "submit": "File {month}"
         }
-      },
-      "back": "GST · IRN pending"
+      }
     },
     "whatsappToken": {
+      "settingsCard": {
+        "title": "WhatsApp access token",
+        "update": "Update",
+        "hint": "Paste a new System User token from Meta Business when the old one expires or is replaced."
+      },
       "banner": {
         "pausedTitle": "WhatsApp messages are paused",
         "tokenBody": "The access token has expired or was replaced. Shop owners are not getting Bills, Receipts or Notes until it is fixed.",
@@ -2191,8 +2085,7 @@
       "held": "Goes out by itself once WhatsApp is fixed.",
       "billCancelled": "The Bill is cancelled. Its Bill messages are not sent again.",
       "olderBill": "Older Bill version. Use Send latest Bill.",
-      "latestCancelled": "This Bill is cancelled. Nothing more is sent for it.",
-      "latestIrnPending": "IRN pending. The Bill goes out by itself once the IRN is entered."
+      "latestCancelled": "This Bill is cancelled. Nothing more is sent for it."
     },
     "resend": {
       "button": "Resend",

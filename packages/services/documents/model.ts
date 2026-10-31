@@ -21,15 +21,6 @@ export const drawPaymentReceiptInputSchema = z.object({
 });
 export type DrawPaymentReceiptInput = z.input<typeof drawPaymentReceiptInputSchema>;
 
-// Content type and size are checked by the service so a wrong image is refused as `bad_image`.
-export const putSignedQrImageInputSchema = z.object({
-  billId: z.string().uuid(),
-  irnRecordedAt: z.date(),
-  contentType: z.string(),
-  bytes: z.instanceof(Uint8Array),
-});
-export type PutSignedQrImageInput = z.input<typeof putSignedQrImageInputSchema>;
-
 export const downloadLinkTargetSchema = z.union([
   z.object({ billVersionId: z.string().uuid() }).strict(),
   z.object({ noteId: z.string().uuid() }).strict(),
@@ -42,16 +33,6 @@ export interface DocumentResult {
   signedUrl?: string;
   expiresAt?: Date;
   bytes?: Uint8Array;
-}
-
-export interface DraftBillResult {
-  filename: string;
-  bytes: Uint8Array;
-}
-
-export interface SignedQrImageLink {
-  url: string;
-  expiresAt: Date;
 }
 
 export interface DownloadLink {

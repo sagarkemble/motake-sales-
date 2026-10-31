@@ -1,5 +1,5 @@
 // The six fixed Document layouts and the values each one prints. Money is integer paise, dates are
-// `YYYY-MM-DD` (Asia/Kolkata). A missing GSTIN or IRN field is a type error here, not a blank on
+// `YYYY-MM-DD` (Asia/Kolkata). A missing GSTIN field is a type error here, not a blank on
 // the paper.
 
 export const LAYOUT_NAMES = [
@@ -100,23 +100,11 @@ export interface TaxInvoiceTotals {
   totalPaise: number;
 }
 
-export interface IrnValues {
-  irn: string;
-  ackNumber: string;
-  ackDate: string;
-  // The portal's signed QR text; the module draws the QR from it.
-  signedQrText: string;
-}
-
-interface TaxInvoiceBase extends BillHeaderValues {
+export interface TaxInvoiceValues extends BillHeaderValues {
   supplyType: SupplyType;
   lines: TaxInvoiceLine[];
   totals: TaxInvoiceTotals;
 }
-
-// A draft never carries an IRN: it is the Admin's check copy while the IRN is pending.
-export type TaxInvoiceValues = TaxInvoiceBase &
-  ({ draft: true; irn: null } | { draft: false; irn: IrnValues | null });
 
 export interface BillOfSupplyLine {
   name: string;

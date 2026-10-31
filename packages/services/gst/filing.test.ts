@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildProfile } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import {
-  buildEinvoicingWorld,
+  buildGstinWorld,
   buildGstHarness,
   placeBill,
   rejectionOf,
@@ -51,7 +51,6 @@ describe("GstService.recordGstr1Filing", () => {
       notes: "Filed by the CA",
     });
 
-    expect(result.irnPendingInMonth).toBe(0);
     expect(result.filing).toMatchObject({
       periodMonth: "2026-10-01",
       filedOn: "2026-11-02",
@@ -198,9 +197,9 @@ describe("GstService.recordGstr1Filing", () => {
     expect(await filingRows()).toHaveLength(0);
   });
 
-  it("warns with the IRN pending count for the month and still records it", async () => {
+  it("previews the Bills dated in the month and then records it", async () => {
     setBusinessDay("2026-10-25");
-    const world = await buildEinvoicingWorld({ businessDate: "2026-10-25" });
+    const world = await buildGstinWorld({ businessDate: "2026-10-25" });
     await placeBill(world);
     await placeBill(world, { curd: 2 });
     setBusinessDay("2026-11-03");
@@ -212,9 +211,8 @@ describe("GstService.recordGstr1Filing", () => {
       month: "2026-10",
       alreadyFiled: false,
       billsDatedInMonth: 2,
-      irnPendingInMonth: 1,
     });
-    expect(result.irnPendingInMonth).toBe(1);
+    expect(result.filing.periodMonth).toBe("2026-10-01");
     expect(await harness.gstService.previewGstr1Filing({ month: "2026-10" })).toMatchObject({
       alreadyFiled: true,
     });

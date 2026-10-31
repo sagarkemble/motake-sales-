@@ -176,11 +176,9 @@ export function resendBlockKey(row: MessageStatusFields, context: ResendContext)
 // Locale key (under `whatsapp.block`) for why Send latest Bill is off.
 export function sendLatestBlockKey(bill: {
   cancelled: boolean;
-  irnPending: boolean;
   customerActive: boolean;
 }): string | null {
   if (bill.cancelled) return "latestCancelled";
-  if (bill.irnPending) return "latestIrnPending";
   if (!bill.customerActive) return "inactive";
   return null;
 }

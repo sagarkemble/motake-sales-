@@ -13,10 +13,8 @@ import {
   waitForLockWaiter,
 } from "../test/database";
 import {
-  billRow,
-  buildEinvoicingWorld,
+  buildGstinWorld,
   buildGstHarness,
-  irnFields,
   placeBill,
   setBusinessDay,
   type GstHarness,
@@ -102,9 +100,9 @@ async function fileOctober(actorId: string) {
   });
 }
 
-// An October Bill of a Customer without e-invoicing, then the clock moves to 3 Nov.
+// An October Bill of a GSTIN Customer, then the clock moves to 3 Nov.
 async function octoberBill() {
-  const world = await buildEinvoicingWorld({ businessDate: "2026-10-25", einvoicing: false });
+  const world = await buildGstinWorld({ businessDate: "2026-10-25" });
   const placed = await placeBill(world);
   setBusinessDay("2026-11-03");
   return { world, placed };
@@ -148,7 +146,7 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
     const state = await harness.gstService.getBillGstState({ billId: placed.billId });
     expect(state).toMatchObject({
       filedMonth: true,
-      allowed: { lineCorrect: false, cancel: false, portalCancel: false, raiseNote: true },
+      allowed: { lineCorrect: false, cancel: false, raiseNote: true },
     });
     expect(state.refusalReasons.lineCorrect).toContain("Raise Note instead");
   });
@@ -165,7 +163,7 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
 
   it("does not lock a Bill dated the day before the month starts", async () => {
     setBusinessDay("2026-09-30");
-    const world = await buildEinvoicingWorld({ businessDate: "2026-09-30", einvoicing: false });
+    const world = await buildGstinWorld({ businessDate: "2026-09-30" });
     const placed = await placeBill(world);
     setBusinessDay("2026-11-03");
     await fileOctober(world.admin.id);
@@ -182,7 +180,7 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
   });
 
   it("locks an Admin Raise Bill the same way", async () => {
-    const world = await buildEinvoicingWorld({ businessDate: "2026-10-25", einvoicing: false });
+    const world = await buildGstinWorld({ businessDate: "2026-10-25" });
     const raised = await harness.adminBillService.raiseBill(world.admin.id, {
       idempotencyKey: randomUUID(),
       customerId: world.customer.id,
@@ -307,38 +305,6 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
     expect(await harness.gstService.getBillGstState({ billId: placed.billId })).toMatchObject({
       cancelled: true,
       filedMonth: true,
-    });
-  });
-
-  it("a filing waits for a portal cancellation already past its month lock", async () => {
-    const world = await buildEinvoicingWorld();
-    const placed = await placeBill(world);
-    await harness.gstService.enterIrn(world.admin.id, { billId: placed.billId, ...irnFields("1") });
-    setBusinessDay("2026-11-03");
-    const point = pausePoint();
-    // The ack and audit are written under the shared month lock; pause before Spec G's Cancel core.
-    const cancelCore = AdminBillService.prototype.cancelBillInTransaction;
-    vi.spyOn(AdminBillService.prototype, "cancelBillInTransaction").mockImplementation(
-      async function (this: AdminBillService, ...args) {
-        await point.pause();
-        return cancelCore.apply(this, args);
-      },
-    );
-    const portal = harness.gstService.recordPortalCancellation(world.admin.id, {
-      billId: placed.billId,
-      ackNumber: "CNL-0001",
-      ackDate: "2026-10-25",
-      reason: "Cancelled on the portal",
-    });
-
-    const order = await fileWhilePaused(world.admin.id, point, portal);
-
-    expect(order).toEqual(["bill change", "filing"]);
-    expect((await billRow(placed.billId)).portalCancelAckNumber).toBe("CNL-0001");
-    expect(await harness.gstService.getBillGstState({ billId: placed.billId })).toMatchObject({
-      cancelled: true,
-      filedMonth: true,
-      irnStatus: "portal_cancelled",
     });
   });
 

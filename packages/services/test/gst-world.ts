@@ -6,16 +6,12 @@ import { vi } from "vitest";
 
 import AdminBillService from "../admin-bills";
 import CustomerService from "../customers";
-import DocumentService from "../documents";
 import GstService from "../gst";
 import OrderService from "../orders";
-import type { AdminBillOutcome } from "../shared/bill-events";
-import type { GstOutcome } from "../shared/gst-events";
 import { buildCheckoutWorld, buildCustomer, type CheckoutWorld } from "./builders";
-import { MemoryDocumentStore } from "./memory-document-store";
 
-// Spec I tests: an e-invoicing Customer's Bills written through the real checkout (Spec F) and
-// the GST, Admin Bill and Document services wired the way the API wires them.
+// Spec I tests: a GSTIN Customer's Bills written through the real checkout (Spec F) and the GST
+// and Admin Bill services wired the way the API wires them.
 
 const orderService = new OrderService();
 const customerService = new CustomerService();
@@ -24,49 +20,19 @@ const customerService = new CustomerService();
 export const MAHARASHTRA_GSTIN = "27ABCDE1234F1Z5";
 export const KARNATAKA_GSTIN = "29ABCDE1234F1Z5";
 
-// 64 hex characters like a portal IRN; `seed` keeps each one distinct.
-export function irnOf(seed: string): string {
-  return seed.padEnd(64, "a").slice(0, 64);
-}
-
-export function irnFields(seed: string, overrides: Record<string, unknown> = {}) {
-  return {
-    irn: irnOf(seed),
-    ackNumber: `1123${seed}`.slice(0, 20),
-    ackDate: "2026-10-25",
-    signedQrText: `signed-qr-${seed}`,
-    ...overrides,
-  };
-}
-
 export interface GstHarness {
-  store: MemoryDocumentStore;
-  gstOutcomes: GstOutcome[];
-  billOutcomes: AdminBillOutcome[];
   gstService: GstService;
   adminBillService: AdminBillService;
 }
 
-// Fresh services per test: an in-memory documents store and listeners that record outcomes.
+// Fresh services per test.
 export function buildGstHarness(): GstHarness {
-  const store = new MemoryDocumentStore();
-  const gstOutcomes: GstOutcome[] = [];
-  const billOutcomes: AdminBillOutcome[] = [];
-  const gstService = new GstService(
-    new DocumentService(store),
-    (outcome) => {
-      gstOutcomes.push(outcome);
-    },
-    (outcome) => {
-      billOutcomes.push(outcome);
-    },
-  );
-  return { store, gstOutcomes, billOutcomes, gstService, adminBillService: new AdminBillService() };
+  return { gstService: new GstService(), adminBillService: new AdminBillService() };
 }
 
-// A checkout world whose Customer has a GSTIN and E-invoicing required.
-export async function buildEinvoicingWorld(
-  input: { businessDate: string; deliveryState?: string; gstin?: string; einvoicing?: boolean } = {
+// A checkout world whose Customer has a GSTIN.
+export async function buildGstinWorld(
+  input: { businessDate: string; deliveryState?: string; gstin?: string } = {
     businessDate: "2026-10-25",
   },
 ): Promise<CheckoutWorld> {
@@ -76,7 +42,7 @@ export async function buildEinvoicingWorld(
   });
   const customer = await customerService.updateCustomer(
     world.customer.id,
-    { gstin: input.gstin ?? MAHARASHTRA_GSTIN, einvoicingRequired: input.einvoicing ?? true },
+    { gstin: input.gstin ?? MAHARASHTRA_GSTIN },
     world.admin.id,
   );
   return { ...world, customer: customer! };
@@ -85,12 +51,11 @@ export async function buildEinvoicingWorld(
 // The same world with another Customer on its Route (one Seller master per database).
 export async function withCustomer(
   world: CheckoutWorld,
-  input: { gstin?: string; einvoicing: boolean },
+  input: { gstin?: string } = {},
 ): Promise<CheckoutWorld> {
   const customer = await buildCustomer(world.admin.id, {
     routeId: world.route.id,
     gstin: input.gstin ?? MAHARASHTRA_GSTIN,
-    einvoicingRequired: input.einvoicing,
   });
   return { ...world, customer };
 }

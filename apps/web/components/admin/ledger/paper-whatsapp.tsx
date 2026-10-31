@@ -54,7 +54,6 @@ export interface LatestBillInfo {
   // "Pending ₹1,234.00": what today's message will show.
   balanceText: string;
   cancelled: boolean;
-  irnPending: boolean;
 }
 
 /**
@@ -202,7 +201,6 @@ function SendLatestBill({
   const [confirm, setConfirm] = useState(false);
   const block = sendLatestBlockKey({
     cancelled: info.cancelled,
-    irnPending: info.irnPending,
     customerActive,
   });
   const sending = state.isSendingLatestBill;

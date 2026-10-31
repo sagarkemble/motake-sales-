@@ -1,23 +1,13 @@
 // @jsxRuntime automatic
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import QRCode from "qrcode";
 import type { ReactElement } from "react";
 
 import { BillOfSupplyPaper, TaxInvoicePaper } from "./layouts/bill";
 import { CommercialCreditNotePaper, GstNotePaper } from "./layouts/note";
 import { PaymentReceiptPaper } from "./layouts/receipt";
-import type { LayoutName, LayoutValues, TaxInvoiceValues } from "./types";
+import type { LayoutName, LayoutValues } from "./types";
 
 type PaperElement = ReactElement<DocumentProps>;
-
-async function taxInvoicePaper(values: TaxInvoiceValues): Promise<PaperElement> {
-  if (values.draft && values.irn) throw new Error("A draft Tax Invoice cannot carry an IRN");
-  // Drawn from the signed QR text; an uploaded QR image is never used.
-  const qrDataUrl = values.irn
-    ? await QRCode.toDataURL(values.irn.signedQrText, { errorCorrectionLevel: "M", margin: 1 })
-    : null;
-  return <TaxInvoicePaper values={values} qrDataUrl={qrDataUrl} />;
-}
 
 async function paperFor<L extends LayoutName>(
   layout: L,
@@ -29,7 +19,7 @@ async function paperFor<L extends LayoutName>(
   }[LayoutName];
   switch (typed.layout) {
     case "tax_invoice":
-      return taxInvoicePaper(typed.values);
+      return <TaxInvoicePaper values={typed.values} />;
     case "bill_of_supply":
       return <BillOfSupplyPaper values={typed.values} />;
     case "gst_credit_note":

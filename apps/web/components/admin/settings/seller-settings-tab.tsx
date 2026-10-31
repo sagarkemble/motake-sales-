@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { WhatsAppTokenSettingsCard } from "~/components/admin/whatsapp-token/whatsapp-token-settings-card";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -158,6 +159,7 @@ export function SellerSettingsTab() {
         )}
       </section>
       <SellerDocumentDetails seller={seller} />
+      <WhatsAppTokenSettingsCard />
       <SellerSettingsHistory />
     </div>
   );

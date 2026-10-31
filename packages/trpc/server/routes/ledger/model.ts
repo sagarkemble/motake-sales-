@@ -389,7 +389,6 @@ export const billPaperSchema = z.object({
     placedAt: z.date(),
     billNote: z.string().nullable(),
     cancelled: z.boolean(),
-    irn: z.string().nullable(),
     latestVersionNumber: z.number().int(),
   }),
   customer: z
