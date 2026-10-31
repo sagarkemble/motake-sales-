@@ -104,6 +104,8 @@
       "fixedHint": "Messages to this Customer go in this language. It cannot be changed later."
     },
     "imageUpload": {
+      "dragHint": "or drag a photo here",
+      "dropNow": "Drop the photo to upload it",
       "uploadImage": "Upload image",
       "uploading": "Uploading…",
       "remove": "Remove",
