@@ -939,7 +939,11 @@
         "sharedNote": "GST and Commercial Credit Notes share the Credit Note series. The next number and first-issued time are set only by issuing."
       },
       "deadline": {
-        "intro": "Last day a GST Credit Note may reverse tax on Bills of that year. After it, reductions become Commercial Credit Notes. Changes apply to new Credit Note decisions only.",
+        "whatTitle": "What is the CN deadline?",
+        "whatNote": "When a Bill's amount goes down (goods returned or damaged, a discount after billing), Motake issues a Credit Note.",
+        "whatGst": "Up to this date it is a GST Credit Note: the GST on that Bill goes down too.",
+        "whatCommercial": "After this date GST can no longer be reduced, so it is a Commercial Credit Note: only what the Customer owes goes down.",
+        "whatDefault": "The default is 30 November after the financial year ends, the GST limit. Change it only if your CA asks. A change applies to new Credit Notes only.",
         "billsOf": "Bills of FY {year}",
         "default": "default",
         "setByAdmin": "set by Admin",

@@ -1,10 +1,12 @@
 "use client";
 
 import type { RouterOutputs } from "@repo/trpc/client";
+import { InfoIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { DatePicker } from "~/components/shared/date-picker";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -40,7 +42,18 @@ export function CreditNoteDeadlineTab({ deadlines }: { deadlines: CreditNoteDead
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-muted-foreground">{tx("admin.settings.deadline.intro")}</p>
+      <Alert className="bg-card">
+        <InfoIcon />
+        <AlertTitle>{tx("admin.settings.deadline.whatTitle")}</AlertTitle>
+        <AlertDescription>
+          <ul className="list-disc space-y-1 pl-4">
+            <li>{tx("admin.settings.deadline.whatNote")}</li>
+            <li>{tx("admin.settings.deadline.whatGst")}</li>
+            <li>{tx("admin.settings.deadline.whatCommercial")}</li>
+            <li>{tx("admin.settings.deadline.whatDefault")}</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
       {deadlines.map((entry) => (
         <div key={entry.financialYear} className="rounded-xl border bg-card p-3">
           <div className="flex items-center justify-between gap-2">
