@@ -22,7 +22,8 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
   const tx = useTranslate();
   const { createRouteAsync, isCreatingRoute } = useRoutes();
   const [name, setName] = useState("");
-  const [deliveryState, setDeliveryState] = useState<IndianStateName | "">("");
+  // Most Routes deliver inside Maharashtra, where the seller is.
+  const [deliveryState, setDeliveryState] = useState<IndianStateName | "">("Maharashtra");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
