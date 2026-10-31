@@ -2,6 +2,8 @@ import {
   createProfile,
   deleteAuthSessions,
   getProfileById,
+  getProfileByIdIncludingDeleted,
+  isProfileEmailTaken,
   softDeleteProfile,
   updateProfile,
 } from "@repo/database/queries/auth";
@@ -47,6 +49,16 @@ function supabaseAccountRefusal(message: string, code: string | undefined) {
     ? supabaseAccountReasons[code as keyof typeof supabaseAccountReasons]
     : undefined;
   return reason ? screenRefusal(reason, message) : badRequest(message);
+}
+
+// `delete+{email}`, or `delete+2+{email}`, `delete+3+{email}` … when an earlier deleted account
+// already holds it.
+export async function deletedEmailFor(email: string): Promise<string> {
+  let candidate = `delete+${email}`;
+  for (let copy = 2; await isProfileEmailTaken(candidate); copy += 1) {
+    candidate = `delete+${copy}+${email}`;
+  }
+  return candidate;
 }
 
 class AuthService {
@@ -269,31 +281,52 @@ class AuthService {
     });
   }
 
-  // Removes every way in: refused while the salesman holds an Active GatePass (hand it over or
-  // close it first); the login is banned, every session ended, and the profile soft-deleted, so
-  // each later request is refused as account_deleted.
+  // Removes every way in, for good: refused while the salesman holds an Active GatePass (hand it
+  // over or close it first). The login is banned and its email renamed to `delete+{email}`, so the
+  // email can be used for a new account; every session is ended and the profile soft-deleted, so
+  // each later request is refused as account_deleted. A deleted salesman is never reactivated.
   public async deleteSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
+    const profile = await getProfileById(profileId);
+    if (!profile) throw notFound(`Salesman ${profileId} not found`);
     if (await this.gatepassService.getActiveGatepassForSalesman(profileId)) {
       throw screenRefusal(
         "salesman_has_active_gatepass",
         "This salesman has an Active GatePass. Hand it over or close it, then delete.",
       );
     }
+    const deletedEmail = await deletedEmailFor(profile.email);
     const { error } = await supabaseAdminClient.auth.admin.updateUserById(profileId, {
+      email: deletedEmail,
+      email_confirm: true,
       ban_duration: "876000h",
     });
     if (error) throw internalError(`The salesman login could not be blocked: ${error.message}`);
     await deleteAuthSessions(profileId);
     await runInTransaction(async (transaction) => {
       await softDeleteProfile(profileId, transaction);
+      await updateProfile(profileId, { email: deletedEmail }, transaction);
       await recordAudit(
-        { actorId: actorProfileId, action: "deleted", entityType: "salesman", entityId: profileId },
+        {
+          actorId: actorProfileId,
+          action: "deleted",
+          entityType: "salesman",
+          entityId: profileId,
+          payload: { email: { from: profile.email, to: deletedEmail } },
+        },
         transaction,
       );
     });
   }
 
   public async reactivateSalesmanAccount(profileId: string, actorProfileId: string): Promise<void> {
+    const profile = await getProfileByIdIncludingDeleted(profileId);
+    if (!profile) throw notFound(`Salesman ${profileId} not found`);
+    if (profile.deletedAt) {
+      throw screenRefusal(
+        "salesman_deleted",
+        "This salesman was deleted and cannot be reactivated. Add them again.",
+      );
+    }
     await supabaseAdminClient.auth.admin.updateUserById(profileId, { ban_duration: "none" });
     await runInTransaction(async (transaction) => {
       await updateProfile(profileId, { status: "active", deletedAt: null }, transaction);

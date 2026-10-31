@@ -85,8 +85,8 @@ export default function AdminPreOrderPaperPage() {
                 {line.quantity} × {line.name}
               </span>
               <span className="shrink-0 text-muted-foreground">
-                {formatPaise(line.routePricePaise)} ·{" "}
-                {tx("admin.ledger.paper.perUnit", { unit: line.unit })}
+                {formatPaise(line.routePricePaise)}
+                {line.unit && ` · ${tx("admin.ledger.paper.perUnit", { unit: line.unit })}`}
               </span>
             </li>
           ))}

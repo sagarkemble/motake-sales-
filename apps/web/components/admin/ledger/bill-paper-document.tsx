@@ -1,5 +1,6 @@
 "use client";
 
+import { CustomerNameLink } from "~/components/admin/shared/name-links";
 import { GstRate } from "~/components/shared/gst-rate";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { useFormatDate } from "~/hooks/use-format-date";
@@ -88,8 +89,9 @@ function EditLinesList({
                 <span className={cn("min-w-0", quantity === 0 && "line-through")}>
                   {line.name}
                   <span className="block text-xs text-muted-foreground">
-                    {formatPaise(Math.round(unitPaise))}{" "}
-                    {tx("admin.ledger.paper.perUnit", { unit: line.unit })} ·{" "}
+                    {formatPaise(Math.round(unitPaise))}
+                    {line.unit &&
+                      ` ${tx("admin.ledger.paper.perUnit", { unit: line.unit })}`} ·{" "}
                     <GstRate gstRateBps={line.gstRateBps} exempt={line.exempt} />
                     {line.creditedQty > 0 &&
                       ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
@@ -160,7 +162,13 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
       <section className="grid gap-3 border-b py-3 text-sm sm:grid-cols-2">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{tx("admin.ledger.paper.billTo")}</p>
-          <p className="font-medium">{buyer.shop_name}</p>
+          <p className="font-medium">
+            {paper.customer ? (
+              <CustomerNameLink customerId={paper.customer.id}>{buyer.shop_name}</CustomerNameLink>
+            ) : (
+              buyer.shop_name
+            )}
+          </p>
           <p className="text-xs text-muted-foreground">{buyer.address}</p>
           <p className="text-xs text-muted-foreground">{buyer.phone}</p>
           {letterhead.buyer.gstin && (
@@ -232,9 +240,13 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
                   <td className={cell}>
                     {line.name}
                     <span className="block text-xs text-muted-foreground">
-                      {tx("admin.ledger.paper.perUnit", { unit: line.unit })}
-                      {line.creditedQty > 0 &&
-                        ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
+                      {[
+                        line.unit && tx("admin.ledger.paper.perUnit", { unit: line.unit }),
+                        line.creditedQty > 0 &&
+                          tx("admin.ledger.paper.credited", { count: line.creditedQty }),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </td>
                   <td className={cn(cell, "font-mono text-xs")}>{line.hsn}</td>

@@ -1,7 +1,7 @@
 import { listAuditLogsForEntity } from "@repo/database/queries/audit";
 import { describe, expect, it } from "vitest";
 
-import { buildProfile } from "../test/builders";
+import { buildProfile, seedUnitsOfMeasure } from "../test/builders";
 import ProductService from "./index";
 
 const productService = new ProductService();
@@ -45,12 +45,13 @@ describe("ProductService audit", () => {
       admin.id,
     );
 
+    await seedUnitsOfMeasure();
     const variety = await productService.createProductVariety(
-      { productId: product.id, name: "200 ml", unit: "cup" },
+      { productId: product.id, name: "Malai", sizeValue: "200", uomCode: "ml" },
       admin.id,
     );
-    await productService.updateProductVariety(variety.id, { unit: "bottle" }, admin.id);
-    await productService.updateProductVariety(variety.id, { unit: "bottle" }, admin.id);
+    await productService.updateProductVariety(variety.id, { name: "Plain" }, admin.id);
+    await productService.updateProductVariety(variety.id, { name: "Plain" }, admin.id);
     await productService.deactivateProductVariety(variety.id, admin.id);
     await productService.reactivateProductVariety(variety.id, admin.id);
 
@@ -65,10 +66,11 @@ describe("ProductService audit", () => {
     const updated = rows.find((row) => row.action === "updated");
     expect(created?.payload).toEqual({
       productId: product.id,
-      name: "200 ml",
-      unit: "cup",
-      sku: "vr-lassi-200-ml-001",
+      name: "Malai",
+      sizeValue: "200",
+      uomCode: "ml",
+      sku: "vr-lassi-malai-200-ml-001",
     });
-    expect(updated?.payload).toEqual({ unit: { from: "cup", to: "bottle" } });
+    expect(updated?.payload).toEqual({ name: { from: "Malai", to: "Plain" } });
   });
 });

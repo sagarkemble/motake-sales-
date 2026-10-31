@@ -19,6 +19,11 @@ import {
 import { isBillCancelled } from "@repo/database/queries/bills/cancelled";
 import { getCustomerById, lockCustomerRow } from "@repo/database/queries/customers";
 import {
+  getNoteById,
+  listBillVersionSnapshots,
+  listNoteLines,
+} from "@repo/database/queries/documents";
+import {
   lockGatepassItemsForVarieties,
   lockGatepassRow,
   restoreSoldQtyOnCancellation,
@@ -98,6 +103,7 @@ import {
   cancelBillInputSchema,
   cancelPreOrderInputSchema,
   correctBillInputSchema,
+  notePaperInputSchema,
   previewCorrectInputSchema,
   previewRaiseBillInputSchema,
   previewRaiseNoteInputSchema,
@@ -114,6 +120,8 @@ import {
   type CorrectBillInput,
   type CorrectPreview,
   type CorrectResult,
+  type NotePaper,
+  type NotePaperInput,
   type NotePreview,
   type PreOrderPaper,
   type PreviewCorrectInput,
@@ -336,7 +344,8 @@ class AdminBillService {
           varietyId: variety.id,
           sku: variety.sku,
           name: variety.name,
-          unit: variety.unit,
+          // Varieties no longer have a pack word; the size is in the name.
+          unit: "",
           productName: variety.productName,
           routePricePaise,
           hsn: tax.hsn,
@@ -1060,6 +1069,74 @@ class AdminBillService {
     };
   }
 
+  // The Note paper: the Note, its lines named from the Bill versions they point at, the Bill it
+  // was raised on and the Customer's Balance. Read-only; Notes are never edited.
+  public async getNotePaper(input: NotePaperInput): Promise<NotePaper> {
+    const parsedInput = notePaperInputSchema.parse(input);
+    const note = await getNoteById(parsedInput.noteId);
+    if (!note) throw notFound(`Note ${parsedInput.noteId} not found`);
+    const [bill, cancelled, customerId, lines] = await Promise.all([
+      getBillById(note.billId),
+      isBillCancelled(note.billId),
+      getBillCustomerId(note.billId),
+      listNoteLines(note.id),
+    ]);
+    if (!bill) throw internalError(`Note ${note.number} has no Bill`);
+    const versions = await listBillVersionSnapshots([
+      ...new Set(lines.map((line) => line.billVersionId)),
+    ]);
+    const customer = customerId ? await getCustomerById(customerId) : undefined;
+    const paperLines = lines
+      .map((line) => {
+        const version = versions.find((candidate) => candidate.id === line.billVersionId);
+        const position = version?.items.findIndex((item) => item.id === line.snapshotLineId) ?? -1;
+        const item = version?.items[position];
+        if (!item) {
+          throw internalError(
+            `Note ${note.number} points at a missing Bill line ${line.snapshotLineId}`,
+          );
+        }
+        return {
+          position,
+          line: {
+            id: line.id,
+            ...item.stamp,
+            exempt: item.exempt,
+            gstRateBps: item.gstRateBps,
+            quantity: line.quantity,
+            amountPaise: line.amountPaise,
+            cgstPaise: line.cgstPaise,
+            sgstPaise: line.sgstPaise,
+            igstPaise: line.igstPaise,
+          },
+        };
+      })
+      .sort((first, second) => first.position - second.position)
+      .map(({ line }) => line);
+
+    return {
+      note: {
+        id: note.id,
+        kind: note.kind,
+        number: note.number,
+        issuedOn: note.issuedOn,
+        amountPaise: note.amountPaise,
+        cgstPaise: note.cgstPaise,
+        sgstPaise: note.sgstPaise,
+        igstPaise: note.igstPaise,
+        reason: note.reason,
+        returnOrDamageOn: note.returnOrDamageOn,
+        hasPdf: note.pdfKey !== null,
+      },
+      bill: { id: bill.id, number: bill.number, billDate: bill.billDate, cancelled },
+      customer: customer
+        ? { id: customer.id, shopName: customer.shopName, status: customer.status }
+        : null,
+      lines: paperLines,
+      balance: customerId ? await this.ledgerService.getBalance(customerId) : null,
+    };
+  }
+
   // The Pre-order paper: Customer, the place-time Route stamp, scheduled date, status, lines at
   // the locked Route price and who placed it.
   public async getPreOrderPaper(orderId: string): Promise<PreOrderPaper> {
@@ -1438,7 +1515,8 @@ class AdminBillService {
         varietyId,
         sku: variety.sku,
         name: variety.name,
-        unit: variety.unit,
+        // Varieties no longer have a pack word; the size is in the name.
+        unit: "",
         quantity,
         routePricePaise,
         hsn: facts.hsn,

@@ -94,7 +94,8 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
       await updateProductVarietyAsync({
         id: editingVariety.id,
         name: values.name,
-        unit: values.unit,
+        sizeValue: values.sizeValue,
+        uomCode: values.uomCode,
       });
       // A GST change starts today; earlier Bills keep the GST they were issued with.
       if (values.tax) await upsertTaxPeriodAsync({ varietyId: editingVariety.id, ...values.tax });
@@ -191,10 +192,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                       isInactive && "text-muted-foreground",
                     )}
                   >
-                    {variety.name}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      &middot; {variety.unit}
-                    </span>
+                    {variety.displayName}
                   </p>
                   <SkuChip sku={variety.sku} muted={isInactive} className="mt-1" />
                   {!isCurrentTaxesLoading && !isCurrentTaxesError && (
@@ -264,9 +262,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
             <AlertDialogTitle>{tx("admin.varieties.deactivateTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {tx("admin.varieties.deactivateBody", {
-                name: deactivatingVariety
-                  ? `${deactivatingVariety.name} · ${deactivatingVariety.unit}`
-                  : "",
+                name: deactivatingVariety?.displayName ?? "",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -297,9 +293,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
             <AlertDialogTitle>{tx("admin.varieties.reactivateTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {tx("admin.varieties.reactivateBody", {
-                name: reactivatingVariety
-                  ? `${reactivatingVariety.name} · ${reactivatingVariety.unit}`
-                  : "",
+                name: reactivatingVariety?.displayName ?? "",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>

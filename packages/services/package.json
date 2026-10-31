@@ -32,6 +32,7 @@
     "./salesman": "./salesman/index.ts",
     "./settings": "./settings/index.ts",
     "./uploads": "./uploads/r2-client.ts",
+    "./units-of-measure": "./units-of-measure/index.ts",
     "./variety-tax-periods": "./variety-tax-periods/index.ts",
     "./whatsapp-token": "./whatsapp-token/index.ts"
   },

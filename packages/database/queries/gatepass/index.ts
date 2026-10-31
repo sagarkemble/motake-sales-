@@ -556,7 +556,7 @@ export async function getAllotmentMatrixForDate(
       routeCode: routesTable.code,
       varietyId: gatepassItemsTable.varietyId,
       productName: productsTable.name,
-      varietyName: productVarietiesTable.name,
+      varietyName: productVarietiesTable.displayName,
       issuedQty: gatepassItemsTable.issuedQty,
       soldQty: gatepassItemsTable.soldQty,
       sellableQty: sql<number>`(${gatepassItemsTable.issuedQty} - ${gatepassItemsTable.soldQty})::int`,

@@ -5,6 +5,7 @@ import { CitiesTab } from "~/components/admin/settings/cities-tab";
 import { CreditNoteDeadlineTab } from "~/components/admin/settings/credit-note-deadline-tab";
 import { NumberSeriesTab } from "~/components/admin/settings/number-series-tab";
 import { SellerSettingsTab } from "~/components/admin/settings/seller-settings-tab";
+import { UnitsTab } from "~/components/admin/settings/units-tab";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -33,6 +34,7 @@ export default function AdminSettingsPage() {
           <TabsTrigger value="prefixes">{tx("admin.settings.tabs.prefixes")}</TabsTrigger>
           <TabsTrigger value="deadline">{tx("admin.settings.tabs.deadline")}</TabsTrigger>
           <TabsTrigger value="cities">{tx("admin.settings.tabs.cities")}</TabsTrigger>
+          <TabsTrigger value="units">{tx("admin.settings.tabs.units")}</TabsTrigger>
         </TabsList>
         <TabsContent value="seller" className="mt-4">
           <SellerSettingsTab />
@@ -61,6 +63,9 @@ export default function AdminSettingsPage() {
         </TabsContent>
         <TabsContent value="cities" className="mt-4">
           <CitiesTab />
+        </TabsContent>
+        <TabsContent value="units" className="mt-4">
+          <UnitsTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -28,6 +28,7 @@ import {
   routesTable,
   salesmenTable,
   sellerSettingsTable,
+  unitsOfMeasureTable,
   varietyTaxPeriodsTable,
   type SelectBill,
   type SelectBillItem,
@@ -154,7 +155,6 @@ export async function buildVariety(
     .values({
       productId: product.id,
       name,
-      unit: "pack",
       sku: nextVarietySku(
         skuPrefix,
         existingSkus.map((row) => row.sku),
@@ -267,6 +267,14 @@ export async function buildGatepass(input: {
   return gatepass!;
 }
 
+// The four units migration 0009 seeds; the test wipe empties the table.
+export async function seedUnitsOfMeasure(): Promise<void> {
+  await db
+    .insert(unitsOfMeasureTable)
+    .values(["ml", "L", "g", "kg"].map((code) => ({ code })))
+    .onConflictDoNothing();
+}
+
 export interface LineInput {
   variety: SelectProductVariety;
   quantity: number;
@@ -276,8 +284,9 @@ export interface LineInput {
   hsn?: string;
 }
 
+// As the services stamp a line today: the display name and no pack word.
 function lineStamp(line: LineInput) {
-  return { name: line.variety.name, unit: line.variety.unit, hsn: line.hsn ?? "0401" };
+  return { name: line.variety.displayName, unit: "", hsn: line.hsn ?? "0401" };
 }
 
 function routeStamp(route: SelectRoute) {
@@ -788,7 +797,7 @@ export async function buildCheckoutWorld(input: {
   const { profile: salesman } = await buildSalesman();
   const route = await buildRoute({ deliveryState: input.deliveryState ?? "Maharashtra" });
   const product = await buildProduct({ name: `Gokul ${nextUnique()}` });
-  const milk = await buildVariety({ productId: product.id, name: "Milk 1 L", unit: "pack" });
+  const milk = await buildVariety({ productId: product.id, name: "Milk 1 L" });
   const curd = await buildVariety({ productId: product.id, name: "Curd 400 g", unit: "cup" });
   await buildRoutePrice(route.id, milk.id, 2_499);
   await buildRoutePrice(route.id, curd.id, 4_000);

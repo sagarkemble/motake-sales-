@@ -1,6 +1,7 @@
 "use client";
 
 import { DownloadIcon, LockIcon, PrinterIcon } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -175,10 +176,13 @@ export function NotesList({ paper }: { paper: BillPaper }) {
           className="flex scroll-mt-20 flex-col gap-2 p-3 target:bg-brand/5 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0 text-sm">
-            <p className="font-medium">
+            <Link
+              href={`/admin/ledger/notes/${note.id}`}
+              className="font-medium underline-offset-4 hover:underline"
+            >
               {tx(`admin.ledger.rowTypes.${note.kind}`)}{" "}
               <span className="font-mono text-xs text-muted-foreground">{note.number}</span>
-            </p>
+            </Link>
             <p className="text-xs text-muted-foreground">
               {formatDate(note.issuedOn, "d MMM yyyy")} · “{note.reason}”
               {note.returnOrDamageOn &&

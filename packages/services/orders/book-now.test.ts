@@ -166,7 +166,7 @@ describe("OrderService.placeBookNow", () => {
     expect(orderItems).toHaveLength(2);
     const milkItem = orderItems.find((item) => item.varietyId === world.milk.id)!;
     expect(milkItem).toMatchObject({
-      stamp: { name: "Milk 1 L", unit: "pack", hsn: "0401" },
+      stamp: { name: "Milk 1 L", unit: "", hsn: "0401" },
       quantity: 3,
       routePricePaise: 2_499,
       exempt: false,
@@ -231,7 +231,7 @@ describe("OrderService.placeBookNow", () => {
       .where(eq(billItemsTable.billId, result.billId));
     expect(billItems.find((item) => item.varietyId === world.milk.id)).toMatchObject({
       orderItemId: milkItem.id,
-      stamp: { name: "Milk 1 L", unit: "pack", hsn: "0401" },
+      stamp: { name: "Milk 1 L", unit: "", hsn: "0401" },
       taxablePaise: 7_497,
       cgstPaise: 187,
       sgstPaise: 187,

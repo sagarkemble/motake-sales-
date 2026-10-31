@@ -53,7 +53,7 @@ export default function SalesmanGatepassPage() {
     productsPage.items.flatMap(({ product, varieties }) =>
       varieties.map((variety) => [
         variety.id,
-        { productName: product.name, varietyName: variety.name, unit: variety.unit },
+        { productName: product.name, varietyName: variety.displayName },
       ]),
     ),
   );
@@ -64,7 +64,6 @@ export default function SalesmanGatepassPage() {
       id: item.id,
       productName: display?.productName ?? tx("salesman.gatepass.productFallback"),
       varietyName: display?.varietyName ?? "",
-      unit: display?.unit ?? "",
       issuedQty: item.issuedQty,
       soldQty: item.soldQty,
       sellableQty: item.sellableQty,

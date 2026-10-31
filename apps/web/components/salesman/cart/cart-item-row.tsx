@@ -49,9 +49,7 @@ export function CartItemRow({
 
         <div className="min-w-32 flex-1">
           <p className="truncate text-sm font-medium">{cartLine.productName}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {cartLine.varietyName} ({cartLine.unit})
-          </p>
+          <p className="truncate text-xs text-muted-foreground">{cartLine.varietyName}</p>
         </div>
 
         <div className="ml-auto flex items-center gap-1">

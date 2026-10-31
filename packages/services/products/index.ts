@@ -21,6 +21,7 @@ import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-error
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
 import { badRequest, conflict, notFound, screenRefusal } from "../errors";
+import UnitOfMeasureService from "../units-of-measure";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   buildObjectKey,
@@ -42,10 +43,11 @@ import {
   type UpdateProductInput,
   type UpdateProductVarietyInput,
 } from "./model";
+import { varietyDisplayName } from "./display-name";
 import { nextVarietySku, varietySkuPrefix, varietySkuSlug } from "./sku";
 
 const productImageFolderName = "products";
-const varietyNameConstraint = "product_varieties_product_name_unique";
+const varietyNameConstraint = "product_varieties_product_display_name_unique";
 const varietySkuConstraint = "product_varieties_sku_unique";
 const productAuditedFields = ["name", "description", "imageKey", "status"] as const;
 
@@ -64,6 +66,8 @@ interface ImageUploadUrlResult {
 }
 
 class ProductService {
+  private readonly unitOfMeasureService = new UnitOfMeasureService();
+
   public async createProduct(
     input: CreateProductInput,
     actorProfileId: string,
@@ -214,7 +218,9 @@ class ProductService {
     if (!parentProduct) {
       throw notFound(`Cannot create variety, product ${parsedInput.productId} not found`);
     }
-    const skuPrefix = varietySkuPrefix(varietySkuSlug(parentProduct.name, parsedInput.name));
+    await this.unitOfMeasureService.assertUnitExists(parsedInput.uomCode);
+    const displayName = varietyDisplayName(parsedInput);
+    const skuPrefix = varietySkuPrefix(varietySkuSlug(parentProduct.name, displayName));
 
     // Two creates can pick the same counter; the loser retries with the next one in a fresh
     // transaction.
@@ -239,7 +245,7 @@ class ProductService {
       } catch (error) {
         const constraint = violatedUniqueConstraint(error);
         if (constraint === varietyNameConstraint) {
-          throw duplicateVarietyName(parentProduct.name, parsedInput.name);
+          throw duplicateVarietyName(parentProduct.name, displayName);
         }
         if (constraint === varietySkuConstraint) {
           if (attempt < 5) continue;
@@ -257,13 +263,15 @@ class ProductService {
     return listVarietiesByProductId(productId, includeInactive);
   }
 
-  // Name and unit only; the SKU never changes after insert.
+  // Name, size and unit only; the SKU never changes after insert.
   public async updateProductVariety(
     varietyId: string,
     changes: UpdateProductVarietyInput,
     actorProfileId: string,
   ): Promise<SelectProductVariety | undefined> {
     const parsedChanges = updateProductVarietyInputSchema.parse(changes);
+    if (parsedChanges.uomCode)
+      await this.unitOfMeasureService.assertUnitExists(parsedChanges.uomCode);
     try {
       return await runInTransaction(async (transaction) => {
         const before = await getProductVarietyById(varietyId, transaction);
@@ -276,7 +284,7 @@ class ProductService {
               action: "updated",
               entityType: "product_variety",
               entityId: varietyId,
-              payload: changedFields(before, after, ["name", "unit"]),
+              payload: changedFields(before, after, ["name", "sizeValue", "uomCode"]),
             },
             transaction,
           );
@@ -284,10 +292,11 @@ class ProductService {
         return after;
       });
     } catch (error) {
-      if (violatedUniqueConstraint(error) === varietyNameConstraint && parsedChanges.name) {
+      if (violatedUniqueConstraint(error) === varietyNameConstraint) {
         const variety = await getProductVarietyById(varietyId);
         const product = variety && (await getProductById(variety.productId));
-        throw duplicateVarietyName(product?.name ?? "this product", parsedChanges.name);
+        const taken = variety && varietyDisplayName({ ...variety, ...parsedChanges });
+        throw duplicateVarietyName(product?.name ?? "this product", taken ?? "");
       }
       throw error;
     }
@@ -346,3 +355,6 @@ class ProductService {
 }
 
 export default ProductService;
+
+export { varietySizeValueSchema } from "./model";
+export { varietyDisplayName } from "./display-name";

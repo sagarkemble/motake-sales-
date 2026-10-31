@@ -20,7 +20,6 @@ interface ProductVarietyOption {
   varietyId: string;
   sku: string;
   varietyName: string;
-  unit: string;
   /** What is left on the Active GatePass; undefined without one. More can still be added. */
   sellableQty?: number;
 }
@@ -53,7 +52,6 @@ export function AddToCartDrawer({
         productId,
         productName,
         varietyName: variety.varietyName,
-        unit: variety.unit,
         productImageUrl,
       },
       quantity,
@@ -99,22 +97,18 @@ export function AddToCartDrawer({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{variety.varietyName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {variety.unit}
-                      {variety.sellableQty !== undefined && (
-                        <span
-                          className={cn(
-                            "font-medium",
-                            getQuantityForVariety(variety.varietyId) > variety.sellableQty
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-brand",
-                          )}
-                        >
-                          {" · "}
-                          {tx("salesman.catalog.inGatepass", { count: variety.sellableQty })}
-                        </span>
-                      )}
-                    </p>
+                    {variety.sellableQty !== undefined && (
+                      <p
+                        className={cn(
+                          "text-xs font-medium",
+                          getQuantityForVariety(variety.varietyId) > variety.sellableQty
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-brand",
+                        )}
+                      >
+                        {tx("salesman.catalog.inGatepass", { count: variety.sellableQty })}
+                      </p>
+                    )}
                   </div>
                   <QuantityStepper
                     quantity={getQuantityForVariety(variety.varietyId)}

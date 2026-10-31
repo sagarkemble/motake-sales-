@@ -136,6 +136,7 @@
       "duplicate_variety_in_allotment": "प्रत्येक प्रकार फक्त एकदाच जोडता येतो.",
       "salesman_has_gatepass": "या विक्रेत्याकडे {date} साठी आधीच गेट पास आहे.",
       "salesman_has_active_gatepass": "या विक्रेत्याकडे सक्रिय गेट पास आहे. तो हस्तांतरित करा किंवा बंद करा, मग हटवा.",
+      "salesman_deleted": "हा विक्रेता हटवला आहे, त्याला पुन्हा सक्रिय करता येणार नाही. पुन्हा नव्याने जोडा.",
       "route_price_missing": "{route} रूटवर यांची किंमत ठरवा: {varieties}.",
       "gatepass_not_active": "हा गेट पास आधीच बंद झाला आहे. पेज रिफ्रेश करा.",
       "returned_qty_out_of_range": "परत केलेली संख्या {max} पेक्षा जास्त असू शकत नाही.",
@@ -162,7 +163,9 @@
       "deadline_too_early": "अंतिम तारीख {date} नंतरची असावी.",
       "deadline_changed": "आत्ताच कोणीतरी हे बदलले आहे. रिफ्रेश करून पुन्हा प्रयत्न करा.",
       "account_deleted": "हे खाते काढून टाकले आहे. आता साइन इन करता येणार नाही.",
-      "city_name_taken": "{state} मध्ये {name} हे शहर आधीच आहे."
+      "city_name_taken": "{state} मध्ये {name} हे शहर आधीच आहे.",
+      "unit_taken": "{code} हे एकक आधीच आहे.",
+      "unit_not_found": "{code} हे एकक नाही. ते Settings > एकके मध्ये जोडा."
     },
     "cities": {
       "label": "शहर",
@@ -360,10 +363,12 @@
       "product": "उत्पादन",
       "validation": {
         "nameRequired": "प्रकाराचे नाव टाका",
-        "unitRequired": "एकक टाका, उदा. pouch किंवा kg"
+        "sizeRequired": "आकार टाका, उदा. 500",
+        "sizeNumber": "आकार ही संख्या असते, उदा. 500 किंवा 1.5",
+        "sizePositive": "आकार 0 पेक्षा जास्त असावा"
       },
       "skuFixed": "SKU (निश्चित)",
-      "skuNeverChanges": "हा SKU कधीही बदलत नाही. नाव किंवा एकक बदलले तरी तो तसाच राहतो, त्यामुळे विक्रेत्यांच्या बास्केट आणि जुनी बिले त्याला शोधू शकतात.",
+      "skuNeverChanges": "हा SKU कधीही बदलत नाही. नाव किंवा आकार बदलला तरी तो तसाच राहतो, त्यामुळे विक्रेत्यांच्या बास्केट आणि जुनी बिले त्याला शोधू शकतात.",
       "copySkuAria": "SKU {sku} कॉपी करा",
       "addedWithSku": "जोडला. SKU सर्व्हरने तयार केला.",
       "gstTitle": "GST",
@@ -382,9 +387,13 @@
       "reactivateConfirm": "पुन्हा सक्रिय करा",
       "reactivateSuccess": "प्रकार पुन्हा सक्रिय केला",
       "reactivateFailed": "प्रकार पुन्हा सक्रिय करता आला नाही. पुन्हा प्रयत्न करा.",
-      "namePlaceholder": "उदा. 500 ml",
+      "namePlaceholder": "उदा. Toned Milk",
+      "nameHint": "आकाराशिवाय. फक्त आकार दाखवायचा असेल (उदा. 500 g) तर रिकामे ठेवा.",
+      "size": "आकार",
+      "sizePlaceholder": "500",
       "unit": "एकक",
-      "unitPlaceholder": "उदा. pouch"
+      "addUnit": "एकक जोडा…",
+      "showsAs": "{name} असे दिसेल"
     },
     "varietyTax": {
       "gstButton": "GST",
@@ -745,7 +754,8 @@
         "seller": "विक्रेता",
         "prefixes": "प्रीफिक्स",
         "deadline": "CN अंतिम तारीख",
-        "cities": "शहरे"
+        "cities": "शहरे",
+        "units": "एकके"
       },
       "loadFailed": "सेटिंग्ज लोड करता आल्या नाहीत.",
       "reasonLabel": "कारण (ऐच्छिक)",
@@ -880,6 +890,17 @@
         "none": "अजून कोणतेही शहर नाही. पहिले शहर जोडा.",
         "countOne": "{count} शहर",
         "countOther": "{count} शहरे"
+      },
+      "units": {
+        "intro": "प्रकाराचा आकार ज्या एककात मोजला जातो ती एकके. नसलेले एकक प्रकाराच्या फॉर्ममधूनही जोडता येते. एकके कधीही बदलली किंवा काढली जात नाहीत.",
+        "add": "एकक जोडा",
+        "addTitle": "एकक जोडा",
+        "addHint": "एक शब्द, उदा. pcs. प्रत्येक प्रकार ते वापरू शकतो, आणि ते बदलता किंवा काढता येत नाही.",
+        "code": "एकक",
+        "codePlaceholder": "उदा. pcs",
+        "added": "{code} एकक जोडले.",
+        "addFailed": "एकक जोडता आले नाही. पुन्हा प्रयत्न करा.",
+        "oneWord": "एकक एकच शब्द असतो, उदा. pcs."
       }
     },
     "routes": {
@@ -1161,6 +1182,15 @@
         "notesTitle": "या बिलावरील नोट्स",
         "notesEmpty": "या बिलावर नोट्स नाहीत.",
         "returnedOn": "{date} रोजी परत",
+        "notePage": {
+          "loadError": "ही नोट लोड झाली नाही",
+          "ofBill": "{date} च्या बिल {number} वर",
+          "openBill": "बिल उघडा",
+          "issuedOn": "{date} रोजी दिली",
+          "reason": "कारण",
+          "noLines": "या नोटवर ओळी नाहीत.",
+          "cancelledBill": "ही नोट ज्या बिलावर दिली ते बिल रद्द झाले आहे."
+        },
         "actions": {
           "correct": "दुरुस्त करा",
           "raiseNote": "नोट करा",

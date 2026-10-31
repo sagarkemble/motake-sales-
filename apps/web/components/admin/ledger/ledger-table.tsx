@@ -20,14 +20,13 @@ import { cn } from "~/lib/utils";
 
 import type { MoneyAdded } from "./money-dialogs";
 
-// Bills and Notes open the Bill paper; a Payment (or Payment adjusted) row the Payment paper, a
-// Refund (or Refund adjusted) row the Refund paper, and the Opening balance row the Opening paper.
+// Each row opens its own paper: Bill, Note, Payment, Refund or the Opening paper.
 export function openHref(row: LedgerRow, customerId: string): string | null {
   switch (row.open.kind) {
     case "bill":
       return `/admin/ledger/bills/${row.open.billId}`;
     case "note":
-      return `/admin/ledger/bills/${row.open.billId}#note-${row.open.noteId}`;
+      return `/admin/ledger/notes/${row.open.noteId}`;
     case "payment":
       return `/admin/ledger/payments/${row.open.paymentId}`;
     case "refund":

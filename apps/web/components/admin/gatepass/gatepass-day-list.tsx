@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { GatepassLinesTable, GatepassQuantityKpis } from "~/components/admin/salesman/gatepass-tab";
+import { SalesmanNameLink } from "~/components/admin/shared/name-links";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { RouteTag } from "~/components/shared/route-tag";
@@ -70,7 +71,9 @@ export function GatepassDayList({
               key={salesman.id}
               className="flex flex-col gap-2 rounded-2xl border bg-card/60 p-3"
             >
-              <p className="text-sm font-semibold">{salesman.name}</p>
+              <p className="text-sm font-semibold">
+                <SalesmanNameLink salesmanId={salesman.id}>{salesman.name}</SalesmanNameLink>
+              </p>
               {salesmanGatepasses.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   {tx("admin.gatepass.list.none", { date: formattedDate })}
@@ -120,7 +123,9 @@ export function GatepassDayList({
                 <div className="flex flex-col gap-4">
                   <DialogHeader className="text-left">
                     <DialogTitle className="flex flex-wrap items-center gap-2">
-                      {salesmanNameOf(openGatepass.salesmanId)}
+                      <SalesmanNameLink salesmanId={openGatepass.salesmanId}>
+                        {salesmanNameOf(openGatepass.salesmanId)}
+                      </SalesmanNameLink>
                       <GatepassStatusBadge
                         status={openGatepass.status}
                         hasDiscrepancy={openGatepass.hasDiscrepancy}

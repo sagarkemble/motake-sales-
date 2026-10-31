@@ -18,6 +18,7 @@ import SalesmanService from "@repo/services/salesman";
 import SettingsService from "@repo/services/settings";
 import VarietyTaxPeriodService from "@repo/services/variety-tax-periods";
 import WhatsAppTokenService, { notificationClientConfig } from "@repo/services/whatsapp-token";
+import UnitOfMeasureService from "@repo/services/units-of-measure";
 
 import { createCustomerMessageGateway } from "../notification/customer-message-gateway";
 import { createNotificationTokenGateway } from "../notification/token-gateway";
@@ -25,6 +26,7 @@ import { createNotificationTokenGateway } from "../notification/token-gateway";
 export const authService = new AuthService();
 export const billService = new BillService();
 export const cityService = new CityService();
+export const unitOfMeasureService = new UnitOfMeasureService();
 export const customerLedgerService = new CustomerLedgerService();
 export const customerService = new CustomerService();
 export const documentService = new DocumentService();

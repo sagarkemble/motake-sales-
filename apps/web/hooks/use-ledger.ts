@@ -14,6 +14,7 @@ export type LedgerBalance = LedgerSummary["footer"]["closing"];
 export type OpenPreorder = RouterOutputs["ledger"]["openPreorders"]["data"][number];
 export type BillPaper = RouterOutputs["ledger"]["billPaper"]["data"];
 export type PreOrderPaper = RouterOutputs["ledger"]["preOrderPaper"]["data"];
+export type NotePaper = RouterOutputs["ledger"]["notePaper"]["data"];
 export type RaiseBillCatalogRow = RouterOutputs["ledger"]["raiseBillCatalog"]["data"][number];
 export type NoteKind = BillPaper["notes"][number]["kind"];
 export type PaymentPaper = RouterOutputs["ledger"]["paymentPaper"]["data"];
@@ -200,17 +201,22 @@ export function useMoneyPaper({
 interface UseBillPaperParams {
   billId?: string;
   orderId?: string;
+  noteId?: string;
   enabled?: boolean;
 }
 
-// The Bill paper and its three writes, and the Pre-order paper. A refused write also reloads the
-// paper, so a retry never resends a version number the server has moved past.
-export function useBillPaper({ billId, orderId, enabled = true }: UseBillPaperParams = {}) {
+// The Bill paper and its three writes, the Note paper and the Pre-order paper. A refused write
+// also reloads the paper, so a retry never resends a version number the server has moved past.
+export function useBillPaper({ billId, orderId, noteId, enabled = true }: UseBillPaperParams = {}) {
   const utils = trpc.useUtils();
 
   const billPaperQuery = trpc.ledger.billPaper.useQuery(
     { billId: billId ?? "" },
     { enabled: enabled && Boolean(billId) },
+  );
+  const notePaperQuery = trpc.ledger.notePaper.useQuery(
+    { noteId: noteId ?? "" },
+    { enabled: enabled && Boolean(noteId) },
   );
   const preOrderPaperQuery = trpc.ledger.preOrderPaper.useQuery(
     { orderId: orderId ?? "" },
@@ -244,6 +250,10 @@ export function useBillPaper({ billId, orderId, enabled = true }: UseBillPaperPa
     isBillPaperLoading: billPaperQuery.isLoading,
     isBillPaperError: billPaperQuery.isError,
     refetchBillPaper: billPaperQuery.refetch,
+
+    notePaper: notePaperQuery.data?.data ?? null,
+    isNotePaperLoading: notePaperQuery.isLoading,
+    refetchNotePaper: notePaperQuery.refetch,
 
     preOrderPaper: preOrderPaperQuery.data?.data ?? null,
     isPreOrderPaperLoading: preOrderPaperQuery.isLoading,

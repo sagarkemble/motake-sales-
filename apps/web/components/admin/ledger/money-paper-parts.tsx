@@ -3,6 +3,7 @@
 import { InfoIcon, LockIcon } from "lucide-react";
 import { type ReactNode } from "react";
 
+import { CustomerNameLink } from "~/components/admin/shared/name-links";
 import { DetailPageSkeleton } from "~/components/shared/detail-page-skeleton";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
@@ -279,7 +280,9 @@ export function PaymentFacts({ paper }: { paper: PaymentPaper }) {
   const { payment, customer } = paper;
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-      <Fact label={tx("admin.ledger.money.paper.customer")}>{customer.shopName}</Fact>
+      <Fact label={tx("admin.ledger.money.paper.customer")}>
+        <CustomerNameLink customerId={customer.id}>{customer.shopName}</CustomerNameLink>
+      </Fact>
       <Fact label={tx("admin.ledger.money.paper.route")}>
         {customer.routeName} ({customer.routeCode})
       </Fact>
@@ -324,7 +327,9 @@ export function RefundFacts({ paper }: { paper: RefundPaper }) {
   const { refund, customer } = paper;
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-      <Fact label={tx("admin.ledger.money.paper.customer")}>{customer.shopName}</Fact>
+      <Fact label={tx("admin.ledger.money.paper.customer")}>
+        <CustomerNameLink customerId={customer.id}>{customer.shopName}</CustomerNameLink>
+      </Fact>
       <Fact label={tx("admin.ledger.money.paper.route")}>
         {customer.routeName} ({customer.routeCode})
       </Fact>

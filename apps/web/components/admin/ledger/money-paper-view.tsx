@@ -3,6 +3,7 @@
 import { InfoIcon, LockIcon } from "lucide-react";
 import { useState } from "react";
 
+import { CustomerNameLink } from "~/components/admin/shared/name-links";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -245,7 +246,9 @@ export function OpeningPaperView({
               {formatDate(opening.date, "d MMM yyyy")}
             </Fact>
             <Fact label={tx("admin.ledger.money.opening.setBy")}>{opening.actorName ?? "—"}</Fact>
-            <Fact label={tx("admin.ledger.money.opening.customer")}>{customer.shopName}</Fact>
+            <Fact label={tx("admin.ledger.money.opening.customer")}>
+              <CustomerNameLink customerId={customer.id}>{customer.shopName}</CustomerNameLink>
+            </Fact>
             <div className="col-span-2">
               <dt className="text-xs text-muted-foreground">
                 {tx("admin.ledger.money.opening.reason")}

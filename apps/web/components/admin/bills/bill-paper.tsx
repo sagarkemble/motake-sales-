@@ -138,7 +138,9 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
                 <td className={cn(cellClassName, "text-right tabular-nums")}>{index + 1}</td>
                 <td className={cellClassName}>
                   {line.stamp.name}
-                  <span className="text-xs text-muted-foreground"> · {line.stamp.unit}</span>
+                  {line.stamp.unit && (
+                    <span className="text-xs text-muted-foreground"> · {line.stamp.unit}</span>
+                  )}
                 </td>
                 <td className={cn(cellClassName, "text-right font-mono text-xs")}>
                   {line.stamp.hsn}

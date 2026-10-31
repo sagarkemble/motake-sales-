@@ -120,8 +120,7 @@ function GatepassPageContent() {
             .filter((variety) => variety.status === "active" && !variety.deletedAt)
             .map((variety) => ({
               varietyId: variety.id,
-              varietyName: variety.name,
-              unit: variety.unit,
+              varietyName: variety.displayName,
               productName: product.name,
               productImageUrl: product.imageUrl,
             })),
@@ -235,9 +234,7 @@ function GatepassPageContent() {
                   >
                     <span className="min-w-0">
                       {item.productName}{" "}
-                      <span className="text-muted-foreground">
-                        {item.varietyName} ({item.unit})
-                      </span>
+                      <span className="text-muted-foreground">{item.varietyName}</span>
                     </span>
                     <span className="font-semibold tabular-nums">{issuedQty}</span>
                   </div>

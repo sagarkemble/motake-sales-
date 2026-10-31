@@ -137,8 +137,7 @@ function SalesmanCatalogContent() {
           varieties={openProduct.varieties.map((variety) => ({
             varietyId: variety.id,
             sku: variety.sku,
-            varietyName: variety.name,
-            unit: variety.unit,
+            varietyName: variety.displayName,
             sellableQty: sellableByVarietyId
               ? (sellableByVarietyId.get(variety.id) ?? 0)
               : undefined,

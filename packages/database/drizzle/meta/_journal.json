@@ -64,6 +64,13 @@
       "when": 1793423614383,
       "tag": "0008_cities",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793428925041,
+      "tag": "0009_variety_sizes",
+      "breakpoints": true
     }
   ]
 }

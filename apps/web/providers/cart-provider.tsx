@@ -11,7 +11,6 @@ export interface CartLine {
   productId: string;
   productName: string;
   varietyName: string;
-  unit: string;
   productImageUrl: string | null;
   quantity: number;
 }

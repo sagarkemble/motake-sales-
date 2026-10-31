@@ -123,7 +123,7 @@ export async function getProductWiseSalesSummary(range: {
     .select({
       varietyId: billItemsTable.varietyId,
       productName: productsTable.name,
-      varietyName: productVarietiesTable.name,
+      varietyName: productVarietiesTable.displayName,
       totalQuantitySold: quantitySold,
       taxablePaise: sql<number>`coalesce(sum(${billItemsTable.taxablePaise}), 0)::bigint`.mapWith(
         Number,
@@ -144,7 +144,7 @@ export async function getProductWiseSalesSummary(range: {
         billIsNotCancelled(),
       ),
     )
-    .groupBy(billItemsTable.varietyId, productsTable.name, productVarietiesTable.name)
+    .groupBy(billItemsTable.varietyId, productsTable.name, productVarietiesTable.displayName)
     .orderBy(desc(quantitySold));
 }
 

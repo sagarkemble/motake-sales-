@@ -133,7 +133,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, lines }: Handov
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium">{line.productName}</p>
                             <p className="truncate text-xs text-muted-foreground">
-                              {line.varietyName} ({line.unit})
+                              {line.varietyName}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground tabular-nums">
                               {tx("salesman.handover.lineQuantities", {

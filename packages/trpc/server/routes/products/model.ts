@@ -1,3 +1,6 @@
+import { varietySizeValueSchema } from "@repo/services/products";
+import { unitOfMeasureCodeSchema } from "@repo/services/units-of-measure";
+
 import { z } from "../../schema";
 
 export const entityStatusSchema = z.enum(["active", "inactive"]);
@@ -18,8 +21,13 @@ export const productVarietySchema = z.object({
   id: z.string(),
   productId: z.string(),
   sku: z.string(),
+  // Without the size; may be empty.
   name: z.string(),
-  unit: z.string(),
+  // "500.000" as stored; null with uomCode on a Variety from before sizes that had none.
+  sizeValue: z.string().nullable(),
+  uomCode: z.string().nullable(),
+  // "Toned Milk 500 ml": what screens print.
+  displayName: z.string(),
   status: entityStatusSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -60,8 +68,9 @@ export const listProductsInputSchema = z.object({
 
 export const createProductVarietyInputSchema = z.object({
   productId: z.string().uuid(),
-  name: z.string().min(1).max(120),
-  unit: z.string().min(1).max(32),
+  name: z.string().max(120),
+  sizeValue: varietySizeValueSchema,
+  uomCode: unitOfMeasureCodeSchema,
 });
 
 export const updateProductVarietyInputSchema = createProductVarietyInputSchema

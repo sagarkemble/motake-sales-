@@ -354,11 +354,10 @@ class OrderService {
     assertBasketNotEmpty(parsedInput.lines);
     const today = businessDateOf(new Date());
     if (parsedInput.scheduledDate < today) {
-      throw checkoutRefusal(
-        "scheduled_date_in_past",
-        "A Pre-order date cannot be before today.",
-        { scheduledDate: parsedInput.scheduledDate, today },
-      );
+      throw checkoutRefusal("scheduled_date_in_past", "A Pre-order date cannot be before today.", {
+        scheduledDate: parsedInput.scheduledDate,
+        today,
+      });
     }
 
     const run = await this.runCheckout<PreOrderResult>(
@@ -937,7 +936,8 @@ class OrderService {
         sku,
         varietyId: variety.id,
         name: variety.name,
-        unit: variety.unit,
+        // Varieties no longer have a pack word; the size is in the name.
+        unit: "",
         quantity,
         routePricePaise,
         exempt: facts.exempt,

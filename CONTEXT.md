@@ -14,7 +14,7 @@ A named area (e.g. Kolhapur, Satara) with its own Customer list, price per varie
 The generated unique key of a Route (`rt-{slug}-{nnn}`). Never edited. Name is the label.
 
 **Salesman**:
-The field-sales person who sells against an Active GatePass.
+The field-sales person who sells against an Active GatePass. Deactivate pauses the account and can be undone. Delete is for good: refused while they hold an Active GatePass; their login email becomes `delete+{email}` (`delete+2+{email}` … if taken) so the email can be used for a new Salesman, and a deleted Salesman is never reactivated. Their GatePasses, orders and money records stay.
 
 **Salesman code**:
 The generated unique key of a Salesman: the first three letters of the name, the last four phone digits and the day they were added (`RAV-4321-261031`), with `-2`, `-3` … if already taken. Made once when the Salesman is added and never changed, even when name or phone change. Admin does not type or edit it.
@@ -22,6 +22,10 @@ The generated unique key of a Salesman: the first three letters of the name, the
 **Product**:
 The named group a Variety belongs to (for example milk). Not billed by itself. Always has an image: a Product cannot be created or saved without one, and its image can be replaced but not removed.
 *Avoid*: treating Product name as a SKU
+
+**Variety**:
+One sellable pack of a Product: a name plus a size in a unit, shown as "Toned Milk 500 ml". The name may be empty, so the Variety reads as its size alone ("500 g"). The unit comes from the units list in Settings (ml, L, g, kg, and any Admin adds); units are never renamed or removed.
+*Avoid*: pack word (pouch, cup) as the unit, size typed into the name
 
 **Variety SKU**:
 The generated unique key of a variety. Admin does not type or edit it.
@@ -115,7 +119,7 @@ A Credit Note that reduces the Customer's Balance without reducing Motake's GST 
 Increases what the Customer owes. Generated automatically when an admin raises a Bill, or raised independently by admin for an undercharge or extra items.
 
 **Payment adjustment**:
-An admin fix to a wrongly recorded Payment (kept amount, mode, or reference), kept with the Payment's history. Never done by editing a Bill. A Payment adjusted Ledger row and the original Payment row both open that Payment.
+An admin fix to a wrongly recorded Payment (kept amount, mode, or reference), kept with the Payment's history. Never done by editing a Bill. It is not a Ledger row of its own: the Payment row shows the net kept amount, and the Ledger totals count it the same way.
 
 **GST**:
 Tax added on top of the Route price per Bill line. Actual delivery state determines CGST + SGST versus IGST; the Route supplies the default state. Bills, Pending and Payments are tax-inclusive.
@@ -138,7 +142,7 @@ The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise
 Money Motake pays back to a Customer out of their Advance. It cannot exceed Advance. Numbered `MR/{FY}/{seq}`. Admin may rewrite a recorded Refund with a reason; Refund history is kept. Salesman cannot. Correct may take the amount to ₹0; that is not a delete.
 
 **Refund adjustment**:
-An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept with the Refund's history and a required reason. Never done by editing a Bill. A bigger Refund still cannot exceed Advance. A Refund adjusted Ledger row and the original Refund row both open that Refund.
+An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept with the Refund's history and a required reason. Never done by editing a Bill. A bigger Refund still cannot exceed Advance. It is not a Ledger row of its own: the Refund row shows the net amount, and the Ledger totals count it the same way.
 
 **Opening balance**:
 A one-time starting Balance entered for a Customer to carry over what was owed before the app; may be Pending or Advance. Admin sets it once from the Ledger and does not Correct it afterwards.
