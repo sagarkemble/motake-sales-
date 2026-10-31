@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@repo/trpc/client";
 import { AlertTriangleIcon, PencilIcon, PlusIcon, WandSparklesIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useForm, type Control, type Path } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -61,14 +61,13 @@ const MAX_LENGTH = {
   bankIfsc: 11,
 } as const;
 
-type TaxFormValues = { pan: string; place: string; terms: string; reason: string };
+type TaxFormValues = { pan: string; place: string; terms: string };
 type BankFormValues = {
   bankAccountName: string;
   bankName: string;
   bankBranch: string;
   bankAccountNumber: string;
   bankIfsc: string;
-  reason: string;
 };
 type DocumentField = (typeof TAX_FIELDS)[number] | (typeof BANK_FIELDS)[number];
 
@@ -207,7 +206,6 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
           pan: z.string(),
           place: maxLengthRule(tx, MAX_LENGTH.place),
           terms: maxLengthRule(tx, MAX_LENGTH.terms),
-          reason: z.string().max(500),
         })
         .superRefine((values, context) => {
           const pan = values.pan.trim().toUpperCase();
@@ -234,7 +232,6 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
       pan: seller.pan ?? "",
       place: seller.place ?? "",
       terms: seller.terms ?? "",
-      reason: "",
     }),
     [seller.pan, seller.place, seller.terms],
   );
@@ -251,12 +248,11 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
         pan: blankToNull(values.pan.toUpperCase()),
         place: blankToNull(values.place),
         terms: blankToNull(values.terms),
-        reason: values.reason.trim() || undefined,
       });
       toast.success(tx("admin.settings.documents.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.documents.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.documents.updateFailed")));
     }
   }
 
@@ -381,7 +377,6 @@ function TaxDocumentsDialog({ open, onOpenChange, seller }: DocumentDialogProps)
           />
 
           <DocumentFormFooter
-            control={form.control}
             isSubmitting={isUpdatingSeller}
             onCancel={() => onOpenChange(false)}
           />
@@ -415,7 +410,6 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
           },
           { message: tx("admin.settings.documents.validation.ifsc") },
         ),
-        reason: z.string().max(500),
       }),
     [tx],
   );
@@ -427,7 +421,6 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
       bankBranch: seller.bankBranch ?? "",
       bankAccountNumber: seller.bankAccountNumber ?? "",
       bankIfsc: seller.bankIfsc ?? "",
-      reason: "",
     }),
     [
       seller.bankAccountName,
@@ -452,12 +445,11 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
         bankBranch: blankToNull(values.bankBranch),
         bankAccountNumber: blankToNull(values.bankAccountNumber.replace(/\s/g, "")),
         bankIfsc: blankToNull(values.bankIfsc.toUpperCase()),
-        reason: values.reason.trim() || undefined,
       });
       toast.success(tx("admin.settings.documents.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.documents.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.documents.updateFailed")));
     }
   }
 
@@ -532,7 +524,6 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
           )}
 
           <DocumentFormFooter
-            control={form.control}
             isSubmitting={isUpdatingSeller}
             onCancel={() => onOpenChange(false)}
           />
@@ -575,39 +566,17 @@ function DocumentDialog({
   );
 }
 
-// Reason, the note that old PDFs keep their details, then Save / Cancel like the Seller form.
-function DocumentFormFooter<T extends { reason: string }>({
-  control,
+// The note that old PDFs keep their details, then Save / Cancel like the Seller form.
+function DocumentFormFooter({
   isSubmitting,
   onCancel,
 }: {
-  control: Control<T>;
   isSubmitting: boolean;
   onCancel: () => void;
 }) {
   const tx = useTranslate();
   return (
     <>
-      <FormField
-        control={control}
-        name={"reason" as Path<T>}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{tx("admin.settings.reasonLabel")}</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                value={field.value as string}
-                maxLength={500}
-                placeholder={tx("admin.settings.reasonPlaceholder")}
-                className="rounded-xl bg-muted/40"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <p className="text-xs text-muted-foreground">{tx("admin.settings.documents.appliesNote")}</p>
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">

@@ -120,7 +120,7 @@ function DeadlineEditor({ entry, onDone }: { entry: CreditNoteDeadlineEntry; onD
       toast.success(tx("admin.settings.deadline.saveSuccess"));
       onDone();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.deadline.saveFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.deadline.saveFailed")));
     }
   }
 

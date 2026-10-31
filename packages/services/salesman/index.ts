@@ -7,9 +7,11 @@ import {
   listSalesmenWithProfiles,
   updateSalesmanCode,
   type SalesmanDayWiseHistoryRow,
+  type SalesmanListRow,
   type SalesmanWithProfile,
 } from "@repo/database/queries/salesman";
 import { db } from "@repo/database";
+import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { SelectProfile, SelectSalesman } from "@repo/database/schema";
@@ -60,10 +62,11 @@ class SalesmanService {
 
   public async listSalesmen(
     input: ListSalesmenInput,
-  ): Promise<PaginatedResult<SalesmanWithProfile>> {
+  ): Promise<PaginatedResult<SalesmanListRow>> {
     const parsedInput = listSalesmenInputSchema.parse(input);
     return listSalesmenWithProfiles(
       { page: parsedInput.page, pageSize: parsedInput.pageSize },
+      businessDateOf(new Date()),
       parsedInput.includeDeleted,
     );
   }

@@ -181,6 +181,28 @@
 }
 
 
+/* Print one element (lib/print-element.ts). Zero page margins drop the browser's own header and
+   footer (title, URL, date); the padding gives the paper its margin back. */
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html.printing body {
+    background: #fff !important;
+  }
+
+  html.printing body > *:not(#print-root) {
+    display: none !important;
+  }
+
+  #print-root {
+    padding: 12mm;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   *,

@@ -59,9 +59,12 @@ export function useGst({
     isFilingsLoading: filingsQuery.isLoading,
     isFilingsError: filingsQuery.isError,
     refetchFilings: filingsQuery.refetch,
+    isFilingsFetching: filingsQuery.isFetching,
 
     irnPendingCount: irnPendingCountQuery.data?.data ?? null,
     isIrnPendingCountLoading: irnPendingCountQuery.isLoading,
+    refetchIrnPendingCount: irnPendingCountQuery.refetch,
+    isIrnPendingCountFetching: irnPendingCountQuery.isFetching,
 
     irnPendingPage:
       irnPendingQuery.data?.data ??
@@ -69,6 +72,7 @@ export function useGst({
     isIrnPendingLoading: irnPendingQuery.isLoading,
     isIrnPendingError: irnPendingQuery.isError,
     refetchIrnPending: irnPendingQuery.refetch,
+    isIrnPendingFetching: irnPendingQuery.isFetching,
 
     filingPreview: previewMonth ? (previewQuery.data?.data ?? null) : null,
     isFilingPreviewLoading: previewQuery.isFetching,

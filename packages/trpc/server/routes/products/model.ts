@@ -39,11 +39,12 @@ export const paginatedProductsSchema = z.object({
   totalPages: z.number(),
 });
 
+// A Product always has an image; an update may replace it but never clear it.
 export const createProductInputSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
-  imageKey: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageKey: z.string().trim().min(1),
+  imageUrl: z.string().trim().min(1),
 });
 
 export const updateProductInputSchema = createProductInputSchema.partial();

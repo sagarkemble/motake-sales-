@@ -97,10 +97,21 @@ export function CheckoutSuccess({
         },
       );
     } else {
+      // No money taken: an Advance held before this Bill pays it first.
+      const advanceBeforePaise = Math.max(0, result.billTotalPaise - result.balancePaise);
+      const fromAdvancePaise = Math.min(advanceBeforePaise, result.billTotalPaise);
       rows.push({
         key: "payment",
         label: tx("checkout.success.paymentLabel"),
-        value: tx("checkout.success.noPayment"),
+        value:
+          fromAdvancePaise === 0
+            ? tx("checkout.success.noPayment")
+            : fromAdvancePaise === result.billTotalPaise
+              ? tx("checkout.success.paidFromAdvance")
+              : tx("checkout.success.partlyFromAdvance", {
+                  advance: formatPaise(fromAdvancePaise),
+                  pending: formatPaise(result.billTotalPaise - fromAdvancePaise),
+                }),
       });
     }
     if (result.returnedPaise !== input.previewReturnedPaise)

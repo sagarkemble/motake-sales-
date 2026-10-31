@@ -93,11 +93,13 @@ export function useGatepasses({
     isMyGatepassLoading: myGatepassQuery.isLoading,
     isMyGatepassError: myGatepassQuery.isError,
     refetchMyGatepass: myGatepassQuery.refetch,
+    isMyGatepassFetching: myGatepassQuery.isFetching,
 
     myHistory: myHistoryQuery.data?.data ?? [],
     isMyHistoryLoading: myHistoryQuery.isLoading,
     isMyHistoryError: myHistoryQuery.isError,
     refetchMyHistory: myHistoryQuery.refetch,
+    isMyHistoryFetching: myHistoryQuery.isFetching,
 
     allotmentMatrix: allotmentMatrixQuery.data?.data ?? [],
     isAllotmentMatrixLoading: allotmentMatrixQuery.isLoading,
@@ -113,6 +115,7 @@ export function useGatepasses({
     isDiscrepanciesLoading: discrepanciesQuery.isLoading,
     isDiscrepanciesError: discrepanciesQuery.isError,
     refetchDiscrepancies: discrepanciesQuery.refetch,
+    isDiscrepanciesFetching: discrepanciesQuery.isFetching,
 
     allotGatepass: allotGatepassMutation.mutate,
     allotGatepassAsync: allotGatepassMutation.mutateAsync,

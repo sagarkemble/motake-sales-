@@ -23,7 +23,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import type { InsertCustomer, SelectCustomer } from "@repo/database/schema";
 
-import { badRequest, conflict, forbidden, notFound } from "../errors";
+import { notFound, screenRefusal } from "../errors";
 import GatepassService from "../gatepass";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
@@ -60,7 +60,12 @@ const customerAuditedFields = [
   "einvoicingRequired",
 ] as const;
 
-const noActiveGatepass = () => badRequest("No Active GatePass");
+const noActiveGatepass = () => screenRefusal("no_active_gatepass", "No Active GatePass");
+
+const routeDeleted = (routeName: string) =>
+  screenRefusal("route_deleted", `Route ${routeName} is deleted. Pick another Route.`, {
+    route: routeName,
+  });
 
 export interface ShopPhotoUploadUrlResult {
   uploadUrl: string;
@@ -70,13 +75,16 @@ export interface ShopPhotoUploadUrlResult {
 
 function assertShopPhotoKeyBelongsToCreator(shopPhotoKey: string, creatorId: string): void {
   if (!shopPhotoKey.startsWith(`${shopPhotoFolderName}/${creatorId}/`)) {
-    throw forbidden("This shop photo does not belong to the creating user");
+    throw screenRefusal(
+      "photo_upload_invalid",
+      "This shop photo does not belong to the creating user",
+    );
   }
 }
 
 function assertShopPhotoKeyInCustomersFolder(shopPhotoKey: string): void {
   if (!shopPhotoKey.startsWith(`${shopPhotoFolderName}/`)) {
-    throw forbidden("Invalid shop photo key");
+    throw screenRefusal("photo_upload_invalid", "Invalid shop photo key");
   }
 }
 
@@ -107,7 +115,7 @@ class CustomerService {
     return runInTransaction(async (transaction) => {
       const route = await getRouteById(parsedInput.routeId, transaction);
       if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
-      if (route.deletedAt) throw badRequest(`Route ${route.name} is deleted. Pick another Route.`);
+      if (route.deletedAt) throw routeDeleted(route.name);
       return this.insertCustomer(
         {
           ...details,
@@ -242,15 +250,21 @@ class CustomerService {
       const targetRoute = await getRouteById(parsedInput.toRouteId, transaction);
       if (!targetRoute) throw notFound(`Route ${parsedInput.toRouteId} not found`);
       if (targetRoute.deletedAt) {
-        throw badRequest(`Route ${targetRoute.name} is deleted. Pick another Route.`);
+        throw routeDeleted(targetRoute.name);
       }
       if (targetRoute.id === customer.routeId) {
-        throw badRequest(`${customer.shopName} is already on Route ${targetRoute.name}`);
+        throw screenRefusal(
+          "customer_already_on_route",
+          `${customer.shopName} is already on Route ${targetRoute.name}`,
+          { shop: customer.shopName, route: targetRoute.name },
+        );
       }
       const openPreorderCount = await countOpenPreordersForCustomer(customer.id, transaction);
       if (openPreorderCount > 0) {
-        throw conflict(
+        throw screenRefusal(
+          "customer_has_open_pre_orders",
           `${customer.shopName} has ${openPreorderCount} open Pre-order${openPreorderCount === 1 ? "" : "s"}. Fulfil or cancel ${openPreorderCount === 1 ? "it" : "them"} before moving the Customer.`,
+          { count: openPreorderCount },
         );
       }
       const moved = await updateCustomer(customer.id, { routeId: targetRoute.id }, transaction);
@@ -353,8 +367,10 @@ class CustomerService {
 
     const openOrderCount = await countOpenOrdersByCustomerId(customerId);
     if (openOrderCount > 0) {
-      throw conflict(
+      throw screenRefusal(
+        "customer_has_open_pre_orders",
         `Customer has ${openOrderCount} open Pre-order${openOrderCount === 1 ? "" : "s"} and cannot be deactivated`,
+        { count: openOrderCount },
       );
     }
 

@@ -12,6 +12,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useOrderHistory } from "~/hooks/use-order-history";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 interface OrderHistoryPanelProps {
   salesmanId?: string;
@@ -27,7 +28,11 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
     isLoadingMoreOrders,
     hasMoreOrders,
     loadMoreOrders,
+    refetchOrderHistory,
+    isOrderHistoryFetching,
   } = useOrderHistory({ pageSize: 15, salesmanId });
+  usePageRefresh(refetchOrderHistory, isOrderHistoryFetching);
+  const isReloading = usePageReloading();
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -55,7 +60,7 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
         </h2>
       </div>
 
-      {isOrderHistoryLoading ? (
+      {isOrderHistoryLoading || (isReloading && isOrderHistoryFetching) ? (
         <ListItemSkeleton count={5} />
       ) : orderHistory.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">

@@ -97,16 +97,13 @@ export const productsRouter = router({
         tags: ["Products"],
         protect: true,
         summary: "Delete a product image",
-        description: "Remove the product image and clear it from the product record. Admin only.",
+        description:
+          "Always refused: a product must have an image. Upload a new one through update to replace it.",
       },
     })
     .input(productIdInputSchema)
     .output(apiResponseSchema(productSchema))
-    .mutation(async ({ ctx, input }) => {
-      const product = await productService.deleteProductImage(input.id, ctx.user.id);
-      if (!product) throw notFound(`Product ${input.id} not found`);
-      return apiResponse(product);
-    }),
+    .mutation(() => productService.deleteProductImage()),
 
   create: adminProcedure
     .meta({

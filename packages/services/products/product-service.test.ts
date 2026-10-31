@@ -126,3 +126,45 @@ describe("ProductService delete", () => {
     expect(deletedAgain).toBeUndefined();
   });
 });
+
+describe("ProductService image", () => {
+  const image = { imageKey: "products/admin/curd.png", imageUrl: "https://cdn.test/curd.png" };
+
+  it("refuses a Product without an image", async () => {
+    const admin = await buildProfile();
+
+    await expect(
+      productService.createProduct({ name: "Curd" } as never, admin.id),
+    ).rejects.toThrow();
+    await expect(
+      productService.createProduct({ name: "Curd", imageKey: "", imageUrl: "" }, admin.id),
+    ).rejects.toThrow();
+  });
+
+  it("creates a Product with its image", async () => {
+    const admin = await buildProfile();
+
+    const product = await productService.createProduct({ name: "Curd", ...image }, admin.id);
+
+    expect(product).toMatchObject({ name: "Curd", ...image });
+  });
+
+  it("refuses an update that clears the image, or changes only half of it", async () => {
+    const admin = await buildProfile();
+    const product = await productService.createProduct({ name: "Curd", ...image }, admin.id);
+
+    await expect(
+      productService.updateProduct(product.id, { imageKey: "", imageUrl: "" }, admin.id),
+    ).rejects.toThrow();
+    await expect(
+      productService.updateProduct(product.id, { imageKey: "products/admin/other.png" }, admin.id),
+    ).rejects.toThrow();
+    expect(await productService.getProductById(product.id)).toMatchObject(image);
+  });
+
+  it("refuses to remove a Product image", () => {
+    expect(() => productService.deleteProductImage()).toThrow(
+      "A Product must have an image; upload a new one to replace it",
+    );
+  });
+});

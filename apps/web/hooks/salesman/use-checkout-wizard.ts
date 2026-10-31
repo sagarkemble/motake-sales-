@@ -4,6 +4,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  EMPTY_NEW_CUSTOMER_FORM,
+  isNewCustomerFormFilled,
+  type NewCustomerFormValues,
+} from "~/components/salesman/customers/new-customer-fields";
 import type { CheckoutSuccessInput } from "~/components/shared/checkout/checkout-success";
 import { useCheckoutAttempt } from "~/hooks/shared/use-checkout-attempt";
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
@@ -25,7 +30,6 @@ import {
   type CheckoutRefusalReason,
 } from "~/lib/checkout-refusal";
 import { getErrorMessage } from "~/lib/get-error-message";
-import type { PreferredLanguage } from "~/lib/preferred-language";
 import { useCart } from "~/providers/cart-provider";
 import { trpc } from "~/trpc/client";
 
@@ -44,15 +48,6 @@ export type CheckoutCustomer = Pick<
   | "balancePaise"
 >;
 
-export interface NewCustomerFormValues {
-  shopName: string;
-  phone: string;
-  address: string;
-  shopPhotoKey: string;
-  shopPhotoUrl: string;
-  preferredLanguage: PreferredLanguage;
-}
-
 /** The Route a salesman works today: their Active GatePass Route, or none. */
 export interface ActiveGatepassRoute {
   name: string;
@@ -65,14 +60,6 @@ export interface BookNowBlockReason {
   values?: Record<string, string | number>;
 }
 
-const EMPTY_NEW_CUSTOMER_FORM: NewCustomerFormValues = {
-  shopName: "",
-  phone: "",
-  address: "",
-  shopPhotoKey: "",
-  shopPhotoUrl: "",
-  preferredLanguage: "mr",
-};
 const CUSTOMER_SEARCH_PAGE_SIZE = 20;
 // One idempotency key per write: the order type, the Customer, the date and the basket. A retry of
 // the same write replays its key; a different write never reuses it.
@@ -226,20 +213,16 @@ export function useCheckoutWizard() {
   const currentStepIndex = Math.max(0, steps.indexOf(currentStep));
   const isLastStep = currentStepIndex === steps.length - 1;
 
-  const isNewCustomerFormFilled =
-    newCustomerForm.shopName.trim().length > 0 &&
-    newCustomerForm.phone.trim().length > 0 &&
-    newCustomerForm.address.trim().length > 0 &&
-    newCustomerForm.shopPhotoKey.trim().length > 0;
+  const isNewCustomerReady = isNewCustomerFormFilled(newCustomerForm);
   const isCustomerStepValid =
-    Boolean(activeGatepassRoute) && (Boolean(selectedCustomer) || isNewCustomerFormFilled);
+    Boolean(activeGatepassRoute) && (Boolean(selectedCustomer) || isNewCustomerReady);
 
   const isCartBlocked =
     cartLines.length === 0 || !quote || Boolean(quoteError) || quote.badLines.length > 0;
 
   // A Customer the salesman adds now starts at Balance 0, so the quote without a Customer is enough.
   const paymentContext: PaymentContext | null =
-    quote && (selectedCustomer || isNewCustomerFormFilled)
+    quote && (selectedCustomer || isNewCustomerReady)
       ? {
           billTotalPaise: quote.totals.totalPaise,
           balanceBeforePaise: selectedCustomer ? (quote.balance?.balancePaise ?? 0) : 0,
@@ -305,11 +288,17 @@ export function useCheckoutWizard() {
     router.push("/salesman");
   }
 
+  // The order just placed, its sheet open on My orders.
+  function goToPlacedOrder() {
+    if (!result || !("orderId" in result.result)) return;
+    router.push(`/salesman/orders?order=${result.result.orderId}`);
+  }
+
   // A new Customer is saved at Place, not when leaving the Customer step, so an abandoned checkout
   // or Back → change leaves no stray Customer. Once saved they stay selected for a retry.
   async function ensureCustomer(): Promise<CheckoutCustomer | null> {
     if (selectedCustomer) return selectedCustomer;
-    if (!isNewCustomerFormFilled) return null;
+    if (!isNewCustomerReady) return null;
     try {
       const createdCustomerResponse = await createCustomerAsync({
         shopName: newCustomerForm.shopName.trim(),
@@ -332,7 +321,9 @@ export function useCheckoutWizard() {
       setNewCustomerForm(EMPTY_NEW_CUSTOMER_FORM);
       return createdCustomer;
     } catch (createCustomerError) {
-      toast.error(getErrorMessage(createCustomerError, tx("salesman.checkout.error.saveCustomer")));
+      toast.error(
+        getErrorMessage(tx, createCustomerError, tx("salesman.checkout.error.saveCustomer")),
+      );
       return null;
     }
   }
@@ -500,5 +491,6 @@ export function useCheckoutWizard() {
     result,
     goToOrdersList,
     goToHome,
+    goToPlacedOrder,
   };
 }

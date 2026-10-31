@@ -1,6 +1,8 @@
 import type { SelectBill, SelectBillItem } from "@repo/database/schema";
 import { z } from "zod";
 
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE, MAX_QTY, QTY_TOO_LARGE } from "../shared/limits";
+
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const listBillsInputSchema = z.object({
@@ -35,8 +37,8 @@ export const issueBillInputSchema = z.object({
         varietyId: z.string().uuid(),
         orderItemId: z.string().uuid().nullable(),
         stamp: lineStampSchema,
-        quantity: z.number().int().positive(),
-        routePricePaise: z.number().int().positive(),
+        quantity: z.number().int().positive().max(MAX_QTY, QTY_TOO_LARGE),
+        routePricePaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
         exempt: z.boolean(),
         gstRateBps: z.number().int().min(0),
       }),

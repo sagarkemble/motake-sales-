@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/drawer";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useTranslate } from "~/hooks/use-translate";
+import { cn } from "~/lib/utils";
 import { useCart } from "~/providers/cart-provider";
 
 interface ProductVarietyOption {
@@ -20,6 +21,8 @@ interface ProductVarietyOption {
   sku: string;
   varietyName: string;
   unit: string;
+  /** What is left on the Active GatePass; undefined without one. More can still be added. */
+  sellableQty?: number;
 }
 
 interface AddToCartDrawerProps {
@@ -96,7 +99,22 @@ export function AddToCartDrawer({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{variety.varietyName}</p>
-                    <p className="text-xs text-muted-foreground">{variety.unit}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {variety.unit}
+                      {variety.sellableQty !== undefined && (
+                        <span
+                          className={cn(
+                            "font-medium",
+                            getQuantityForVariety(variety.varietyId) > variety.sellableQty
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-brand",
+                          )}
+                        >
+                          {" · "}
+                          {tx("salesman.catalog.inGatepass", { count: variety.sellableQty })}
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <QuantityStepper
                     quantity={getQuantityForVariety(variety.varietyId)}

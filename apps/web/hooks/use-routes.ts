@@ -67,6 +67,7 @@ export function useRoutes({
     isRoutesListLoading: routesListQuery.isLoading,
     isRoutesListError: routesListQuery.isError,
     refetchRoutesList: routesListQuery.refetch,
+    isRoutesListFetching: routesListQuery.isFetching,
 
     routeChoices: routeChoicesQuery.data?.data ?? [],
     isRouteChoicesLoading: routeChoicesQuery.isLoading,
@@ -77,6 +78,7 @@ export function useRoutes({
     isRouteLoading: routeQuery.isLoading,
     isRouteError: routeQuery.isError,
     refetchRoute: routeQuery.refetch,
+    isRouteFetching: routeQuery.isFetching,
 
     createRouteAsync: createRouteMutation.mutateAsync,
     isCreatingRoute: createRouteMutation.isPending,

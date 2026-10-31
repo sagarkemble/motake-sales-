@@ -27,6 +27,7 @@ export function useBills({ listFilters, billId, enabled = true }: UseBillsParams
     isBillsListLoading: billsListQuery.isLoading,
     isBillsListError: billsListQuery.isError,
     refetchBillsList: billsListQuery.refetch,
+    isBillsListFetching: billsListQuery.isFetching,
 
     bill: billQuery.data?.data ?? null,
     isBillLoading: billQuery.isLoading,

@@ -1,19 +1,24 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { defineConfig } from "vitest/config";
 
-// Tests read the root .env.testing (the test database), never the root .env (production). Values
-// already in the environment win, e.g. CI's throwaway Postgres; the wipe guard checks either way.
-const testingEnvFile = resolve(__dirname, "../../.env.testing");
-if (existsSync(testingEnvFile)) process.loadEnvFile(testingEnvFile);
+// DATABASE_URL comes from the environment only: `pnpm test:local` or CI point it at a throwaway
+// local Postgres. No env file is read, so the motake-testing and production data are never wiped.
+
+const VAULT_TEST_FILES = [
+  "whatsapp-token/whatsapp-token.test.ts",
+  "notification/notification-token.test.ts",
+  "notification/whatsapp-token-store.test.ts",
+];
 
 // Tests call the domain service classes against the real Postgres at DATABASE_URL. Files run one
 // at a time because each file wipes every application table first.
 export default defineConfig({
   test: {
     include: ["**/*.test.ts"],
-    exclude: ["**/node_modules/**"],
+    // `pnpm test:local` runs on plain Postgres, which has no Supabase Vault for the WhatsApp token.
+    exclude: [
+      "**/node_modules/**",
+      ...(process.env.SKIP_VAULT_TESTS === "true" ? VAULT_TEST_FILES : []),
+    ],
     globalSetup: ["./test/global-setup.ts"],
     setupFiles: ["./test/wipe-before-file.ts"],
     fileParallelism: false,

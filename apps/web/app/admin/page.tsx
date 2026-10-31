@@ -22,6 +22,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useFormatMoney } from "~/hooks/use-format-money";
 import { useReports } from "~/hooks/use-reports";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 function KpiGridSkeleton({ count, columnClassName }: { count: number; columnClassName: string }) {
   return (
@@ -48,11 +49,24 @@ export default function AdminDashboardPage() {
   const tx = useTranslate();
   const { signedInUser } = useAuth();
   const { formatPaiseCompact } = useFormatMoney();
-  const { dailyKpiSummary: todayKpiSummary, isDailyKpiSummaryLoading: isTodayKpiSummaryLoading } =
-    useReports({ dailyKpiFilters: toBusinessDateFilters(today) });
-  const { dailyKpiSummary: yesterdayKpiSummary } = useReports({
+  const {
+    dailyKpiSummary: todayKpiSummary,
+    isDailyKpiSummaryLoading: isTodayKpiSummaryLoading,
+    refetchDailyKpiSummary: refetchTodayKpiSummary,
+    isDailyKpiSummaryFetching: isTodayKpiSummaryFetching,
+  } = useReports({ dailyKpiFilters: toBusinessDateFilters(today) });
+  const {
+    dailyKpiSummary: yesterdayKpiSummary,
+    refetchDailyKpiSummary: refetchYesterdayKpiSummary,
+    isDailyKpiSummaryFetching: isYesterdayKpiSummaryFetching,
+  } = useReports({
     dailyKpiFilters: toBusinessDateFilters(yesterday),
   });
+  usePageRefresh(
+    () => Promise.all([refetchTodayKpiSummary(), refetchYesterdayKpiSummary()]),
+    isTodayKpiSummaryFetching || isYesterdayKpiSummaryFetching,
+  );
+  const isReloading = usePageReloading();
 
   const trimmedSignedInUserName = signedInUser?.name?.trim();
   const firstName = trimmedSignedInUserName
@@ -72,7 +86,8 @@ export default function AdminDashboardPage() {
         <h2 className="text-sm font-medium text-muted-foreground">
           {tx("admin.dashboard.todaysOrders")}
         </h2>
-        {isTodayKpiSummaryLoading ? (
+        {isTodayKpiSummaryLoading ||
+        (isReloading && (isTodayKpiSummaryFetching || isYesterdayKpiSummaryFetching)) ? (
           <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -109,7 +124,8 @@ export default function AdminDashboardPage() {
         <h2 className="text-sm font-medium text-muted-foreground">
           {tx("admin.dashboard.todaysGatepasses")}
         </h2>
-        {isTodayKpiSummaryLoading ? (
+        {isTodayKpiSummaryLoading ||
+        (isReloading && (isTodayKpiSummaryFetching || isYesterdayKpiSummaryFetching)) ? (
           <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

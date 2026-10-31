@@ -20,7 +20,7 @@ export default function NewSalesmanPage() {
       toast.success(tx("admin.salesmen.createSuccess"));
       router.push(`/admin/salesman/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.createFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.createFailed")));
     }
   }
 

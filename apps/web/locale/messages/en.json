@@ -17,7 +17,8 @@
       "clearSearch": "Clear search",
       "pickDate": "Pick a date",
       "clearDate": "Clear date",
-      "logout": "Logout"
+      "logout": "Logout",
+      "reload": "Reload"
     },
     "status": {
       "loading": "Loading…",
@@ -73,11 +74,21 @@
     "nav": {
       "quickActions": "Quick actions",
       "profile": "Profile",
-      "account": "Account",
-      "updatePhone": "Update phone number"
+      "account": "Account"
     },
     "errors": {
-      "logoutFailed": "Could not log out. Try again."
+      "logoutFailed": "Could not log out. Try again.",
+      "network": "Can't reach the server. Check your internet connection and try again.",
+      "sessionEnded": "Your session has ended. Please sign in again.",
+      "forbidden": "You don't have permission to do this.",
+      "notFound": "This record no longer exists. Refresh the page.",
+      "invalidInput": "Some details are missing or not valid. Check the form and try again.",
+      "tooManyRequests": "Too many tries. Wait a moment and try again."
+    },
+    "validation": {
+      "amountTooLarge": "Amount can be at most ₹50,00,000.",
+      "amount_too_large": "An amount is too large. It can be at most ₹50,00,000.",
+      "qty_too_large": "A quantity is too large. It can be at most 5,000."
     },
     "pagination": {
       "pageOf": "Page {page} of {total}",
@@ -104,6 +115,54 @@
       "uploadFailed": "Upload failed. Try again.",
       "confirmRemove": "Remove this image?",
       "removeFailed": "Could not remove the image. Try again."
+    },
+    "refusals": {
+      "account_deactivated": "Your account is switched off. Please contact the Admin.",
+      "variety_name_taken": "{product} already has a variety called {variety}.",
+      "gst_exempt_rate_not_zero": "An exempt item cannot have a GST rate.",
+      "gst_rate_required": "Enter a GST rate above 0%.",
+      "gst_start_outside_window": "GST can only be set from today until the end of this financial year.",
+      "route_required": "Choose a Route for this Customer.",
+      "route_deleted": "Route {route} has been removed. Choose another Route.",
+      "route_name_taken": "A Route called {name} already exists.",
+      "route_has_open_work": "{route} still has {gatepasses} Active GatePass(es) and {preOrders} open Pre-order(s). Close them before deleting the Route.",
+      "photo_upload_invalid": "The photo did not upload properly. Please upload it again.",
+      "customer_has_open_pre_orders": "This Customer has {count} open Pre-order(s). Fulfil or cancel them first.",
+      "customer_already_on_route": "{shop} is already on Route {route}.",
+      "no_active_gatepass": "You don't have an Active GatePass today. Ask the Admin to allot one.",
+      "email_taken": "This email is already used by another account.",
+      "password_too_weak": "This password is too weak. Use a longer password.",
+      "email_invalid": "Enter a valid email address.",
+      "gatepass_not_awaiting_verification": "This GatePass is no longer waiting for verification. Refresh the page.",
+      "duplicate_variety_in_allotment": "Each variety can be added only once.",
+      "salesman_has_gatepass": "This salesman already has a GatePass for {date}.",
+      "route_price_missing": "Set a price on Route {route} for: {varieties}.",
+      "gatepass_not_active": "This GatePass is already closed. Refresh the page.",
+      "returned_qty_out_of_range": "Returned quantity cannot be more than {max}.",
+      "short_reason_required": "Give a reason for the missing items.",
+      "stock_changed": "Stock changed just now. Check the quantities and try again.",
+      "checkout_already_placed": "This order was already placed. Check the orders list.",
+      "number_series_exhausted": "Bill numbers for this year are not set up. Ask the Admin to check Settings → Prefixes.",
+      "number_series_missing": "Bill numbers for this year are not set up. Ask the Admin to check Settings → Prefixes.",
+      "refund_above_advance": "A refund cannot be more than the Customer's Advance.",
+      "already_posted": "This was already saved. Refresh the page.",
+      "amount_not_positive": "Enter an amount above ₹0.",
+      "irn_taken": "This IRN is already recorded on another Bill. One IRN belongs to one Bill.",
+      "cancel_ack_in_future": "The cancellation ack date cannot be in the future.",
+      "gstr1_already_filed": "GSTR-1 for {month} is already filed. Use Correct to change it.",
+      "filing_month_not_started": "{month} has not started yet, so it cannot be filed.",
+      "filing_date_before_month": "The filing date cannot be before {month} starts.",
+      "filing_date_after_today": "The filing date cannot be after today.",
+      "gstin_state_mismatch": "This GSTIN is not from {state}. Check the GSTIN or the state.",
+      "pan_gstin_mismatch": "The PAN does not match the GSTIN.",
+      "seller_master_exists": "Seller details are already set up. Refresh the page.",
+      "financial_year_ended": "Past financial years cannot be changed.",
+      "financial_year_too_far": "Only the next financial year can be prepared.",
+      "prefix_too_long": "This prefix is too long. Use a shorter one.",
+      "prefix_frozen": "This prefix cannot change because numbers have already been issued with it.",
+      "prefix_taken": "This prefix is already used for another paper this year.",
+      "deadline_too_early": "The deadline must be after {date}.",
+      "deadline_changed": "Someone else just changed this. Refresh and try again."
     }
   },
   "auth": {
@@ -231,7 +290,8 @@
       "empty": "No products yet",
       "newAria": "New product",
       "validation": {
-        "nameRequired": "Enter a product name"
+        "nameRequired": "Enter a product name",
+        "imageRequired": "Add a product image"
       },
       "createSuccess": "Product created",
       "createFailed": "Could not create product. Try again.",
@@ -285,14 +345,13 @@
         "nameRequired": "Enter a variety name",
         "unitRequired": "Enter a unit, e.g. pouch or kg"
       },
-      "skuOnSave": "The SKU is generated from the Product and Variety name when you save. You cannot type or change it.",
       "skuFixed": "SKU (fixed)",
       "skuNeverChanges": "This SKU never changes. Renaming or changing the unit keeps it, so salesman baskets and old Bills still find it.",
       "copySkuAria": "Copy SKU {sku}",
       "addedWithSku": "Added. SKU generated by the server.",
       "gstTitle": "GST",
       "gstTitleOptional": "GST (optional)",
-      "gstHint": "Applies from today, {date}. Leave it empty to add it later with Edit.",
+      "gstHint": "Applies from today, {date}. Leave HSN and GST rate empty to add GST later with Edit.",
       "gstEditHint": "Changes apply from today, {date}. Bills already issued keep their GST.",
       "gstSaveFailed": "Variety added, but its GST was not saved: {reason}. Add it with Edit.",
       "editTitle": "Edit variety",
@@ -345,6 +404,7 @@
         "startRequired": "Pick a start date",
         "startOutsideYear": "Only starts from {from} to {to} can be added",
         "hsnDigits": "HSN must be 4 to 8 digits",
+        "hsnRequired": "Enter the HSN code for this GST rate",
         "rate": "Enter a GST rate above 0%, at most two decimals"
       },
       "addSuccess": "Period starting {date} added",
@@ -522,7 +582,9 @@
       "notFound": "Salesman not found",
       "showDeleted": "Show deleted salesmen",
       "title": "Salesmen",
-      "unnamed": "Unnamed"
+      "unnamed": "Unnamed",
+      "noActiveRoute": "Unassigned",
+      "activeRouteAria": "Active GatePass Route"
     },
     "orders": {
       "tab": {
@@ -671,10 +733,6 @@
     },
     "settings": {
       "title": "Settings",
-      "accountEntry": {
-        "title": "Settings",
-        "description": "Seller details, number prefixes and GST Credit Note deadline"
-      },
       "tabs": {
         "seller": "Seller",
         "prefixes": "Prefixes",
@@ -999,7 +1057,7 @@
       "saving": "Saving…",
       "refusals": {
         "empty_basket": "Add at least one item.",
-        "bad_lines": "Some items cannot be billed. Fix the marked lines.",
+        "bad_lines": "Some items cannot be billed. Fix the marked lines; a quantity can be at most 5,000.",
         "bill_cancelled": "This Bill was cancelled. It has been reloaded.",
         "bill_locked": "This Bill is locked and cannot be changed.",
         "stale_version": "Someone changed this Bill just now. It has been reloaded; redo your changes on the latest version.",
@@ -1032,7 +1090,21 @@
         "no_active_gatepass": "You have no Active GatePass today, so you cannot see or resend WhatsApp messages.",
         "customer_not_on_route": "This Customer is not on your Active GatePass Route.",
         "notification_unavailable": "WhatsApp messages are not set up on this server.",
-        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded."
+        "irn_pending": "This Bill waits for its IRN; it is sent once the IRN is recorded.",
+        "superseded_version": "This Bill was corrected. Download its latest version.",
+        "irn_not_recorded": "This Bill has no IRN recorded yet, so this file cannot be made.",
+        "irn_not_pending": "This Bill is not waiting for an IRN. Download its PDF instead.",
+        "not_posted_event": "Could not open this receipt. Refresh the page and try again.",
+        "nothing_kept": "This Payment has no receipt because nothing was kept.",
+        "bad_image": "The QR image must be a PNG or JPG under 1 MB.",
+        "forbidden": "Only an Admin can do this.",
+        "template_superseded": "This message cannot be resent because its wording has changed. Use Send latest Bill.",
+        "token_not_working": "WhatsApp is paused. The Admin needs to fix the access token.",
+        "template_not_found": "WhatsApp couldn't be sent right now. Try again later.",
+        "template_not_verified": "WhatsApp couldn't be sent right now. Try again later.",
+        "template_values_mismatch": "WhatsApp couldn't be sent right now. Try again later.",
+        "attachment_mismatch": "WhatsApp couldn't be sent right now. Try again later.",
+        "provider_not_supported": "WhatsApp couldn't be sent right now. Try again later."
       },
       "paper": {
         "back": "{shopName} Ledger",
@@ -1086,24 +1158,16 @@
           "cancel": "Cancel Bill",
           "download": "Download PDF",
           "opening": "Opening…",
-          "pdf": "PDF"
+          "pdf": "PDF",
+          "print": "Print"
         },
         "editing": "Correcting version {version}. Saving makes version {next}.",
-        "buyerText": "Buyer text",
-        "buyer": {
-          "shopName": "Shop name",
-          "phone": "Phone",
-          "address": "Address",
-          "gstinHint": "GSTIN and the Bill note cannot be changed here.",
-          "required": "Shop name, phone and address are required."
-        },
         "correctReasonPlaceholder": "Why is this Bill being corrected?",
         "saveCorrect": "Save correction",
         "correctSaved": "Saved as version {version}.",
         "preview": {
-          "nothingYet": "Change a quantity or the buyer text to see what happens.",
+          "nothingYet": "Change a quantity to see what happens.",
           "checking": "Checking…",
-          "text_only": "Only the text changes. No note is raised.",
           "debit_note": "A debit note will be raised.",
           "credit_note": "A credit note will be raised.",
           "debit_and_credit_notes": "A debit note and a credit note will be raised.",
@@ -1241,7 +1305,7 @@
         "badLinesTitle": "Some items cannot be billed",
         "badLine": {
           "unknown_variety": "not in the catalog",
-          "bad_qty": "wrong quantity",
+          "bad_qty": "quantity must be 1 to 5,000",
           "no_route_price": "no price on this Route",
           "no_tax_period": "no GST rate set"
         },
@@ -1250,9 +1314,7 @@
         "submit": "Raise Bill",
         "submitAmount": "Raise Bill · {amount}",
         "submitting": "Raising…",
-        "successTitle": "Bill raised",
         "success": "{number} for {amount}.",
-        "openPaper": "Open the Bill",
         "catalogError": {
           "title": "Could not load the catalog",
           "body": "Check your connection and try again."
@@ -1566,7 +1628,10 @@
       "searchPlaceholder": "Search products",
       "noMatch": "No products match \"{term}\"",
       "noSizes": "No sizes are set up for this product yet.",
-      "selected": "Selected"
+      "selected": "Selected",
+      "inGatepass": "{count} in GatePass",
+      "showAll": "All",
+      "emptyGatepass": "Nothing left on your GatePass. Switch on All to see every product."
     },
     "cart": {
       "emptyTitle": "Your cart is empty",
@@ -1638,7 +1703,7 @@
         "body": "Your order has been placed.",
         "totalItems": "Total items",
         "orderTime": "Order time",
-        "viewOrders": "View my orders",
+        "viewOrder": "View this order",
         "backHome": "Back to home"
       },
       "gatepass": {
@@ -1664,7 +1729,7 @@
         "badLinesHint": "Remove them to continue.",
         "badLine": {
           "unknown_sku": "This item is not in the catalog any more.",
-          "bad_qty": "Quantity must be a whole number above 0.",
+          "bad_qty": "Quantity must be a whole number from 1 to 5,000.",
           "no_route_price": "No price on your Route for this item. Ask Admin.",
           "no_tax_period": "No GST rate set for today. Ask Admin."
         },
@@ -1829,7 +1894,10 @@
       "noPurchase": "{shop} · no purchase",
       "recordFailed": "Could not record the Payment",
       "startOrder": "Start an order for this shop",
-      "startOrderToast": "Add products to the cart; checkout will be for {shop}."
+      "startOrderToast": "Add products to the cart; checkout will be for {shop}.",
+      "add": "Add customer",
+      "addHint": "Shop name, phone, address and shop photo are required.",
+      "addSuccess": "{shop} added on {route}"
     },
     "account": {
       "avatarTitle": "Update avatar",
@@ -1911,6 +1979,8 @@
       "payment": "Payment · {mode}",
       "paymentLabel": "Payment",
       "noPayment": "None taken. Whole Bill is Pending.",
+      "paidFromAdvance": "None taken. Paid from Advance.",
+      "partlyFromAdvance": "None taken. {advance} from Advance, {pending} Pending.",
       "kept": "Kept",
       "cashReturned": "Cash returned",
       "newBalance": "New Balance",
@@ -1973,7 +2043,7 @@
       },
       "bad_lines": {
         "title": "Some items cannot be sold",
-        "message": "{count} item(s) have no price, no GST rate or a wrong quantity. Remove them to continue.",
+        "message": "{count} item(s) have no price, no GST rate or a wrong quantity (1 to 5,000). Fix or remove them to continue.",
         "action": "Fix cart"
       },
       "short_stock": {

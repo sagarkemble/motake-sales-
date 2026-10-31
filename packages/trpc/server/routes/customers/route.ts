@@ -1,7 +1,7 @@
 import { customerService } from "../../services";
 import { adminProcedure, protectedProcedure, router } from "../../trpc";
 import { apiResponse, apiResponseSchema } from "../../utils/api-response";
-import { badRequest, notFound } from "@repo/services/errors";
+import { badRequest, notFound, screenRefusal } from "@repo/services/errors";
 import { generatePath } from "../../utils/path-generator";
 import { z } from "../../schema";
 import {
@@ -151,7 +151,7 @@ export const customersRouter = router({
         const customer = await customerService.createCustomerAsSalesman(details, ctx.user.id);
         return apiResponse(customer);
       }
-      if (!routeId) throw badRequest("Pick a Route for the Customer");
+      if (!routeId) throw screenRefusal("route_required", "Pick a Route for the Customer");
       const customer = await customerService.createCustomerAsAdmin(
         { ...details, routeId, gstin, einvoicingRequired },
         ctx.user.id,

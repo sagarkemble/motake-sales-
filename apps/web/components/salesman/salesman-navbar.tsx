@@ -15,6 +15,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
+import { NavbarRefreshButton } from "~/providers/page-refresh-provider";
 import {
   getPageTitleForPathname,
   isNavItemActive,
@@ -43,7 +44,7 @@ export function SalesmanNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, tx("common.errors.logoutFailed")));
+      toast.error(getErrorMessage(tx, logoutError, tx("common.errors.logoutFailed")));
     }
   }
 
@@ -172,6 +173,7 @@ export function SalesmanNavbar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <NavbarRefreshButton />
         <LanguageSwitcher />
         <Link href="/salesman/account" aria-label={tx("salesman.nav.openAccount")}>
           <Avatar className="ring-2 ring-transparent transition-shadow hover:ring-brand/30">

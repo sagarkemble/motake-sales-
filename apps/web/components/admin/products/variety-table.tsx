@@ -111,7 +111,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
           // The Variety is saved; its GST can be added with Edit.
           toast.error(
             tx("admin.varieties.gstSaveFailed", {
-              reason: getErrorMessage(error, tx("admin.varietyTax.saveFailed")),
+              reason: getErrorMessage(tx, error, tx("admin.varietyTax.saveFailed")),
             }),
           );
           setIsDialogOpen(false);
@@ -130,7 +130,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
       toast.success(tx("admin.varieties.deactivateSuccess"));
       setDeactivatingVariety(null);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.varieties.deactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.varieties.deactivateFailed")));
     }
   }
 
@@ -141,7 +141,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
       toast.success(tx("admin.varieties.reactivateSuccess"));
       setReactivatingVariety(null);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.varieties.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.varieties.reactivateFailed")));
     }
   }
 

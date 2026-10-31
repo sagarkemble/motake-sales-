@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { INDIAN_STATES, type IndianStateName } from "../shared/indian-states";
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "../shared/limits";
 
 const indianStateNames = INDIAN_STATES.map((state) => state.name) as [
   IndianStateName,
@@ -47,7 +48,7 @@ export const setRoutePriceInputSchema = z.object({
   routeId: z.string().uuid(),
   varietyId: z.string().uuid(),
   // Tax-exclusive, integer paise, above zero.
-  pricePaise: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  pricePaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
 });
 export type SetRoutePriceInput = z.input<typeof setRoutePriceInputSchema>;
 

@@ -40,6 +40,7 @@ export function useReports({
     isDailyKpiSummaryLoading: dailyKpiQuery.isLoading,
     isDailyKpiSummaryError: dailyKpiQuery.isError,
     refetchDailyKpiSummary: dailyKpiQuery.refetch,
+    isDailyKpiSummaryFetching: dailyKpiQuery.isFetching,
 
     monthlyOrderVolume: monthlyOrderVolumeQuery.data?.data ?? null,
     isMonthlyOrderVolumeLoading: monthlyOrderVolumeQuery.isLoading,

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getProfileById, updateProfile } from "@repo/database/queries/auth";
 import type { SelectProfile } from "@repo/database/schema";
 
-import { forbidden } from "../errors";
+import { screenRefusal } from "../errors";
 import {
   buildObjectKey,
   buildPublicUrl,
@@ -49,7 +49,7 @@ export async function updateProfileNameAndAvatar(
   }
 
   if (!avatarKey.startsWith(`${avatarImageFolderName}/${profileId}/`)) {
-    throw forbidden("This avatar image does not belong to you");
+    throw screenRefusal("photo_upload_invalid", "This avatar image does not belong to you");
   }
 
   const existingProfile = await getProfileById(profileId);

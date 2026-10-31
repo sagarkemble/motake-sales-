@@ -20,7 +20,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { SelectProduct, SelectProductVariety } from "@repo/database/schema";
 
-import { conflict, notFound } from "../errors";
+import { badRequest, conflict, notFound, screenRefusal } from "../errors";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   buildObjectKey,
@@ -50,7 +50,11 @@ const varietySkuConstraint = "product_varieties_sku_unique";
 const productAuditedFields = ["name", "description", "imageKey", "status"] as const;
 
 function duplicateVarietyName(productName: string, varietyName: string) {
-  return conflict(`Product "${productName}" already has a variety named "${varietyName}"`);
+  return screenRefusal(
+    "variety_name_taken",
+    `Product "${productName}" already has a variety named "${varietyName}"`,
+    { product: productName, variety: varietyName },
+  );
 }
 
 interface ImageUploadUrlResult {
@@ -102,19 +106,9 @@ class ProductService {
     return after;
   }
 
-  public async deleteProductImage(
-    productId: string,
-    actorProfileId: string,
-  ): Promise<SelectProduct | undefined> {
-    const { before, after } = await this.updateProductWithAudit(
-      productId,
-      { imageKey: null, imageUrl: null },
-      actorProfileId,
-    );
-    if (before?.imageKey) {
-      await deleteObject(before.imageKey);
-    }
-    return after;
+  // A Product always has an image: updateProduct replaces it, nothing removes it.
+  public deleteProductImage(): never {
+    throw badRequest("A Product must have an image; upload a new one to replace it");
   }
 
   public async deactivateProduct(

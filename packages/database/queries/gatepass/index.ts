@@ -359,7 +359,13 @@ export type SubmitHandoverOutcome =
   | { status: "not_found" }
   | { status: "forbidden" }
   | { status: "not_active" }
-  | { status: "invalid"; message: string };
+  | {
+      status: "invalid";
+      // Why, for the app: an unknown item, a returned qty out of range, or a missing short reason.
+      reason: "unknown_item" | "returned_qty_out_of_range" | "short_reason_required";
+      message: string;
+      maxReturnedQty?: number;
+    };
 
 export async function submitHandoverForGatepass(
   gatepassId: string,
@@ -396,6 +402,7 @@ export async function submitHandoverForGatepass(
       if (!lockedItemIds.has(provided.gatepassItemId)) {
         return {
           status: "invalid",
+          reason: "unknown_item",
           message: `Gatepass item ${provided.gatepassItemId} does not belong to this gatepass`,
         };
       }
@@ -421,7 +428,9 @@ export async function submitHandoverForGatepass(
       if (!Number.isInteger(returnedQty) || returnedQty < 0 || returnedQty > remaining) {
         return {
           status: "invalid",
+          reason: "returned_qty_out_of_range",
           message: `Returned quantity for item ${item.id} must be between 0 and ${remaining}`,
+          maxReturnedQty: remaining,
         };
       }
 
@@ -430,6 +439,7 @@ export async function submitHandoverForGatepass(
       if (shortfall > 0 && !shortReason) {
         return {
           status: "invalid",
+          reason: "short_reason_required",
           message: `A reason is required for the ${shortfall} short unit(s) on item ${item.id}`,
         };
       }

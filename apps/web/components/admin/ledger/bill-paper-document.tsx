@@ -11,19 +11,12 @@ import { cn } from "~/lib/utils";
 
 type Totals = BillPaper["version"]["totals"];
 
-export interface BuyerText {
-  shopName: string;
-  phone: string;
-  address: string;
-}
-
-// Correct in place: qty per line, the edited buyer text and the server-previewed totals.
+// Correct in place: qty per line and the server-previewed totals. The buyer stays as issued.
 export interface CorrectEdit {
   // True while the save runs: the steppers are greyed out.
   disabled: boolean;
   quantities: Record<string, number>;
   setQuantity: (lineId: string, quantity: number) => void;
-  buyer: BuyerText;
   totals: Totals | null;
 }
 
@@ -133,9 +126,7 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
   const totals = edit?.totals ?? issuedTotals;
   // CGST and SGST, or IGST when inter-state; none on a Bill of Supply.
   const taxColumns = billTaxRows(issuedTotals).map((row) => row.tax);
-  const buyer = edit
-    ? { shop_name: edit.buyer.shopName, phone: edit.buyer.phone, address: edit.buyer.address }
-    : letterhead.buyer;
+  const { buyer } = letterhead;
 
   return (
     <article

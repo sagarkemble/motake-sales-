@@ -16,6 +16,7 @@ import { useGatepasses } from "~/hooks/use-gatepasses";
 import { useProducts } from "~/hooks/use-products";
 import { useTranslate } from "~/hooks/use-translate";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const CATALOG_PAGE_SIZE = 200;
 
@@ -25,14 +26,28 @@ export default function SalesmanGatepassPage() {
   const [detailBusinessDate, setDetailBusinessDate] = useState<string | null>(null);
   const [isHandoverDialogOpen, setIsHandoverDialogOpen] = useState(false);
 
-  const { myGatepass, isMyGatepassLoading, myHistory, isMyHistoryLoading } = useGatepasses({
+  const {
+    myGatepass,
+    isMyGatepassLoading,
+    refetchMyGatepass,
+    isMyGatepassFetching,
+    myHistory,
+    isMyHistoryLoading,
+    refetchMyHistory,
+    isMyHistoryFetching,
+  } = useGatepasses({
     businessDate: businessDateKey,
     includeMyGatepass: true,
     includeMyHistory: true,
   });
-  const { productsPage } = useProducts({
+  const { productsPage, refetchProductsList, isProductsListFetching } = useProducts({
     listFilters: { page: 1, pageSize: CATALOG_PAGE_SIZE },
   });
+  usePageRefresh(
+    () => Promise.all([refetchMyGatepass(), refetchMyHistory(), refetchProductsList()]),
+    isMyGatepassFetching || isMyHistoryFetching || isProductsListFetching,
+  );
+  const isReloading = usePageReloading();
 
   const varietyDisplayById = new Map(
     productsPage.items.flatMap(({ product, varieties }) =>
@@ -85,7 +100,7 @@ export default function SalesmanGatepassPage() {
               : tx("salesman.gatepass.handedOver")}
           </Button>
 
-          {isMyGatepassLoading ? (
+          {isMyGatepassLoading || (isReloading && isMyGatepassFetching) ? (
             <ListItemSkeleton count={4} />
           ) : !myGatepass ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
@@ -121,7 +136,7 @@ export default function SalesmanGatepassPage() {
         </TabsContent>
 
         <TabsContent value="history" className="flex flex-col gap-3">
-          {isMyHistoryLoading ? (
+          {isMyHistoryLoading || (isReloading && isMyHistoryFetching) ? (
             <ListItemSkeleton count={5} />
           ) : myHistory.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">

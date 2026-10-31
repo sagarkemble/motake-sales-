@@ -9,7 +9,7 @@ import {
 import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared/executor";
 import type { SelectDocumentNumberSeries } from "@repo/database/schema";
 
-import { conflict, internalError } from "../errors";
+import { screenRefusal } from "../errors";
 import {
   allocateInputSchema,
   DEFAULT_PREFIXES,
@@ -55,7 +55,10 @@ class DocumentNumberService {
       row = await lockSeriesRow(parsedInput, executor);
     }
     if (!row)
-      throw internalError(`Series ${parsedInput.kind} ${parsedInput.financialYear} missing`);
+      throw screenRefusal(
+        "number_series_missing",
+        `Series ${parsedInput.kind} ${parsedInput.financialYear} missing`,
+      );
     return row;
   }
 
@@ -63,7 +66,8 @@ class DocumentNumberService {
     const parsedInput = allocateInputSchema.parse(input);
     const series = await this.lockSeriesRow(parsedInput, executor);
     if (series.nextSeq > MAX_SEQ) {
-      throw conflict(
+      throw screenRefusal(
+        "number_series_exhausted",
         `The ${parsedInput.kind} series for ${parsedInput.financialYear} has run out of numbers`,
       );
     }

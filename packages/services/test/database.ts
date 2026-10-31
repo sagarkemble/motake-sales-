@@ -1,12 +1,11 @@
 import { db, sql } from "@repo/database";
 
-// Supabase projects the tests may wipe: motake-testing (root .env.testing). The root .env is
-// production and is never on this list.
-const TEST_SUPABASE_PROJECT_REFS = ["osugflntfiggupnstyfo"];
+// Tests wipe every table, so they only run on a throwaway local Postgres (`pnpm test:local`, or
+// CI's service container). Hosted Supabase projects are never test databases: motake-testing
+// keeps the seeded data used for click-testing, and the root .env is production.
 const LOCAL_DATABASE_HOSTS = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres"];
 
-// True when the URL is a test database: a local Postgres, or a listed Supabase project through
-// its pooler (user postgres.<ref>) or direct host (db.<ref>.supabase.co).
+// True when the URL is a local Postgres.
 export function isTestDatabaseUrl(databaseUrl: string | undefined): boolean {
   if (!databaseUrl) return false;
   let url: URL;
@@ -15,10 +14,7 @@ export function isTestDatabaseUrl(databaseUrl: string | undefined): boolean {
   } catch {
     return false;
   }
-  if (LOCAL_DATABASE_HOSTS.includes(url.hostname)) return true;
-  return TEST_SUPABASE_PROJECT_REFS.some(
-    (ref) => url.username === `postgres.${ref}` || url.hostname === `db.${ref}.supabase.co`,
-  );
+  return LOCAL_DATABASE_HOSTS.includes(url.hostname);
 }
 
 // Tests wipe the database at DATABASE_URL, so a run must opt in explicitly and point at a test
@@ -31,7 +27,7 @@ export function assertDatabaseWipeAllowed(environment: NodeJS.ProcessEnv): void 
   }
   if (!isTestDatabaseUrl(environment.DATABASE_URL)) {
     throw new Error(
-      "Refusing to run tests: DATABASE_URL is not a test database. Tests only run against .env.testing.",
+      "Refusing to run tests: DATABASE_URL is not a local Postgres. Run them with `pnpm test:local`.",
     );
   }
 }

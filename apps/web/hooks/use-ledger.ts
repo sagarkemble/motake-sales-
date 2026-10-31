@@ -96,8 +96,11 @@ export function useLedger({
     isSummaryLoading: summaryQuery.isLoading,
     isSummaryError: summaryQuery.isError,
     refetchSummary: summaryQuery.refetch,
+    isSummaryFetching: summaryQuery.isFetching,
 
     openPreorders: openPreordersQuery.data?.data ?? [],
+    refetchOpenPreorders: openPreordersQuery.refetch,
+    isOpenPreordersFetching: openPreordersQuery.isFetching,
 
     catalog: catalogQuery.data?.data ?? [],
     isCatalogLoading: catalogQuery.isLoading,

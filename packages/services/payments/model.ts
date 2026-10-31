@@ -2,6 +2,7 @@ import type { SelectCustomer, SelectPayment } from "@repo/database/schema";
 import { z } from "zod";
 
 import type { Balance } from "../ledger/model";
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE } from "../shared/limits";
 
 export const paymentModeSchema = z.enum(["cash", "bank", "upi"]);
 export const overpayChoiceSchema = z.enum(["return_change", "keep_advance"]);
@@ -20,7 +21,7 @@ export const referenceSchema = z
 // The Payment block at Book Now and fulfil. ₹0 received means the whole Bill stays Pending.
 export const checkoutPaymentInputSchema = z.object({
   mode: paymentModeSchema,
-  receivedPaise: z.number().int().min(0),
+  receivedPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: referenceSchema,
   overpay: overpayChoiceSchema.optional(),
 });
@@ -38,9 +39,9 @@ export type RecordFieldPaymentInput = z.input<typeof recordFieldPaymentInputSche
 export const postPaymentInputSchema = z.object({
   customerId: z.string().uuid(),
   mode: paymentModeSchema,
-  receivedPaise: z.number().int().min(0),
-  keptPaise: z.number().int().positive(),
-  returnedPaise: z.number().int().min(0),
+  receivedPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
+  keptPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
+  returnedPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: z.string().max(128).nullish(),
   reason: z.string().trim().optional(),
   // Only when a salesman takes it against an Active GatePass.
@@ -83,7 +84,7 @@ export const correctReferenceSchema = z
 export const addPaymentInputSchema = z.object({
   customerId: z.string().uuid(),
   mode: paymentModeSchema,
-  keptPaise: z.number().int().positive(),
+  keptPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: referenceSchema,
   reason: reasonSchema,
   idempotencyKey: idempotencyKeySchema,
@@ -95,7 +96,7 @@ export type ParsedAddPaymentInput = z.output<typeof addPaymentInputSchema>;
 export const correctPaymentInputSchema = z.object({
   paymentId: z.string().uuid(),
   expectedLatestEventId: z.string().uuid(),
-  keptPaise: z.number().int().min(0),
+  keptPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   mode: paymentModeSchema,
   reference: correctReferenceSchema,
   reason: reasonSchema,

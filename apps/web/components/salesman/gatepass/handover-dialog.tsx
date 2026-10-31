@@ -94,7 +94,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, lines }: Handov
       toast.success(tx("salesman.handover.success"));
       handleOpenChange(false);
     } catch (submitHandoverError) {
-      toast.error(getErrorMessage(submitHandoverError, tx("salesman.handover.failed")));
+      toast.error(getErrorMessage(tx, submitHandoverError, tx("salesman.handover.failed")));
     } finally {
       setIsConfirmOpen(false);
     }

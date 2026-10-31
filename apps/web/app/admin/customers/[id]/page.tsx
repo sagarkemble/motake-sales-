@@ -62,7 +62,7 @@ export default function CustomerDetailPage() {
       await reactivateCustomerAsync({ id: customerId });
       toast.success(tx("admin.customers.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.customers.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.customers.reactivateFailed")));
     }
   }
 
@@ -104,7 +104,6 @@ export default function CustomerDetailPage() {
               <MapPinIcon className="mt-0.5 size-3.5 shrink-0" />
               {customer.address}
             </p>
-            {customer.notes && <p className="text-xs text-muted-foreground">{customer.notes}</p>}
           </div>
 
           <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted/40 p-3 text-sm md:col-span-1">
@@ -150,6 +149,13 @@ export default function CustomerDetailPage() {
             </div>
           </dl>
         </div>
+
+        {customer.notes && (
+          <div className="rounded-xl bg-muted/40 p-3 text-sm">
+            <p className="text-xs text-muted-foreground">{tx("admin.customers.form.notes")}</p>
+            <p className="whitespace-pre-line break-words">{customer.notes}</p>
+          </div>
+        )}
 
         {movedToRouteMessage && (
           <p

@@ -10,7 +10,7 @@ import { supabaseAdminClient } from "../clients/supabase-admin";
 import { env } from "../env";
 import { runInTransaction } from "@repo/database/queries/shared/executor";
 
-import { badRequest, notFound, unauthorized } from "../errors";
+import { badRequest, notFound, screenRefusal, unauthorized } from "../errors";
 import SalesmanService from "../salesman";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
@@ -30,6 +30,22 @@ import {
   type UpdateMyProfileInput,
   type UpdateSalesmanAccountInput,
 } from "./model";
+
+// Supabase Auth error codes the Admin can fix in the form; any other failure stays a plain
+// bad request, so the app shows its own "could not save" text.
+const supabaseAccountReasons = {
+  email_exists: "email_taken",
+  user_already_exists: "email_taken",
+  weak_password: "password_too_weak",
+  email_address_invalid: "email_invalid",
+} as const;
+
+function supabaseAccountRefusal(message: string, code: string | undefined) {
+  const reason = code
+    ? supabaseAccountReasons[code as keyof typeof supabaseAccountReasons]
+    : undefined;
+  return reason ? screenRefusal(reason, message) : badRequest(message);
+}
 
 class AuthService {
   private readonly salesmanService = new SalesmanService();
@@ -96,7 +112,10 @@ class AuthService {
       app_metadata: { role: salesmanRole },
     });
     if (error || !data.user) {
-      throw badRequest(`Failed to create Supabase account: ${error?.message ?? "unknown error"}`);
+      throw supabaseAccountRefusal(
+        `Failed to create Supabase account: ${error?.message ?? "unknown error"}`,
+        error?.code,
+      );
     }
 
     const supabaseUserId = data.user.id;
@@ -175,7 +194,12 @@ class AuthService {
         email: parsedChanges.email,
         password: parsedChanges.password,
       });
-      if (error) throw badRequest(`Failed to update Supabase account: ${error.message}`);
+      if (error) {
+        throw supabaseAccountRefusal(
+          `Failed to update Supabase account: ${error.message}`,
+          error.code,
+        );
+      }
     }
 
     const profileChanges: Partial<InsertProfile> = {};

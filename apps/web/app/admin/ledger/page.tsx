@@ -33,6 +33,7 @@ import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { useLedger, type LedgerRowType } from "~/hooks/use-ledger";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const PAGE_SIZE = 25;
 
@@ -73,7 +74,10 @@ function LedgerPageContent() {
     isSummaryLoading,
     isSummaryError,
     refetchSummary,
+    isSummaryFetching,
     openPreorders,
+    refetchOpenPreorders,
+    isOpenPreordersFetching,
   } = useLedger({
     customerId: customerId ?? undefined,
     rowFilters: {
@@ -85,6 +89,13 @@ function LedgerPageContent() {
       pageSize: PAGE_SIZE,
     },
   });
+  // The Ledger's queries run only once a Customer is picked.
+  usePageRefresh(
+    () => Promise.all([refetchSummary(), refetchRows(), refetchOpenPreorders()]),
+    isSummaryFetching || isRowsFetching || isOpenPreordersFetching,
+    Boolean(customerId),
+  );
+  const isReloading = usePageReloading();
 
   useEffect(() => {
     try {
@@ -146,7 +157,8 @@ function LedgerPageContent() {
   }
 
   const inactive = summary?.customer.status === "inactive";
-  const isLoading = isSummaryLoading || isRowsLoading;
+  const isLoading =
+    isSummaryLoading || isRowsLoading || (isReloading && (isSummaryFetching || isRowsFetching));
   const isError = isSummaryError || isRowsError;
 
   return (

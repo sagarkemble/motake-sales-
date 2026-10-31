@@ -44,10 +44,7 @@ describe("Seller master setup", () => {
   it("creates the one row with e-invoicing on and a created audit row, and refuses a second setup", async () => {
     const admin = await buildProfile({ name: "Asha Admin" });
 
-    const created = await settings.setUpSellerSettings(
-      { ...sellerInput, reason: "Go-live" },
-      admin.id,
-    );
+    const created = await settings.setUpSellerSettings(sellerInput, admin.id);
     await expect(settings.setUpSellerSettings(sellerInput, admin.id)).rejects.toMatchObject({
       code: "CONFLICT",
     });
@@ -64,7 +61,7 @@ describe("Seller master setup", () => {
         action: "created",
         actorId: admin.id,
         actorName: "Asha Admin",
-        reason: "Go-live",
+        reason: null,
         payload: sellerInput,
       }),
     ]);
@@ -149,7 +146,7 @@ describe("Seller master edits", () => {
     await settings.setUpSellerSettings(sellerInput, admin.id);
 
     const updated = await settings.updateSellerSettings(
-      { ...sellerInput, phone: "9000000001", reason: "CA instruction 12 Oct" },
+      { ...sellerInput, phone: "9000000001" },
       editor.id,
     );
 
@@ -159,7 +156,7 @@ describe("Seller master edits", () => {
       action: "updated",
       actorId: editor.id,
       actorName: "Ravi Admin",
-      reason: "CA instruction 12 Oct",
+      reason: null,
       payload: { phone: { old: "9822418224", new: "9000000001" } },
     });
   });
@@ -261,14 +258,13 @@ describe("Seller document details", () => {
         bankIfsc: "bkid0000919",
         terms:
           "  1. Please verify quantities at delivery.  \r\n\n 2. Refrigerate where required.\n",
-        reason: "Bank letter",
       },
       admin.id,
     );
 
     expect(updated).toMatchObject(documentDetails);
     const [latest] = await settings.listSellerSettingsHistory();
-    expect(latest).toMatchObject({ action: "updated", reason: "Bank letter" });
+    expect(latest).toMatchObject({ action: "updated", reason: null });
     expect(latest?.payload).toEqual({
       pan: { old: null, new: "EHCPP4509Q" },
       bankAccountName: { old: null, new: "MOTAKE MILK AND MILK PRODUCTS" },

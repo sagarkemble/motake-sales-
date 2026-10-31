@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { PaymentScannerButton } from "~/components/shared/checkout/payment-scanner-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -216,6 +217,7 @@ function AddPaymentForm({ summary, onAdded, onClose }: AddFormProps) {
         onChange={fields.setMode}
         disabled={isAddingPayment}
       />
+      {fields.mode === "upi" && <PaymentScannerButton />}
       <AmountField
         id="add-payment-amount"
         label={tx("admin.ledger.money.addPayment.kept")}

@@ -20,7 +20,7 @@ export default function NewProductPage() {
       toast.success(tx("admin.products.createSuccess"));
       router.push(`/admin/products/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.products.createFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.products.createFailed")));
     }
   }
 

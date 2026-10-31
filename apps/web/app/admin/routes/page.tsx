@@ -15,6 +15,7 @@ import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useRoutes } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { cn } from "~/lib/utils";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 function RoutesPageContent() {
   const tx = useTranslate();
@@ -24,9 +25,11 @@ function RoutesPageContent() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
 
-  const { routes, isRoutesListLoading } = useRoutes({
+  const { routes, isRoutesListLoading, refetchRoutesList, isRoutesListFetching } = useRoutes({
     listFilters: { search: debouncedSearchTerm || undefined, includeHidden },
   });
+  usePageRefresh(refetchRoutesList, isRoutesListFetching);
+  const isReloading = usePageReloading();
 
   const activeRouteId = selectedRouteId ?? routes[0]?.id ?? null;
 
@@ -92,7 +95,7 @@ function RoutesPageContent() {
         )}
 
         <div className="flex flex-col gap-2">
-          {isRoutesListLoading ? (
+          {isRoutesListLoading || (isReloading && isRoutesListFetching) ? (
             <ListItemSkeleton count={4} />
           ) : routes.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

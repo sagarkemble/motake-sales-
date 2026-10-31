@@ -8,6 +8,7 @@ import {
   orderItemsTable,
   ordersTable,
   profilesTable,
+  routesTable,
   salesmenTable,
   type InsertSalesman,
   type SelectGatepass,
@@ -27,6 +28,12 @@ import {
 export interface SalesmanWithProfile {
   salesman: SelectSalesman;
   profile: SelectProfile;
+}
+
+// A list row also names the Route of the salesman's Active GatePass for the business date, or null
+// without one.
+export interface SalesmanListRow extends SalesmanWithProfile {
+  activeRouteName: string | null;
 }
 
 export async function createSalesman(
@@ -69,16 +76,31 @@ export async function getSalesmanWithProfileById(
 
 export async function listSalesmenWithProfiles(
   pagination: PaginationParams,
+  businessDate: string,
   includeDeleted = false,
-): Promise<PaginatedResult<SalesmanWithProfile>> {
+): Promise<PaginatedResult<SalesmanListRow>> {
   const { limit, offset } = buildPaginationOffsets(pagination);
   const whereClause = includeDeleted ? undefined : isNull(profilesTable.deletedAt);
 
   const [rows, countRows] = await Promise.all([
     db
-      .select({ salesman: salesmenTable, profile: profilesTable })
+      .select({
+        salesman: salesmenTable,
+        profile: profilesTable,
+        activeRouteName: routesTable.name,
+      })
       .from(salesmenTable)
       .innerJoin(profilesTable, eq(salesmenTable.id, profilesTable.id))
+      // At most one active GatePass per salesman and day, as getActiveGatepassWithRoute reads it.
+      .leftJoin(
+        gatepassesTable,
+        and(
+          eq(gatepassesTable.salesmanId, salesmenTable.id),
+          eq(gatepassesTable.businessDate, businessDate),
+          eq(gatepassesTable.status, "active"),
+        ),
+      )
+      .leftJoin(routesTable, eq(gatepassesTable.routeId, routesTable.id))
       .where(whereClause)
       .limit(limit)
       .offset(offset),

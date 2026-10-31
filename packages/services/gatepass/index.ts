@@ -35,7 +35,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { SelectGatepass, SelectGatepassItem } from "@repo/database/schema";
 
-import { badRequest, conflict, forbidden, notFound } from "../errors";
+import { badRequest, conflict, forbidden, notFound, refused, screenRefusal } from "../errors";
 import { changedFields, recordAudit } from "../shared/audit";
 import {
   allotGatepassInputSchema,
@@ -100,11 +100,16 @@ class GatepassService {
     const parsedInput = allotGatepassInputSchema.parse(input);
     const varietyIds = parsedInput.items.map((item) => item.varietyId);
     if (new Set(varietyIds).size !== varietyIds.length) {
-      throw badRequest("Each variety can appear only once in a gatepass allotment");
+      throw screenRefusal(
+        "duplicate_variety_in_allotment",
+        "Each variety can appear only once in a gatepass allotment",
+      );
     }
     const alreadyActive = () =>
-      conflict(
+      screenRefusal(
+        "salesman_has_gatepass",
         `Salesman ${parsedInput.salesmanId} already has an active gatepass on ${parsedInput.businessDate}`,
+        { date: parsedInput.businessDate },
       );
     try {
       return await runInTransaction(async (transaction) => {
@@ -112,7 +117,15 @@ class GatepassService {
         const route = await lockRouteRow(parsedInput.routeId, "share", transaction);
         if (!route) throw notFound(`Route ${parsedInput.routeId} not found`);
         if (route.deletedAt) {
-          throw conflict(`Route ${route.name} is deleted. Pick another Route.`);
+          // Same reason as a Customer's deleted Route, but allot keeps its CONFLICT code.
+          throw refused(
+            "CONFLICT",
+            "route_deleted",
+            `Route ${route.name} is deleted. Pick another Route.`,
+            {
+              route: route.name,
+            },
+          );
         }
 
         // Only varieties with a quantity above zero are allotted, so only they need a Route price.
@@ -126,7 +139,11 @@ class GatepassService {
         if (unpricedVarietyIds.length > 0) {
           const labels = await listVarietyLabels(unpricedVarietyIds, transaction);
           const named = labels.length ? labels.map((row) => row.label) : unpricedVarietyIds;
-          throw badRequest(`No price on Route ${route.name} for: ${named.join(", ")}`);
+          throw screenRefusal(
+            "route_price_missing",
+            `No price on Route ${route.name} for: ${named.join(", ")}`,
+            { route: route.name, varieties: named.join(", ") },
+          );
         }
 
         // A salesman can be re-allotted a fresh gatepass on the same day, but only once their
@@ -299,10 +316,16 @@ class GatepassService {
       throw forbidden("This gatepass does not belong to you");
     }
     if (outcome.status === "not_active") {
-      throw conflict(`Gatepass ${parsedInput.gatepassId} is not active`);
+      throw screenRefusal(
+        "gatepass_not_active",
+        `Gatepass ${parsedInput.gatepassId} is not active`,
+      );
     }
     if (outcome.status === "invalid") {
-      throw badRequest(outcome.message);
+      if (outcome.reason === "unknown_item") throw badRequest(outcome.message);
+      throw screenRefusal(outcome.reason, outcome.message, {
+        max: outcome.maxReturnedQty ?? null,
+      });
     }
     return outcome.gatepass;
   }
@@ -317,7 +340,10 @@ class GatepassService {
       const gatepass = await getGatepassById(gatepassId, transaction);
       if (!gatepass) return undefined;
       if (gatepass.status !== "pending_verification") {
-        throw conflict("Only gatepasses awaiting verification can be approved");
+        throw screenRefusal(
+          "gatepass_not_awaiting_verification",
+          "Only gatepasses awaiting verification can be approved",
+        );
       }
       const closedGatepass = await updateGatepassStatus(
         gatepassId,
@@ -353,7 +379,10 @@ class GatepassService {
       const gatepass = await getGatepassById(gatepassId, transaction);
       if (!gatepass) return undefined;
       if (gatepass.status !== "pending_verification") {
-        throw conflict("Only gatepasses awaiting verification can be flagged");
+        throw screenRefusal(
+          "gatepass_not_awaiting_verification",
+          "Only gatepasses awaiting verification can be flagged",
+        );
       }
       const flaggedGatepass = await updateGatepassStatus(
         gatepassId,

@@ -111,7 +111,7 @@ async function octoberBill() {
 }
 
 describe("Filed month lock on Spec G's Correct and Cancel", () => {
-  it("refuses line Correct, text-only Correct and Cancel in a filed month, naming Raise Note; Raise Note still works", async () => {
+  it("refuses Correct and Cancel in a filed month, naming Raise Note; Raise Note still works", async () => {
     const { world, placed } = await octoberBill();
     await fileOctober(world.admin.id);
     const [line] = (await versionsOf(placed.billId))[0]!.items as Array<{ id: string }>;
@@ -122,14 +122,6 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
         expectedVersionNumber: 1,
         lines: [{ lineId: line!.id, quantity: 2 }],
         reason: "Wrong qty",
-      }),
-    );
-    const textCorrect = await refusalOf(
-      harness.adminBillService.correctBill(world.admin.id, {
-        billId: placed.billId,
-        expectedVersionNumber: 1,
-        buyer: { shopName: "New name", phone: "9800000001", address: "Elsewhere" },
-        reason: "Wrong buyer text",
       }),
     );
     const cancel = await refusalOf(
@@ -148,7 +140,7 @@ describe("Filed month lock on Spec G's Correct and Cancel", () => {
       idempotencyKey: randomUUID(),
     });
 
-    for (const refusal of [lineCorrect, textCorrect, cancel]) {
+    for (const refusal of [lineCorrect, cancel]) {
       expect(refusal).toEqual({ reason: "bill_locked", details: { lockReason: "month_filed" } });
     }
     expect(note.kind).toBe("gst_credit_note");

@@ -84,12 +84,10 @@ const sellerFieldsSchema = z.object({
 });
 
 // No einvoicingRequired: the seller-level flag stays at its default (true) and is not editable here.
-export const setUpSellerSettingsInputSchema = sellerFieldsSchema.extend({ reason: reasonSchema });
+export const setUpSellerSettingsInputSchema = sellerFieldsSchema;
 export type SetUpSellerSettingsInput = z.input<typeof setUpSellerSettingsInputSchema>;
 
-export const updateSellerSettingsInputSchema = sellerFieldsSchema
-  .partial()
-  .extend({ reason: reasonSchema });
+export const updateSellerSettingsInputSchema = sellerFieldsSchema.partial();
 export type UpdateSellerSettingsInput = z.input<typeof updateSellerSettingsInputSchema>;
 
 export const listNumberSeriesInputSchema = financialYearSchema;

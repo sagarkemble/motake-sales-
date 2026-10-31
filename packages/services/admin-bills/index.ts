@@ -54,7 +54,7 @@ import type {
 
 import BillService from "../bills";
 import DocumentNumberService from "../document-numbers";
-import { internalError, ledgerRefusal, notFound } from "../errors";
+import { internalError, ledgerRefusal, notFound, screenRefusal } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
 import LedgerService from "../ledger";
 import RouteService from "../routes";
@@ -89,6 +89,7 @@ import { gstBillLockHook } from "../shared/gst-gates";
 import { dueStateOf, routeStampFromHeader, routeStampOf } from "../shared/checkout-events";
 import { recordAudit } from "../shared/audit";
 import { financialYearOf } from "../shared/financial-year";
+import { MAX_QTY } from "../shared/limits";
 import { computeBillTax, placeOfSupplyOf, type PlaceOfSupply } from "../shared/tax-engine";
 import VarietyTaxPeriodService from "../variety-tax-periods";
 import {
@@ -163,7 +164,7 @@ function sameQuantities(first: Map<string, number>, second: Map<string, number>)
   );
 }
 
-// Technical limits only, as at checkout: int4 quantities and safe-integer paise.
+// As at checkout: MAX_QTY a line, an int4 basket and safe-integer paise.
 const MAX_INT4 = 2_147_483_647;
 const MAX_SAFE_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -194,7 +195,7 @@ interface Run<Result> {
 
 const arithmeticMessages: Record<ArithmeticRefusal["reason"], string> = {
   unknown_line: "A line is not on the latest version of this Bill.",
-  nothing_changed: "Nothing changed. Change a qty or the buyer text, or close Correct.",
+  nothing_changed: "Nothing changed. Change a qty, or close Correct.",
   all_lines_zero: "Every line would be 0. Use Cancel to void a Bill.",
   below_credited_qty: "A line cannot go below the qty already on a Credit Note.",
   note_amount_zero: "This change would make a ₹0.00 Note after round-off.",
@@ -211,7 +212,7 @@ function refuseArithmetic(refusalResult: ArithmeticRefusal): never {
   );
 }
 
-// Correct and Debit Note quantities stay inside an int4 qty and a safe-integer amount, like
+// Correct and Debit Note quantities stay inside MAX_QTY a line and a safe-integer amount, like
 // Raise Bill's basket: a line past either is refused as bad_qty instead of overflowing.
 function assertQuantitiesFit(
   items: ArithmeticLine[],
@@ -231,8 +232,8 @@ function assertQuantitiesFit(
       mode === "debit_note" ? (remainingById.get(line.lineId) ?? 0) + line.quantity : line.quantity;
     const amountWithTax = BigInt(item.routePricePaise) * BigInt(lineQuantity) * 2n;
     if (
-      line.quantity > MAX_INT4 ||
-      lineQuantity > MAX_INT4 ||
+      line.quantity > MAX_QTY ||
+      lineQuantity > MAX_QTY ||
       totalQuantity + lineQuantity > MAX_INT4 ||
       totalAmount + amountWithTax > MAX_SAFE_AMOUNT
     ) {
@@ -524,8 +525,8 @@ class AdminBillService {
     };
   }
 
-  // Fixes a wrong entry on the latest version: line qty (0 removes) and the buyer text, at the
-  // frozen price and tax facts. Rewrites the live Bill and its lines in place (surviving line ids
+  // Fixes a wrong qty on the latest version (0 removes a line), at the frozen price and tax facts.
+  // The buyer stays as issued. Rewrites the live Bill and its lines in place (surviving line ids
   // kept), appends a version, and writes the Credit and Debit Notes the change needs, pointing at
   // the replaced version. No stock goes back to any GatePass.
   public async correctBill(
@@ -536,11 +537,7 @@ class AdminBillService {
     const run = await runInTransaction(async (transaction): Promise<Run<CorrectResult>> => {
       const bill = await this.lockOpenBill(parsedInput.billId, "correct", transaction);
       const customerId = await this.activeCustomerOf(bill, transaction);
-      const { state, plan, buyer, issuedOn } = await this.planCorrectFor(
-        bill,
-        parsedInput,
-        transaction,
-      );
+      const { state, plan, issuedOn } = await this.planCorrectFor(bill, parsedInput, transaction);
 
       const creditNumber = plan.creditNote
         ? await this.allocateNoteNumber("credit_note", issuedOn, actorProfileId, transaction)
@@ -571,7 +568,6 @@ class AdminBillService {
         bill.id,
         {
           legalType: plan.tax.legalType,
-          letterhead: { ...state.letterhead, buyer },
           totalQuantity: plan.tax.totalQuantity,
           totalPaise: plan.tax.totalPaise,
           taxablePaise: plan.tax.taxablePaise,
@@ -820,26 +816,15 @@ class AdminBillService {
     return run.result;
   }
 
-  // The orders cancel entry: an unfulfilled Pre-order is cancelled as such; an order with a Bill
-  // cancels that Bill at its latest version. Returns the order as it now stands.
+  // The orders cancel entry: only a placed Pre-order that is not yet fulfilled is cancelled. A
+  // fulfilled Pre-order or a Book Now has a Bill, which is cancelled from the Bill instead.
+  // Returns the order as it now stands.
   public async cancelOrder(
     actorProfileId: string,
     input: CancelPreOrderInput,
   ): Promise<SelectOrder> {
     const parsedInput = cancelPreOrderInputSchema.parse(input);
-    const bill = await getBillByOrderId(parsedInput.orderId);
-    if (!bill) {
-      await this.cancelPreOrder(actorProfileId, parsedInput);
-    } else {
-      const run = await runInTransaction((transaction) =>
-        this.cancelBillInTransaction(
-          actorProfileId,
-          { billId: bill.id, reason: parsedInput.reason },
-          transaction,
-        ),
-      );
-      await notifyAdminBillOutcome(this.afterCommit, run.outcome);
-    }
+    await this.cancelPreOrder(actorProfileId, parsedInput);
     const order = await getOrderWithItemsById(parsedInput.orderId);
     if (!order) throw notFound(`Order ${parsedInput.orderId} not found`);
     return order.order;
@@ -1258,37 +1243,23 @@ class AdminBillService {
     input: {
       expectedVersionNumber: number;
       lines: Array<{ lineId: string; quantity: number }>;
-      buyer?: { shopName: string; phone: string; address: string };
     },
     executor: DbExecutor,
   ) {
     const state = await this.loadBillState(bill, executor);
     this.assertExpectedVersion(state, input.expectedVersionNumber);
     const issuedOn = businessDateOf(new Date());
-    const current = state.letterhead.buyer;
-    const buyer = input.buyer
-      ? {
-          ...current,
-          shop_name: input.buyer.shopName,
-          phone: input.buyer.phone,
-          address: input.buyer.address,
-        }
-      : current;
     assertQuantitiesFit(state.items, state.standing, input.lines, "correct");
     const plan = planCorrect({
       currentItems: state.items,
       standing: state.standing,
       newQuantities: new Map(input.lines.map((line) => [line.lineId, line.quantity])),
-      buyerChanged:
-        buyer.shop_name !== current.shop_name ||
-        buyer.phone !== current.phone ||
-        buyer.address !== current.address,
       placeOfSupply: state.placeOfSupply,
       creditNoteKind: await this.creditNoteKindFor(bill, issuedOn, executor),
       oldTotalPaise: bill.totalPaise,
     });
     if (!plan.ok) refuseArithmetic(plan);
-    return { state, plan, buyer, issuedOn };
+    return { state, plan, issuedOn };
   }
 
   private async planNoteFor(
@@ -1371,7 +1342,9 @@ class AdminBillService {
       );
       if (quantity <= 0) continue;
       const updated = await restoreSoldQtyOnCancellation(stock.id, quantity, transaction);
-      if (!updated) throw internalError(`GatePass stock moved under lock: ${item.varietyId}`);
+      if (!updated) {
+        throw screenRefusal("stock_changed", `GatePass stock moved under lock: ${item.varietyId}`);
+      }
       restored = true;
     }
     return restored;
@@ -1424,7 +1397,7 @@ class AdminBillService {
       );
     }
     for (const [varietyId, quantity] of quantityByVarietyId) {
-      if (quantity > MAX_INT4) badQtyIds.add(varietyId);
+      if (quantity > MAX_QTY) badQtyIds.add(varietyId);
     }
     for (const varietyId of badQtyIds) {
       badLines.push({ varietyId, reason: "bad_qty" });

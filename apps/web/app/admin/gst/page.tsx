@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useGst, type Gstr1Filing } from "~/hooks/use-gst";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 const PAGE_SIZE = 25;
 
@@ -38,12 +39,21 @@ function GstPageContent() {
     isFilingsLoading,
     isFilingsError,
     refetchFilings,
+    isFilingsFetching,
     irnPendingCount,
+    refetchIrnPendingCount,
+    isIrnPendingCountFetching,
     irnPendingPage,
     isIrnPendingLoading,
     isIrnPendingError,
     refetchIrnPending,
+    isIrnPendingFetching,
   } = useGst({ loadFilings: true, irnPendingPage: { page, pageSize: PAGE_SIZE } });
+  usePageRefresh(
+    () => Promise.all([refetchFilings(), refetchIrnPendingCount(), refetchIrnPending()]),
+    isFilingsFetching || isIrnPendingCountFetching || isIrnPendingFetching,
+  );
+  const isReloading = usePageReloading();
 
   function replaceQuery(next: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -82,7 +92,7 @@ function GstPageContent() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="filings" className="space-y-2">
-          {isFilingsLoading ? (
+          {isFilingsLoading || (isReloading && isFilingsFetching) ? (
             <GstSkeleton />
           ) : isFilingsError ? (
             <GstError onRetry={() => void refetchFilings()} />
@@ -96,7 +106,7 @@ function GstPageContent() {
           )}
         </TabsContent>
         <TabsContent value="irn" className="space-y-2">
-          {isIrnPendingLoading ? (
+          {isIrnPendingLoading || (isReloading && isIrnPendingFetching) ? (
             <GstSkeleton />
           ) : isIrnPendingError ? (
             <GstError onRetry={() => void refetchIrnPending()} />

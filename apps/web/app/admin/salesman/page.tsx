@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MoreVerticalIcon, PlusIcon } from "lucide-react";
+import { MapPinIcon, MoreVerticalIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -24,6 +24,7 @@ import { getNameInitials } from "~/lib/get-name-initials";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 function SalesmanPageContent() {
   const tx = useTranslate();
@@ -35,6 +36,8 @@ function SalesmanPageContent() {
   const {
     salesmenPage,
     isSalesmenListLoading,
+    refetchSalesmenList,
+    isSalesmenListFetching,
     deactivateSalesmanAccountAsync,
     isDeactivatingSalesmanAccount,
     reactivateSalesmanAccountAsync,
@@ -44,13 +47,15 @@ function SalesmanPageContent() {
   } = useSalesmen({
     listFilters: { page, pageSize, includeDeleted },
   });
+  usePageRefresh(refetchSalesmenList, isSalesmenListFetching);
+  const isReloading = usePageReloading();
 
   async function handleDeactivate(salesmanId: string) {
     try {
       await deactivateSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.deactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.deactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.deactivateFailed")));
     }
   }
 
@@ -59,7 +64,7 @@ function SalesmanPageContent() {
       await reactivateSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.reactivateSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.reactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.reactivateFailed")));
     }
   }
 
@@ -69,7 +74,7 @@ function SalesmanPageContent() {
       await deleteSalesmanAccountAsync({ id: salesmanId });
       toast.success(tx("admin.salesmen.deleteSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.deleteFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.deleteFailed")));
     }
   }
 
@@ -100,14 +105,14 @@ function SalesmanPageContent() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {isSalesmenListLoading ? (
+        {isSalesmenListLoading || (isReloading && isSalesmenListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
             {tx("admin.salesmen.empty")}
           </p>
         ) : (
-          salesmenPage.items.map(({ salesman, profile }) => {
+          salesmenPage.items.map(({ salesman, profile, activeRouteName }) => {
             const isDeleted = Boolean(profile.deletedAt);
 
             return (
@@ -141,6 +146,17 @@ function SalesmanPageContent() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {salesman.salesmanCode} · {profile.phone ?? profile.email}
+                  </p>
+                  <p
+                    aria-label={tx("admin.salesmen.activeRouteAria")}
+                    className={`mt-0.5 flex items-center gap-1 truncate text-xs font-medium ${
+                      activeRouteName ? "text-brand" : "text-muted-foreground"
+                    }`}
+                  >
+                    <MapPinIcon className="size-3 shrink-0" />
+                    <span className="truncate">
+                      {activeRouteName ?? tx("admin.salesmen.noActiveRoute")}
+                    </span>
                   </p>
                 </div>
 

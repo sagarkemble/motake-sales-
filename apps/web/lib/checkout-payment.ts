@@ -1,6 +1,6 @@
 import type { RouterInputs } from "@repo/trpc/client";
 
-import { keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
+import { isAmountTooLarge, keepRupeeInputCharacters, parseRupeesToPaise } from "~/lib/rupee-input";
 
 // The checkout Payment block (Book Now, fulfil, field Payment). The maths mirror
 // packages/services/payments/overpay.ts so the preview matches what the server keeps.
@@ -91,6 +91,7 @@ export function paymentMaths(context: PaymentContext, draft: PaymentDraft) {
 
 // The locale key of what blocks the primary button, or null.
 export function paymentProblemKey(context: PaymentContext, draft: PaymentDraft): string | null {
+  if (isAmountTooLarge(draft.receivedText)) return "common.validation.amountTooLarge";
   const { preview, canReturnChange } = paymentMaths(context, draft);
   if (preview.needsOverpayChoice)
     return canReturnChange

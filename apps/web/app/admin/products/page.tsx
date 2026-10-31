@@ -14,6 +14,7 @@ import { GridItemSkeleton } from "~/components/shared/grid-item-skeleton";
 import { useProducts } from "~/hooks/use-products";
 import { useListQueryState } from "~/hooks/shared/use-list-query-state";
 import { useTranslate } from "~/hooks/use-translate";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 
 function ProductsPageContent() {
   const tx = useTranslate();
@@ -21,9 +22,12 @@ function ProductsPageContent() {
   const { page, setPage, searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeDeleted, setIncludeDeleted] = useState(false);
 
-  const { productsPage, isProductsListLoading } = useProducts({
-    listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize, includeDeleted },
-  });
+  const { productsPage, isProductsListLoading, refetchProductsList, isProductsListFetching } =
+    useProducts({
+      listFilters: { searchTerm: debouncedSearchTerm || undefined, page, pageSize, includeDeleted },
+    });
+  usePageRefresh(refetchProductsList, isProductsListFetching);
+  const isReloading = usePageReloading();
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
@@ -70,7 +74,7 @@ function ProductsPageContent() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {isProductsListLoading ? (
+        {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
           <p className="col-span-full py-8 text-center text-sm text-muted-foreground">

@@ -29,7 +29,7 @@ export function refusalMessage(
     const message = tx(key);
     if (message !== key) return message;
   }
-  return getErrorMessage(error, fallbackMessage);
+  return getErrorMessage(tx, error, fallbackMessage);
 }
 
 // A failure with no answer from the server (network drop, timeout, 5xx): the write may or may not

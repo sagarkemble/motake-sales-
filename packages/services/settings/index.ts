@@ -22,7 +22,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import type { SelectGstCreditNoteDeadline, SelectSellerSettings } from "@repo/database/schema";
 
 import DocumentNumberService, { formatDocumentNumber } from "../document-numbers";
-import { badRequest, conflict, internalError, notFound } from "../errors";
+import { badRequest, internalError, screenRefusal } from "../errors";
 import GstCreditNoteDeadlineService from "../gst-credit-note-deadline";
 import { changedFields, createdFields, oldNewPayload, recordAudit } from "../shared/audit";
 import { sellerMasterMissingRefusal } from "../shared/checkout";
@@ -89,14 +89,18 @@ const gstCreditNoteDeadlines = new GstCreditNoteDeadlineService();
 function assertGstinMatchesState(gstin: string, state: string): void {
   const code = INDIAN_STATES.find((candidate) => candidate.name === state)?.gstStateCode;
   if (gstin.slice(0, 2) !== code) {
-    throw badRequest(`GSTIN ${gstin} does not belong to ${state} (state code ${code})`);
+    throw screenRefusal(
+      "gstin_state_mismatch",
+      `GSTIN ${gstin} does not belong to ${state} (state code ${code})`,
+      { state },
+    );
   }
 }
 
 // A PAN is characters 3–12 of the GSTIN issued to it.
 function assertPanMatchesGstin(pan: string | null | undefined, gstin: string): void {
   if (pan && gstin.slice(2, 12) !== pan) {
-    throw badRequest(`PAN ${pan} does not match GSTIN ${gstin}`);
+    throw screenRefusal("pan_gstin_mismatch", `PAN ${pan} does not match GSTIN ${gstin}`);
   }
 }
 
@@ -123,10 +127,14 @@ function nextFinancialYearOf(financialYear: string): string {
 function assertPrefixYearEditable(financialYear: string): void {
   const current = currentFinancialYear();
   if (startYearOf(financialYear) < startYearOf(current)) {
-    throw badRequest(`Financial year ${financialYear} has ended; its prefixes are read-only`);
+    throw screenRefusal(
+      "financial_year_ended",
+      `Financial year ${financialYear} has ended; its prefixes are read-only`,
+    );
   }
   if (startYearOf(financialYear) > startYearOf(current) + 1) {
-    throw badRequest(
+    throw screenRefusal(
+      "financial_year_too_far",
       `Financial year ${financialYear} is too far ahead; only ${nextFinancialYearOf(current)} can be prepared`,
     );
   }
@@ -153,13 +161,15 @@ class SettingsService {
     input: SetUpSellerSettingsInput,
     actorProfileId: string,
   ): Promise<SelectSellerSettings> {
-    const { reason, ...fields } = setUpSellerSettingsInputSchema.parse(input);
+    const fields = setUpSellerSettingsInputSchema.parse(input);
     assertGstinMatchesState(fields.gstin, fields.state);
     assertPanMatchesGstin(fields.pan, fields.gstin);
     return runInTransaction(async (transaction) => {
       await lockSellerSettingsTable(transaction);
       const existing = await listSellerSettingsRows(transaction);
-      if (existing.length > 0) throw conflict("Seller master is already set up");
+      if (existing.length > 0) {
+        throw screenRefusal("seller_master_exists", "Seller master is already set up");
+      }
       const settings = await insertSellerSettings(
         { ...fields, email: fields.email ?? null, updatedBy: actorProfileId },
         transaction,
@@ -170,7 +180,6 @@ class SettingsService {
           action: "created",
           entityType: "seller_settings",
           entityId: settings.id,
-          reason,
           payload: createdFields(fields),
         },
         transaction,
@@ -185,10 +194,10 @@ class SettingsService {
     input: UpdateSellerSettingsInput,
     actorProfileId: string,
   ): Promise<SelectSellerSettings> {
-    const { reason, ...patch } = updateSellerSettingsInputSchema.parse(input);
+    const patch = updateSellerSettingsInputSchema.parse(input);
     return runInTransaction(async (transaction) => {
       const before = onlySellerRow(await lockSellerSettingsRows(transaction));
-      if (!before) throw notFound("Seller master not set up");
+      if (!before) throw screenRefusal("seller_master_missing", "Seller master not set up");
       const givenFields = Object.fromEntries(
         Object.entries(patch).filter(([, value]) => value !== undefined),
       );
@@ -212,7 +221,6 @@ class SettingsService {
           action: "updated",
           entityType: "seller_settings",
           entityId: before.id,
-          reason,
           payload: oldNewPayload(changes),
         },
         transaction,
@@ -259,7 +267,10 @@ class SettingsService {
     const { financialYear, kind, prefix, reason } = parsedInput;
     assertPrefixYearEditable(financialYear);
     if (formatDocumentNumber(prefix, financialYear, 1).length > MAX_DOCUMENT_NUMBER_LENGTH) {
-      throw badRequest(`Prefix ${prefix} makes numbers longer than 16 characters`);
+      throw screenRefusal(
+        "prefix_too_long",
+        `Prefix ${prefix} makes numbers longer than 16 characters`,
+      );
     }
 
     await runInTransaction(async (transaction) => {
@@ -267,16 +278,22 @@ class SettingsService {
       // Locks the whole year, not just this kind, so two changes cannot both take the same prefix.
       const yearRows = await lockSeriesForYear(financialYear, transaction);
       const series = yearRows.find((row) => row.kind === kind);
-      if (!series) throw internalError(`Series ${kind} ${financialYear} missing`);
+      if (!series) {
+        throw screenRefusal("number_series_missing", `Series ${kind} ${financialYear} missing`);
+      }
       if (series.firstUsedAt) {
-        throw conflict(
+        throw screenRefusal(
+          "prefix_frozen",
           `The ${kind} prefix for ${financialYear} is frozen: its first number has been issued`,
         );
       }
       if (series.prefix === prefix) return;
       const clash = yearRows.find((row) => row.kind !== kind && row.prefix === prefix);
       if (clash) {
-        throw conflict(`Prefix ${prefix} is already used by ${clash.kind} in ${financialYear}`);
+        throw screenRefusal(
+          "prefix_taken",
+          `Prefix ${prefix} is already used by ${clash.kind} in ${financialYear}`,
+        );
       }
       await updateSeriesPrefix(
         { seriesId: series.id, prefix, actorId: actorProfileId },
@@ -347,7 +364,11 @@ class SettingsService {
     }
     const { lastDay } = financialYearBounds(financialYear);
     if (date <= lastDay) {
-      throw badRequest(`The deadline for ${financialYear} must be after ${lastDay}`);
+      throw screenRefusal(
+        "deadline_too_early",
+        `The deadline for ${financialYear} must be after ${lastDay}`,
+        { date: lastDay },
+      );
     }
 
     await runInTransaction(async (transaction) => {
@@ -365,7 +386,8 @@ class SettingsService {
         transaction,
       );
       if (!created) {
-        throw conflict(
+        throw screenRefusal(
+          "deadline_changed",
           `The ${financialYear} deadline was just saved by someone else; reload and retry`,
         );
       }

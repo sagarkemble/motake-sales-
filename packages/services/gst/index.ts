@@ -33,13 +33,12 @@ import { draftBillFileName } from "@repo/pdf";
 import AdminBillService from "../admin-bills";
 import DocumentService from "../documents";
 import {
-  badRequest,
   checkoutRefusal,
-  conflict,
   documentRefused,
   internalError,
   ledgerRefusal,
   notFound,
+  screenRefusal,
 } from "../errors";
 import { changedFields, oldNewPayload, recordAudit } from "../shared/audit";
 import {
@@ -124,11 +123,17 @@ type IrnFields = Pick<SelectBill, (typeof irnAuditedFields)[number]>;
 type IrnRun = { result: IrnResult; outcome: GstOutcome } | { replay: IrnResult };
 
 function alreadyFiled(month: string) {
-  return conflict(`GSTR-1 for ${monthLabelOf(`${month}-01`)} is already filed — Correct it.`);
+  const monthLabel = monthLabelOf(`${month}-01`);
+  return screenRefusal(
+    "gstr1_already_filed",
+    `GSTR-1 for ${monthLabel} is already filed — Correct it.`,
+    { month: monthLabel },
+  );
 }
 
 function irnTaken(irn: string, otherBillNumber: string | undefined) {
-  return conflict(
+  return screenRefusal(
+    "irn_taken",
     `IRN ${irn} is already recorded on Bill ${otherBillNumber ?? "another Bill"}. One IRN belongs to one Bill.`,
   );
 }
@@ -287,7 +292,10 @@ class GstService {
       };
       const changes = changedFields(before, after, ["filedOn", "reference", "notes"]);
       if (Object.keys(changes).length === 0) {
-        throw badRequest("Nothing changed. Change the filing date, reference or notes.");
+        throw screenRefusal(
+          "nothing_changed",
+          "Nothing changed. Change the filing date, reference or notes.",
+        );
       }
       const updated = await updateGstr1Filing(
         before.id,
@@ -467,7 +475,10 @@ class GstService {
           irnAuditedFields,
         );
         if (Object.keys(textChanged).length === 0 && !image && bill.signedQrImageKey === null) {
-          throw badRequest("Nothing changed. Change an IRN field or the signed QR image.");
+          throw screenRefusal(
+            "nothing_changed",
+            "Nothing changed. Change an IRN field or the signed QR image.",
+          );
         }
         await this.assertIrnUnused(parsedInput.irn, bill.id, transaction);
         const irnRecordedAt = new Date();
@@ -532,7 +543,10 @@ class GstService {
   ): Promise<PortalCancellationResult> {
     const parsedInput = recordPortalCancellationInputSchema.parse(input);
     if (parsedInput.ackDate > businessDateOf(new Date())) {
-      throw badRequest("The cancellation ack date cannot be in the future.");
+      throw screenRefusal(
+        "cancel_ack_in_future",
+        "The cancellation ack date cannot be in the future.",
+      );
     }
     const run = await runInTransaction(async (transaction) => {
       const bill = await this.lockBill(parsedInput.billId, transaction);
@@ -676,19 +690,25 @@ class GstService {
 
   private assertMonthStarted(periodMonth: string, today: string): void {
     if (periodMonth > periodMonthOf(today)) {
-      throw badRequest(
+      throw screenRefusal(
+        "filing_month_not_started",
         `${monthLabelOf(periodMonth)} has not started yet. A future month cannot be filed.`,
+        { month: monthLabelOf(periodMonth) },
       );
     }
   }
 
   private assertFiledOn(filedOn: string, periodMonth: string, today: string): void {
     if (filedOn < periodMonth) {
-      throw badRequest(
+      throw screenRefusal(
+        "filing_date_before_month",
         `The filing date cannot be before ${monthLabelOf(periodMonth)} starts (${periodMonth}).`,
+        { month: monthLabelOf(periodMonth) },
       );
     }
-    if (filedOn > today) throw badRequest("The filing date cannot be after today.");
+    if (filedOn > today) {
+      throw screenRefusal("filing_date_after_today", "The filing date cannot be after today.");
+    }
   }
 
   private async lockBill(billId: string, transaction: DbExecutor): Promise<SelectBill> {

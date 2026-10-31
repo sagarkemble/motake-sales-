@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
+import { isNetworkError } from "~/lib/get-error-message";
 import { usePasswordLoginStore } from "~/lib/login-store";
 
 const minPasswordLength = 8;
@@ -43,10 +44,6 @@ export function PasswordLoginForm() {
     [tx],
   );
 
-  const remainingPasswordCharacters = minPasswordLength - password.length;
-  const showRemainingPasswordCharactersHint =
-    password.length > 0 && remainingPasswordCharacters > 0;
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (isSubmitting) return;
@@ -65,8 +62,12 @@ export function PasswordLoginForm() {
       await signInWithEmailAndPassword(parsedForm.data);
       toast.success(tx("auth.login.success"));
       router.push("/");
-    } catch {
-      setFormError(tx("auth.login.error.wrongCredentials"));
+    } catch (error) {
+      setFormError(
+        isNetworkError(error)
+          ? tx("common.errors.network")
+          : tx("auth.login.error.wrongCredentials"),
+      );
       setPassword("");
     } finally {
       setIsSubmitting(false);
@@ -114,16 +115,6 @@ export function PasswordLoginForm() {
             {isPasswordVisible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </button>
         </div>
-        {showRemainingPasswordCharactersHint && (
-          <p className="text-xs text-muted-foreground">
-            {tx(
-              remainingPasswordCharacters === 1
-                ? "admin.salesmen.form.moreCharsOne"
-                : "admin.salesmen.form.moreCharsOther",
-              { count: remainingPasswordCharacters },
-            )}
-          </p>
-        )}
       </div>
 
       {formError ? (

@@ -81,7 +81,7 @@ export function SalesmanEditDialog({
       toast.success(tx("admin.salesmen.updateSuccess"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.salesmen.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.salesmen.updateFailed")));
     }
   }
 

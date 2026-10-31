@@ -25,7 +25,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import type { SelectRoute, SelectRoutePrice } from "@repo/database/schema";
 
-import { conflict, notFound } from "../errors";
+import { notFound, screenRefusal } from "../errors";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import { nextRouteCode } from "./code";
 import {
@@ -55,7 +55,7 @@ export interface RouteWithPriceForm {
 }
 
 function routeNameTaken(name: string) {
-  return conflict(`A Route named "${name}" already exists`);
+  return screenRefusal("route_name_taken", `A Route named "${name}" already exists`, { name });
 }
 
 function plural(count: number, singular: string, pluralForm: string): string {
@@ -220,8 +220,10 @@ class RouteService {
       const activeGatepassCount = await countActiveGatepassesOnRoute(parsedRouteId, transaction);
       const openPreorderCount = await countOpenPreordersOnRoute(parsedRouteId, transaction);
       if (activeGatepassCount > 0 || openPreorderCount > 0) {
-        throw conflict(
+        throw screenRefusal(
+          "route_has_open_work",
           `${route.name} has ${plural(activeGatepassCount, "Active GatePass", "Active GatePasses")} and ${plural(openPreorderCount, "open Pre-order", "open Pre-orders")}. Close them before deleting the Route.`,
+          { route: route.name, gatepasses: activeGatepassCount, preOrders: openPreorderCount },
         );
       }
       const hidden = await updateRoute(parsedRouteId, { deletedAt: new Date() }, transaction);

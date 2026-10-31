@@ -1,14 +1,11 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DatePicker } from "~/components/shared/date-picker";
 import { QuantityStepper } from "~/components/shared/quantity-stepper";
 import { Button } from "~/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Spinner } from "~/components/ui/spinner";
@@ -19,7 +16,7 @@ import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
 import { isOutcomeUnknown, refusalMessage } from "~/lib/refusal";
 import { cn } from "~/lib/utils";
 
-import type { BuyerText, CorrectEdit } from "./bill-paper-document";
+import type { CorrectEdit } from "./bill-paper-document";
 import {
   NOTE_KINDS,
   OutcomeUnknownAlert,
@@ -41,42 +38,20 @@ export function useDebouncedPreviewInput<Input>(input: Input | null): Input | nu
 // --- Correct in place.
 
 export function useCorrectState(paper: BillPaper) {
-  const issuedBuyer: BuyerText = {
-    shopName: paper.version.letterhead.buyer.shop_name,
-    phone: paper.version.letterhead.buyer.phone,
-    address: paper.version.letterhead.buyer.address,
-  };
   const [quantities, setQuantities] = useState<Record<string, number>>(() =>
     Object.fromEntries(paper.lines.map((line) => [line.id, line.quantity])),
   );
-  const [buyer, setBuyer] = useState<BuyerText>(issuedBuyer);
 
   const changedLines = paper.lines
     .filter((line) => (quantities[line.id] ?? line.quantity) !== line.quantity)
     .map((line) => ({ lineId: line.id, quantity: quantities[line.id] ?? line.quantity }));
-  const trimmedBuyer = {
-    shopName: buyer.shopName.trim(),
-    phone: buyer.phone.trim(),
-    address: buyer.address.trim(),
-  };
-  const buyerChanged =
-    trimmedBuyer.shopName !== issuedBuyer.shopName ||
-    trimmedBuyer.phone !== issuedBuyer.phone ||
-    trimmedBuyer.address !== issuedBuyer.address;
-  const buyerFilled =
-    trimmedBuyer.shopName !== "" && trimmedBuyer.phone !== "" && trimmedBuyer.address !== "";
 
   return {
     quantities,
     setQuantity: (lineId: string, quantity: number) =>
       setQuantities((current) => ({ ...current, [lineId]: quantity })),
-    buyer,
-    setBuyer,
     changedLines,
-    buyerChanged,
-    buyerFilled,
-    trimmedBuyer,
-    hasChanges: changedLines.length > 0 || buyerChanged,
+    hasChanges: changedLines.length > 0,
   };
 }
 
@@ -85,12 +60,11 @@ export type CorrectState = ReturnType<typeof useCorrectState>;
 /** The server's word on the edit, for the paper's live totals. */
 export function useCorrectPreview(paper: BillPaper, state: CorrectState) {
   const previewInput =
-    state.hasChanges && state.buyerFilled
+    state.hasChanges
       ? {
           billId: paper.bill.id,
           expectedVersionNumber: paper.bill.latestVersionNumber,
           lines: state.changedLines,
-          buyer: state.buyerChanged ? state.trimmedBuyer : undefined,
         }
       : null;
   const debouncedInput = useDebouncedPreviewInput(previewInput);
@@ -106,48 +80,8 @@ export function toCorrectEdit(
     disabled,
     quantities: state.quantities,
     setQuantity: state.setQuantity,
-    buyer: state.buyer,
     totals: preview.correctPreview?.totals ?? null,
   };
-}
-
-export function BuyerFields({ state, disabled }: { state: CorrectState; disabled?: boolean }) {
-  const tx = useTranslate();
-  return (
-    <div className="grid gap-2">
-      <div className="grid gap-1">
-        <Label htmlFor="buyer-shop">{tx("admin.ledger.paper.buyer.shopName")}</Label>
-        <Input
-          id="buyer-shop"
-          maxLength={200}
-          disabled={disabled}
-          value={state.buyer.shopName}
-          onChange={(event) => state.setBuyer({ ...state.buyer, shopName: event.target.value })}
-        />
-      </div>
-      <div className="grid gap-1">
-        <Label htmlFor="buyer-phone">{tx("admin.ledger.paper.buyer.phone")}</Label>
-        <Input
-          id="buyer-phone"
-          inputMode="tel"
-          maxLength={20}
-          disabled={disabled}
-          value={state.buyer.phone}
-          onChange={(event) => state.setBuyer({ ...state.buyer, phone: event.target.value })}
-        />
-      </div>
-      <div className="grid gap-1">
-        <Label htmlFor="buyer-address">{tx("admin.ledger.paper.buyer.address")}</Label>
-        <Input
-          id="buyer-address"
-          disabled={disabled}
-          value={state.buyer.address}
-          onChange={(event) => state.setBuyer({ ...state.buyer, address: event.target.value })}
-        />
-      </div>
-      <p className="text-xs text-muted-foreground">{tx("admin.ledger.paper.buyer.gstinHint")}</p>
-    </div>
-  );
 }
 
 export function CorrectPanel({
@@ -170,12 +104,10 @@ export function CorrectPanel({
   const { formatPaise } = useFormatMoney();
   const [reason, setReason] = useState("");
   const [refusal, setRefusal] = useState<string | null>(null);
-  const [isBuyerOpen, setIsBuyerOpen] = useState(false);
   const { correctBillAsync, isCorrectingBill } = correct;
   const { correctPreview, correctPreviewError, isCorrectPreviewFetching } = preview;
   const canSave =
     state.hasChanges &&
-    state.buyerFilled &&
     reason.trim() !== "" &&
     correctPreviewError == null &&
     !isCorrectingBill;
@@ -188,7 +120,6 @@ export function CorrectPanel({
         billId: paper.bill.id,
         expectedVersionNumber: paper.bill.latestVersionNumber,
         lines: state.changedLines,
-        buyer: state.buyerChanged ? state.trimmedBuyer : undefined,
         reason: reason.trim(),
       });
       toast.success(tx("admin.ledger.paper.correctSaved", { version: result.data.versionNumber }));
@@ -203,8 +134,6 @@ export function CorrectPanel({
       <div className="space-y-2 rounded-xl border bg-muted/40 p-3 text-sm">
         {!state.hasChanges ? (
           <p className="text-muted-foreground">{tx("admin.ledger.paper.preview.nothingYet")}</p>
-        ) : !state.buyerFilled ? (
-          <p className="text-destructive">{tx("admin.ledger.paper.buyer.required")}</p>
         ) : correctPreviewError ? (
           <p className="text-destructive">
             {refusalMessage(tx, correctPreviewError, tx("admin.ledger.refusals.generic"))}
@@ -247,7 +176,7 @@ export function CorrectPanel({
                 {formatPaise(correctPreview.totals.totalPaise)}
               </dd>
             </dl>
-            {correctPreview.billHasNotes && correctPreview.classification !== "text_only" && (
+            {correctPreview.billHasNotes && (
               <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
                 {tx("admin.ledger.paper.preview.notesWarning")}
               </p>
@@ -260,24 +189,6 @@ export function CorrectPanel({
           </>
         )}
       </div>
-      <Collapsible
-        open={isBuyerOpen || !state.buyerFilled}
-        onOpenChange={setIsBuyerOpen}
-        className="rounded-xl border px-3 py-2"
-      >
-        <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-sm">
-          {tx("admin.ledger.paper.buyerText")}
-          <ChevronDownIcon
-            className={cn(
-              "size-4 transition-transform",
-              (isBuyerOpen || !state.buyerFilled) && "rotate-180",
-            )}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-3">
-          <BuyerFields state={state} disabled={isCorrectingBill} />
-        </CollapsibleContent>
-      </Collapsible>
       <ReasonField
         id="correct-reason"
         value={reason}

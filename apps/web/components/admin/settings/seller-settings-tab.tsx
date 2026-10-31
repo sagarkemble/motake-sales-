@@ -47,7 +47,6 @@ export type SellerFormValues = {
   gstin: string;
   phone: string;
   email: string;
-  reason: string;
 };
 
 const SELLER_SUMMARY_FIELDS = ["legalName", "address", "state", "gstin", "phone", "email"] as const;
@@ -73,7 +72,7 @@ export function SellerSettingsTab() {
       await setUpSellerAsync(toSellerInput(values));
       toast.success(tx("admin.settings.seller.setUpSuccess"));
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.seller.setUpFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.seller.setUpFailed")));
     }
   }
 
@@ -83,7 +82,7 @@ export function SellerSettingsTab() {
       toast.success(tx("admin.settings.seller.updateSuccess"));
       setIsEditing(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.settings.seller.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.settings.seller.updateFailed")));
     }
   }
 
@@ -172,7 +171,6 @@ function toSellerInput(values: SellerFormValues) {
     gstin: values.gstin.trim().toUpperCase(),
     phone: values.phone.trim(),
     email: values.email.trim() || null,
-    reason: values.reason.trim() || undefined,
   };
 }
 
@@ -224,7 +222,6 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             z.literal(""),
             z.string().trim().email(tx("admin.settings.seller.validation.email")).max(255),
           ]),
-          reason: z.string().max(500),
         })
         .superRefine((values, context) => {
           const state = INDIAN_STATES.find((candidate) => candidate.name === values.state);
@@ -272,7 +269,6 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
       gstin: defaultValues?.gstin ?? "",
       phone: defaultValues?.phone ?? "",
       email: defaultValues?.email ?? "",
-      reason: "",
     },
   });
 
@@ -394,25 +390,6 @@ function SellerForm({ mode, defaultValues, isSubmitting, onSubmit, onCancel }: S
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="reason"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{tx("admin.settings.reasonLabel")}</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  maxLength={500}
-                  placeholder={tx("admin.settings.reasonPlaceholder")}
-                  className="rounded-xl bg-muted/40"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <p className="text-xs text-muted-foreground">{tx("admin.settings.seller.appliesNote")}</p>
 

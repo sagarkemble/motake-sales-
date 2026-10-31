@@ -71,6 +71,7 @@ export function useCustomers({
     isCustomersListLoading: customersListQuery.isLoading,
     isCustomersListError: customersListQuery.isError,
     refetchCustomersList: customersListQuery.refetch,
+    isCustomersListFetching: customersListQuery.isFetching,
 
     customer: customerQuery.data?.data ?? null,
     isCustomerLoading: customerQuery.isLoading,

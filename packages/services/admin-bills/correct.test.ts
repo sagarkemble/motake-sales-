@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CustomerService from "../customers";
 import type { AdminBillOutcome, BillLockHook } from "../shared/bill-events";
+import { MAX_QTY, QTY_TOO_LARGE } from "../shared/limits";
 import { buildCheckoutWorld, buildSellerSettings, type CheckoutWorld } from "../test/builders";
 import {
   BOOK_NOW_TOTAL_PAISE,
@@ -221,35 +222,20 @@ describe("AdminBillService.correctBill", () => {
     expect(await expectBalanceMatchesLedger(world.customer.id)).toBe(bill.totalPaise);
   });
 
-  it("a buyer text edit alone appends a version, writes no Note and leaves the Balance", async () => {
+  it("keeps the buyer as issued: a qty Correct leaves the letterhead buyer unchanged", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await billWithLines(world);
-    outcomes.length = 0;
+    const { placed, milkLine } = await billWithLines(world);
+    const issuedBuyer = ((await billTotal(placed.billId)).letterhead as { buyer: unknown }).buyer;
 
-    const result = await adminBillService.correctBill(world.admin.id, {
+    await adminBillService.correctBill(world.admin.id, {
       billId: placed.billId,
       expectedVersionNumber: 1,
-      buyer: { shopName: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-      reason: "Shop name spelt wrong",
+      lines: [{ lineId: milkLine.id, quantity: 4 }],
+      reason: "One more Milk",
     });
 
-    expect(result).toMatchObject({
-      classification: "text_only",
-      notes: [],
-      totalPaise: BOOK_NOW_TOTAL_PAISE,
-      balancePaise: BOOK_NOW_TOTAL_PAISE,
-    });
     const bill = await billTotal(placed.billId);
-    expect(bill.letterhead).toMatchObject({
-      buyer: { shop_name: "Shree Ganesh Kirana", phone: "9822000000", address: "Shop 4, Main Rd" },
-    });
-    expect(await notesOf(placed.billId)).toEqual([]);
-    expect((await versionsOf(placed.billId)).map((version) => version.versionNumber)).toEqual([
-      1, 2,
-    ]);
-    expect(outcomes).toEqual([
-      expect.objectContaining({ kind: "bill_corrected", balanceChanged: false, notes: [] }),
-    ]);
+    expect((bill.letterhead as { buyer: unknown }).buyer).toEqual(issuedBuyer);
   });
 
   it("previews the classification, Notes and new totals and warns when the Bill has Notes, writing nothing", async () => {
@@ -583,9 +569,9 @@ describe("AdminBillService.correctBill (review fixes)", () => {
     ).toMatchObject({ reason: "customer_inactive" });
   });
 
-  it("a text-only Correct for a deactivated Customer is refused customer_inactive", async () => {
+  it("a Correct for a deactivated Customer is refused customer_inactive", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
-    const { placed } = await billWithLines(world);
+    const { placed, milkLine } = await billWithLines(world);
     await new CustomerService().deactivateCustomer(world.customer.id, world.admin.id);
     outcomes.length = 0;
 
@@ -594,8 +580,8 @@ describe("AdminBillService.correctBill (review fixes)", () => {
         adminBillService.correctBill(world.admin.id, {
           billId: placed.billId,
           expectedVersionNumber: 1,
-          buyer: { shopName: "New Name", phone: "9822000000", address: "New address" },
-          reason: "Fix the name",
+          lines: [{ lineId: milkLine.id, quantity: 4 }],
+          reason: "One more Milk",
         }),
       ),
     ).toMatchObject({ reason: "customer_inactive" });
@@ -603,24 +589,19 @@ describe("AdminBillService.correctBill (review fixes)", () => {
     expect(outcomes).toEqual([]);
   });
 
-  it("refuses a qty past int4 as bad_qty, writing nothing", async () => {
+  it("refuses a qty past 5,000 as qty_too_large, writing nothing", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await billWithLines(world);
     outcomes.length = 0;
 
-    expect(
-      await refusalOf(
-        adminBillService.correctBill(world.admin.id, {
-          billId: placed.billId,
-          expectedVersionNumber: 1,
-          lines: [{ lineId: milkLine.id, quantity: 2_147_483_648 }],
-          reason: "Huge",
-        }),
-      ),
-    ).toEqual({
-      reason: "bad_lines",
-      details: { lines: [{ lineId: milkLine.id, reason: "bad_qty" }] },
-    });
+    await expect(
+      adminBillService.correctBill(world.admin.id, {
+        billId: placed.billId,
+        expectedVersionNumber: 1,
+        lines: [{ lineId: milkLine.id, quantity: MAX_QTY + 1 }],
+        reason: "Huge",
+      }),
+    ).rejects.toThrow(QTY_TOO_LARGE);
     expect(await versionsOf(placed.billId)).toHaveLength(1);
     expect(await notesOf(placed.billId)).toEqual([]);
     expect(outcomes).toEqual([]);

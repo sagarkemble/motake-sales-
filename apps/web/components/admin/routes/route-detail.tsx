@@ -24,6 +24,7 @@ import { useRoutes, type RoutePriceFormRow } from "~/hooks/use-routes";
 import { useTranslate } from "~/hooks/use-translate";
 import { useVarietyTaxPeriods } from "~/hooks/use-variety-tax-periods";
 import { getErrorMessage } from "~/lib/get-error-message";
+import { usePageRefresh, usePageReloading } from "~/providers/page-refresh-provider";
 import type { IndianStateName } from "@repo/trpc/client";
 
 import { DeliveryStateSelect } from "./delivery-state-select";
@@ -40,6 +41,8 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     route,
     routePriceForm,
     isRouteLoading,
+    refetchRoute,
+    isRouteFetching,
     updateRouteAsync,
     setRouteStatusAsync,
     isSettingRouteStatus,
@@ -53,7 +56,13 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     () => routePriceForm.map((variety) => variety.varietyId),
     [routePriceForm],
   );
-  const { currentTaxes, isCurrentTaxesLoading } = useVarietyTaxPeriods({ varietyIds });
+  const { currentTaxes, isCurrentTaxesLoading, refetchCurrentTaxes, isCurrentTaxesFetching } =
+    useVarietyTaxPeriods({ varietyIds });
+  usePageRefresh(
+    () => Promise.all([refetchRoute(), varietyIds.length > 0 ? refetchCurrentTaxes() : null]),
+    isRouteFetching || isCurrentTaxesFetching,
+  );
+  const isReloading = usePageReloading();
 
   useEffect(() => {
     setNameText(route?.name ?? "");
@@ -63,7 +72,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     setHideRefusal(null);
   }, [routeId]);
 
-  if (isRouteLoading) {
+  if (isRouteLoading || (isReloading && isRouteFetching)) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-10 rounded-full" />
@@ -91,7 +100,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
       await updateRouteAsync({ id: route.id, name: nameText });
     } catch (error) {
       setNameText(route.name);
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -100,7 +109,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await updateRouteAsync({ id: route.id, deliveryState });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -109,7 +118,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await setRouteStatusAsync({ id: route.id, status: isActive ? "active" : "inactive" });
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.routes.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.routes.updateFailed")));
     }
   }
 
@@ -119,7 +128,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     try {
       await hideRouteAsync({ id: route.id });
     } catch (error) {
-      setHideRefusal(getErrorMessage(error, tx("admin.routes.deleteFailed")));
+      setHideRefusal(getErrorMessage(tx, error, tx("admin.routes.deleteFailed")));
     } finally {
       setIsConfirmOpen(false);
     }
@@ -230,7 +239,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                     routeId={route.id}
                     variety={variety}
                     currentTax={
-                      isCurrentTaxesLoading
+                      isCurrentTaxesLoading || (isReloading && isCurrentTaxesFetching)
                         ? undefined
                         : (currentTaxes.find((tax) => tax.varietyId === variety.varietyId)
                             ?.period ?? null)

@@ -310,3 +310,120 @@ export const customerMessageRefused = (
   message: string,
   details: Record<string, unknown> | null = null,
 ) => refused(customerMessageRefusalCodes[reason], reason, message, details);
+
+// Business rules on Admin and salesman screens outside checkout and the Ledger. The message stays
+// for logs and API callers; the app shows its own words for `data.refusal.reason`, filled from
+// `details`, so a screen never shows server text.
+export type ScreenRefusalReason =
+  | "account_deactivated"
+  | "variety_name_taken"
+  | "gst_exempt_rate_not_zero"
+  | "gst_rate_required"
+  | "gst_start_outside_window"
+  | "route_required"
+  | "route_deleted"
+  | "route_name_taken"
+  | "route_has_open_work"
+  | "photo_upload_invalid"
+  | "customer_has_open_pre_orders"
+  | "customer_already_on_route"
+  | "no_active_gatepass"
+  | "email_taken"
+  | "password_too_weak"
+  | "email_invalid"
+  | "gatepass_not_awaiting_verification"
+  | "duplicate_variety_in_allotment"
+  | "salesman_has_gatepass"
+  | "route_price_missing"
+  | "gatepass_not_active"
+  | "returned_qty_out_of_range"
+  | "short_reason_required"
+  | "stock_changed"
+  | "checkout_already_placed"
+  | "number_series_exhausted"
+  | "number_series_missing"
+  | "refund_above_advance"
+  | "already_posted"
+  | "amount_not_positive"
+  | "opening_balance_exists"
+  | "irn_taken"
+  | "nothing_changed"
+  | "cancel_ack_in_future"
+  | "gstr1_already_filed"
+  | "filing_month_not_started"
+  | "filing_date_before_month"
+  | "filing_date_after_today"
+  | "message_pending"
+  | "phone_unusable"
+  | "gstin_state_mismatch"
+  | "pan_gstin_mismatch"
+  | "seller_master_exists"
+  | "seller_master_missing"
+  | "financial_year_ended"
+  | "financial_year_too_far"
+  | "prefix_too_long"
+  | "prefix_frozen"
+  | "prefix_taken"
+  | "deadline_too_early"
+  | "deadline_changed";
+
+// Each reason keeps the HTTP code its error had before it carried a reason.
+const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
+  account_deactivated: "FORBIDDEN",
+  variety_name_taken: "CONFLICT",
+  gst_exempt_rate_not_zero: "BAD_REQUEST",
+  gst_rate_required: "BAD_REQUEST",
+  gst_start_outside_window: "BAD_REQUEST",
+  route_required: "BAD_REQUEST",
+  route_deleted: "BAD_REQUEST",
+  route_name_taken: "CONFLICT",
+  route_has_open_work: "CONFLICT",
+  photo_upload_invalid: "FORBIDDEN",
+  customer_has_open_pre_orders: "CONFLICT",
+  customer_already_on_route: "BAD_REQUEST",
+  no_active_gatepass: "BAD_REQUEST",
+  email_taken: "BAD_REQUEST",
+  password_too_weak: "BAD_REQUEST",
+  email_invalid: "BAD_REQUEST",
+  gatepass_not_awaiting_verification: "CONFLICT",
+  duplicate_variety_in_allotment: "BAD_REQUEST",
+  salesman_has_gatepass: "CONFLICT",
+  route_price_missing: "BAD_REQUEST",
+  gatepass_not_active: "CONFLICT",
+  returned_qty_out_of_range: "BAD_REQUEST",
+  short_reason_required: "BAD_REQUEST",
+  stock_changed: "INTERNAL_SERVER_ERROR",
+  checkout_already_placed: "CONFLICT",
+  number_series_exhausted: "CONFLICT",
+  number_series_missing: "INTERNAL_SERVER_ERROR",
+  refund_above_advance: "CONFLICT",
+  already_posted: "CONFLICT",
+  amount_not_positive: "BAD_REQUEST",
+  opening_balance_exists: "CONFLICT",
+  irn_taken: "CONFLICT",
+  nothing_changed: "BAD_REQUEST",
+  cancel_ack_in_future: "BAD_REQUEST",
+  gstr1_already_filed: "CONFLICT",
+  filing_month_not_started: "BAD_REQUEST",
+  filing_date_before_month: "BAD_REQUEST",
+  filing_date_after_today: "BAD_REQUEST",
+  message_pending: "CONFLICT",
+  phone_unusable: "BAD_REQUEST",
+  gstin_state_mismatch: "BAD_REQUEST",
+  pan_gstin_mismatch: "BAD_REQUEST",
+  seller_master_exists: "CONFLICT",
+  seller_master_missing: "NOT_FOUND",
+  financial_year_ended: "BAD_REQUEST",
+  financial_year_too_far: "BAD_REQUEST",
+  prefix_too_long: "BAD_REQUEST",
+  prefix_frozen: "CONFLICT",
+  prefix_taken: "CONFLICT",
+  deadline_too_early: "BAD_REQUEST",
+  deadline_changed: "CONFLICT",
+};
+
+export const screenRefusal = (
+  reason: ScreenRefusalReason,
+  message: string,
+  details: Record<string, unknown> | null = null,
+) => refused(screenRefusalCodes[reason], reason, message, details);

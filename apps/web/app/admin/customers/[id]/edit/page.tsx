@@ -40,7 +40,7 @@ export default function EditCustomerPage() {
       toast.success(tx("admin.customers.updateSuccess"));
       router.push(`/admin/customers/${customerId}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.customers.updateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.customers.updateFailed")));
     }
   }
 

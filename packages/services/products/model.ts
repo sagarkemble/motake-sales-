@@ -1,14 +1,20 @@
 import { z } from "zod";
 
+// A Product always has an image: create needs one, and an update may replace it but never clear it.
 export const createProductInputSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
-  imageKey: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageKey: z.string().trim().min(1),
+  imageUrl: z.string().trim().min(1),
 });
 export type CreateProductInput = z.infer<typeof createProductInputSchema>;
 
-export const updateProductInputSchema = createProductInputSchema.partial();
+export const updateProductInputSchema = createProductInputSchema
+  .partial()
+  .refine((changes) => (changes.imageKey === undefined) === (changes.imageUrl === undefined), {
+    message: "imageKey and imageUrl change together",
+    path: ["imageUrl"],
+  });
 export type UpdateProductInput = z.infer<typeof updateProductInputSchema>;
 
 export const allowedProductImageContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;

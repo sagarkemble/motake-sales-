@@ -95,6 +95,8 @@ export function useOrders({
       utils.ledger.invalidate();
       utils.bills.invalidate();
     },
+    // Refused because it was fulfilled or cancelled meanwhile: reload so the list shows that.
+    onError: () => utils.orders.invalidate(),
   });
 
   return {
@@ -103,6 +105,7 @@ export function useOrders({
     isOrdersListLoading: ordersListQuery.isLoading,
     isOrdersListError: ordersListQuery.isError,
     refetchOrdersList: ordersListQuery.refetch,
+    isOrdersListFetching: ordersListQuery.isFetching,
 
     order: orderQuery.data?.data ?? null,
     isOrderLoading: orderQuery.isLoading,
@@ -119,6 +122,7 @@ export function useOrders({
     isDuePreordersError: routePreordersQuery.isError,
     duePreordersError: routePreordersQuery.error ?? null,
     refetchDuePreorders: routePreordersQuery.refetch,
+    isDuePreordersFetching: routePreordersQuery.isFetching,
 
     quote: quoteQuery.data?.data ?? null,
     isQuoteLoading: quoteQuery.isLoading,

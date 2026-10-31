@@ -4,6 +4,7 @@ import { AlertCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { PaymentScannerButton } from "~/components/shared/checkout/payment-scanner-dialog";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { DialogFooter } from "~/components/ui/dialog";
@@ -221,6 +222,7 @@ export function CorrectPaymentForm({
         onChange={fields.setMode}
         disabled={isCorrectingPayment}
       />
+      {fields.mode === "upi" && <PaymentScannerButton />}
       <AmountField
         id="correct-payment-kept"
         label={tx("admin.ledger.money.addPayment.kept")}

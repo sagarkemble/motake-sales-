@@ -23,7 +23,7 @@ export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogPro
       await updateMyProfileAsync({ avatarKey: result.imageKey });
       toast.success(tx("account.avatar.updated"));
     } catch (updateError) {
-      toast.error(getErrorMessage(updateError, tx("account.avatar.saveFailed")));
+      toast.error(getErrorMessage(tx, updateError, tx("account.avatar.saveFailed")));
     }
   }
 
@@ -32,7 +32,7 @@ export function UpdateAvatarDialog({ open, onOpenChange }: UpdateAvatarDialogPro
       await deleteMyAvatarAsync();
       toast.success(tx("account.avatar.removed"));
     } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, tx("account.avatar.removeFailed")));
+      toast.error(getErrorMessage(tx, deleteError, tx("account.avatar.removeFailed")));
       throw deleteError;
     }
   }

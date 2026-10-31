@@ -68,7 +68,7 @@ export function DeactivateCustomerDialog({
       onOpenChange(false);
       onDeactivated?.();
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.customers.deactivateFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.customers.deactivateFailed")));
       await refetchOpenOrders();
     }
   }

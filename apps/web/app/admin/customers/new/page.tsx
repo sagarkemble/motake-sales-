@@ -35,7 +35,7 @@ export default function NewCustomerPage() {
       toast.success(tx("admin.customers.createSuccess"));
       router.push(`/admin/customers/${response.data.id}`);
     } catch (error) {
-      toast.error(getErrorMessage(error, tx("admin.customers.createFailed")));
+      toast.error(getErrorMessage(tx, error, tx("admin.customers.createFailed")));
     }
   }
 

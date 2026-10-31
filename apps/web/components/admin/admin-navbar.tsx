@@ -1,12 +1,10 @@
 "use client";
 
-import { LogOutIcon, MenuIcon, SmartphoneIcon, UserIcon } from "lucide-react";
+import { LogOutIcon, MenuIcon, SettingsIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 
-import { UpdatePhoneNumberDialog } from "~/components/account/update-phone-number-dialog";
 import { LanguageSwitcher } from "~/components/shared/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -22,6 +20,7 @@ import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
+import { NavbarRefreshButton } from "~/providers/page-refresh-provider";
 import {
   adminNavItems,
   adminQuickActions,
@@ -34,7 +33,6 @@ export function AdminNavbar() {
   const currentPathname = usePathname();
   const router = useRouter();
   const { signedInUser, logoutAsync } = useAuth();
-  const [isUpdatePhoneDialogOpen, setIsUpdatePhoneDialogOpen] = useState(false);
 
   const pageTitle = getPageTitleForPathname(currentPathname);
   const avatarInitial = getNameInitials(signedInUser?.name, signedInUser?.role.charAt(0) ?? "A");
@@ -44,7 +42,7 @@ export function AdminNavbar() {
       await logoutAsync();
       router.replace("/login");
     } catch (logoutError) {
-      toast.error(getErrorMessage(logoutError, tx("common.errors.logoutFailed")));
+      toast.error(getErrorMessage(tx, logoutError, tx("common.errors.logoutFailed")));
     }
   }
 
@@ -140,6 +138,7 @@ export function AdminNavbar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <NavbarRefreshButton />
         <LanguageSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -166,9 +165,11 @@ export function AdminNavbar() {
                 {tx("common.nav.profile")}
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setIsUpdatePhoneDialogOpen(true)}>
-              <SmartphoneIcon className="size-4" />
-              {tx("common.nav.updatePhone")}
+            <DropdownMenuItem asChild>
+              <Link href="/admin/settings">
+                <SettingsIcon className="size-4" />
+                {tx("admin.settings.title")}
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={handleLogout}>
               <LogOutIcon className="size-4" />
@@ -177,11 +178,6 @@ export function AdminNavbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <UpdatePhoneNumberDialog
-        open={isUpdatePhoneDialogOpen}
-        onOpenChange={setIsUpdatePhoneDialogOpen}
-      />
     </header>
   );
 }

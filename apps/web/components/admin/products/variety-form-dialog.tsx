@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { LockedSku } from "~/components/admin/products/sku-chip";
 import {
+  DEFAULT_GST_RATE_PERCENT,
   HSN_PATTERN,
   VarietyTaxRateFields,
   type TaxRateFieldValues,
@@ -42,7 +43,13 @@ import { Label } from "~/components/ui/label";
 
 const UNIT_SUGGESTIONS = ["pouch", "pack", "cup", "tin", "box", "kg"];
 
-const emptyValues = { name: "", unit: "", hsn: "", exempt: false, ratePercent: "" };
+const emptyValues = {
+  name: "",
+  unit: "",
+  hsn: "",
+  exempt: false,
+  ratePercent: DEFAULT_GST_RATE_PERCENT,
+};
 
 export type VarietyFormValues = {
   name: string;
@@ -53,13 +60,14 @@ export type VarietyFormValues = {
 
 type VarietyDialogFormValues = { name: string; unit: string } & TaxRateFieldValues;
 
-// All three left empty means "no GST yet"; only a Variety without GST can leave them empty.
+// No HSN, not exempt and the rate cleared means "no GST yet"; only a Variety without GST can leave
+// it so. A GST rate, the default included, asks for an HSN.
 function isTaxLeftEmpty(values: TaxRateFieldValues) {
   return values.hsn === "" && !values.exempt && values.ratePercent.trim() === "";
 }
 
 function toTaxFieldValues(tax: VarietyTax | null): TaxRateFieldValues {
-  if (!tax) return { hsn: "", exempt: false, ratePercent: "" };
+  if (!tax) return { hsn: "", exempt: false, ratePercent: DEFAULT_GST_RATE_PERCENT };
   return {
     hsn: tax.hsn,
     exempt: tax.exempt,
@@ -118,7 +126,10 @@ export function VarietyFormDialog({
             context.addIssue({
               code: "custom",
               path: ["hsn"],
-              message: tx("admin.varietyTax.validation.hsnDigits"),
+              message:
+                values.hsn === ""
+                  ? tx("admin.varietyTax.validation.hsnRequired")
+                  : tx("admin.varietyTax.validation.hsnDigits"),
             });
           }
           const gstRateBps = percentToBps(values.ratePercent);
@@ -157,7 +168,7 @@ export function VarietyFormDialog({
     try {
       await onSubmit({ name: values.name, unit: values.unit, tax });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, tx("admin.varieties.saveFailed"));
+      const errorMessage = getErrorMessage(tx, error, tx("admin.varieties.saveFailed"));
       // The server refuses a second Variety with the same name under this Product.
       if (error instanceof TRPCClientError && error.data?.code === "CONFLICT") {
         form.setError("name", { message: errorMessage });
@@ -243,13 +254,7 @@ export function VarietyFormDialog({
                   )}
                 />
 
-                {editing ? (
-                  <LockedSku sku={editing.sku} />
-                ) : (
-                  <p className="rounded-xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-                    {tx("admin.varieties.skuOnSave")}
-                  </p>
-                )}
+                {editing && <LockedSku sku={editing.sku} />}
 
                 <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3">
                   <div>

@@ -1,3 +1,5 @@
+import { AMOUNT_TOO_LARGE, MAX_AMOUNT_PAISE, MAX_QTY, QTY_TOO_LARGE } from "@repo/services/limits";
+
 import { z } from "../../schema";
 
 // Admin Ledger and Bill paper (Spec G).
@@ -54,7 +56,7 @@ export const routeStampSchema = z.object({
   delivery_state: z.string(),
 });
 
-// Frozen at issue; the buyer text changes only through Correct.
+// Frozen at issue; Correct changes qty only, never the buyer.
 export const billLetterheadSchema = z.object({
   route: routeStampSchema,
   buyer: z.object({
@@ -192,7 +194,7 @@ export const openPreorderSchema = z.object({
 export const addOpeningBalanceInputSchema = z.object({
   customerId: z.string().uuid(),
   side: z.enum(["pending", "advance"]),
-  amountPaise: z.number().int().positive(),
+  amountPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reason: reasonSchema,
   openingDate: businessDateSchema.optional(),
 });
@@ -274,26 +276,19 @@ export const previewCorrectInputSchema = z.object({
   billId: z.string().uuid(),
   expectedVersionNumber: versionNumberSchema,
   lines: z
-    .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().min(0) }))
+    .array(
+      z.object({
+        lineId: z.string().uuid(),
+        quantity: z.number().int().min(0).max(MAX_QTY, QTY_TOO_LARGE),
+      }),
+    )
     .refine(noRepeatedLine, "A line appears twice")
     .default([]),
-  buyer: z
-    .object({
-      shopName: z.string().trim().min(1).max(200),
-      phone: z.string().trim().min(1).max(20),
-      address: z.string().trim().min(1),
-    })
-    .optional(),
 });
 
 export const correctBillInputSchema = previewCorrectInputSchema.extend({ reason: reasonSchema });
 
-const correctClassificationSchema = z.enum([
-  "text_only",
-  "debit_note",
-  "credit_note",
-  "debit_and_credit_notes",
-]);
+const correctClassificationSchema = z.enum(["debit_note", "credit_note", "debit_and_credit_notes"]);
 
 export const correctPreviewSchema = z.object({
   classification: correctClassificationSchema,
@@ -354,7 +349,12 @@ export const previewRaiseNoteInputSchema = z.object({
   expectedVersionNumber: versionNumberSchema,
   kind: noteKindSchema,
   lines: z
-    .array(z.object({ lineId: z.string().uuid(), quantity: z.number().int().positive() }))
+    .array(
+      z.object({
+        lineId: z.string().uuid(),
+        quantity: z.number().int().positive().max(MAX_QTY, QTY_TOO_LARGE),
+      }),
+    )
     .refine(noRepeatedLine, "A line appears twice"),
 });
 
@@ -518,7 +518,7 @@ export const refundIdInputSchema = z.object({ refundId: z.string().uuid() });
 export const addPaymentInputSchema = z.object({
   customerId: z.string().uuid(),
   mode: paymentModeSchema,
-  keptPaise: z.number().int().positive(),
+  keptPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: referenceSchema,
   reason: reasonSchema,
   idempotencyKey: idempotencyKeySchema,
@@ -534,7 +534,7 @@ export const addPaymentResultSchema = z.object({
 export const correctPaymentInputSchema = z.object({
   paymentId: z.string().uuid(),
   expectedLatestEventId: z.string().uuid(),
-  keptPaise: z.number().int().min(0),
+  keptPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   mode: paymentModeSchema,
   reference: correctReferenceSchema,
   reason: reasonSchema,
@@ -594,7 +594,7 @@ export const paymentPaperSchema = z.object({
 export const addRefundInputSchema = z.object({
   customerId: z.string().uuid(),
   mode: paymentModeSchema,
-  amountPaise: z.number().int().positive(),
+  amountPaise: z.number().int().positive().max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   reference: referenceSchema,
   reason: reasonSchema,
   idempotencyKey: idempotencyKeySchema,
@@ -610,7 +610,7 @@ export const addRefundResultSchema = z.object({
 export const correctRefundInputSchema = z.object({
   refundId: z.string().uuid(),
   expectedLatestEventId: z.string().uuid(),
-  amountPaise: z.number().int().min(0),
+  amountPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE, AMOUNT_TOO_LARGE),
   mode: paymentModeSchema,
   reference: correctReferenceSchema,
   reason: reasonSchema,
