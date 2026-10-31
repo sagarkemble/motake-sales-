@@ -32,9 +32,7 @@ const ROW_LABELS: Record<LedgerRowType, { detailsTitle: string; typeLabel: strin
   opening_balance: { detailsTitle: "Opening balance", typeLabel: "Opening balance" },
   bill: { detailsTitle: "Bill raised", typeLabel: "Bill" },
   payment: { detailsTitle: "Payment received", typeLabel: "Payment" },
-  payment_adjusted: { detailsTitle: "Payment adjusted", typeLabel: "Payment adjusted" },
   refund: { detailsTitle: "Refund paid", typeLabel: "Refund" },
-  refund_adjusted: { detailsTitle: "Refund adjusted", typeLabel: "Refund adjusted" },
   gst_credit_note: { detailsTitle: "GST Credit Note", typeLabel: "GST Credit Note" },
   commercial_credit_note: {
     detailsTitle: "Commercial Credit Note",

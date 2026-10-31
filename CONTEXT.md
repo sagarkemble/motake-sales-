@@ -115,7 +115,7 @@ A Credit Note that reduces the Customer's Balance without reducing Motake's GST 
 Increases what the Customer owes. Generated automatically when an admin raises a Bill, or raised independently by admin for an undercharge or extra items.
 
 **Payment adjustment**:
-An admin fix to a wrongly recorded Payment (kept amount, mode, or reference), kept with the Payment's history. Never done by editing a Bill. A Payment adjusted Ledger row and the original Payment row both open that Payment.
+An admin fix to a wrongly recorded Payment (kept amount, mode, or reference), kept with the Payment's history. Never done by editing a Bill. It is not a Ledger row of its own: the Payment row shows the net kept amount, and the Ledger totals count it the same way.
 
 **GST**:
 Tax added on top of the Route price per Bill line. Actual delivery state determines CGST + SGST versus IGST; the Route supplies the default state. Bills, Pending and Payments are tax-inclusive.
@@ -138,7 +138,7 @@ The integer unit used to store all money exactly: ₹1.00 is stored as 100 paise
 Money Motake pays back to a Customer out of their Advance. It cannot exceed Advance. Numbered `MR/{FY}/{seq}`. Admin may rewrite a recorded Refund with a reason; Refund history is kept. Salesman cannot. Correct may take the amount to ₹0; that is not a delete.
 
 **Refund adjustment**:
-An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept with the Refund's history and a required reason. Never done by editing a Bill. A bigger Refund still cannot exceed Advance. A Refund adjusted Ledger row and the original Refund row both open that Refund.
+An admin fix to a wrongly recorded Refund (amount, mode, or reference), kept with the Refund's history and a required reason. Never done by editing a Bill. A bigger Refund still cannot exceed Advance. It is not a Ledger row of its own: the Refund row shows the net amount, and the Ledger totals count it the same way.
 
 **Opening balance**:
 A one-time starting Balance entered for a Customer to carry over what was owed before the app; may be Pending or Advance. Admin sets it once from the Ledger and does not Correct it afterwards.

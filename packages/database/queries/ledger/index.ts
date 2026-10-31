@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, lte, notInArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "../../index";
@@ -305,9 +305,13 @@ export async function listNoteLinesForNotes(
 
 // --- Admin Ledger table (Spec G).
 
-// Ledger row types as the Admin filters them: a Note row is typed by its Note kind.
+// Ledger row types as the Admin filters them: a Note row is typed by its Note kind. Payment and
+// Refund adjustments are not rows (see ledgerRowAmount).
 export type LedgerRowType =
-  | Exclude<SelectLedgerEntry["entryType"], "credit_note" | "debit_note">
+  | Exclude<
+      SelectLedgerEntry["entryType"],
+      "credit_note" | "debit_note" | "payment_adjusted" | "refund_adjusted"
+    >
   | SelectNote["kind"];
 
 const ledgerRowType = sql<LedgerRowType>`CASE
@@ -316,6 +320,24 @@ const ledgerRowType = sql<LedgerRowType>`CASE
 END`;
 
 const ledgerBusinessDate = sql`(${ledgerEntriesTable.occurredAt} AT TIME ZONE 'Asia/Kolkata')::date`;
+
+// A Payment or Refund correction stays in that record's history, not in the table: its row shows
+// the net amount (original ± every adjustment), so the rows still add up to the totals.
+const adjustmentEntryTypes = ["payment_adjusted", "refund_adjusted"] as const;
+
+const ledgerRowAmount = sql<number>`CASE
+  WHEN ${ledgerEntriesTable.entryType} = 'payment' THEN (
+    SELECT coalesce(sum(CASE WHEN adjusted.side = ${ledgerEntriesTable.side} THEN adjusted.amount_paise ELSE -adjusted.amount_paise END), 0)
+    FROM ledger_entries AS adjusted
+    WHERE adjusted.payment_id = ${ledgerEntriesTable.paymentId}
+  )
+  WHEN ${ledgerEntriesTable.entryType} = 'refund' THEN (
+    SELECT coalesce(sum(CASE WHEN adjusted.side = ${ledgerEntriesTable.side} THEN adjusted.amount_paise ELSE -adjusted.amount_paise END), 0)
+    FROM ledger_entries AS adjusted
+    WHERE adjusted.refund_id = ${ledgerEntriesTable.refundId}
+  )
+  ELSE ${ledgerEntriesTable.amountPaise}
+END`.mapWith(Number);
 
 export interface LedgerRowFilters {
   customerId: string;
@@ -343,7 +365,8 @@ export interface LedgerRowRecord {
   refundId: string | null;
 }
 
-// Opening balance first, then posting time, then insert time. Filters hide rows only.
+// Opening balance first, then posting time, then insert time. Filters hide rows only. Payment and
+// Refund adjustments are never rows of their own.
 export async function listCustomerLedgerRows(
   filters: LedgerRowFilters,
   pagination: PaginationParams,
@@ -352,6 +375,7 @@ export async function listCustomerLedgerRows(
   const { limit, offset } = buildPaginationOffsets(pagination);
   const whereClause = and(
     eq(ledgerEntriesTable.customerId, filters.customerId),
+    notInArray(ledgerEntriesTable.entryType, [...adjustmentEntryTypes]),
     filters.types && filters.types.length > 0
       ? sql`${ledgerRowType} IN (${sql.join(
           filters.types.map((type) => sql`${type}`),
@@ -369,7 +393,7 @@ export async function listCustomerLedgerRows(
         entryType: ledgerEntriesTable.entryType,
         rowType: ledgerRowType,
         side: ledgerEntriesTable.side,
-        amountPaise: ledgerEntriesTable.amountPaise,
+        amountPaise: ledgerRowAmount,
         occurredAt: ledgerEntriesTable.occurredAt,
         reason: ledgerEntriesTable.reason,
         number: sql<
@@ -415,19 +439,25 @@ export interface LedgerTotals {
   hasOpeningBalance: boolean;
 }
 
-// Over every Ledger row of the Customer, ignoring filters and paging.
+// Over every Ledger row of the Customer, ignoring filters and paging. An adjustment counts on its
+// Payment's (Credit) or Refund's (Debit) side, signed, so the totals match the net rows.
 export async function getCustomerLedgerTotals(
   customerId: string,
   executor: DbExecutor = db,
 ): Promise<LedgerTotals> {
   const sumWhere = (opening: boolean, side: SelectLedgerEntry["side"]) =>
-    sql<string>`coalesce(sum(${ledgerEntriesTable.amountPaise}) FILTER (WHERE ${ledgerEntriesTable.entryType} ${opening ? sql`=` : sql`<>`} 'opening_balance' AND ${ledgerEntriesTable.side} = ${side}), 0)`;
+    sql<string>`coalesce(sum(${ledgerEntriesTable.amountPaise}) FILTER (WHERE ${ledgerEntriesTable.entryType} ${opening ? sql`=` : sql`<>`} 'opening_balance' AND ${ledgerEntriesTable.entryType} NOT IN ('payment_adjusted', 'refund_adjusted') AND ${ledgerEntriesTable.side} = ${side}), 0)`;
+  const adjustmentsOf = (
+    entryType: (typeof adjustmentEntryTypes)[number],
+    side: SelectLedgerEntry["side"],
+  ) =>
+    sql<string>`coalesce(sum(CASE WHEN ${ledgerEntriesTable.side} = ${side} THEN ${ledgerEntriesTable.amountPaise} ELSE -${ledgerEntriesTable.amountPaise} END) FILTER (WHERE ${ledgerEntriesTable.entryType} = ${entryType}), 0)`;
   const [row] = await executor
     .select({
       openingDebitPaise: sumWhere(true, "debit"),
       openingCreditPaise: sumWhere(true, "credit"),
-      currentDebitPaise: sumWhere(false, "debit"),
-      currentCreditPaise: sumWhere(false, "credit"),
+      currentDebitPaise: sql<string>`${sumWhere(false, "debit")} + ${adjustmentsOf("refund_adjusted", "debit")}`,
+      currentCreditPaise: sql<string>`${sumWhere(false, "credit")} + ${adjustmentsOf("payment_adjusted", "credit")}`,
       openingCount: sql<number>`count(*) FILTER (WHERE ${ledgerEntriesTable.entryType} = 'opening_balance')::int`,
     })
     .from(ledgerEntriesTable)

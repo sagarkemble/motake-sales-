@@ -74,7 +74,7 @@ describe("CustomerLedgerService.getOpeningPaper", () => {
 });
 
 describe("Ledger rows for Payments and Refunds", () => {
-  it("show their titles, MP / MR numbers and open their paper, adjusted rows included", async () => {
+  it("show their titles, MP / MR numbers and net amount; adjustments are not rows of their own", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     await customerLedgerService.addOpeningBalance(world.admin.id, {
       customerId: world.customer.id,
@@ -143,38 +143,22 @@ describe("Ledger rows for Payments and Refunds", () => {
         typeLabel: "Payment",
         number: "MP/26-27/000001",
         debitPaise: null,
-        creditPaise: 9_000,
+        creditPaise: 8_000,
         open: { kind: "payment", paymentId: payment.paymentId },
       },
       {
         detailsTitle: "Refund paid",
         typeLabel: "Refund",
         number: "MR/26-27/000001",
-        debitPaise: 2_000,
+        debitPaise: 1_500,
         creditPaise: null,
-        open: { kind: "refund", refundId: refund.refundId },
-      },
-      {
-        detailsTitle: "Payment adjusted",
-        typeLabel: "Payment adjusted",
-        number: "MP/26-27/000001",
-        debitPaise: 1_000,
-        creditPaise: null,
-        open: { kind: "payment", paymentId: payment.paymentId },
-      },
-      {
-        detailsTitle: "Refund adjusted",
-        typeLabel: "Refund adjusted",
-        number: "MR/26-27/000001",
-        debitPaise: null,
-        creditPaise: 500,
         open: { kind: "refund", refundId: refund.refundId },
       },
     ]);
     const summary = await customerLedgerService.getSummary(world.customer.id);
     expect(summary.footer).toEqual({
       opening: { debitPaise: 1_000, creditPaise: 0 },
-      currentTotal: { debitPaise: 3_000, creditPaise: 9_500 },
+      currentTotal: { debitPaise: 1_500, creditPaise: 8_000 },
       closing: { balancePaise: -5_500, state: "advance", amountPaise: 5_500 },
     });
   });
