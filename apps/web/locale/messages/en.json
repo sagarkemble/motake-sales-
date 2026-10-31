@@ -148,8 +148,8 @@
       "already_posted": "This was already saved. Refresh the page.",
       "amount_not_positive": "Enter an amount above ₹0.",
       "gstr1_already_filed": "GSTR-1 for {month} is already filed. Use Correct to change it.",
-      "filing_month_not_started": "{month} has not started yet, so it cannot be filed.",
-      "filing_date_before_month": "The filing date cannot be before {month} starts.",
+      "filing_month_not_ended": "GSTR-1 for {month} can be filed from {from}, once the month is over.",
+      "filing_date_before_month_end": "The filing date must be on or after {from}, after {month} ends.",
       "filing_date_after_today": "The filing date cannot be after today.",
       "gstin_state_mismatch": "This GSTIN is not from {state}. Check the GSTIN or the state.",
       "pan_gstin_mismatch": "The PAN does not match the GSTIN.",
@@ -1420,7 +1420,7 @@
         "correctHint": "Correct changes the date, reference and notes only. The month stays filed; there is no unfile.",
         "errors": {
           "filedOnRequired": "The filing date is required.",
-          "filedOnBeforeMonth": "The filing date cannot be before {month} starts.",
+          "filedOnBeforeMonthEnd": "The filing date must be on or after {from}, after {month} ends.",
           "filedOnFuture": "The filing date cannot be after today.",
           "referenceRequired": "The reference is required.",
           "reasonRequired": "A reason is required."

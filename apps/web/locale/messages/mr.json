@@ -148,8 +148,8 @@
       "already_posted": "हे आधीच जतन झाले आहे. पेज रिफ्रेश करा.",
       "amount_not_positive": "₹0 पेक्षा जास्त रक्कम टाका.",
       "gstr1_already_filed": "{month} साठी GSTR-1 आधीच भरले आहे. बदलण्यासाठी दुरुस्त करा वापरा.",
-      "filing_month_not_started": "{month} अजून सुरू झालेला नाही, त्यामुळे तो भरता येत नाही.",
-      "filing_date_before_month": "भरण्याची तारीख {month} सुरू होण्यापूर्वीची असू शकत नाही.",
+      "filing_month_not_ended": "{month} ची GSTR-1 महिना संपल्यावर, {from} पासून फाइल करता येईल.",
+      "filing_date_before_month_end": "फाइल तारीख {month} संपल्यानंतरची, म्हणजे {from} किंवा नंतरची असावी.",
       "filing_date_after_today": "भरण्याची तारीख आजनंतरची असू शकत नाही.",
       "gstin_state_mismatch": "हा GSTIN {state} चा नाही. GSTIN किंवा राज्य तपासा.",
       "pan_gstin_mismatch": "PAN हा GSTIN शी जुळत नाही.",
@@ -1420,7 +1420,7 @@
         "correctHint": "Correct फक्त तारीख, संदर्भ आणि टीप बदलते. महिना फाइलच राहतो; अनफाइल करता येत नाही.",
         "errors": {
           "filedOnRequired": "फाइल तारीख आवश्यक आहे.",
-          "filedOnBeforeMonth": "फाइल तारीख {month} सुरू होण्याआधीची असू शकत नाही.",
+          "filedOnBeforeMonthEnd": "फाइल तारीख {month} संपल्यानंतरची, म्हणजे {from} किंवा नंतरची असावी.",
           "filedOnFuture": "फाइल तारीख आजनंतरची असू शकत नाही.",
           "referenceRequired": "संदर्भ आवश्यक आहे.",
           "reasonRequired": "कारण आवश्यक आहे."

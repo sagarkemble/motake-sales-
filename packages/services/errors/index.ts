@@ -332,8 +332,8 @@ export type ScreenRefusalReason =
   | "opening_balance_exists"
   | "nothing_changed"
   | "gstr1_already_filed"
-  | "filing_month_not_started"
-  | "filing_date_before_month"
+  | "filing_month_not_ended"
+  | "filing_date_before_month_end"
   | "filing_date_after_today"
   | "message_pending"
   | "phone_unusable"
@@ -384,8 +384,8 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   opening_balance_exists: "CONFLICT",
   nothing_changed: "BAD_REQUEST",
   gstr1_already_filed: "CONFLICT",
-  filing_month_not_started: "BAD_REQUEST",
-  filing_date_before_month: "BAD_REQUEST",
+  filing_month_not_ended: "BAD_REQUEST",
+  filing_date_before_month_end: "BAD_REQUEST",
   filing_date_after_today: "BAD_REQUEST",
   message_pending: "CONFLICT",
   phone_unusable: "BAD_REQUEST",

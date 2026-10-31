@@ -2,6 +2,7 @@ import { asc, db, eq } from "@repo/database";
 import { auditLogsTable, gstr1FilingsTable } from "@repo/database/schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { refusalOf } from "../errors";
 import { buildProfile } from "../test/builders";
 import { wipeApplicationTables } from "../test/database";
 import {
@@ -104,39 +105,51 @@ describe("GstService.recordGstr1Filing", () => {
     expect(await filingRows()).toHaveLength(1);
   });
 
-  it("allows the current month and refuses a month that has not started", async () => {
+  it("refuses the current month and a future one until they are over; allows last month", async () => {
     const admin = await buildProfile();
 
-    await harness.gstService.recordGstr1Filing(admin.id, {
-      month: "2026-11",
-      filedOn: "2026-11-03",
-      reference: "EARLY",
-    });
-    const error = await rejectionOf(
+    const current = await rejectionOf(
+      harness.gstService.recordGstr1Filing(admin.id, {
+        month: "2026-11",
+        filedOn: "2026-11-03",
+        reference: "EARLY",
+      }),
+    );
+    const currentPreview = await rejectionOf(
+      harness.gstService.previewGstr1Filing({ month: "2026-11" }),
+    );
+    const future = await rejectionOf(
       harness.gstService.recordGstr1Filing(admin.id, {
         month: "2026-12",
         filedOn: "2026-11-03",
         reference: "FUTURE",
       }),
     );
+    await harness.gstService.recordGstr1Filing(admin.id, october);
 
-    expect(error).toMatchObject({ code: "BAD_REQUEST" });
-    expect(error.message).toContain("has not started");
-    expect((await filingRows()).map((row) => row.periodMonth)).toEqual(["2026-11-01"]);
+    expect(refusalOf(current)).toMatchObject({
+      reason: "filing_month_not_ended",
+      details: { month: "Nov 2026", from: "1 Dec 2026" },
+    });
+    expect(current.message).toContain("can be filed from 1 Dec 2026");
+    expect(refusalOf(currentPreview)?.reason).toBe("filing_month_not_ended");
+    expect(refusalOf(future)?.reason).toBe("filing_month_not_ended");
+    expect((await filingRows()).map((row) => row.periodMonth)).toEqual(["2026-10-01"]);
   });
 
-  it("refuses a filing date before the month starts or after today (Asia/Kolkata)", async () => {
+  it("refuses a filing date before the month is over or after today (Asia/Kolkata)", async () => {
     const admin = await buildProfile();
 
     const early = await rejectionOf(
-      harness.gstService.recordGstr1Filing(admin.id, { ...october, filedOn: "2026-09-30" }),
+      harness.gstService.recordGstr1Filing(admin.id, { ...october, filedOn: "2026-10-31" }),
     );
     const late = await rejectionOf(
       harness.gstService.recordGstr1Filing(admin.id, { ...october, filedOn: "2026-11-04" }),
     );
 
     expect(early).toMatchObject({ code: "BAD_REQUEST" });
-    expect(early.message).toContain("before Oct 2026 starts");
+    expect(refusalOf(early)?.reason).toBe("filing_date_before_month_end");
+    expect(early.message).toContain("on or after 1 Nov 2026");
     expect(late.message).toContain("after today");
     expect(await filingRows()).toHaveLength(0);
   });
@@ -154,26 +167,26 @@ describe("GstService.recordGstr1Filing", () => {
     expect(await filingRows()).toHaveLength(1);
   });
 
-  it("a month starts at midnight Asia/Kolkata: 23:59 IST on 31 Oct refuses Nov, 00:30 IST on 1 Nov allows it", async () => {
+  it("a month ends at midnight Asia/Kolkata: 23:59 IST on 31 Oct refuses Oct, 00:30 IST on 1 Nov allows it", async () => {
     const admin = await buildProfile();
-    const november = { month: "2026-11", filedOn: "2026-11-01", reference: "NOV-ACK" };
+    const filedOnFirst = { ...october, filedOn: "2026-11-01" };
 
     // 18:29 UTC on 31 Oct is 23:59 IST, still October.
     vi.setSystemTime(new Date("2026-10-31T18:29:00Z"));
-    const early = await rejectionOf(harness.gstService.recordGstr1Filing(admin.id, november));
+    const early = await rejectionOf(harness.gstService.recordGstr1Filing(admin.id, filedOnFirst));
     const earlyPreview = await rejectionOf(
-      harness.gstService.previewGstr1Filing({ month: "2026-11" }),
+      harness.gstService.previewGstr1Filing({ month: "2026-10" }),
     );
     // 19:00 UTC on 31 Oct is 00:30 IST on 1 Nov: still October in UTC, November in India.
     vi.setSystemTime(new Date("2026-10-31T19:00:00Z"));
-    const preview = await harness.gstService.previewGstr1Filing({ month: "2026-11" });
-    await harness.gstService.recordGstr1Filing(admin.id, november);
+    const preview = await harness.gstService.previewGstr1Filing({ month: "2026-10" });
+    await harness.gstService.recordGstr1Filing(admin.id, filedOnFirst);
 
     expect(early).toMatchObject({ code: "BAD_REQUEST" });
-    expect(early.message).toContain("Nov 2026 has not started");
-    expect(earlyPreview.message).toContain("has not started");
-    expect(preview).toMatchObject({ month: "2026-11", alreadyFiled: false });
-    expect((await filingRows()).map((row) => row.periodMonth)).toEqual(["2026-11-01"]);
+    expect(early.message).toContain("GSTR-1 for Oct 2026 can be filed from 1 Nov 2026");
+    expect(refusalOf(earlyPreview)?.reason).toBe("filing_month_not_ended");
+    expect(preview).toMatchObject({ month: "2026-10", alreadyFiled: false });
+    expect((await filingRows()).map((row) => row.periodMonth)).toEqual(["2026-10-01"]);
   });
 
   it("refuses a filing date that is not on the calendar", async () => {
@@ -270,7 +283,7 @@ describe("GstService.correctGstr1Filing", () => {
     const early = await rejectionOf(
       harness.gstService.correctGstr1Filing(admin.id, {
         filingId: filing.id,
-        filedOn: "2026-09-30",
+        filedOn: "2026-10-31",
         reference: october.reference,
         reason: "Wrong date",
       }),
@@ -284,7 +297,7 @@ describe("GstService.correctGstr1Filing", () => {
       }),
     );
 
-    expect(early.message).toContain("before Oct 2026 starts");
+    expect(early.message).toContain("on or after 1 Nov 2026");
     expect(unchanged.message).toContain("Nothing changed");
     expect((await filingAuditRows(filing.id)).map((row) => row.action)).toEqual(["filed"]);
   });

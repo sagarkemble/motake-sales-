@@ -121,7 +121,7 @@ Not done in Motake. No Bill waits for an IRN: every Tax Invoice PDF is drawn and
 *Avoid*: IRN pending, Enter IRN, portal cancellation, Draft PDF
 
 **GSTR-1 filing**:
-Admin's record that Motake's monthly GSTR-1 for one calendar month is done on the government portal. One filing per month. Filer is the signed-in Admin. Correcting ack, filing date, or notes does not unlock the month. There is no unfile.
+Admin's record that Motake's monthly GSTR-1 for one calendar month is done on the government portal. A month is filed only once it is over: from the 1st of the next month, with a filing date on or after that day. One filing per month. Filer is the signed-in Admin. Correcting ack, filing date, or notes does not unlock the month. There is no unfile.
 *Avoid*: generating GSTR-1 from the app; a second filing for the same month
 
 **Filed month**:
