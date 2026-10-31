@@ -122,7 +122,7 @@ function CustomerList({ order }: { order: OfficeOrder }) {
                   type="button"
                   onClick={() => order.setCustomerId(customer.id)}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent/50",
+                    "flex w-full items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent",
                     selected && "border-brand bg-accent",
                   )}
                 >

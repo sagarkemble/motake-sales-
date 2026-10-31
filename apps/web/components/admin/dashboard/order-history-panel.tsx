@@ -87,7 +87,7 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
                 key={id}
                 type="button"
                 onClick={() => setSelectedOrderId(id)}
-                className="flex items-center justify-between gap-3 rounded-lg py-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="flex items-center justify-between gap-3 rounded-lg py-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <ShopPhotoThumbnail

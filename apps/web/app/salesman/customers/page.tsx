@@ -140,7 +140,7 @@ export default function SalesmanRouteCustomersPage() {
                   key={customer.id}
                   type="button"
                   variant="outline"
-                  className="h-auto justify-between gap-3 whitespace-normal rounded-2xl bg-card p-3 text-left font-normal shadow-none hover:bg-accent/50"
+                  className="h-auto justify-between gap-3 whitespace-normal rounded-2xl bg-card p-3 text-left font-normal shadow-none hover:bg-accent"
                   onClick={() => setOpenedCustomerId(customer.id)}
                 >
                   <ShopPhotoThumbnail

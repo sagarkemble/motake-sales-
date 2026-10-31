@@ -79,7 +79,7 @@ export function FilingsList({
           <li key={filing.id}>
             <button
               type="button"
-              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent/50"
+              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent"
               onClick={() => onCorrect(filing)}
             >
               <span className="min-w-0">

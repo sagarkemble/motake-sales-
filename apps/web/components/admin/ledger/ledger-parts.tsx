@@ -225,7 +225,7 @@ export function PreorderItem({ preorder }: { preorder: OpenPreorder }) {
   return (
     <Link
       href={`/admin/ledger/pre-orders/${preorder.id}`}
-      className="flex items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-sm transition-colors hover:bg-accent/50"
+      className="flex items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-sm transition-colors hover:bg-accent"
     >
       <div className="min-w-0">
         <p className="font-medium">

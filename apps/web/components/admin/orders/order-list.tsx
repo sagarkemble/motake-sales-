@@ -386,7 +386,11 @@ function OrderTable({
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id} onClick={() => onSelect(row)} className="cursor-pointer">
+            <TableRow
+              key={row.id}
+              onClick={() => onSelect(row)}
+              className="cursor-pointer hover:bg-accent"
+            >
               <TableCell>
                 <div className="flex items-center gap-2">
                   <ShopPhotoThumbnail
@@ -451,7 +455,7 @@ function OrderCard({
     <button
       type="button"
       onClick={() => onSelect(row)}
-      className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent/50"
+      className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

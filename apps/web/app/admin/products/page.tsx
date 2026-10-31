@@ -89,7 +89,7 @@ function ProductsPageContent() {
             return (
               <div
                 key={product.id}
-                className={`flex flex-col gap-2.5 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50 ${
+                className={`flex flex-col gap-2.5 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent ${
                   product.deletedAt ? "opacity-60" : ""
                 }`}
               >

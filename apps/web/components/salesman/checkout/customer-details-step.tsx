@@ -201,7 +201,7 @@ export function CustomerDetailsStep({
                 {customerOptions.map((customer) => (
                   <div
                     key={customer.id}
-                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent/50"
+                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent"
                   >
                     <Button
                       type="button"

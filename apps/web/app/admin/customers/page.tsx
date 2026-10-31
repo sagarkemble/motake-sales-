@@ -151,7 +151,7 @@ function CustomersPageContent() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") router.push(`/admin/customers/${customer.id}`);
               }}
-              className="flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ShopPhotoThumbnail
                 shopPhotoUrl={customer.shopPhotoUrl}
