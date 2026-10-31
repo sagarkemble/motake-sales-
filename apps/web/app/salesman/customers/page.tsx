@@ -97,7 +97,7 @@ export default function SalesmanRouteCustomersPage() {
                 setPage(1);
               }}
               placeholder={tx("salesman.checkout.customer.searchPlaceholder")}
-              className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
+              className="h-11 rounded-full bg-muted-soft pl-9 pr-11"
             />
             {searchTerm && (
               <Button
@@ -119,7 +119,7 @@ export default function SalesmanRouteCustomersPage() {
           {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
             <ListItemSkeleton count={5} />
           ) : customersPage.items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
               <SearchXIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">
                 {debouncedSearchTerm

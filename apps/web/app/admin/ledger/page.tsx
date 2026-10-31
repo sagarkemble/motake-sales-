@@ -186,7 +186,7 @@ function LedgerPageContent() {
       </div>
 
       {!customerId ? (
-        <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
+        <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
           <p className="text-sm font-medium">{tx("admin.ledger.pickCustomerTitle")}</p>
           <p className="text-sm text-muted-foreground">{tx("admin.ledger.pickCustomerHint")}</p>
         </div>

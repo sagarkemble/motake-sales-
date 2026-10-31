@@ -31,7 +31,7 @@ export function OrderBillLines({ bill }: OrderBillLinesProps) {
 
   return (
     <div className="overflow-hidden rounded-2xl border text-xs">
-      <div className="flex items-center justify-between gap-2 bg-muted/40 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 bg-muted-soft px-3 py-2">
         <p className="font-medium">
           {tx(
             bill.legalType === "tax_invoice"
@@ -78,7 +78,7 @@ export function OrderBillLines({ bill }: OrderBillLinesProps) {
         </tbody>
       </table>
 
-      <div className="space-y-1 border-t bg-muted/20 px-3 py-2">
+      <div className="space-y-1 border-t bg-muted-faint px-3 py-2">
         {totalRows.map(({ labelKey, paise }) => (
           <div key={labelKey} className="flex justify-between text-muted-foreground">
             <span>{tx(labelKey)}</span>

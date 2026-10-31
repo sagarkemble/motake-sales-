@@ -182,7 +182,7 @@ export function BillList() {
       {isBillsListLoading || (isReloading && isBillsListFetching) ? (
         <ListItemSkeleton count={5} />
       ) : billsPage.items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed bg-card py-10 text-center text-sm text-muted-foreground">
           {tx("admin.bills.empty")}
         </p>
       ) : (

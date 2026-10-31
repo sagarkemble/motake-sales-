@@ -177,7 +177,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
                 key={variety.id}
                 className={cn(
                   "flex flex-wrap items-start gap-3 rounded-xl border bg-background p-3",
-                  isInactive && "border-dashed bg-muted/30",
+                  isInactive && "border-dashed bg-muted-faint",
                   variety.id === addedVarietyId && "border-brand ring-2 ring-brand/20",
                 )}
               >

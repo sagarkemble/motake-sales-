@@ -60,7 +60,7 @@ export function SalesmanDetailsForm({
                 <FormControl>
                   <Input
                     placeholder={tx("admin.salesmen.form.namePlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>

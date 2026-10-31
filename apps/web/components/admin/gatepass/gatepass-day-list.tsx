@@ -67,10 +67,7 @@ export function GatepassDayList({
             (gatepass) => gatepass.salesmanId === salesman.id,
           );
           return (
-            <div
-              key={salesman.id}
-              className="flex flex-col gap-2 rounded-2xl border bg-card/60 p-3"
-            >
+            <div key={salesman.id} className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
               <p className="text-sm font-semibold">
                 <SalesmanNameLink salesmanId={salesman.id}>{salesman.name}</SalesmanNameLink>
               </p>

@@ -223,7 +223,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
               if (event.key === "Enter" && isEdited) handleSaveClick();
               if (event.key === "Escape" && isEdited) handleCancelClick();
             }}
-            className="rounded-xl bg-muted/40 pl-7 text-right"
+            className="rounded-xl bg-muted-soft pl-7 text-right"
           />
         </div>
         {errorMessage ? (

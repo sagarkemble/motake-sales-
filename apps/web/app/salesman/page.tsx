@@ -70,7 +70,7 @@ function SalesmanCatalogContent() {
             placeholder={tx("salesman.catalog.searchPlaceholder")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="h-11 rounded-full bg-muted/40 pl-9 pr-11"
+            className="h-11 rounded-full bg-muted-soft pl-9 pr-11"
           />
           {searchTerm && (
             <Button
@@ -103,7 +103,7 @@ function SalesmanCatalogContent() {
         {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : catalogItems.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
             <PackageSearchIcon className="size-6 text-muted-foreground" />
             <p className="text-sm font-medium">
               {debouncedSearchTerm

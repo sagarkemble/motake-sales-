@@ -72,7 +72,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
                 <FormControl>
                   <Input
                     placeholder={tx("admin.salesmen.form.namePlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>
@@ -90,7 +90,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
                 <FormControl>
                   <Input
                     placeholder={tx("common.fields.phone")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>
@@ -109,7 +109,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
                   <Input
                     type="email"
                     placeholder={tx("admin.salesmen.form.emailPlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>
@@ -131,7 +131,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
                     <Input
                       type="password"
                       placeholder={tx("admin.salesmen.form.passwordPlaceholder")}
-                      className="rounded-xl bg-muted/40"
+                      className="rounded-xl bg-muted-soft"
                       {...field}
                     />
                   </FormControl>

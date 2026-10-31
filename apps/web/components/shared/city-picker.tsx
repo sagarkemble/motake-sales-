@@ -55,7 +55,7 @@ export function CityPicker({ id, value, onValueChange, invalid }: CityPickerProp
             role="combobox"
             aria-expanded={open}
             aria-invalid={invalid}
-            className="h-10 w-full justify-between rounded-xl bg-muted/40 font-normal"
+            className="h-10 w-full justify-between rounded-xl bg-muted-soft font-normal"
           >
             <span className={cn("truncate", !selected && "text-muted-foreground")}>
               {selected ? `${selected.name}, ${selected.state}` : tx("common.cities.placeholder")}

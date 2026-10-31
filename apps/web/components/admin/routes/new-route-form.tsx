@@ -63,7 +63,7 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
             setName(event.target.value);
             setErrorMessage(null);
           }}
-          className="rounded-xl bg-muted/40"
+          className="rounded-xl bg-muted-soft"
         />
       </div>
       <div className="flex flex-col gap-1.5">

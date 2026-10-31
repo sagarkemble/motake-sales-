@@ -165,7 +165,7 @@ export function AmountField({
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         onChange={(event) => onChange(keepRupeeInputCharacters(event.target.value))}
-        className="rounded-xl bg-muted/40"
+        className="rounded-xl bg-muted-soft"
       />
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
@@ -203,7 +203,7 @@ export function ReferenceField({
         placeholder={tx("admin.ledger.money.referencePlaceholder")}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl bg-muted/40"
+        className="rounded-xl bg-muted-soft"
       />
     </div>
   );
@@ -233,7 +233,7 @@ export function MoneyReasonField({
         disabled={disabled}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl bg-muted/40"
+        className="rounded-xl bg-muted-soft"
       />
     </div>
   );

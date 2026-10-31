@@ -35,7 +35,7 @@ export function SkuChip({ sku, muted, className }: SkuChipProps) {
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-1 rounded-md border bg-muted/40 py-0.5 pl-1.5 pr-0.5 font-mono text-[11px]",
+        "inline-flex max-w-full items-center gap-1 rounded-md border bg-muted-soft py-0.5 pl-1.5 pr-0.5 font-mono text-[11px]",
         muted && "opacity-60",
         className,
       )}
@@ -58,7 +58,7 @@ export function LockedSku({ sku }: { sku: string }) {
   const tx = useTranslate();
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-dashed bg-muted/30 p-3">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-dashed bg-muted-faint p-3">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <LockIcon className="size-3.5" />
         {tx("admin.varieties.skuFixed")}

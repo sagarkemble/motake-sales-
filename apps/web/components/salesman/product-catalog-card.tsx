@@ -30,7 +30,7 @@ export function ProductCatalogCard({
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/40">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted-soft">
         {productImageUrl ? (
           <img src={productImageUrl} alt={productName} className="size-full object-contain p-2" />
         ) : (

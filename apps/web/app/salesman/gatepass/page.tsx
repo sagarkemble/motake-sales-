@@ -102,7 +102,7 @@ export default function SalesmanGatepassPage() {
           {isMyGatepassLoading || (isReloading && isMyGatepassFetching) ? (
             <ListItemSkeleton count={4} />
           ) : !myGatepass ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
               <TicketXIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">{tx("salesman.gatepass.emptyToday")}</p>
             </div>
@@ -138,7 +138,7 @@ export default function SalesmanGatepassPage() {
           {isMyHistoryLoading || (isReloading && isMyHistoryFetching) ? (
             <ListItemSkeleton count={5} />
           ) : myHistory.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
               <HistoryIcon className="size-6 text-muted-foreground" />
               <p className="text-sm font-medium">{tx("salesman.gatepass.emptyHistory")}</p>
             </div>

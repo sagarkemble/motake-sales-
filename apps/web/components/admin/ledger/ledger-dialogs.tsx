@@ -119,7 +119,7 @@ export function OpeningBalanceDialog({
                 {(["pending", "advance"] as const).map((value) => (
                   <Label
                     key={value}
-                    className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent/50"
+                    className="flex cursor-pointer items-start gap-2 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-accent"
                   >
                     <RadioGroupItem value={value} className="mt-0.5" />
                     <span>
@@ -143,7 +143,7 @@ export function OpeningBalanceDialog({
                     value={amount}
                     onChange={(event) => setAmount(keepRupeeInputCharacters(event.target.value))}
                     aria-invalid={isAmountTooLarge(amount)}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                   />
                   {isAmountTooLarge(amount) && (
                     <p className="text-xs text-destructive">
@@ -178,7 +178,7 @@ export function OpeningBalanceDialog({
                   placeholder={tx("admin.ledger.opening.reasonPlaceholder")}
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
-                  className="rounded-xl bg-muted/40"
+                  className="rounded-xl bg-muted-soft"
                 />
               </div>
               <p className="text-sm">
@@ -268,7 +268,7 @@ export function PickBillForNoteDialog({
           <div className="grid gap-1.5">
             <Label htmlFor="note-bill">{tx("admin.ledger.pickBill.label")}</Label>
             <Select value={billId} onValueChange={setBillId}>
-              <SelectTrigger id="note-bill" className="w-full rounded-xl bg-muted/40">
+              <SelectTrigger id="note-bill" className="w-full rounded-xl bg-muted-soft">
                 <SelectValue
                   placeholder={
                     isBillsListLoading

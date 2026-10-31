@@ -115,7 +115,7 @@ export function ImageUpload({
       ) : (
         <div
           className={cn(
-            "flex size-28 items-center justify-center border border-dashed bg-muted/40 text-xs text-muted-foreground",
+            "flex size-28 items-center justify-center border border-dashed bg-muted-soft text-xs text-muted-foreground",
             previewShapeClassName,
           )}
         >

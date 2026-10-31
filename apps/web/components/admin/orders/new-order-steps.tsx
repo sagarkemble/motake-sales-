@@ -84,7 +84,7 @@ function CustomerList({ order }: { order: OfficeOrder }) {
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={tx("admin.orders.new.customerSearch")}
-          className="rounded-xl bg-muted/40 pr-9 pl-9"
+          className="rounded-xl bg-muted-soft pr-9 pl-9"
         />
         {searchTerm && (
           <Button
@@ -123,7 +123,7 @@ function CustomerList({ order }: { order: OfficeOrder }) {
                   onClick={() => order.setCustomerId(customer.id)}
                   className={cn(
                     "flex w-full items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent/50",
-                    selected && "border-brand bg-accent/50",
+                    selected && "border-brand bg-accent",
                   )}
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -226,7 +226,7 @@ function ItemList({ order }: { order: OfficeOrder }) {
         <SearchIcon className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder={tx("admin.orders.new.search")}
-          className="rounded-full bg-muted/40 pr-9 pl-9"
+          className="rounded-full bg-muted-soft pr-9 pl-9"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -336,7 +336,7 @@ function AdvanceFields({ order }: { order: OfficeOrder }) {
           <span className="text-muted-foreground">{tx("admin.orders.new.advanceKept")}</span>
           <span className="tabular-nums">{formatPaise(advancePaise)}</span>
         </div>
-        <div className="flex justify-between bg-muted/30 px-3 py-1.5 font-medium">
+        <div className="flex justify-between bg-muted-faint px-3 py-1.5 font-medium">
           <span>{tx("admin.orders.new.balanceAfterAdvance")}</span>
           <BalanceText balancePaise={balancePaise - advancePaise} />
         </div>

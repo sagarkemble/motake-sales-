@@ -262,7 +262,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
                   htmlFor={`${idPrefix}-overpay-${option.value}`}
                   className={cn(
                     "flex cursor-pointer items-start gap-3 rounded-xl border p-3 font-normal",
-                    draft.overpay === option.value ? "border-brand bg-accent/50" : "bg-background",
+                    draft.overpay === option.value ? "border-brand bg-accent" : "bg-background",
                   )}
                 >
                   <RadioGroupItem
@@ -292,7 +292,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
             <span className="tabular-nums">{formatPaise(row.value)}</span>
           </div>
         ))}
-        <div className="flex justify-between bg-muted/30 px-3 py-1.5 font-medium">
+        <div className="flex justify-between bg-muted-faint px-3 py-1.5 font-medium">
           <span>{tx("checkout.payment.preview.balanceAfter")}</span>
           <BalanceText balancePaise={preview.balanceAfterPaise} />
         </div>

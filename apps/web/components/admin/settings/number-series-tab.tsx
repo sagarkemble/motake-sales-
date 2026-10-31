@@ -270,7 +270,7 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
             maxLength={2}
             autoCapitalize="characters"
             aria-invalid={showError && !isPrefixValid}
-            className="w-20 rounded-xl bg-muted/40 font-mono uppercase"
+            className="w-20 rounded-xl bg-muted-soft font-mono uppercase"
             onChange={(event) => {
               setPrefix(event.target.value.toUpperCase());
               setShowError(false);
@@ -291,7 +291,7 @@ function PrefixEditor({ financialYear, entry, onDone }: PrefixEditorProps) {
           placeholder={tx("admin.settings.reasonPlaceholder")}
           maxLength={500}
           value={reason}
-          className="rounded-xl bg-muted/40"
+          className="rounded-xl bg-muted-soft"
           onChange={(event) => setReason(event.target.value)}
         />
       </div>

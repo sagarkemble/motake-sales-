@@ -178,7 +178,7 @@ export function OrderList({ customerId }: OrderListProps) {
             </FilterField>
             <FilterField label={tx("admin.orders.filters.type")}>
               <Select value={filters.type} onValueChange={(value) => setFilter("type", value)}>
-                <SelectTrigger className="w-full rounded-full bg-muted/40">
+                <SelectTrigger className="w-full rounded-full bg-muted-soft">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,7 +193,7 @@ export function OrderList({ customerId }: OrderListProps) {
             </FilterField>
             <FilterField label={tx("admin.orders.filters.status")}>
               <Select value={filters.status} onValueChange={(value) => setFilter("status", value)}>
-                <SelectTrigger className="w-full rounded-full bg-muted/40">
+                <SelectTrigger className="w-full rounded-full bg-muted-soft">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,7 +210,7 @@ export function OrderList({ customerId }: OrderListProps) {
               <Input
                 inputMode="tel"
                 placeholder="98220…"
-                className="rounded-full bg-muted/40"
+                className="rounded-full bg-muted-soft"
                 value={filters.customerPhone}
                 onChange={(event) => setFilter("customerPhone", event.target.value)}
               />

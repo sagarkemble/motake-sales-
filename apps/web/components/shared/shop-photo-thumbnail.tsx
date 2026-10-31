@@ -36,12 +36,7 @@ export function ShopPhotoThumbnail({
       <img
         src={shopPhotoUrl}
         alt={shopName}
-        className={cn(
-          "shrink-0 object-cover",
-          sizeClassName[size],
-          shapeClassName,
-          className,
-        )}
+        className={cn("shrink-0 object-cover", sizeClassName[size], shapeClassName, className)}
       />
     );
   }
@@ -49,7 +44,7 @@ export function ShopPhotoThumbnail({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center bg-muted/40",
+        "flex shrink-0 items-center justify-center bg-muted-soft",
         sizeClassName[size],
         shapeClassName,
         className,

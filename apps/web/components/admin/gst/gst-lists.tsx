@@ -45,7 +45,7 @@ export function GstError({ onRetry }: { onRetry: () => void }) {
 
 function GstEmpty({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
+    <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
       <p className="text-sm font-medium">{title}</p>
       <p className="text-sm text-muted-foreground">{body}</p>
     </div>

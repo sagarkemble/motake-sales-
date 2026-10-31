@@ -34,6 +34,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  /* Solid tints: the same colour as muted at that opacity over a card, without the doodle
+     background showing through when they sit on the page. */
+  --color-muted-faint: color-mix(in oklab, var(--muted) 25%, var(--card));
+  --color-muted-soft: color-mix(in oklab, var(--muted) 40%, var(--card));
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);

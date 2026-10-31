@@ -79,7 +79,7 @@ export function OrderTypeStep({
           htmlFor={`${idPrefix}-order-type-book-now`}
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
-            orderType === "book_now" ? "border-brand bg-accent/50" : "bg-card",
+            orderType === "book_now" ? "border-brand bg-accent" : "bg-card",
             !isBookNowAllowed && "opacity-70",
           )}
         >
@@ -118,7 +118,7 @@ export function OrderTypeStep({
           htmlFor={`${idPrefix}-order-type-pre-order`}
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
-            orderType === "pre_order" ? "border-brand bg-accent/50" : "bg-card",
+            orderType === "pre_order" ? "border-brand bg-accent" : "bg-card",
           )}
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">

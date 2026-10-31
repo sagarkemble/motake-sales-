@@ -52,7 +52,7 @@ export function AllotSalesmanStep({
               id="allot-business-date"
               type="button"
               variant="outline"
-              className="h-11 justify-between rounded-xl bg-muted/40 font-normal"
+              className="h-11 justify-between rounded-xl bg-muted-soft font-normal"
             >
               {formatDate(businessDate, "d MMM yyyy")}
               <CalendarIcon className="size-4 text-muted-foreground" />
@@ -88,7 +88,7 @@ export function AllotSalesmanStep({
                 onClick={() => onSelectSalesman(salesman.id)}
                 className={cn(
                   "flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors",
-                  isSelected ? "border-brand bg-accent/50" : "hover:bg-accent/50",
+                  isSelected ? "border-brand bg-accent" : "hover:bg-accent/50",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">

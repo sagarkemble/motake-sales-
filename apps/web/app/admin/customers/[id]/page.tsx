@@ -106,7 +106,7 @@ export default function CustomerDetailPage() {
             </p>
           </div>
 
-          <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted/40 p-3 text-sm md:col-span-1">
+          <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted-soft p-3 text-sm md:col-span-1">
             <div className="min-w-0">
               <dt className="text-xs text-muted-foreground">{tx("admin.customers.form.route")}</dt>
               <dd className="min-w-0">
@@ -155,7 +155,7 @@ export default function CustomerDetailPage() {
         </div>
 
         {customer.notes && (
-          <div className="rounded-xl bg-muted/40 p-3 text-sm">
+          <div className="rounded-xl bg-muted-soft p-3 text-sm">
             <p className="text-xs text-muted-foreground">{tx("admin.customers.form.notes")}</p>
             <p className="whitespace-pre-line break-words">{customer.notes}</p>
           </div>

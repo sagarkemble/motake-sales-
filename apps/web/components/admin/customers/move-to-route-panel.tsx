@@ -42,7 +42,7 @@ export function MoveToRoutePanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/30 p-3">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-muted-faint p-3">
       <div>
         <Label htmlFor={`move-route-${customerId}`}>{tx("admin.customers.move.title")}</Label>
         <p className="text-xs text-muted-foreground">{tx("admin.customers.move.hint")}</p>

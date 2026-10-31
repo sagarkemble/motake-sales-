@@ -110,7 +110,7 @@ export function ProductForm({
                 <FormControl>
                   <Input
                     placeholder={tx("admin.products.namePlaceholder")}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>
@@ -134,7 +134,7 @@ export function ProductForm({
                   <Textarea
                     placeholder={tx("admin.products.descriptionPlaceholder")}
                     rows={4}
-                    className="rounded-xl bg-muted/40"
+                    className="rounded-xl bg-muted-soft"
                     {...field}
                   />
                 </FormControl>

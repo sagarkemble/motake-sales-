@@ -67,7 +67,7 @@ export function AddToCartDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <DrawerHeader className="flex flex-row items-center gap-3 text-left">
-          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted-soft">
             {productImageUrl ? (
               <img
                 src={productImageUrl}

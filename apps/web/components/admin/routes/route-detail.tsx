@@ -159,7 +159,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") event.currentTarget.blur();
                 }}
-                className="h-11 rounded-xl bg-muted/40 text-base font-semibold"
+                className="h-11 rounded-xl bg-muted-soft text-base font-semibold"
               />
             </div>
             <div className="col-span-2 row-start-2 flex min-w-0 flex-col gap-1.5 sm:col-span-1 sm:row-start-1">
@@ -201,7 +201,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
             <p className="text-sm font-medium">{tx("admin.routes.code")}</p>
             <p className="mt-1 truncate font-mono text-sm text-muted-foreground">{route.code}</p>
           </div>
-          <div className="flex w-fit items-center gap-2 justify-self-end rounded-full bg-muted/40 px-3 py-2">
+          <div className="flex w-fit items-center gap-2 justify-self-end rounded-full bg-muted-soft px-3 py-2">
             <Label htmlFor={`route-status-${route.id}`}>
               {route.status === "active"
                 ? tx("common.status.active")

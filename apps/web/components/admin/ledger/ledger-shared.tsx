@@ -96,7 +96,7 @@ export function ReasonField({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="rounded-xl bg-muted/40"
+        className="rounded-xl bg-muted-soft"
       />
     </div>
   );

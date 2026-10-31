@@ -65,7 +65,7 @@ function CustomersPageContent() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={tx("admin.customers.searchPlaceholder")}
-            className="rounded-full bg-muted/40 pl-9 pr-9"
+            className="rounded-full bg-muted-soft pl-9 pr-9"
           />
           {searchTerm && (
             <button
@@ -99,7 +99,7 @@ function CustomersPageContent() {
         >
           <SelectTrigger
             aria-label={tx("admin.customers.routeFilter")}
-            className="w-full rounded-full bg-muted/40 sm:w-64"
+            className="w-full rounded-full bg-muted-soft sm:w-64"
           >
             <SelectValue />
           </SelectTrigger>

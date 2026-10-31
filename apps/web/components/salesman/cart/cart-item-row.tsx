@@ -35,7 +35,7 @@ export function CartItemRow({
       )}
     >
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/40">
+        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted-soft">
           {cartLine.productImageUrl ? (
             <img
               src={cartLine.productImageUrl}
