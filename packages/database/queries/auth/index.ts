@@ -21,6 +21,31 @@ export async function getProfileById(profileId: string): Promise<SelectProfile |
   return profile;
 }
 
+// Deleted profiles included.
+export async function getProfileByIdIncludingDeleted(
+  profileId: string,
+  executor: DbExecutor = db,
+): Promise<SelectProfile | undefined> {
+  const [profile] = await executor
+    .select()
+    .from(profilesTable)
+    .where(eq(profilesTable.id, profileId));
+  return profile;
+}
+
+// Any profile, deleted included, already has this email in any letter case.
+export async function isProfileEmailTaken(
+  email: string,
+  executor: DbExecutor = db,
+): Promise<boolean> {
+  const [row] = await executor
+    .select({ id: profilesTable.id })
+    .from(profilesTable)
+    .where(sql`lower(${profilesTable.email}) = lower(${email})`)
+    .limit(1);
+  return Boolean(row);
+}
+
 export async function getProfileByEmail(email: string): Promise<SelectProfile | undefined> {
   const [profile] = await db
     .select()

@@ -136,6 +136,7 @@
       "duplicate_variety_in_allotment": "Each variety can be added only once.",
       "salesman_has_gatepass": "This salesman already has a GatePass for {date}.",
       "salesman_has_active_gatepass": "This salesman has an Active GatePass. Hand it over or close it, then delete.",
+      "salesman_deleted": "This salesman was deleted and cannot be reactivated. Add them again.",
       "route_price_missing": "Set a price on Route {route} for: {varieties}.",
       "gatepass_not_active": "This GatePass is already closed. Refresh the page.",
       "returned_qty_out_of_range": "Returned quantity cannot be more than {max}.",

@@ -172,44 +172,47 @@ function SalesmanPageContent() {
                     <StatusBadge status={profile.status === "active" ? "active" : "inactive"} />
                   )}
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={tx("admin.salesmen.actionsAria")}
-                        className="size-8 shrink-0"
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        <MoreVerticalIcon className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
-                      {profile.status === "active" ? (
-                        <DropdownMenuItem
-                          disabled={isDeactivatingSalesmanAccount}
-                          onSelect={() => handleDeactivate(salesman.id)}
+                  {/* A deleted salesman is gone for good: no Reactivate, no second Delete. */}
+                  {!isDeleted && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={tx("admin.salesmen.actionsAria")}
+                          className="size-8 shrink-0"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
                         >
-                          {tx("admin.customers.deactivate")}
-                        </DropdownMenuItem>
-                      ) : (
+                          <MoreVerticalIcon className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                        {profile.status === "active" ? (
+                          <DropdownMenuItem
+                            disabled={isDeactivatingSalesmanAccount}
+                            onSelect={() => handleDeactivate(salesman.id)}
+                          >
+                            {tx("admin.customers.deactivate")}
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            disabled={isReactivatingSalesmanAccount}
+                            onSelect={() => handleReactivate(salesman.id)}
+                          >
+                            {tx("admin.customers.reactivate")}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
-                          disabled={isReactivatingSalesmanAccount}
-                          onSelect={() => handleReactivate(salesman.id)}
+                          variant="destructive"
+                          disabled={isDeletingSalesmanAccount}
+                          onSelect={() => handleDelete(salesman.id)}
                         >
-                          {tx("admin.customers.reactivate")}
+                          {tx("admin.products.deleteConfirm")}
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        variant="destructive"
-                        disabled={isDeletingSalesmanAccount}
-                        onSelect={() => handleDelete(salesman.id)}
-                      >
-                        {tx("admin.products.deleteConfirm")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             );

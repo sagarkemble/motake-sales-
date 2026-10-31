@@ -14,7 +14,7 @@ A named area (e.g. Kolhapur, Satara) with its own Customer list, price per varie
 The generated unique key of a Route (`rt-{slug}-{nnn}`). Never edited. Name is the label.
 
 **Salesman**:
-The field-sales person who sells against an Active GatePass.
+The field-sales person who sells against an Active GatePass. Deactivate pauses the account and can be undone. Delete is for good: refused while they hold an Active GatePass; their login email becomes `delete+{email}` (`delete+2+{email}` … if taken) so the email can be used for a new Salesman, and a deleted Salesman is never reactivated. Their GatePasses, orders and money records stay.
 
 **Salesman code**:
 The generated unique key of a Salesman: the first three letters of the name, the last four phone digits and the day they were added (`RAV-4321-261031`), with `-2`, `-3` … if already taken. Made once when the Salesman is added and never changed, even when name or phone change. Admin does not type or edit it.

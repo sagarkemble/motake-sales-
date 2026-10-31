@@ -321,6 +321,7 @@ export type ScreenRefusalReason =
   | "duplicate_variety_in_allotment"
   | "salesman_has_gatepass"
   | "salesman_has_active_gatepass"
+  | "salesman_deleted"
   | "route_price_missing"
   | "gatepass_not_active"
   | "returned_qty_out_of_range"
@@ -376,6 +377,7 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   duplicate_variety_in_allotment: "BAD_REQUEST",
   salesman_has_gatepass: "CONFLICT",
   salesman_has_active_gatepass: "CONFLICT",
+  salesman_deleted: "CONFLICT",
   route_price_missing: "BAD_REQUEST",
   gatepass_not_active: "CONFLICT",
   returned_qty_out_of_range: "BAD_REQUEST",
