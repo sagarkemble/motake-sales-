@@ -74,7 +74,7 @@ export default function AdminDashboardPage() {
     : tx("admin.dashboard.greetingFallbackName");
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:gap-8 sm:p-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:gap-8 sm:p-6">
       <section>
         <h1 className="text-xl font-semibold sm:text-2xl">
           {tx("admin.dashboard.greeting", { name: firstName ?? "" })}

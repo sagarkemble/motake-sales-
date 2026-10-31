@@ -23,7 +23,7 @@ function GstPageContent() {
   const isReloading = usePageReloading();
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
       <div className="flex items-center justify-end gap-2 md:justify-between">
         {/* The phone navbar already names the page. */}
         <h1 className="sr-only md:not-sr-only md:text-base md:font-semibold">
@@ -62,7 +62,7 @@ export default function AdminGstPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto w-full max-w-5xl px-4 py-4">
+        <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
           <GstSkeleton />
         </div>
       }

@@ -42,7 +42,7 @@ function RoutesPageContent() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-4 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
       <section className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -163,7 +163,7 @@ export default function AdminRoutesPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={4} />
         </div>
       }

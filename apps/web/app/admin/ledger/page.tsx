@@ -162,7 +162,7 @@ function LedgerPageContent() {
   const isError = isSummaryError || isRowsError;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <CustomerPicker
           value={customerId}
@@ -302,7 +302,7 @@ export default function AdminLedgerPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={4} />
         </div>
       }

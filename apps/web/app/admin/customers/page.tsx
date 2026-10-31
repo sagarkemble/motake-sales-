@@ -57,7 +57,7 @@ function CustomersPageContent() {
   const isReloading = usePageReloading();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -193,7 +193,7 @@ export default function AdminCustomersPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={6} />
         </div>
       }

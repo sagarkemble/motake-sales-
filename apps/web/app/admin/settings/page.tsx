@@ -26,7 +26,7 @@ export default function AdminSettingsPage() {
   const [nextFinancialYear, currentFinancialYear] = financialYears;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4 sm:px-6">
       <BackHeader href="/admin/account" title={tx("admin.settings.title")} />
       <Tabs defaultValue="seller">
         <TabsList className="w-full">

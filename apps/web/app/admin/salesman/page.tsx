@@ -79,7 +79,7 @@ function SalesmanPageContent() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center justify-end">
         <h1 className="sr-only">{tx("admin.salesmen.title")}</h1>
         <Button
@@ -233,7 +233,7 @@ export default function AdminSalesmanPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={6} />
         </div>
       }
