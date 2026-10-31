@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { PackageIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -30,7 +31,7 @@ function ProductsPageContent() {
   const isReloading = usePageReloading();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -77,11 +78,25 @@ function ProductsPageContent() {
         {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : productsPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm
-              ? tx("admin.products.noMatch", { term: debouncedSearchTerm })
-              : tx("admin.products.empty")}
-          </p>
+          debouncedSearchTerm ? (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+              body={tx("empty.noMatch.body")}
+              action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+            />
+          ) : (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.products.title")}
+              body={tx("empty.products.body")}
+              action={{
+                label: tx("empty.actions.addProduct"),
+                icon: PlusIcon,
+                href: "/admin/products/new",
+              }}
+            />
+          )
         ) : (
           productsPage.items.map(({ product, varieties }) => {
             const activeVarieties = varieties.filter((variety) => variety.status === "active");
@@ -171,7 +186,7 @@ export default function AdminProductsPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-3 px-4 py-4 sm:px-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           <GridItemSkeleton count={8} />
         </div>
       }

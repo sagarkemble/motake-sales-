@@ -2,7 +2,9 @@
 
 import { Suspense, useRef, useState } from "react";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { NewRouteForm } from "~/components/admin/routes/new-route-form";
 import { RouteDetail } from "~/components/admin/routes/route-detail";
 import { StatusBadge } from "~/components/admin/products/status-badge";
@@ -22,7 +24,9 @@ function RoutesPageContent() {
   const { searchTerm, setSearchTerm, debouncedSearchTerm } = useListQueryState();
   const [includeHidden, setIncludeHidden] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  // ?route= opens that Route, e.g. from Allot GatePass to set a missing price.
+  const requestedRouteId = useSearchParams().get("route");
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(requestedRouteId);
   const detailRef = useRef<HTMLElement>(null);
 
   const { routes, isRoutesListLoading, refetchRoutesList, isRoutesListFetching } = useRoutes({
@@ -42,7 +46,7 @@ function RoutesPageContent() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-4 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
       <section className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -98,11 +102,28 @@ function RoutesPageContent() {
           {isRoutesListLoading || (isReloading && isRoutesListFetching) ? (
             <ListItemSkeleton count={4} />
           ) : routes.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {debouncedSearchTerm
-                ? tx("admin.routes.noMatch", { term: debouncedSearchTerm })
-                : tx("admin.routes.empty")}
-            </p>
+            debouncedSearchTerm ? (
+              <EmptyStateCard
+                media="none"
+                title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+                body={tx("empty.noMatch.body")}
+                action={{
+                  label: tx("empty.actions.clearSearch"),
+                  onClick: () => setSearchTerm(""),
+                }}
+              />
+            ) : (
+              <EmptyStateCard
+                media="none"
+                title={tx("empty.routes.title")}
+                body={tx("empty.routes.body")}
+                action={{
+                  label: tx("empty.actions.newRoute"),
+                  icon: PlusIcon,
+                  onClick: () => setIsCreating(true),
+                }}
+              />
+            )
           ) : (
             routes.map((route) => (
               <button
@@ -163,7 +184,7 @@ export default function AdminRoutesPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={4} />
         </div>
       }

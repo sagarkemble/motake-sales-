@@ -4,6 +4,7 @@ import type { RouterOutputs } from "@repo/trpc/client";
 import { ChevronDownIcon, HistoryIcon } from "lucide-react";
 import { useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -55,7 +56,14 @@ export function SettingsHistoryList({ entries }: { entries: SettingsHistoryEntry
   }
 
   if (entries.length === 0) {
-    return <p className="text-xs text-muted-foreground">{tx("admin.settings.history.empty")}</p>;
+    return (
+      <EmptyStateCard
+        compact
+        media="none"
+        title={tx("empty.history.title")}
+        body={tx("empty.history.body")}
+      />
+    );
   }
 
   return (

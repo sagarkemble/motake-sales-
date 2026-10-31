@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MapPinIcon, MoreVerticalIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -79,7 +80,7 @@ function SalesmanPageContent() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center justify-end">
         <h1 className="sr-only">{tx("admin.salesmen.title")}</h1>
         <Button
@@ -108,9 +109,15 @@ function SalesmanPageContent() {
         {isSalesmenListLoading || (isReloading && isSalesmenListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : salesmenPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {tx("admin.salesmen.empty")}
-          </p>
+          <EmptyStateCard
+            title={tx("empty.salesmen.title")}
+            body={tx("empty.salesmen.body")}
+            action={{
+              label: tx("empty.actions.addSalesman"),
+              icon: PlusIcon,
+              href: "/admin/salesman/new",
+            }}
+          />
         ) : (
           salesmenPage.items.map(({ salesman, profile, activeRouteName }) => {
             const isDeleted = Boolean(profile.deletedAt);
@@ -233,7 +240,7 @@ export default function AdminSalesmanPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={6} />
         </div>
       }

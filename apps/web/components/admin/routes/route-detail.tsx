@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -238,9 +239,14 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
         {/* Radix lays the viewport content out as a table; block keeps the rows' truncation working. */}
         <ScrollArea className="mt-1 min-h-0 flex-1 pr-3 [&_[data-slot=scroll-area-viewport]>div]:block!">
           {productGroups.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {tx("admin.routes.prices.empty")}
-            </p>
+            <EmptyStateCard
+              compact
+              media="square"
+              className="mt-3 bg-muted-faint"
+              title={tx("empty.routePrices.title")}
+              body={tx("empty.routePrices.body")}
+              action={{ label: tx("empty.actions.addProduct"), href: "/admin/products/new" }}
+            />
           ) : (
             productGroups.map((group) => (
               <div key={group.productName}>

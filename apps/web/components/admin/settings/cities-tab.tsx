@@ -3,6 +3,7 @@
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { AddCityDialog } from "~/components/shared/add-city-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -62,9 +63,23 @@ export function CitiesTab() {
           </Button>
         </div>
       ) : shownGroups.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          {cities.length === 0 ? tx("admin.settings.cities.none") : tx("common.cities.empty")}
-        </p>
+        cities.length === 0 ? (
+          <EmptyStateCard
+            compact
+            media="none"
+            title={tx("empty.cities.title")}
+            body={tx("empty.cities.body")}
+            action={{ label: tx("empty.actions.addCity"), onClick: () => setIsAddOpen(true) }}
+          />
+        ) : (
+          <EmptyStateCard
+            compact
+            media="none"
+            title={tx("empty.noMatch.title", { term: searchTerm.trim() })}
+            body={tx("empty.noMatch.body")}
+            action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+          />
+        )
       ) : (
         shownGroups.map((group) => (
           <div key={group.state} className="rounded-xl border bg-card p-3">

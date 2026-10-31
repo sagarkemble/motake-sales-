@@ -40,7 +40,7 @@ export default function AdminPreOrderPaperPage() {
 
   if (!preOrderPaper) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-4">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:px-6">
         {back}
         <PaperLoadFailed
           message={tx("admin.ledger.preorder.loadError")}
@@ -54,7 +54,7 @@ export default function AdminPreOrderPaperPage() {
   const open = order.status !== "fulfilled" && order.status !== "cancelled";
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4 sm:px-6">
       {back}
       <div className="rounded-2xl border bg-card p-4">
         <div className="flex items-start justify-between gap-2">

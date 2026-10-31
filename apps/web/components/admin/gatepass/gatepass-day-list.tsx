@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { GatepassLinesTable, GatepassQuantityKpis } from "~/components/admin/salesman/gatepass-tab";
 import { SalesmanNameLink } from "~/components/admin/shared/name-links";
 import { GatepassStatusBadge } from "~/components/shared/gatepass-status-badge";
@@ -29,6 +30,8 @@ interface GatepassDayListProps {
   dayGatepasses: DayGatepass[];
   allotmentMatrix: AllotmentMatrixRow[];
   isLoading: boolean;
+  // Starts the allotment above for that salesman.
+  onAllot: (salesmanId: string) => void;
 }
 
 /** Every salesman's GatePasses on the chosen date, each with its Route. Tap one to open it. */
@@ -38,6 +41,7 @@ export function GatepassDayList({
   dayGatepasses,
   allotmentMatrix,
   isLoading,
+  onAllot,
 }: GatepassDayListProps) {
   const tx = useTranslate();
   const formatDate = useFormatDate();
@@ -72,9 +76,14 @@ export function GatepassDayList({
                 <SalesmanNameLink salesmanId={salesman.id}>{salesman.name}</SalesmanNameLink>
               </p>
               {salesmanGatepasses.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {tx("admin.gatepass.list.none", { date: formattedDate })}
-                </p>
+                <EmptyStateCard
+                  compact
+                  media="none"
+                  className="bg-muted-faint"
+                  title={tx("empty.gatepassDay.title", { date: formattedDate })}
+                  body={tx("empty.gatepassDay.body")}
+                  action={{ label: tx("empty.actions.allot"), onClick: () => onAllot(salesman.id) }}
+                />
               ) : (
                 salesmanGatepasses.map((gatepass) => {
                   const totals = sumGatepassQuantities(linesOf(gatepass.id));

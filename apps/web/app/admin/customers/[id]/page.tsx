@@ -79,7 +79,7 @@ export default function CustomerDetailPage() {
   const isInactive = customer.status === "inactive" || Boolean(customer.deletedAt);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-4 sm:px-6">
       <BackHeader href="/admin/customers" title={customer.shopName} />
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">

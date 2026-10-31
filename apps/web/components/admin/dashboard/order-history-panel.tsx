@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { InboxIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { OrderDetailDialog } from "~/components/admin/orders/order-detail-dialog";
 import { OrderStatusBadge } from "~/components/shared/order-status-badge";
 import { OrderItemAvatars } from "~/components/shared/order-item-avatars";
@@ -63,10 +63,12 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
       {isOrderHistoryLoading || (isReloading && isOrderHistoryFetching) ? (
         <ListItemSkeleton count={5} />
       ) : orderHistory.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10 text-center">
-          <InboxIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{tx("admin.dashboard.orders.empty")}</p>
-        </div>
+        <EmptyStateCard
+          compact
+          title={tx("empty.dashboardOrders.title")}
+          body={tx("empty.dashboardOrders.body")}
+          action={{ label: tx("empty.actions.newOrder"), href: "/admin/orders/new" }}
+        />
       ) : (
         <div className="flex flex-col divide-y divide-border">
           {orderHistory.map(

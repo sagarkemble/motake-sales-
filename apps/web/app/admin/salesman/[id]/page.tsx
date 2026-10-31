@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PencilIcon } from "lucide-react";
 
@@ -21,6 +21,10 @@ export default function SalesmanDetailPage() {
   const tx = useTranslate();
   const params = useParams<{ id: string }>();
   const salesmanId = params.id;
+  // The dashboard's Waiting for verification links straight to the Verification tab.
+  const requestedTab = useSearchParams().get("tab");
+  const initialTab =
+    requestedTab === "gatepass" || requestedTab === "verification" ? requestedTab : "sales";
 
   const { salesmanById: salesmanEntry, isSalesmanByIdLoading } = useSalesmen({
     salesmanId,
@@ -38,7 +42,7 @@ export default function SalesmanDetailPage() {
   const { salesman, profile } = salesmanEntry;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-4 sm:px-6">
       <BackHeader
         href="/admin/salesman"
         title={profile.name ?? tx("admin.nav.salesman")}
@@ -66,7 +70,7 @@ export default function SalesmanDetailPage() {
         }
       />
 
-      <Tabs defaultValue="sales">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="w-full">
           <TabsTrigger value="sales">{tx("admin.salesmen.tab.sales")}</TabsTrigger>
           <TabsTrigger value="gatepass">{tx("admin.salesmen.tab.gatepass")}</TabsTrigger>

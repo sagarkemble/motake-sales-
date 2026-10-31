@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -57,7 +58,7 @@ function CustomersPageContent() {
   const isReloading = usePageReloading();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -136,11 +137,23 @@ function CustomersPageContent() {
         {isCustomersListLoading || (isReloading && isCustomersListFetching) ? (
           <ListItemSkeleton count={6} />
         ) : customersPage.items.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-            {debouncedSearchTerm
-              ? tx("admin.customers.noMatch", { term: debouncedSearchTerm })
-              : tx("admin.customers.empty")}
-          </p>
+          debouncedSearchTerm ? (
+            <EmptyStateCard
+              title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+              body={tx("empty.noMatch.body")}
+              action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+            />
+          ) : (
+            <EmptyStateCard
+              title={tx("empty.customers.title")}
+              body={tx("empty.customers.body")}
+              action={{
+                label: tx("empty.actions.addCustomer"),
+                icon: PlusIcon,
+                href: "/admin/customers/new",
+              }}
+            />
+          )
         ) : (
           customersPage.items.map((customer) => (
             <div
@@ -193,7 +206,7 @@ export default function AdminCustomersPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
           <ListItemSkeleton count={6} />
         </div>
       }

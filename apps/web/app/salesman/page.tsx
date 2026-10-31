@@ -2,8 +2,9 @@
 
 import { businessDateOf } from "@repo/trpc/client";
 import { Suspense, useMemo, useState } from "react";
-import { PackageSearchIcon, SearchIcon, XIcon } from "lucide-react";
+import { SearchIcon, XIcon } from "lucide-react";
 
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { AddToCartDrawer } from "~/components/salesman/add-to-cart-drawer";
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
 import { ProductCatalogCard } from "~/components/salesman/product-catalog-card";
@@ -114,16 +115,30 @@ function SalesmanCatalogContent() {
         {isProductsListLoading || (isReloading && isProductsListFetching) ? (
           <GridItemSkeleton count={6} />
         ) : catalogItems.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-            <PackageSearchIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm font-medium">
-              {debouncedSearchTerm
-                ? tx("salesman.catalog.noMatch", { term: debouncedSearchTerm })
-                : onlyGatepassProducts
-                  ? tx("salesman.catalog.emptyGatepass")
-                  : tx("salesman.catalog.empty")}
-            </p>
-          </div>
+          debouncedSearchTerm ? (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.noMatch.title", { term: debouncedSearchTerm })}
+              body={tx("empty.noMatch.body")}
+              action={{ label: tx("empty.actions.clearSearch"), onClick: () => setSearchTerm("") }}
+            />
+          ) : onlyGatepassProducts ? (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.catalogGatepass.title")}
+              body={tx("empty.catalogGatepass.body")}
+              action={{
+                label: tx("empty.actions.showAll"),
+                onClick: () => setShowAllProducts(true),
+              }}
+            />
+          ) : (
+            <EmptyStateCard
+              media="square"
+              title={tx("empty.catalog.title")}
+              body={tx("empty.catalog.body")}
+            />
+          )
         ) : (
           catalogItems.map(({ product, varieties }) => (
             <ProductCatalogCard

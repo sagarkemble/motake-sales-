@@ -13,7 +13,7 @@ export default function AdminOrdersPage() {
   const tx = useTranslate();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
       <Tabs defaultValue="orders">
         {/* Two equal halves: full width beside New order on a phone, a fixed width from sm up. */}
         <div className="flex items-center gap-3">

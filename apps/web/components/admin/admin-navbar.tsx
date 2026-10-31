@@ -47,8 +47,8 @@ export function AdminNavbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-md">
-      <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-6">
         <Sheet>
           <SheetTrigger asChild>
             <Button
@@ -117,14 +117,16 @@ export function AdminNavbar() {
           {pageTitle === "Motake" ? pageTitle : tx(pageTitle)}
         </p>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        {/* Nine tabs: tighter on a tablet, and scrolls sideways there rather than pushing the account
+            menu off the bar. */}
+        <nav className="hidden min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] md:flex lg:gap-1">
           {adminNavItems.map((navItem) => {
             const isActiveTab = isNavItemActive(navItem.href, currentPathname);
             return (
               <Link
                 key={navItem.href}
                 href={navItem.href}
-                className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors xl:px-3 ${
                   isActiveTab
                     ? "bg-brand/10 text-brand"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -137,7 +139,7 @@ export function AdminNavbar() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         <NavbarRefreshButton />
         <LanguageSwitcher />
         <DropdownMenu>

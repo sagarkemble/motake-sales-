@@ -13,6 +13,8 @@ interface UseGatepassesParams {
   includeMyGatepass?: boolean;
   includeMyHistory?: boolean;
   includeAdminOverview?: boolean;
+  // The day's GatePasses alone, without the rest of the admin overview.
+  includeDayGatepasses?: boolean;
   includeDiscrepancies?: boolean;
   enabled?: boolean;
 }
@@ -22,6 +24,7 @@ export function useGatepasses({
   includeMyGatepass = false,
   includeMyHistory = false,
   includeAdminOverview = false,
+  includeDayGatepasses = false,
   includeDiscrepancies = false,
   enabled = true,
 }: UseGatepassesParams = {}) {
@@ -35,7 +38,7 @@ export function useGatepasses({
 
   const gatepassesForDateQuery = trpc.gatepasses.listForDate.useQuery(
     { businessDate: businessDate ?? "" },
-    { enabled: dateIsSet && includeAdminOverview },
+    { enabled: dateIsSet && (includeAdminOverview || includeDayGatepasses) },
   );
   const myGatepassQuery = trpc.gatepasses.getMine.useQuery(
     { businessDate: businessDate ?? "" },
@@ -88,6 +91,7 @@ export function useGatepasses({
     isGatepassesLoading: gatepassesForDateQuery.isLoading,
     isGatepassesError: gatepassesForDateQuery.isError,
     refetchGatepasses: gatepassesForDateQuery.refetch,
+    isGatepassesFetching: gatepassesForDateQuery.isFetching,
 
     myGatepass: myGatepassQuery.data?.data ?? null,
     isMyGatepassLoading: myGatepassQuery.isLoading,

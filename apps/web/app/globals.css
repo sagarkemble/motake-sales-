@@ -153,8 +153,19 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Keeps the scrollbar's space on short pages too, so a page without a scrollbar (Salesmen)
+     doesn't sit wider than one with it (Products). */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
+  }
+
+  /* The space is already kept, so a dialog's scroll lock must not add it again. */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
   }
 
   /* Prefer Devanagari for Marathi UI; avoid latin-only Fraunces as display */

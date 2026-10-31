@@ -77,9 +77,11 @@ export function AllotSalesmanStep({
             const salesmanGatepasses = dayGatepasses.filter(
               (gatepass) => gatepass.salesmanId === salesman.id,
             );
-            const hasActiveGatepass = salesmanGatepasses.some(
+            // Only the Active GatePass blocks a new allotment, so only it is shown; ended ones are a count.
+            const activeGatepass = salesmanGatepasses.find(
               (gatepass) => gatepass.status === "active",
             );
+            const endedCount = salesmanGatepasses.length - (activeGatepass ? 1 : 0);
             const isSelected = selectedSalesmanId === salesman.id;
             return (
               <button
@@ -93,7 +95,7 @@ export function AllotSalesmanStep({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold">{salesman.name}</span>
-                  {hasActiveGatepass ? (
+                  {activeGatepass ? (
                     <span className="text-xs text-amber-600">
                       {tx("admin.gatepass.allot.hasActive")}
                     </span>
@@ -103,18 +105,22 @@ export function AllotSalesmanStep({
                     </span>
                   )}
                 </div>
-                {salesmanGatepasses.map((gatepass) => (
-                  <span
-                    key={gatepass.id}
-                    className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
-                  >
+                {activeGatepass && (
+                  <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <GatepassStatusBadge
-                      status={gatepass.status}
-                      hasDiscrepancy={gatepass.hasDiscrepancy}
+                      status={activeGatepass.status}
+                      hasDiscrepancy={activeGatepass.hasDiscrepancy}
                     />
-                    <RouteTag name={gatepass.routeName} code={gatepass.routeCode} />
+                    <RouteTag name={activeGatepass.routeName} code={activeGatepass.routeCode} />
                   </span>
-                ))}
+                )}
+                {endedCount > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {endedCount === 1
+                      ? tx("admin.gatepass.allot.earlierOne")
+                      : tx("admin.gatepass.allot.earlierOther", { count: endedCount })}
+                  </span>
+                )}
               </button>
             );
           })

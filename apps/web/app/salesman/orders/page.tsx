@@ -1,12 +1,12 @@
 "use client";
 
-import { CalendarCheckIcon, ClipboardListIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import type { RouterOutputs } from "@repo/trpc/client";
 
 import { isPreorderPending } from "~/lib/is-preorder-pending";
+import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { OrderDetailSheet } from "~/components/salesman/order-detail-sheet";
@@ -88,10 +88,11 @@ function SalesmanOrdersContent() {
           {isBookNowLoading || (isReloading && isBookNowFetching) ? (
             <ListItemSkeleton count={5} />
           ) : bookNowOrdersPage.items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-              <ClipboardListIcon className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">{tx("salesman.orders.empty.orders")}</p>
-            </div>
+            <EmptyStateCard
+              title={tx("empty.salesmanOrders.title")}
+              body={tx("empty.salesmanOrders.body")}
+              action={{ label: tx("empty.actions.goToProducts"), href: "/salesman" }}
+            />
           ) : (
             bookNowOrdersPage.items.map((row) => (
               <OrderListRow
@@ -143,14 +144,18 @@ function SalesmanOrdersContent() {
           {isMyPreordersLoading || (isReloading && isMyPreordersFetching) ? (
             <ListItemSkeleton count={5} />
           ) : visiblePreorderRows.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card p-6 text-center">
-              <CalendarCheckIcon className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">
-                {preorderStatusFilter === "pending"
-                  ? tx("salesman.orders.empty.preOrdersPending")
-                  : tx("salesman.orders.empty.preOrdersFulfilled")}
-              </p>
-            </div>
+            <EmptyStateCard
+              title={
+                preorderStatusFilter === "pending"
+                  ? tx("empty.preordersPending.title")
+                  : tx("empty.preordersFulfilled.title")
+              }
+              body={
+                preorderStatusFilter === "pending"
+                  ? tx("empty.preordersPending.body")
+                  : tx("empty.preordersFulfilled.body")
+              }
+            />
           ) : (
             <div className="flex flex-col gap-3">
               {visiblePreorderRows.map((row) => (

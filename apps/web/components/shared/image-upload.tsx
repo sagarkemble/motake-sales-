@@ -47,6 +47,8 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const isBusy = isUploading || isDeleting;
 
   async function handleFileSelected(selectedFile: File | undefined) {
     if (!selectedFile) return;
@@ -104,8 +106,36 @@ export function ImageUpload({
 
   const previewShapeClassName = shape === "circle" ? "rounded-full" : "rounded-2xl";
 
+  // The whole block takes a dropped file, the same as picking one with the button.
+  function handleDragOver(dragEvent: React.DragEvent) {
+    if (isBusy || !dragEvent.dataTransfer.types.includes("Files")) return;
+    dragEvent.preventDefault();
+    dragEvent.dataTransfer.dropEffect = "copy";
+    setIsDraggingOver(true);
+  }
+
+  function handleDrop(dragEvent: React.DragEvent) {
+    dragEvent.preventDefault();
+    setIsDraggingOver(false);
+    if (isBusy) return;
+    void handleFileSelected(dragEvent.dataTransfer.files[0]);
+  }
+
   return (
-    <div className={cn("flex flex-col items-center gap-3", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-transparent p-2 transition-colors",
+        isDraggingOver && "border-brand bg-accent",
+        className,
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={(dragEvent) => {
+        if (!dragEvent.currentTarget.contains(dragEvent.relatedTarget as Node | null)) {
+          setIsDraggingOver(false);
+        }
+      }}
+      onDrop={handleDrop}
+    >
       {previewUrl ? (
         <img
           src={previewUrl}
@@ -137,7 +167,7 @@ export function ImageUpload({
           variant="outline"
           size="sm"
           className="rounded-full"
-          disabled={isUploading || isDeleting}
+          disabled={isBusy}
           onClick={() => fileInputRef.current?.click()}
         >
           {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
@@ -152,7 +182,7 @@ export function ImageUpload({
             variant="outline"
             size="sm"
             className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={isUploading || isDeleting}
+            disabled={isBusy}
             onClick={handleDeleteClicked}
           >
             {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
@@ -160,6 +190,11 @@ export function ImageUpload({
           </Button>
         )}
       </div>
+
+      {/* Phones have nothing to drag from, so the hint shows from md up. */}
+      <p className="hidden text-xs text-muted-foreground md:block">
+        {isDraggingOver ? tx("common.imageUpload.dropNow") : tx("common.imageUpload.dragHint")}
+      </p>
 
       {uploadErrorMessage && <p className="text-sm text-destructive">{uploadErrorMessage}</p>}
     </div>
