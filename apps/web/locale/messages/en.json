@@ -739,6 +739,8 @@
         },
         "hasActive": "Has an Active GatePass",
         "freeToAllot": "Free to allot",
+        "earlierOne": "1 earlier GatePass this day, already ended",
+        "earlierOther": "{count} earlier GatePasses this day, already ended",
         "activeBlocks": "This salesman has an Active GatePass on this date. Allot a new one after it is handed over.",
         "routeHint": "Pick the Route for this GatePass. It cannot change after allotment. Only varieties priced on the Route can be given.",
         "pricedOf": "{count} of {total} varieties priced",
