@@ -4,6 +4,7 @@ import { adminRouter } from "./routes/admin/route";
 import { authRouter } from "./routes/auth/route";
 import { billsRouter } from "./routes/bills/route";
 import { citiesRouter } from "./routes/cities/route";
+import { unitsRouter } from "./routes/units/route";
 import { customerMessagesRouter } from "./routes/customer-messages/route";
 import { customersRouter } from "./routes/customers/route";
 import { documentsRouter } from "./routes/documents/route";
@@ -24,6 +25,7 @@ export const serverRouter = router({
   auth: authRouter,
   bills: billsRouter,
   cities: citiesRouter,
+  units: unitsRouter,
   admin: adminRouter,
   customerMessages: customerMessagesRouter,
   customers: customersRouter,

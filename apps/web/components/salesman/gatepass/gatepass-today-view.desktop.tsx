@@ -57,9 +57,7 @@ export function GatepassTodayViewDesktop({
           <div key={line.id} className="grid grid-cols-6 gap-2 px-4 py-3 text-sm tabular-nums">
             <div className="col-span-2 min-w-0">
               <p className="truncate font-medium">{line.productName}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {line.varietyName} ({line.unit})
-              </p>
+              <p className="truncate text-xs text-muted-foreground">{line.varietyName}</p>
             </div>
             <p className="text-right font-medium">{line.issuedQty}</p>
             <p className="text-right font-medium">{line.soldQty}</p>

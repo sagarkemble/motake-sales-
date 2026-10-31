@@ -115,6 +115,7 @@ export const auditEntityTypeEnum = pgEnum("audit_entity_type", [
   "gstr1_filing",
   "whatsapp_token",
   "city",
+  "unit_of_measure",
 ]);
 
 export const auditActionEnum = pgEnum("audit_action", [

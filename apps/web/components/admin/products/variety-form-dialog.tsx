@@ -3,11 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { businessDateOf, TRPCClientError } from "@repo/trpc/client";
 import { parseISO } from "date-fns";
-import { useEffect, useMemo } from "react";
+import { PlusIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { AddUnitDialog } from "~/components/admin/products/add-unit-dialog";
 import { LockedSku } from "~/components/admin/products/sku-chip";
 import {
   DEFAULT_GST_RATE_PERCENT,
@@ -22,7 +24,6 @@ import { getErrorMessage } from "~/lib/get-error-message";
 import { bpsToPercent, percentToBps } from "~/lib/gst-rate";
 import { useFormatDate } from "~/hooks/use-format-date";
 import { useTranslate } from "~/hooks/use-translate";
-import { cn } from "~/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -40,12 +41,23 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useUnits } from "~/hooks/use-units";
 
-const UNIT_SUGGESTIONS = ["pouch", "pack", "cup", "tin", "box", "kg"];
+const ADD_UNIT = "__add_unit__";
+const SIZE_PATTERN = /^\d{1,7}(\.\d{1,3})?$/;
 
 const emptyValues = {
   name: "",
-  unit: "",
+  sizeValue: "",
+  uomCode: "ml",
   hsn: "",
   exempt: false,
   ratePercent: DEFAULT_GST_RATE_PERCENT,
@@ -53,12 +65,23 @@ const emptyValues = {
 
 export type VarietyFormValues = {
   name: string;
-  unit: string;
+  sizeValue: string;
+  uomCode: string;
   /** GST starting today; null when it is left empty or unchanged. */
   tax: (VarietyTax & { effectiveFrom: string }) | null;
 };
 
-type VarietyDialogFormValues = { name: string; unit: string } & TaxRateFieldValues;
+type VarietyDialogFormValues = {
+  name: string;
+  sizeValue: string;
+  uomCode: string;
+} & TaxRateFieldValues;
+
+// "Toned Milk 500 ml", as the server prints it: no trailing zeros, just the size with no name.
+function displayNameOf(values: { name: string; sizeValue: string; uomCode: string }) {
+  const size = SIZE_PATTERN.test(values.sizeValue.trim()) ? Number(values.sizeValue) : null;
+  return size === null ? null : `${values.name.trim()} ${size} ${values.uomCode}`.trim();
+}
 
 // No HSN, not exempt and the rate cleared means "no GST yet"; only a Variety without GST can leave
 // it so. A GST rate, the default included, asks for an HSN.
@@ -94,7 +117,13 @@ interface VarietyFormDialogProps {
   onOpenChange: (open: boolean) => void;
   productName: string;
   /** The Variety being edited with its GST for today; omitted when adding one. */
-  editing?: { name: string; unit: string; sku: string; tax: VarietyTax | null };
+  editing?: {
+    name: string;
+    sizeValue: string | null;
+    uomCode: string | null;
+    sku: string;
+    tax: VarietyTax | null;
+  };
   isSubmitting: boolean;
   onSubmit: (values: VarietyFormValues) => Promise<void>;
 }
@@ -113,8 +142,16 @@ export function VarietyFormDialog({
     () =>
       z
         .object({
-          name: z.string().trim().min(1, tx("admin.varieties.validation.nameRequired")).max(120),
-          unit: z.string().trim().min(1, tx("admin.varieties.validation.unitRequired")).max(32),
+          name: z.string().trim().max(120),
+          sizeValue: z
+            .string()
+            .trim()
+            .min(1, tx("admin.varieties.validation.sizeRequired"))
+            .regex(SIZE_PATTERN, tx("admin.varieties.validation.sizeNumber"))
+            .refine((sizeValue) => Number(sizeValue) > 0, {
+              message: tx("admin.varieties.validation.sizePositive"),
+            }),
+          uomCode: z.string().min(1),
           hsn: z.string(),
           exempt: z.boolean(),
           ratePercent: z.string(),
@@ -147,12 +184,22 @@ export function VarietyFormDialog({
     resolver: zodResolver(varietyFormSchema),
     defaultValues: emptyValues,
   });
+  const { units } = useUnits({ enabled: open });
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
+  const [name, sizeValue, uomCode] = form.watch(["name", "sizeValue", "uomCode"]);
+  const shownName = displayNameOf({ name, sizeValue, uomCode });
 
   useEffect(() => {
     if (open) {
       form.reset(
         editing
-          ? { name: editing.name, unit: editing.unit, ...toTaxFieldValues(editing.tax) }
+          ? {
+              name: editing.name,
+              // Stored as 500.000; shown as typed.
+              sizeValue: editing.sizeValue === null ? "" : String(Number(editing.sizeValue)),
+              uomCode: editing.uomCode ?? emptyValues.uomCode,
+              ...toTaxFieldValues(editing.tax),
+            }
           : emptyValues,
       );
     }
@@ -166,7 +213,12 @@ export function VarietyFormDialog({
       enteredTax !== null && !(editing?.tax && isSameTax(editing.tax, enteredTax));
     const tax = enteredTax && isTaxChanged ? { effectiveFrom: today, ...enteredTax } : null;
     try {
-      await onSubmit({ name: values.name, unit: values.unit, tax });
+      await onSubmit({
+        name: values.name.trim(),
+        sizeValue: values.sizeValue.trim(),
+        uomCode: values.uomCode,
+        tax,
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(tx, error, tx("admin.varieties.saveFailed"));
       // The server refuses a second Variety with the same name under this Product.
@@ -213,46 +265,77 @@ export function VarietyFormDialog({
                           {...field}
                         />
                       </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        {tx("admin.varieties.nameHint")}
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tx("admin.varieties.unit")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tx("admin.varieties.unitPlaceholder")}
-                          className="rounded-xl bg-muted/40"
-                          {...field}
-                        />
-                      </FormControl>
-                      <div className="flex flex-wrap gap-1.5">
-                        {UNIT_SUGGESTIONS.map((unit) => (
-                          <Button
-                            key={unit}
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className={cn(
-                              "h-7 rounded-full px-3 text-xs",
-                              field.value === unit &&
-                                "border-brand bg-brand/10 text-brand hover:bg-brand/10 hover:text-brand",
-                            )}
-                            onClick={() => field.onChange(unit)}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start gap-2">
+                    <FormField
+                      control={form.control}
+                      name="sizeValue"
+                      render={({ field }) => (
+                        <FormItem className="min-w-0 flex-1">
+                          <FormLabel>{tx("admin.varieties.size")}</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              placeholder={tx("admin.varieties.sizePlaceholder")}
+                              className="rounded-xl bg-muted/40"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="uomCode"
+                      render={({ field }) => (
+                        <FormItem className="w-28 shrink-0">
+                          <FormLabel>{tx("admin.varieties.unit")}</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) => {
+                              if (value === ADD_UNIT) setIsAddUnitOpen(true);
+                              // Radix sends "" while the value has no item yet; keep the unit.
+                              else if (value) field.onChange(value);
+                            }}
                           >
-                            {unit}
-                          </Button>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                            <FormControl>
+                              <SelectTrigger className="w-full rounded-xl bg-muted/40">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {units.map((unit) => (
+                                <SelectItem key={unit.id} value={unit.code}>
+                                  {unit.code}
+                                </SelectItem>
+                              ))}
+                              <SelectSeparator />
+                              <SelectItem value={ADD_UNIT} className="text-brand">
+                                <PlusIcon className="size-4" />
+                                {tx("admin.varieties.addUnit")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {shownName && (
+                    <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      {tx("admin.varieties.showsAs", { name: shownName })}
+                    </p>
                   )}
-                />
+                </div>
 
                 {editing && <LockedSku sku={editing.sku} />}
 
@@ -295,6 +378,11 @@ export function VarietyFormDialog({
           </form>
         </Form>
       </DialogContent>
+      <AddUnitDialog
+        open={isAddUnitOpen}
+        onOpenChange={setIsAddUnitOpen}
+        onAdded={(unit) => form.setValue("uomCode", unit.code, { shouldDirty: true })}
+      />
     </Dialog>
   );
 }

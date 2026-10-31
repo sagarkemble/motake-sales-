@@ -166,7 +166,7 @@ describe("OrderService.placePreOrder", () => {
       routePricePaise: 2_499,
       exempt: false,
       gstRateBps: 500,
-      stamp: { name: "Milk 1 L", unit: "pack", hsn: "0401" },
+      stamp: { name: "Milk 1 L", unit: "", hsn: "0401" },
     });
     const versions = await db
       .select()

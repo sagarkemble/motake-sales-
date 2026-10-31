@@ -5,7 +5,6 @@ export interface GatepassLine {
   id: string;
   productName: string;
   varietyName: string;
-  unit: string;
   issuedQty: number;
   soldQty: number;
   // Left to sell: issued − sold. Returned never changes it.

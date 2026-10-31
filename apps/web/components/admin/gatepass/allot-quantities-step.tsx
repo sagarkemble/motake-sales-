@@ -14,7 +14,6 @@ import { cn } from "~/lib/utils";
 export interface AllotCatalogItem {
   varietyId: string;
   varietyName: string;
-  unit: string;
   productName: string;
   productImageUrl: string | null;
 }
@@ -200,9 +199,7 @@ function VarietyRow({
         <p className={cn("truncate text-sm font-medium", isUnpriced && "text-muted-foreground")}>
           {item.productName}
         </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {item.varietyName} ({item.unit})
-        </p>
+        <p className="truncate text-xs text-muted-foreground">{item.varietyName}</p>
       </div>
       {onQuantityChange ? (
         <div className="ml-auto">

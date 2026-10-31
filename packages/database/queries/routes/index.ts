@@ -41,9 +41,9 @@ export interface RouteChoice {
 export interface RoutePriceFormRow {
   varietyId: string;
   productName: string;
+  // "Toned Milk 500 ml".
   varietyName: string;
   sku: string;
-  unit: string;
   varietyActive: boolean;
   pricePaise: number | null;
   pricedOnAnyRoute: boolean;
@@ -256,9 +256,8 @@ export async function listRoutePriceForm(
     .select({
       varietyId: productVarietiesTable.id,
       productName: productsTable.name,
-      varietyName: productVarietiesTable.name,
+      varietyName: productVarietiesTable.displayName,
       sku: productVarietiesTable.sku,
-      unit: productVarietiesTable.unit,
       varietyActive: sql<boolean>`(${productVarietiesTable.status} = 'active' AND ${productVarietiesTable.deletedAt} IS NULL)`,
       pricePaise: routePricesTable.pricePaise,
       pricedOnAnyRoute: sql<boolean>`EXISTS (
@@ -280,7 +279,7 @@ export async function listRoutePriceForm(
         isNotNull(routePricesTable.id),
       ),
     )
-    .orderBy(asc(productsTable.name), asc(productVarietiesTable.name));
+    .orderBy(asc(productsTable.name), asc(productVarietiesTable.displayName));
 }
 
 // The variety row, active or not; a Route price may be set on any variety that exists.
@@ -304,10 +303,10 @@ export async function listVarietyLabels(
   return executor
     .select({
       varietyId: productVarietiesTable.id,
-      label: sql<string>`${productsTable.name} || ' ' || ${productVarietiesTable.name}`,
+      label: sql<string>`${productsTable.name} || ' ' || ${productVarietiesTable.displayName}`,
     })
     .from(productVarietiesTable)
     .innerJoin(productsTable, eq(productVarietiesTable.productId, productsTable.id))
     .where(inArray(productVarietiesTable.id, varietyIds))
-    .orderBy(asc(productsTable.name), asc(productVarietiesTable.name));
+    .orderBy(asc(productsTable.name), asc(productVarietiesTable.displayName));
 }

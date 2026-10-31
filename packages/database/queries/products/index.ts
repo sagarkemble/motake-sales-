@@ -261,7 +261,7 @@ export async function listVarietiesByProductId(
         includeInactive ? undefined : isNull(productVarietiesTable.deletedAt),
       ),
     )
-    .orderBy(asc(productVarietiesTable.name));
+    .orderBy(asc(productVarietiesTable.displayName));
 }
 
 export async function listActiveVarietiesByIds(
@@ -283,8 +283,8 @@ export async function listActiveVarietiesByIds(
 export interface SellableVarietyBySku {
   id: string;
   sku: string;
+  // The display name, "Toned Milk 500 ml": what an order or Bill line stamps.
   name: string;
-  unit: string;
   productName: string;
 }
 
@@ -299,8 +299,7 @@ export async function listSellableVarietiesBySkus(
     .select({
       id: productVarietiesTable.id,
       sku: productVarietiesTable.sku,
-      name: productVarietiesTable.name,
-      unit: productVarietiesTable.unit,
+      name: productVarietiesTable.displayName,
       productName: productsTable.name,
     })
     .from(productVarietiesTable)
@@ -326,8 +325,7 @@ export async function listSellableVarietiesByIds(
     .select({
       id: productVarietiesTable.id,
       sku: productVarietiesTable.sku,
-      name: productVarietiesTable.name,
-      unit: productVarietiesTable.unit,
+      name: productVarietiesTable.displayName,
       productName: productsTable.name,
     })
     .from(productVarietiesTable)
@@ -341,7 +339,7 @@ export async function listSellableVarietiesByIds(
         isNull(productsTable.deletedAt),
       ),
     )
-    .orderBy(asc(productsTable.name), asc(productVarietiesTable.name));
+    .orderBy(asc(productsTable.name), asc(productVarietiesTable.displayName));
 }
 
 export async function updateProductVariety(

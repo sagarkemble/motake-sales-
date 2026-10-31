@@ -89,8 +89,9 @@ function EditLinesList({
                 <span className={cn("min-w-0", quantity === 0 && "line-through")}>
                   {line.name}
                   <span className="block text-xs text-muted-foreground">
-                    {formatPaise(Math.round(unitPaise))}{" "}
-                    {tx("admin.ledger.paper.perUnit", { unit: line.unit })} ·{" "}
+                    {formatPaise(Math.round(unitPaise))}
+                    {line.unit &&
+                      ` ${tx("admin.ledger.paper.perUnit", { unit: line.unit })}`} ·{" "}
                     <GstRate gstRateBps={line.gstRateBps} exempt={line.exempt} />
                     {line.creditedQty > 0 &&
                       ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
@@ -239,9 +240,13 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
                   <td className={cell}>
                     {line.name}
                     <span className="block text-xs text-muted-foreground">
-                      {tx("admin.ledger.paper.perUnit", { unit: line.unit })}
-                      {line.creditedQty > 0 &&
-                        ` · ${tx("admin.ledger.paper.credited", { count: line.creditedQty })}`}
+                      {[
+                        line.unit && tx("admin.ledger.paper.perUnit", { unit: line.unit }),
+                        line.creditedQty > 0 &&
+                          tx("admin.ledger.paper.credited", { count: line.creditedQty }),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </td>
                   <td className={cn(cell, "font-mono text-xs")}>{line.hsn}</td>

@@ -309,6 +309,8 @@ export type ScreenRefusalReason =
   | "route_deleted"
   | "route_name_taken"
   | "city_name_taken"
+  | "unit_taken"
+  | "unit_not_found"
   | "route_has_open_work"
   | "photo_upload_invalid"
   | "customer_has_open_pre_orders"
@@ -365,6 +367,8 @@ const screenRefusalCodes: Record<ScreenRefusalReason, TRPCError["code"]> = {
   route_deleted: "BAD_REQUEST",
   route_name_taken: "CONFLICT",
   city_name_taken: "CONFLICT",
+  unit_taken: "CONFLICT",
+  unit_not_found: "BAD_REQUEST",
   route_has_open_work: "CONFLICT",
   photo_upload_invalid: "FORBIDDEN",
   customer_has_open_pre_orders: "CONFLICT",

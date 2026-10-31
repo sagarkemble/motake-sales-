@@ -10,6 +10,7 @@ export * from "./models/route-price";
 export * from "./models/gatepass";
 export * from "./models/gatepass-item";
 export * from "./models/city";
+export * from "./models/unit-of-measure";
 export * from "./models/customer";
 export * from "./models/order";
 export * from "./models/order-item";

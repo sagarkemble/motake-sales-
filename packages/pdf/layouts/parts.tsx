@@ -291,10 +291,11 @@ export function LinesTable(props: { columns: Column[]; rows: string[][]; totalRo
   );
 }
 
-// "37 (mixed units)" when the lines are counted in different units, "20 L" when all share one.
+// "37 (mixed units)" when the lines are counted in different units, "20 L" when all share one,
+// "37" when the lines have no unit (a Variety's size is in its name).
 export function totalQuantityText(lines: Array<{ quantity: number; unit: string }>): string {
   const total = lines.reduce((sum, line) => sum + line.quantity, 0);
-  const units = new Set(lines.map((line) => line.unit));
+  const units = new Set(lines.map((line) => line.unit).filter((unit) => unit !== ""));
   if (units.size === 1) return `${total} ${[...units][0]}`;
   return units.size > 1 ? `${total} (mixed units)` : String(total);
 }

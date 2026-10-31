@@ -142,9 +142,7 @@ export function RoutePriceRow({ routeId, variety, currentTax }: RoutePriceRowPro
           <p className="text-sm font-medium">{variety.varietyName}</p>
           {!variety.varietyActive && <StatusBadge status="inactive" />}
         </div>
-        <p className="font-mono text-[11px] text-muted-foreground">
-          {variety.sku} · {variety.unit}
-        </p>
+        <p className="font-mono text-[11px] text-muted-foreground">{variety.sku}</p>
         {!variety.pricedOnAnyRoute && (
           <p className="text-[11px] text-muted-foreground">
             {tx("admin.routes.prices.unsellableUntilPriced")}

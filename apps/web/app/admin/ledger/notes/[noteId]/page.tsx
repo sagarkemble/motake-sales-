@@ -111,7 +111,7 @@ function NoteDocument({ paper }: { paper: NotePaper }) {
                   <td className={cell}>
                     {line.name}
                     <span className="block text-xs text-muted-foreground">
-                      {tx("admin.ledger.paper.perUnit", { unit: line.unit })} ·{" "}
+                      {line.unit && `${tx("admin.ledger.paper.perUnit", { unit: line.unit })} · `}
                       <span className="font-mono">{line.hsn}</span>
                     </span>
                   </td>

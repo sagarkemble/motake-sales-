@@ -229,7 +229,7 @@ export const productsRouter = router({
         protect: true,
         summary: "Add a product variety",
         description:
-          "Create a new variety under a product. The server generates its SKU. Admin only.",
+          "Create a new variety under a product: a name (may be empty), a size and a unit from Settings > Units. The server generates its SKU. Admin only.",
       },
     })
     .input(createProductVarietyInputSchema)
@@ -248,7 +248,7 @@ export const productsRouter = router({
         protect: true,
         summary: "Update a product variety",
         description:
-          "Rename a product variety or change its unit. The SKU never changes. Admin only.",
+          "Change a product variety's name, size or unit; size and unit change together. The SKU never changes. Admin only.",
       },
     })
     .input(varietyIdInputSchema.extend(updateProductVarietyInputSchema.shape))

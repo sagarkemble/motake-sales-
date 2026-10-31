@@ -61,10 +61,7 @@ export function AllotReviewStep({
             className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
           >
             <span className="min-w-0">
-              {item.productName}{" "}
-              <span className="text-muted-foreground">
-                {item.varietyName} ({item.unit})
-              </span>
+              {item.productName} <span className="text-muted-foreground">{item.varietyName}</span>
             </span>
             <span className="font-semibold tabular-nums">{issuedQty}</span>
           </div>

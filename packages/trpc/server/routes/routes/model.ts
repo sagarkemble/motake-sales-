@@ -44,7 +44,6 @@ export const routePriceFormRowSchema = z.object({
   productName: z.string(),
   varietyName: z.string(),
   sku: z.string(),
-  unit: z.string(),
   varietyActive: z.boolean(),
   // Tax-exclusive integer paise; null = Unsellable on this Route.
   pricePaise: z.number().int().nullable(),

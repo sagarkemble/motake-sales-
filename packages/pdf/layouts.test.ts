@@ -11,6 +11,7 @@ import type {
   TaxInvoiceLine,
   TaxInvoiceValues,
 } from "./index";
+import { totalQuantityText } from "./layouts/parts";
 import { renderDocument } from "./render";
 
 // The text a reader sees, one string per page, with line wraps read as spaces.
@@ -556,5 +557,23 @@ describe("payment_receipt", () => {
     expect(text).not.toContain("Received At");
     expect(text).not.toContain("Company Bank Details");
     expect(text).toContain("For MOTAKE MILK AND MILK PRODUCTS Authorised Signatory");
+  });
+});
+
+describe("totalQuantityText", () => {
+  it("names the one unit, says mixed for several, and is just the number for sized names", () => {
+    expect(totalQuantityText([{ quantity: 20, unit: "L" }])).toBe("20 L");
+    expect(
+      totalQuantityText([
+        { quantity: 3, unit: "pouch" },
+        { quantity: 4, unit: "cup" },
+      ]),
+    ).toBe("7 (mixed units)");
+    expect(
+      totalQuantityText([
+        { quantity: 3, unit: "" },
+        { quantity: 4, unit: "" },
+      ]),
+    ).toBe("7");
   });
 });

@@ -46,12 +46,12 @@ export async function listVarietyLabelsByIds(
   return executor
     .select({
       id: productVarietiesTable.id,
-      name: productVarietiesTable.name,
+      name: productVarietiesTable.displayName,
       sku: productVarietiesTable.sku,
     })
     .from(productVarietiesTable)
     .where(inArray(productVarietiesTable.id, varietyIds))
-    .orderBy(asc(productVarietiesTable.name));
+    .orderBy(asc(productVarietiesTable.displayName));
 }
 
 // Newest start first.

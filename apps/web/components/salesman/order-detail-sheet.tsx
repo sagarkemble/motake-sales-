@@ -336,9 +336,11 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                               <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-sm font-semibold text-brand">
                                 {item.quantity}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                × {item.stamp.unit}
-                              </span>
+                              {item.stamp.unit && (
+                                <span className="text-xs text-muted-foreground">
+                                  × {item.stamp.unit}
+                                </span>
+                              )}
                             </p>
                             <p className="mt-1 whitespace-nowrap text-xs text-muted-foreground">
                               {tx("salesman.orders.sheet.routePrice", {

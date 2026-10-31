@@ -30,9 +30,7 @@ export function GatepassItemRow({ line, handedOver }: GatepassItemRowProps) {
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{line.productName}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {line.varietyName} ({line.unit})
-        </p>
+        <p className="truncate text-xs text-muted-foreground">{line.varietyName}</p>
         {line.sellableQty === 0 && (
           <Badge
             variant="outline"

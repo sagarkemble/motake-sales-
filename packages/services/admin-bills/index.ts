@@ -344,7 +344,8 @@ class AdminBillService {
           varietyId: variety.id,
           sku: variety.sku,
           name: variety.name,
-          unit: variety.unit,
+          // Varieties no longer have a pack word; the size is in the name.
+          unit: "",
           productName: variety.productName,
           routePricePaise,
           hsn: tax.hsn,
@@ -1514,7 +1515,8 @@ class AdminBillService {
         varietyId,
         sku: variety.sku,
         name: variety.name,
-        unit: variety.unit,
+        // Varieties no longer have a pack word; the size is in the name.
+        unit: "",
         quantity,
         routePricePaise,
         hsn: facts.hsn,

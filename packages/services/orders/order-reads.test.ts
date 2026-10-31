@@ -91,7 +91,7 @@ describe("OrderService reads", () => {
   it("lists and opens an order with no salesman, showing the locked line terms", async () => {
     const admin = await buildProfile();
     const customer = await buildCustomer(admin.id);
-    const milk = await buildVariety({ name: "1 L", unit: "pouch" });
+    const milk = await buildVariety({ name: "1 L" });
     const { order, bill } = await buildBookNowWithBill({
       customer,
       actorId: admin.id,
@@ -108,7 +108,7 @@ describe("OrderService reads", () => {
     expect(detail.items).toEqual([
       expect.objectContaining({
         varietyId: milk.id,
-        stamp: { name: "1 L", unit: "pouch", hsn: "0401" },
+        stamp: { name: "1 L", unit: "", hsn: "0401" },
         quantity: 2,
         routePricePaise: 4_500,
         exempt: false,

@@ -23,6 +23,10 @@ The generated unique key of a Salesman: the first three letters of the name, the
 The named group a Variety belongs to (for example milk). Not billed by itself. Always has an image: a Product cannot be created or saved without one, and its image can be replaced but not removed.
 *Avoid*: treating Product name as a SKU
 
+**Variety**:
+One sellable pack of a Product: a name plus a size in a unit, shown as "Toned Milk 500 ml". The name may be empty, so the Variety reads as its size alone ("500 g"). The unit comes from the units list in Settings (ml, L, g, kg, and any Admin adds); units are never renamed or removed.
+*Avoid*: pack word (pouch, cup) as the unit, size typed into the name
+
 **Variety SKU**:
 The generated unique key of a variety. Admin does not type or edit it.
 *Avoid*: Admin-typed SKU, product code

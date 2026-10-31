@@ -24,7 +24,6 @@ import { cn } from "~/lib/utils";
 interface VarietyDisplay {
   productName: string;
   varietyName: string;
-  unit: string;
 }
 
 interface GatepassDetailDrawerProps {
@@ -144,7 +143,7 @@ export function GatepassDetailDrawer({
                                 {display?.productName ?? tx("salesman.gatepass.productFallback")}
                               </p>
                               <p className="truncate text-xs text-muted-foreground">
-                                {display?.varietyName} ({display?.unit})
+                                {display?.varietyName}
                               </p>
                             </div>
                             <p className="text-right font-medium">{item.issuedQty}</p>

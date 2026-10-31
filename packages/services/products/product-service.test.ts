@@ -1,23 +1,48 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { buildProduct, buildProfile } from "../test/builders";
+import { buildProduct, buildProfile, seedUnitsOfMeasure } from "../test/builders";
 import ProductService from "./index";
 
 const productService = new ProductService();
 
 describe("ProductService varieties", () => {
-  it("mints the Variety SKU as vr-{slug}-001 from Product and Variety names", async () => {
+  beforeEach(seedUnitsOfMeasure);
+
+  it("mints the Variety SKU as vr-{slug}-001 from the Product and the Variety display name", async () => {
     const admin = await buildProfile();
     const product = await buildProduct({ name: "Gokul Milk" });
 
     const variety = await productService.createProductVariety(
-      { productId: product.id, name: "Full Cream 500 ml", unit: "pouch" },
+      { productId: product.id, name: "Full Cream", sizeValue: "500", uomCode: "ml" },
       admin.id,
     );
 
     expect(variety.sku).toBe("vr-gokul-milk-full-cream-500-ml-001");
-    expect(variety.name).toBe("Full Cream 500 ml");
-    expect(variety.unit).toBe("pouch");
+    expect(variety).toMatchObject({
+      name: "Full Cream",
+      sizeValue: "500.000",
+      uomCode: "ml",
+      displayName: "Full Cream 500 ml",
+      unit: null,
+    });
+  });
+
+  it("reads as its size alone when the name is empty, and drops trailing zeros", async () => {
+    const admin = await buildProfile();
+    const product = await buildProduct({ name: "Basundi" });
+
+    const sizeOnly = await productService.createProductVariety(
+      { productId: product.id, name: "", sizeValue: "500", uomCode: "g" },
+      admin.id,
+    );
+    const decimal = await productService.createProductVariety(
+      { productId: product.id, name: "Family", sizeValue: "1.500", uomCode: "kg" },
+      admin.id,
+    );
+
+    expect(sizeOnly.displayName).toBe("500 g");
+    expect(sizeOnly.sku).toBe("vr-basundi-500-g-001");
+    expect(decimal.displayName).toBe("Family 1.5 kg");
   });
 
   it("gives a second Variety with the same slug the next counter", async () => {
@@ -25,46 +50,50 @@ describe("ProductService varieties", () => {
     const product = await buildProduct({ name: "Gokul Milk" });
 
     await productService.createProductVariety(
-      { productId: product.id, name: "Toned 500 ml", unit: "pouch" },
+      { productId: product.id, name: "Toned", sizeValue: "500", uomCode: "ml" },
       admin.id,
     );
     const second = await productService.createProductVariety(
-      { productId: product.id, name: "Toned 500-ml", unit: "pouch" },
+      { productId: product.id, name: "Toned-", sizeValue: "500", uomCode: "ml" },
       admin.id,
     );
 
     expect(second.sku).toBe("vr-gokul-milk-toned-500-ml-002");
   });
 
-  it("allows the same Variety name under two Products", async () => {
+  it("allows one name in two sizes, and the same Variety under two Products", async () => {
     const admin = await buildProfile();
     const milk = await buildProduct({ name: "Milk" });
     const curd = await buildProduct({ name: "Curd" });
 
-    const milkLitre = await productService.createProductVariety(
-      { productId: milk.id, name: "1 L", unit: "pouch" },
+    const half = await productService.createProductVariety(
+      { productId: milk.id, name: "Toned", sizeValue: "500", uomCode: "ml" },
+      admin.id,
+    );
+    const litre = await productService.createProductVariety(
+      { productId: milk.id, name: "Toned", sizeValue: "1", uomCode: "L" },
       admin.id,
     );
     const curdLitre = await productService.createProductVariety(
-      { productId: curd.id, name: "1 L", unit: "tub" },
+      { productId: curd.id, name: "Toned", sizeValue: "1", uomCode: "L" },
       admin.id,
     );
 
-    expect(milkLitre.sku).toBe("vr-milk-1-l-001");
-    expect(curdLitre.sku).toBe("vr-curd-1-l-001");
+    expect([half.displayName, litre.displayName]).toEqual(["Toned 500 ml", "Toned 1 L"]);
+    expect(curdLitre.sku).toBe("vr-curd-toned-1-l-001");
   });
 
-  it("refuses a second Variety with the same name under one Product, naming both", async () => {
+  it("refuses a second Variety that reads the same under one Product, naming both", async () => {
     const admin = await buildProfile();
     const product = await buildProduct({ name: "Paneer" });
     await productService.createProductVariety(
-      { productId: product.id, name: "200 g", unit: "pack" },
+      { productId: product.id, name: "", sizeValue: "200", uomCode: "g" },
       admin.id,
     );
 
     await expect(
       productService.createProductVariety(
-        { productId: product.id, name: "200 g", unit: "box" },
+        { productId: product.id, name: "", sizeValue: "200.0", uomCode: "g" },
         admin.id,
       ),
     ).rejects.toMatchObject({
@@ -73,28 +102,59 @@ describe("ProductService varieties", () => {
     });
   });
 
-  it("keeps the SKU when a Variety is renamed or its unit changes", async () => {
+  it("refuses a unit that is not in Settings, and a size of 0", async () => {
+    const admin = await buildProfile();
+    const product = await buildProduct({ name: "Paneer" });
+
+    await expect(
+      productService.createProductVariety(
+        { productId: product.id, name: "Block", sizeValue: "2", uomCode: "pcs" },
+        admin.id,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      productService.createProductVariety(
+        { productId: product.id, name: "Block", sizeValue: "0", uomCode: "g" },
+        admin.id,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("keeps the SKU when a Variety is renamed or its size changes", async () => {
     const admin = await buildProfile();
     const product = await buildProduct({ name: "Ghee" });
     const variety = await productService.createProductVariety(
-      { productId: product.id, name: "1 kg", unit: "tin" },
+      { productId: product.id, name: "", sizeValue: "1", uomCode: "kg" },
       admin.id,
     );
 
     const updated = await productService.updateProductVariety(
       variety.id,
-      { name: "1 kg jar", unit: "jar", sku: "vr-hacked-001" } as never,
+      { name: "Jar", sizeValue: "500", uomCode: "g", sku: "vr-hacked-001" } as never,
       admin.id,
     );
 
-    expect(updated).toMatchObject({ name: "1 kg jar", unit: "jar", sku: "vr-ghee-1-kg-001" });
+    expect(updated).toMatchObject({ displayName: "Jar 500 g", sku: "vr-ghee-1-kg-001" });
+  });
+
+  it("refuses a size change without its unit", async () => {
+    const admin = await buildProfile();
+    const product = await buildProduct({ name: "Ghee" });
+    const variety = await productService.createProductVariety(
+      { productId: product.id, name: "", sizeValue: "1", uomCode: "kg" },
+      admin.id,
+    );
+
+    await expect(
+      productService.updateProductVariety(variety.id, { sizeValue: "2" }, admin.id),
+    ).rejects.toThrow();
   });
 
   it("lists a deactivated Variety for Admin only, and reactivates it", async () => {
     const admin = await buildProfile();
     const product = await buildProduct({ name: "Curd" });
     const variety = await productService.createProductVariety(
-      { productId: product.id, name: "1 kg", unit: "tub" },
+      { productId: product.id, name: "", sizeValue: "1", uomCode: "kg" },
       admin.id,
     );
     await productService.deactivateProductVariety(variety.id, admin.id);

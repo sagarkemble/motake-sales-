@@ -21,7 +21,6 @@ export default function SalesmanCartPage() {
         productId: cartLine.productId,
         productName: cartLine.productName,
         varietyName: cartLine.varietyName,
-        unit: cartLine.unit,
         productImageUrl: cartLine.productImageUrl,
       },
       quantity,
