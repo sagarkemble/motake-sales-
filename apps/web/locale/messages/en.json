@@ -655,6 +655,60 @@
         "paymentTitle": "Payment at fulfil",
         "officeNote": "Billed by Office: no GatePass, no stock change. Price and GST from the day it was placed.",
         "viewDetails": "View order details"
+      },
+      "new": {
+        "button": "New order",
+        "title": "New order",
+        "change": "Change",
+        "steps": {
+          "customer": "Customer",
+          "type": "Type",
+          "items": "Items",
+          "checkout": "Checkout"
+        },
+        "customerTitle": "Who is it for?",
+        "customerHint": "Any active Customer, on any Route. Prices come from the Route they are on now.",
+        "openPreorders": "Open Pre-orders ({count})",
+        "openPreordersHint": "Not billed yet. The Customer's Route cannot change until these are fulfilled or cancelled.",
+        "itemsTitle": "Items",
+        "itemsHint": "Prices for {route}, excl. GST. No GatePass stock is taken.",
+        "search": "Search products",
+        "noMatch": "No product matches.",
+        "add": "Add",
+        "remove": "Remove",
+        "catalogEmpty": "No Variety has a price on {route} yet. Set prices in Routes.",
+        "catalogError": "Could not load the products. Try again.",
+        "badLine": {
+          "unknown_sku": "no longer sold",
+          "bad_qty": "quantity must be 1 to 5,000",
+          "no_route_price": "no price on this Route",
+          "no_tax_period": "no GST set for today"
+        },
+        "checkoutTitle": "Checkout",
+        "confirmPreOrder": "Confirm Pre-order",
+        "paymentTitle": "Payment",
+        "preOrderNote": "Pre-order for {date}. No Bill now; the total is indicative. The Bill is issued when it is fulfilled.",
+        "advanceTitle": "Advance (optional)",
+        "advanceHint": "Taken now as an office Payment and kept as Advance. Leave empty for none.",
+        "advanceAmount": "Advance received",
+        "totalLine": "{count} qty · {amount}",
+        "back": "Back",
+        "next": "Next",
+        "placing": "Placing…",
+        "placeBookNow": "Place order & issue Bill",
+        "placePreOrder": "Place Pre-order",
+        "problem": {
+          "pickCustomer": "Pick a Customer.",
+          "inactive": "This Customer is deactivated and cannot take orders.",
+          "addItem": "Add at least one item.",
+          "removeBad": "Remove the items that cannot be sold.",
+          "checking": "Checking prices…"
+        },
+        "openBill": "Open Bill",
+        "openPreOrder": "Open Pre-order",
+        "another": "New order",
+        "backToOrders": "Back to Orders",
+        "placeFailed": "Could not place the order. Try again."
       }
     },
     "gatepass": {
@@ -1035,7 +1089,7 @@
       },
       "add": {
         "button": "Add",
-        "raiseBill": "Raise Bill",
+        "newOrder": "New order",
         "raiseNote": "Raise Note",
         "payment": "Payment",
         "refund": "Refund",
@@ -1259,36 +1313,6 @@
         "placeholder": "Why is this Pre-order being cancelled?",
         "done": "Pre-order cancelled.",
         "loadError": "Could not load the Pre-order"
-      },
-      "raiseBill": {
-        "title": "Raise Bill",
-        "pickCustomer": "Pick a Customer to raise a Bill for.",
-        "search": "Search product, variety or SKU",
-        "noMatch": "Nothing matches.",
-        "perUnit": "{price} per {unit}",
-        "add": "Add",
-        "cartTitle": "Bill · {count} items",
-        "badLinesTitle": "Some items cannot be billed",
-        "badLine": {
-          "unknown_variety": "not in the catalog",
-          "bad_qty": "quantity must be 1 to 5,000",
-          "no_route_price": "no price on this Route",
-          "no_tax_period": "no GST rate set"
-        },
-        "total": "Total · {count} qty",
-        "reasonPlaceholder": "Why is this Bill raised from the office?",
-        "submit": "Raise Bill",
-        "submitAmount": "Raise Bill · {amount}",
-        "submitting": "Raising…",
-        "success": "{number} for {amount}.",
-        "catalogError": {
-          "title": "Could not load the catalog",
-          "body": "Check your connection and try again."
-        },
-        "catalogEmpty": {
-          "title": "No priced items on {route}",
-          "body": "Set Route prices for this Route first."
-        }
       },
       "outcomeUnknown": {
         "title": "We could not confirm this",

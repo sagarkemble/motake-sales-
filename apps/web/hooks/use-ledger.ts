@@ -74,15 +74,6 @@ export function useLedger({
     onSuccess: invalidateMoney,
     onError: invalidateMoney,
   });
-  const raiseBillMutation = trpc.ledger.raiseBill.useMutation({
-    onSuccess: () => {
-      utils.ledger.invalidate();
-      utils.bills.invalidate();
-      // Lifetime stats and sales reports sum the Bills.
-      utils.customers.invalidate();
-      utils.reports.invalidate();
-    },
-  });
 
   return {
     rowsPage:
@@ -110,9 +101,6 @@ export function useLedger({
 
     addOpeningBalanceAsync: addOpeningBalanceMutation.mutateAsync,
     isAddingOpeningBalance: addOpeningBalanceMutation.isPending,
-
-    raiseBillAsync: raiseBillMutation.mutateAsync,
-    isRaisingBill: raiseBillMutation.isPending,
 
     addPaymentAsync: addPaymentMutation.mutateAsync,
     isAddingPayment: addPaymentMutation.isPending,
@@ -285,18 +273,15 @@ const PAPER_OUT_OF_DATE = new Set(["stale_version", "bill_cancelled", "unknown_l
 
 type CorrectPreviewInput = RouterInputs["ledger"]["previewCorrect"];
 type RaiseNotePreviewInput = RouterInputs["ledger"]["previewRaiseNote"];
-type RaiseBillPreviewInput = RouterInputs["ledger"]["previewRaiseBill"];
 
-// Server previews for the three forms; null input means nothing to preview yet. The last answer
+// Server previews for the two forms; null input means nothing to preview yet. The last answer
 // stays on screen while the next one loads, so totals do not flicker as qty changes.
 export function useLedgerPreviews({
   correct,
   raiseNote,
-  raiseBill,
 }: {
   correct?: CorrectPreviewInput | null;
   raiseNote?: RaiseNotePreviewInput | null;
-  raiseBill?: RaiseBillPreviewInput | null;
 }) {
   const correctPreviewQuery = trpc.ledger.previewCorrect.useQuery(
     correct ?? { billId: "", expectedVersionNumber: 1, lines: [] },
@@ -305,10 +290,6 @@ export function useLedgerPreviews({
   const raiseNotePreviewQuery = trpc.ledger.previewRaiseNote.useQuery(
     raiseNote ?? { billId: "", expectedVersionNumber: 1, kind: "debit_note", lines: [] },
     { enabled: Boolean(raiseNote), retry: false, placeholderData: (previous) => previous },
-  );
-  const raiseBillPreviewQuery = trpc.ledger.previewRaiseBill.useQuery(
-    raiseBill ?? { customerId: "", lines: [] },
-    { enabled: Boolean(raiseBill), retry: false, placeholderData: (previous) => previous },
   );
 
   // A preview refused because the paper is out of date reloads the paper, as a refused write does.
@@ -328,9 +309,5 @@ export function useLedgerPreviews({
     raiseNotePreview: raiseNote ? (raiseNotePreviewQuery.data?.data ?? null) : null,
     isRaiseNotePreviewFetching: raiseNotePreviewQuery.isFetching,
     raiseNotePreviewError: raiseNote ? raiseNotePreviewQuery.error : null,
-
-    raiseBillPreview: raiseBill ? (raiseBillPreviewQuery.data?.data ?? null) : null,
-    isRaiseBillPreviewFetching: raiseBillPreviewQuery.isFetching,
-    raiseBillPreviewError: raiseBill ? raiseBillPreviewQuery.error : null,
   };
 }

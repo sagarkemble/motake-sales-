@@ -77,6 +77,25 @@ export function useOrders({
     onSuccess: () => utils.orders.invalidate(),
     onError: refreshAfterRefusal,
   });
+  // Admin New order: billed at once with no GatePass, or a Pre-order with an optional advance.
+  const placeOfficeBookNowMutation = trpc.orders.placeOfficeBookNow.useMutation({
+    onSuccess: () => {
+      utils.orders.invalidate();
+      utils.customers.invalidate();
+      utils.ledger.invalidate();
+      utils.bills.invalidate();
+      utils.reports.invalidate();
+    },
+    onError: refreshAfterRefusal,
+  });
+  const placeOfficePreOrderMutation = trpc.orders.placeOfficePreOrder.useMutation({
+    onSuccess: () => {
+      utils.orders.invalidate();
+      utils.customers.invalidate();
+      utils.ledger.invalidate();
+    },
+    onError: refreshAfterRefusal,
+  });
   const fulfillOrderMutation = trpc.orders.fulfilPreOrder.useMutation({
     onSuccess: () => {
       utils.orders.invalidate();
@@ -139,6 +158,12 @@ export function useOrders({
     placePreOrderAsync: placePreOrderMutation.mutateAsync,
     isPlacingPreOrder: placePreOrderMutation.isPending,
     placePreOrderError: placePreOrderMutation.error ?? null,
+
+    placeOfficeBookNowAsync: placeOfficeBookNowMutation.mutateAsync,
+    isPlacingOfficeBookNow: placeOfficeBookNowMutation.isPending,
+
+    placeOfficePreOrderAsync: placeOfficePreOrderMutation.mutateAsync,
+    isPlacingOfficePreOrder: placeOfficePreOrderMutation.isPending,
 
     fulfillOrder: fulfillOrderMutation.mutate,
     fulfillOrderAsync: fulfillOrderMutation.mutateAsync,
