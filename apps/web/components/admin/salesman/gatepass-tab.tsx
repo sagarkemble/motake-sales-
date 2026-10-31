@@ -103,7 +103,7 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
         ) : activeGatepass ? (
           tx("admin.salesmen.gatepass.alreadyActive")
         ) : (
-          <Link href={`/gatepass?salesmanId=${salesmanId}`}>
+          <Link href={`/admin/gatepass?salesmanId=${salesmanId}`}>
             {todaysGatepass
               ? tx("admin.salesmen.gatepass.allotAgain")
               : tx("admin.salesmen.gatepass.allot")}

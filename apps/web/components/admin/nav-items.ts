@@ -18,7 +18,8 @@ import {
 } from "~/components/shared/nav-items";
 import type { NavItem } from "~/components/shared/nav-items";
 
-export type AdminNavItem = NavItem;
+// The phone bottom tabs fit eight at 360px; the rest stay in the header and its menu sheet.
+export type AdminNavItem = NavItem & { hideInBottomTabs?: boolean };
 
 const ADMIN_HOME_HREF = "/admin";
 
@@ -26,6 +27,12 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "admin.nav.dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "admin.nav.products", href: "/admin/products", icon: Package },
   { label: "admin.nav.salesman", href: "/admin/salesman", icon: Users },
+  {
+    label: "admin.nav.gatepass",
+    href: "/admin/gatepass",
+    icon: TicketIcon,
+    hideInBottomTabs: true,
+  },
   { label: "admin.nav.orders", href: "/admin/orders", icon: ShoppingCart },
   { label: "admin.nav.customers", href: "/admin/customers", icon: Store },
   { label: "admin.nav.ledger", href: "/admin/ledger", icon: BookOpenIcon },
@@ -34,7 +41,7 @@ export const adminNavItems: AdminNavItem[] = [
 ];
 
 export const adminQuickActions: AdminNavItem[] = [
-  { label: "admin.nav.quickAllotGatePass", href: "/gatepass", icon: TicketIcon },
+  { label: "admin.nav.quickAllotGatePass", href: "/admin/gatepass", icon: TicketIcon },
   { label: "admin.nav.quickAddProduct", href: "/admin/products/new", icon: PackagePlusIcon },
   { label: "admin.nav.quickAddSalesman", href: "/admin/salesman/new", icon: UserPlusIcon },
   { label: "admin.nav.quickViewCustomers", href: "/admin/customers", icon: Store },
