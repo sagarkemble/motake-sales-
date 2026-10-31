@@ -1814,7 +1814,7 @@
       "startOrder": "Start an order for this shop",
       "startOrderToast": "Add products to the cart; checkout will be for {shop}.",
       "add": "Add customer",
-      "addHint": "Shop name, phone, address and shop photo are required.",
+      "addHint": "Shop name, phone, address and city are required. The shop photo is optional.",
       "addSuccess": "{shop} added on {route}"
     },
     "account": {
