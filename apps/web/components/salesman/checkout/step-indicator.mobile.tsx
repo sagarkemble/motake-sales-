@@ -8,9 +8,17 @@ import { cn } from "~/lib/utils";
 interface StepIndicatorMobileProps {
   currentStepNumber: number;
   stepLabels: string[];
+  // Admin New order: a step already reached opens on tap, with what was entered kept.
+  furthestStepNumber?: number;
+  onStepClick?: (stepNumber: number) => void;
 }
 
-export function StepIndicatorMobile({ currentStepNumber, stepLabels }: StepIndicatorMobileProps) {
+export function StepIndicatorMobile({
+  currentStepNumber,
+  stepLabels,
+  furthestStepNumber = currentStepNumber,
+  onStepClick,
+}: StepIndicatorMobileProps) {
   const tx = useTranslate();
 
   return (
@@ -20,10 +28,21 @@ export function StepIndicatorMobile({ currentStepNumber, stepLabels }: StepIndic
         const isCompletedStep = stepNumber < currentStepNumber;
         const isCurrentStep = stepNumber === currentStepNumber;
         const isLastStep = stepIndex === stepLabels.length - 1;
+        const isClickable =
+          Boolean(onStepClick) && !isCurrentStep && stepNumber <= furthestStepNumber;
 
         return (
           <div key={stepLabel} className={cn("flex items-start", !isLastStep && "flex-1")}>
-            <div className="flex w-14 flex-col items-center gap-1">
+            <button
+              type="button"
+              disabled={!isClickable}
+              aria-current={isCurrentStep ? "step" : undefined}
+              onClick={() => onStepClick?.(stepNumber)}
+              className={cn(
+                "flex w-14 flex-col items-center gap-1 disabled:cursor-default",
+                isClickable && "cursor-pointer",
+              )}
+            >
               <div
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
@@ -41,7 +60,7 @@ export function StepIndicatorMobile({ currentStepNumber, stepLabels }: StepIndic
               >
                 {tx(stepLabel)}
               </p>
-            </div>
+            </button>
             {!isLastStep && (
               <div
                 className={cn(

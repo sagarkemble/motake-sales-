@@ -67,7 +67,7 @@ An order placed for a later date at the route price of the moment it was placed;
 ### Money
 
 **Bill**:
-A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill) when it is issued: at Book Now, Pre-order fulfil, or Admin Raise Bill. An unfulfilled Pre-order has no Bill. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed.
+A single order's latest billed state at its locked Route prices, including tax. Numbered `MB/{FY}/{seq}` (Motake Bill) when it is issued: at Book Now (by a salesman or the office), or at Pre-order fulfil. An unfulfilled Pre-order has no Bill. Bill History preserves the original and every later version. Admin Corrects, Cancels, or Raises a Note from the Bill paper; those actions are not inline on the items table. Line Correct is refused after that Bill-date month is filed.
 *Avoid*: Invoice
 
 **Tax Invoice**:

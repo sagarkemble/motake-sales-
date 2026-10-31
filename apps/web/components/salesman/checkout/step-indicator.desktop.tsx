@@ -8,9 +8,17 @@ import { cn } from "~/lib/utils";
 interface StepIndicatorDesktopProps {
   currentStepNumber: number;
   stepLabels: string[];
+  // Admin New order: a step already reached opens on tap, with what was entered kept.
+  furthestStepNumber?: number;
+  onStepClick?: (stepNumber: number) => void;
 }
 
-export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndicatorDesktopProps) {
+export function StepIndicatorDesktop({
+  currentStepNumber,
+  stepLabels,
+  furthestStepNumber = currentStepNumber,
+  onStepClick,
+}: StepIndicatorDesktopProps) {
   const tx = useTranslate();
 
   return (
@@ -20,10 +28,21 @@ export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndi
         const isCompletedStep = stepNumber < currentStepNumber;
         const isCurrentStep = stepNumber === currentStepNumber;
         const isLastStep = stepIndex === stepLabels.length - 1;
+        const isClickable =
+          Boolean(onStepClick) && !isCurrentStep && stepNumber <= furthestStepNumber;
 
         return (
           <div key={stepLabel} className={cn("flex items-center", !isLastStep && "flex-1")}>
-            <div className="flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              disabled={!isClickable}
+              aria-current={isCurrentStep ? "step" : undefined}
+              onClick={() => onStepClick?.(stepNumber)}
+              className={cn(
+                "flex flex-col items-center gap-1.5 disabled:cursor-default",
+                isClickable && "cursor-pointer",
+              )}
+            >
               <div
                 className={cn(
                   "flex size-8 items-center justify-center rounded-full text-sm font-semibold",
@@ -42,7 +61,7 @@ export function StepIndicatorDesktop({ currentStepNumber, stepLabels }: StepIndi
               >
                 {tx(stepLabel)}
               </p>
-            </div>
+            </button>
             {!isLastStep && (
               <div className={cn("mx-2 h-0.5 flex-1", isCompletedStep ? "bg-brand" : "bg-muted")} />
             )}

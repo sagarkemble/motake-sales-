@@ -4,6 +4,7 @@ import { getBillByOrderId } from "@repo/database/queries/bills";
 import { getCustomerById, lockCustomerRow } from "@repo/database/queries/customers";
 import {
   incrementSoldQtyIfAvailable,
+  type ActiveGatepassRoute,
   listGatepassItemsByGatepassId,
   lockGatepassItemsForVarieties,
 } from "@repo/database/queries/gatepass";
@@ -37,7 +38,7 @@ import { runInTransaction, type DbExecutor } from "@repo/database/queries/shared
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
 import { violatedUniqueConstraint } from "@repo/database/queries/shared/pg-errors";
 import { listVarietyLabelsByIds } from "@repo/database/queries/variety-tax-periods";
-import type { SelectCustomer, SelectOrder } from "@repo/database/schema";
+import type { SelectCustomer, SelectGatepass, SelectOrder } from "@repo/database/schema";
 
 import BillService, { type IssueBillInput } from "../bills";
 import DocumentNumberService from "../document-numbers";
@@ -127,6 +128,14 @@ interface ResolvedBasket {
   lines: ResolvedLine[];
   badLines: BadLine[];
 }
+
+// Who places a sale: a salesman from the Active GatePass, or the office (Admin) with none.
+type SaleSource = { kind: "salesman"; salesmanId: string } | { kind: "office"; adminId: string };
+
+const actorIdOf = (source: SaleSource) =>
+  source.kind === "salesman" ? source.salesmanId : source.adminId;
+const salesmanIdOf = (source: SaleSource) =>
+  source.kind === "salesman" ? source.salesmanId : null;
 
 // A transaction either did the work or found that a first attempt with the same key already had.
 type CheckoutRun<Result> =
@@ -242,6 +251,23 @@ class OrderService {
     actorSalesmanId: string,
     input: PlaceBookNowInput,
   ): Promise<BilledCheckoutResult> {
+    return this.placeBilledSale({ kind: "salesman", salesmanId: actorSalesmanId }, input);
+  }
+
+  // Admin New order: billed at once on the Customer's current Route, with no GatePass and no
+  // stock. Placed by shows the office (no salesman).
+  public async placeOfficeBookNow(
+    actorAdminId: string,
+    input: PlaceBookNowInput,
+  ): Promise<BilledCheckoutResult> {
+    return this.placeBilledSale({ kind: "office", adminId: actorAdminId }, input);
+  }
+
+  private async placeBilledSale(
+    source: SaleSource,
+    input: PlaceBookNowInput,
+  ): Promise<BilledCheckoutResult> {
+    const actorId = actorIdOf(source);
     const parsedInput = placeBookNowInputSchema.parse(input);
     assertOnlySkuAndQty(parsedInput.lines);
     const firstOrder = await getOrderByIdempotencyKey(parsedInput.idempotencyKey);
@@ -252,16 +278,11 @@ class OrderService {
       parsedInput.idempotencyKey,
       async (transaction) => {
         const now = new Date();
-        const activeGatepass = await this.gatepassService.lockActiveGatepassForSalesman(
-          actorSalesmanId,
-          "update",
-          transaction,
-        );
-        if (!activeGatepass) throw noActiveGatepassRefusal();
+        const sale = await this.saleRouteOf(source, parsedInput.customerId, "update", transaction);
         // A retry that waited on the GatePass lock behind its first attempt.
         const winner = await getOrderByIdempotencyKey(parsedInput.idempotencyKey, transaction);
         if (winner) return { kind: "replay", order: winner };
-        const { gatepass, route } = activeGatepass;
+        const { gatepass, route } = sale;
 
         const customer = await getCustomerById(parsedInput.customerId, transaction);
         assertCustomerOnRoute(customer, parsedInput.customerId, route.id);
@@ -272,7 +293,10 @@ class OrderService {
           transaction,
         );
         assertNoBadLines(basket.badLines);
-        const gatepassItemIds = await this.lockStock(gatepass.id, basket.lines, transaction);
+        // An office sale takes no GatePass stock.
+        const gatepassItemIds = gatepass
+          ? await this.lockStock(gatepass.id, basket.lines, transaction)
+          : null;
 
         const seller = await this.settingsService.requireSellerSettings(transaction);
         const tax = computeBillTax(
@@ -284,24 +308,24 @@ class OrderService {
 
         return this.billAndCollect(
           {
-            actorId: actorSalesmanId,
+            actorId,
             customer,
             routeId: route.id,
             routeStamp,
             billTotalPaise: tax.totalPaise,
             payment: parsedInput.payment,
             idempotencyKey: parsedInput.idempotencyKey,
-            gatepassId: gatepass.id,
+            gatepassId: gatepass?.id ?? null,
             now,
             writeOrder: async () => {
               const order = await insertOrder(
                 {
                   type: "book_now",
                   status: "confirmed",
-                  salesmanId: actorSalesmanId,
+                  salesmanId: salesmanIdOf(source),
                   customerId: parsedInput.customerId,
                   routeId: route.id,
-                  gatepassId: gatepass.id,
+                  gatepassId: gatepass?.id ?? null,
                   placedAt: now,
                   idempotencyKey: parsedInput.idempotencyKey,
                   notes: parsedInput.notes,
@@ -312,12 +336,12 @@ class OrderService {
                 order,
                 basket.lines,
                 routeStamp,
-                actorSalesmanId,
+                actorId,
                 transaction,
               );
-              for (const line of basket.lines) {
+              for (const line of gatepassItemIds ? basket.lines : []) {
                 const deducted = await incrementSoldQtyIfAvailable(
-                  gatepassItemIds.get(line.varietyId)!,
+                  gatepassItemIds!.get(line.varietyId)!,
                   line.quantity,
                   transaction,
                 );
@@ -347,6 +371,23 @@ class OrderService {
     actorSalesmanId: string,
     input: PlacePreOrderInput,
   ): Promise<PreOrderResult> {
+    return this.placeScheduledSale({ kind: "salesman", salesmanId: actorSalesmanId }, input);
+  }
+
+  // Admin New order: a Pre-order on the Customer's current Route with no GatePass, placed by the
+  // office. An advance is a separate office Payment (PaymentService.addPayment).
+  public async placeOfficePreOrder(
+    actorAdminId: string,
+    input: PlacePreOrderInput,
+  ): Promise<PreOrderResult> {
+    return this.placeScheduledSale({ kind: "office", adminId: actorAdminId }, input);
+  }
+
+  private async placeScheduledSale(
+    source: SaleSource,
+    input: PlacePreOrderInput,
+  ): Promise<PreOrderResult> {
+    const actorId = actorIdOf(source);
     const parsedInput = placePreOrderInputSchema.parse(input);
     assertOnlySkuAndQty(parsedInput.lines);
     const firstOrder = await getOrderByIdempotencyKey(parsedInput.idempotencyKey);
@@ -364,13 +405,12 @@ class OrderService {
       parsedInput.idempotencyKey,
       async (transaction) => {
         const now = new Date();
-        const activeGatepass = await this.gatepassService.lockActiveGatepassForSalesman(
-          actorSalesmanId,
+        const { route } = await this.saleRouteOf(
+          source,
+          parsedInput.customerId,
           "share",
           transaction,
         );
-        if (!activeGatepass) throw noActiveGatepassRefusal();
-        const { route } = activeGatepass;
 
         const customer = await getCustomerById(parsedInput.customerId, transaction);
         assertCustomerOnRoute(customer, parsedInput.customerId, route.id);
@@ -397,7 +437,7 @@ class OrderService {
           {
             type: "pre_order",
             status: "scheduled",
-            salesmanId: actorSalesmanId,
+            salesmanId: salesmanIdOf(source),
             customerId: parsedInput.customerId,
             routeId: route.id,
             gatepassId: null,
@@ -408,13 +448,7 @@ class OrderService {
           },
           transaction,
         );
-        await this.writeSaleLines(
-          order,
-          basket.lines,
-          routeStampOf(route),
-          actorSalesmanId,
-          transaction,
-        );
+        await this.writeSaleLines(order, basket.lines, routeStampOf(route), actorId, transaction);
         return {
           kind: "done",
           result: {
@@ -683,6 +717,33 @@ class OrderService {
     to: Date;
   }): Promise<OrderCountBySalesman[]> {
     return getOrderCountsPerSalesmanInRange(range);
+  }
+
+  // The Route a sale is placed on: the salesman's Active GatePass (locked), or for the office the
+  // Customer's current Route with no GatePass. A Route move is caught again under the Customer lock.
+  private async saleRouteOf(
+    source: SaleSource,
+    customerId: string,
+    gatepassLock: "update" | "share",
+    transaction: DbExecutor,
+  ): Promise<{
+    gatepass: SelectGatepass | null;
+    route: Pick<ActiveGatepassRoute, "id" | "name" | "code" | "deliveryState">;
+  }> {
+    if (source.kind === "salesman") {
+      const activeGatepass = await this.gatepassService.lockActiveGatepassForSalesman(
+        source.salesmanId,
+        gatepassLock,
+        transaction,
+      );
+      if (!activeGatepass) throw noActiveGatepassRefusal();
+      return activeGatepass;
+    }
+    const customer = await getCustomerById(customerId, transaction);
+    assertCustomerActive(customer, customerId);
+    const route = await getRouteById(customer.routeId, transaction);
+    if (!route) throw notFound(`Route ${customer.routeId} not found`);
+    return { gatepass: null, route };
   }
 
   // Runs a place in one transaction; a unique-key race with a concurrent first attempt rolls

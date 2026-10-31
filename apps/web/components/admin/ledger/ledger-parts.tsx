@@ -281,8 +281,8 @@ export function AddMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuItem asChild>
-          <Link href={`/admin/ledger/raise-bill?customer=${summary.customer.id}`}>
-            {tx("admin.ledger.add.raiseBill")}
+          <Link href={`/admin/orders/new?customer=${summary.customer.id}`}>
+            {tx("admin.ledger.add.newOrder")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onRaiseNote}>
@@ -403,8 +403,8 @@ export function LedgerEmpty({
               {tx("admin.ledger.empty.addOpening")}
             </Button>
             <Button size="sm" variant="outline" className="rounded-full" asChild>
-              <Link href={`/admin/ledger/raise-bill?customer=${customerId}`}>
-                {tx("admin.ledger.add.raiseBill")}
+              <Link href={`/admin/orders/new?customer=${customerId}`}>
+                {tx("admin.ledger.add.newOrder")}
               </Link>
             </Button>
           </div>
