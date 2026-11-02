@@ -35,13 +35,19 @@ import { useCart } from "~/providers/cart-provider";
 
 interface RouteCustomerDrawerProps {
   customerId: string;
+  // Opens straight on Record Payment (the menu's Quick action).
+  startOnPayment?: boolean;
   onClose: () => void;
 }
 
 /** A Route Customer's details; "Record Payment" turns the drawer into the Payment block. */
-export function RouteCustomerDrawer({ customerId, onClose }: RouteCustomerDrawerProps) {
+export function RouteCustomerDrawer({
+  customerId,
+  startOnPayment = false,
+  onClose,
+}: RouteCustomerDrawerProps) {
   const tx = useTranslate();
-  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
+  const [isRecordingPayment, setIsRecordingPayment] = useState(startOnPayment);
   const { customer, isCustomerLoading } = useCustomers({ customerId, loadStats: false });
   const fieldPayment = useRecordFieldPayment(customer);
   const hint = isRecordingPayment && fieldPayment.problemKey ? tx(fieldPayment.problemKey) : null;

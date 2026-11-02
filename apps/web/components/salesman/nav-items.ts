@@ -1,11 +1,12 @@
 import {
+  BanknoteIcon,
   ClipboardList,
   LayoutGrid,
-  PackagePlusIcon,
   ShoppingCart,
   TicketCheck,
-  TicketIcon,
   UserIcon,
+  UserPlusIcon,
+  UsersIcon,
 } from "lucide-react";
 
 import {
@@ -25,11 +26,33 @@ export const salesmanNavItems: SalesmanNavItem[] = [
   { label: "salesman.nav.orders", href: "/salesman/orders", icon: ClipboardList },
 ];
 
-export const salesmanQuickActions: SalesmanNavItem[] = [
-  { label: "salesman.nav.quickNewOrder", href: "/salesman", icon: PackagePlusIcon },
-  { label: "salesman.nav.gatepass", href: "/salesman/gatepass", icon: TicketIcon },
-  { label: "salesman.nav.quickMyOrders", href: "/salesman/orders", icon: ClipboardList },
-  { label: "salesman.nav.quickMyAccount", href: "/salesman/account", icon: UserIcon },
+// The menu's Quick actions: what the bottom tabs don't have. Add customer and Record Payment open
+// Route Customers with the form, or the shop pick, already started (`?action=`).
+export const salesmanQuickActions: (SalesmanNavItem & { hint: string })[] = [
+  {
+    label: "salesman.nav.quickAddCustomer",
+    hint: "salesman.nav.quickAddCustomerHint",
+    href: "/salesman/customers?action=add",
+    icon: UserPlusIcon,
+  },
+  {
+    label: "salesman.nav.quickRecordPayment",
+    hint: "salesman.nav.quickRecordPaymentHint",
+    href: "/salesman/customers?action=payment",
+    icon: BanknoteIcon,
+  },
+  {
+    label: "salesman.nav.customers",
+    hint: "salesman.nav.quickCustomersHint",
+    href: "/salesman/customers",
+    icon: UsersIcon,
+  },
+  {
+    label: "salesman.nav.quickMyAccount",
+    hint: "salesman.nav.quickMyAccountHint",
+    href: "/salesman/account",
+    icon: UserIcon,
+  },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

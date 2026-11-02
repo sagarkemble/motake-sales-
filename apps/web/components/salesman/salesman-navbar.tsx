@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, MenuIcon, UserIcon, UsersIcon } from "lucide-react";
+import { ChevronDownIcon, LogOutIcon, MenuIcon, SparklesIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -9,19 +9,16 @@ import { toast } from "sonner";
 import { LanguageSwitcher } from "~/components/shared/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { useAuth } from "~/hooks/use-auth";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
 import { getNameInitials } from "~/lib/get-name-initials";
+import { cn } from "~/lib/utils";
 import { NavbarRefreshButton } from "~/providers/page-refresh-provider";
-import {
-  getPageTitleForPathname,
-  isNavItemActive,
-  salesmanNavItems,
-  salesmanQuickActions,
-} from "./nav-items";
+import { getPageTitleForPathname, salesmanQuickActions } from "./nav-items";
 
 export function SalesmanNavbar() {
   const tx = useTranslate();
@@ -30,6 +27,7 @@ export function SalesmanNavbar() {
   const { signedInUser, logoutAsync } = useAuth();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [areQuickActionsOpen, setQuickActionsOpen] = useState(true);
 
   const pageTitle = getPageTitleForPathname(currentPathname);
   const avatarInitial = getNameInitials(signedInUser?.name, "S");
@@ -80,55 +78,29 @@ export function SalesmanNavbar() {
             {/* Radix lays the viewport content out as a table; block keeps the content at the sheet width. */}
             <ScrollArea className="flex min-h-0 flex-col [&>[data-slot=scroll-area-viewport]>div]:block!">
               <div className="flex flex-col gap-4">
-                <nav className="flex flex-col gap-1 px-4 pt-4">
-                  {salesmanNavItems.map((navItem) => {
-                    const NavIcon = navItem.icon;
-                    const isActiveTab = isNavItemActive(navItem.href, currentPathname);
-                    return (
-                      <Link
-                        key={navItem.href}
-                        href={navItem.href}
-                        onClick={closeDrawer}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                          isActiveTab ? "bg-brand/10 text-brand" : "text-foreground hover:bg-accent"
-                        }`}
-                      >
-                        <NavIcon className="size-4" />
-                        {tx(navItem.label)}
-                      </Link>
-                    );
-                  })}
-                  <Link
-                    href="/salesman/customers"
-                    onClick={closeDrawer}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isNavItemActive("/salesman/customers", currentPathname)
-                        ? "bg-brand/10 text-brand"
-                        : "text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <UsersIcon className="size-4" />
-                    {tx("salesman.nav.customers")}
-                  </Link>
-                  <Link
-                    href="/salesman/account"
-                    onClick={closeDrawer}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isNavItemActive("/salesman/account", currentPathname)
-                        ? "bg-brand/10 text-brand"
-                        : "text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <UserIcon className="size-4" />
-                    {tx("common.nav.account")}
-                  </Link>
-                </nav>
-
-                <div className="mt-4 border-t border-border px-4 pt-4">
-                  <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {tx("common.nav.quickActions")}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
+                {/* Products, Cart, Gate Pass and Orders are in the bottom tabs; the menu leads
+                    with what they don't have. */}
+                <Collapsible
+                  open={areQuickActionsOpen}
+                  onOpenChange={setQuickActionsOpen}
+                  className="flex flex-col gap-2 px-4 pt-4"
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      className="h-14 w-full justify-start gap-3 rounded-2xl bg-brand px-4 text-base font-semibold text-brand-foreground shadow-sm hover:bg-brand-deep"
+                    >
+                      <SparklesIcon className="size-5" />
+                      <span className="flex-1 text-left">{tx("common.nav.quickActions")}</span>
+                      <ChevronDownIcon
+                        className={cn(
+                          "size-5 transition-transform",
+                          areQuickActionsOpen && "rotate-180",
+                        )}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="flex flex-col overflow-hidden rounded-2xl border bg-card">
                     {salesmanQuickActions.map((quickAction) => {
                       const QuickActionIcon = quickAction.icon;
                       return (
@@ -136,17 +108,24 @@ export function SalesmanNavbar() {
                           key={quickAction.href}
                           href={quickAction.href}
                           onClick={closeDrawer}
-                          className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand-faint"
+                          className="flex items-center gap-3 border-b px-3 py-3 transition-colors last:border-b-0 hover:bg-brand-faint"
                         >
-                          <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                             <QuickActionIcon className="size-4" />
                           </span>
-                          {tx(quickAction.label)}
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-medium">
+                              {tx(quickAction.label)}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {tx(quickAction.hint)}
+                            </span>
+                          </span>
                         </Link>
                       );
                     })}
-                  </div>
-                </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
                 <div className="mt-4 border-t border-border px-4 pt-4">
                   <Button

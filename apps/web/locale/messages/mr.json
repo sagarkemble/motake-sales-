@@ -1591,9 +1591,13 @@
       "orders": "ऑर्डर",
       "roleLabel": "विक्रेता",
       "openAccount": "खाते उघडा",
-      "quickNewOrder": "नवीन ऑर्डर",
-      "quickMyOrders": "माझे ऑर्डर",
       "quickMyAccount": "माझे खाते",
+      "quickAddCustomer": "ग्राहक जोडा",
+      "quickAddCustomerHint": "तुमच्या रूटवर नवीन दुकान",
+      "quickRecordPayment": "पेमेंट नोंदवा",
+      "quickRecordPaymentHint": "दुकानाकडून रक्कम घ्या",
+      "quickCustomersHint": "दुकाने आणि त्यांची बाकी",
+      "quickMyAccountHint": "फोटो, नाव, पासवर्ड",
       "customers": "रूटवरील ग्राहक"
     },
     "catalog": {
@@ -1857,6 +1861,7 @@
       "hint": "तुमच्या सक्रिय गेट पासच्या रूटवरील ग्राहक.",
       "balance": "शिल्लक",
       "recordPayment": "पेमेंट नोंदवा",
+      "pickForPayment": "ज्या दुकानाचे पेमेंट नोंदवायचे ते दुकान निवडा.",
       "noPurchase": "{shop} · खरेदी नाही",
       "recordFailed": "पेमेंट नोंदवता आले नाही",
       "startOrder": "या दुकानासाठी ऑर्डर सुरू करा",

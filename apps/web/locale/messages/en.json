@@ -1591,9 +1591,13 @@
       "orders": "Orders",
       "roleLabel": "Salesman",
       "openAccount": "Open account",
-      "quickNewOrder": "New order",
-      "quickMyOrders": "My orders",
       "quickMyAccount": "My account",
+      "quickAddCustomer": "Add customer",
+      "quickAddCustomerHint": "New shop on your Route",
+      "quickRecordPayment": "Record Payment",
+      "quickRecordPaymentHint": "Collect from a shop",
+      "quickCustomersHint": "Shops and their Balance",
+      "quickMyAccountHint": "Photo, name, password",
       "customers": "Route Customers"
     },
     "catalog": {
@@ -1857,6 +1861,7 @@
       "hint": "Customers on your Active GatePass Route.",
       "balance": "Balance",
       "recordPayment": "Record Payment",
+      "pickForPayment": "Pick the shop to record a Payment for.",
       "noPurchase": "{shop} · no purchase",
       "recordFailed": "Could not record the Payment",
       "startOrder": "Start an order for this shop",
