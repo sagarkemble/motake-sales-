@@ -43,7 +43,14 @@ import { useTranslate } from "~/hooks/use-translate";
 type SheetKind = "cancel" | "note";
 
 function BackLink({ paper }: { paper: BillPaper | null }) {
-  return <LedgerBackHeader customerId={paper?.customer?.id} shopName={paper?.customer?.shopName} />;
+  const tx = useTranslate();
+  return (
+    <LedgerBackHeader
+      customerId={paper?.customer?.id}
+      shopName={paper?.customer?.shopName}
+      paperLabel={paper ? tx(`admin.bills.legalType.${paper.version.legalType}`) : undefined}
+    />
+  );
 }
 
 // The on-screen Bill that Print sends to the browser's print dialog.
