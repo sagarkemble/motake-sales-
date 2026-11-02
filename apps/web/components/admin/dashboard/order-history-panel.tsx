@@ -70,7 +70,8 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
           action={{ label: tx("empty.actions.newOrder"), href: "/admin/orders/new" }}
         />
       ) : (
-        <div className="flex flex-col divide-y divide-border">
+        // Rows reach a little past the heading's edge so their hover box has room inside.
+        <div className="-mx-2 flex flex-col gap-1">
           {orderHistory.map(
             ({
               id,
@@ -89,7 +90,7 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
                 key={id}
                 type="button"
                 onClick={() => setSelectedOrderId(id)}
-                className="flex items-center justify-between gap-3 rounded-lg py-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <ShopPhotoThumbnail
