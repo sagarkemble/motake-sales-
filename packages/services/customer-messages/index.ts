@@ -659,6 +659,7 @@ class CustomerMessageService {
         balance_adjustment: balanceAdjustment(outcome.differencePaise, recipient.language),
         balance_line: balanceLine("now", outcome.balanceAfterPaise, recipient.language),
       }),
+      document: () => this.documents.ensureNoteDocument(outcome.note.noteId),
     };
   }
 

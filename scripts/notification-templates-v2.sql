@@ -213,3 +213,14 @@ VALUES
   ('whatsapp', 'motake_note_update_v2', 'en', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true),
   ('whatsapp', 'motake_note_update_v2', 'mr', 1, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'none', true)
 ON CONFLICT (provider, template_id, language, version) DO NOTHING;
+
+-- 2026-11-02: motake_note_update_v2 gained a DOCUMENT header in Meta (same body), so every Note
+-- message carries the Note PDF. A change is a new version (db-decisions/0014): insert these only
+-- after Meta shows motake_note_update_v2 APPROVED again in en and mr, together with the deploy
+-- that attaches the PDF; the highest version wins, so version 1 is no longer used.
+INSERT INTO notification_templates
+  (provider, template_id, language, version, template_variables, document_type, verified)
+VALUES
+  ('whatsapp', 'motake_note_update_v2', 'en', 2, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'pdf', true),
+  ('whatsapp', 'motake_note_update_v2', 'mr', 2, '["customer", "route_name", "note_number", "bill_number", "status", "reason", "balance_adjustment", "balance_line"]'::jsonb, 'pdf', true)
+ON CONFLICT (provider, template_id, language, version) DO NOTHING;

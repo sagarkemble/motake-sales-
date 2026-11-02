@@ -121,7 +121,7 @@ export const customerMessageTemplates = {
   noteUpdate: {
     templateId: "motake_note_update_v2",
     kind: "account_update",
-    pdf: false,
+    pdf: true,
     values: [
       "customer",
       "route_name",

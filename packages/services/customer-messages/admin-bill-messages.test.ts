@@ -386,7 +386,7 @@ describe("Raise Note", () => {
     ]);
   });
 
-  it("a Commercial Credit Note to a GSTIN Customer sends the Note update, no PDF", async () => {
+  it("a Commercial Credit Note to a GSTIN Customer sends the Note update with its PDF", async () => {
     const world = await gstinWorld();
     const { placed, curdLine } = await bookNow(world);
 
@@ -418,12 +418,20 @@ describe("Raise Note", () => {
           balance_line: "आता बाकी रक्कम: ₹79.00",
         },
         businessRef: `note/${raised.noteId}`,
+        attachment: {
+          key: `documents/notes/${raised.noteId}.pdf`,
+          type: "pdf",
+          filename: "Motake Credit Note MC-26-27-000001.pdf",
+        },
       },
     ]);
-    expect(harness.documents.calls.map((call) => call.method)).not.toContain("ensureNoteDocument");
+    expect(harness.documents.calls.at(-1)).toEqual({
+      method: "ensureNoteDocument",
+      noteId: raised.noteId,
+    });
   });
 
-  it("a GST Debit Note to a Customer without GSTIN sends the Note update", async () => {
+  it("a GST Debit Note to a Customer without GSTIN sends the Note update with its PDF", async () => {
     const world = await buildCheckoutWorld({ businessDate: today });
     const { placed, milkLine } = await bookNow(world);
 
@@ -440,6 +448,10 @@ describe("Raise Note", () => {
     expect(harness.gateway.instructions[1]!.values).toMatchObject({
       status: "डेबिट नोट दिली",
       balance_adjustment: "₹26.23 ने वाढ",
+    });
+    expect(harness.gateway.instructions[1]!.attachment).toMatchObject({
+      type: "pdf",
+      filename: expect.stringMatching(/^Motake Debit Note MD-26-27-\d+\.pdf$/),
     });
   });
 });
