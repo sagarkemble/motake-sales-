@@ -1,8 +1,9 @@
 "use client";
 
 import { businessDateOf } from "@repo/trpc/client";
-import { ChevronRightIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { BanknoteIcon, ChevronRightIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 import { EmptyStateCard } from "~/components/shared/empty-state-card";
 import { NoActiveGatepassNotice } from "~/components/salesman/checkout/no-active-gatepass-notice";
@@ -12,6 +13,7 @@ import { BalanceChip } from "~/components/shared/checkout/balance-text";
 import { ListItemSkeleton } from "~/components/shared/list-item-skeleton";
 import { ListPager } from "~/components/shared/list-pager";
 import { ShopPhotoThumbnail } from "~/components/shared/shop-photo-thumbnail";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useDebouncedValue } from "~/hooks/shared/use-debounced-value";
@@ -24,11 +26,31 @@ const CUSTOMERS_PAGE_SIZE = 20;
 
 /** Customers on the Active GatePass Route with their Balance; field Payment starts here. */
 export default function SalesmanRouteCustomersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4 md:px-6">
+          <ListItemSkeleton count={5} />
+        </div>
+      }
+    >
+      <RouteCustomers />
+    </Suspense>
+  );
+}
+
+// `?action=add` (the menu's Add customer) opens the Add form; `?action=payment` (Record Payment)
+// asks for the shop and opens its drawer on Record Payment.
+function RouteCustomers() {
   const tx = useTranslate();
+  const router = useRouter();
+  const pathname = usePathname();
+  const action = useSearchParams().get("action");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [openedCustomerId, setOpenedCustomerId] = useState<string | null>(null);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
+  const [isPickingForPayment, setPickingForPayment] = useState(false);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 350);
 
   const { myGatepass, isMyGatepassLoading, refetchMyGatepass, isMyGatepassFetching } =
@@ -54,6 +76,16 @@ export default function SalesmanRouteCustomersPage() {
     isMyGatepassFetching || isCustomersListFetching,
   );
   const isReloading = usePageReloading();
+
+  // Taken once the Route is known, then dropped from the URL so a reload doesn't start it again.
+  useEffect(() => {
+    if (!action || isMyGatepassLoading) return;
+    if (activeRouteName) {
+      if (action === "add") setIsAddingCustomer(true);
+      if (action === "payment") setPickingForPayment(true);
+    }
+    router.replace(pathname, { scroll: false });
+  }, [action, activeRouteName, isMyGatepassLoading, pathname, router]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4 md:px-6">
@@ -89,6 +121,25 @@ export default function SalesmanRouteCustomersPage() {
         />
       ) : (
         <>
+          {isPickingForPayment && (
+            <Alert className="border-brand/30 bg-brand-faint">
+              <BanknoteIcon className="text-brand" />
+              <AlertDescription className="flex items-center justify-between gap-2 text-foreground">
+                {tx("salesman.customers.pickForPayment")}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={tx("common.actions.cancel")}
+                  onClick={() => setPickingForPayment(false)}
+                  className="size-7 shrink-0 rounded-full text-muted-foreground"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -189,7 +240,11 @@ export default function SalesmanRouteCustomersPage() {
         <RouteCustomerDrawer
           key={openedCustomerId}
           customerId={openedCustomerId}
-          onClose={() => setOpenedCustomerId(null)}
+          startOnPayment={isPickingForPayment}
+          onClose={() => {
+            setOpenedCustomerId(null);
+            setPickingForPayment(false);
+          }}
         />
       )}
     </div>
