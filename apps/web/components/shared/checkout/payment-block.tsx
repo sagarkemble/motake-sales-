@@ -83,7 +83,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border bg-card p-3 text-xs">
+      <div className="rounded-2xl border bg-card shadow-sm p-3 text-xs">
         <div className="flex items-center justify-between gap-2">
           <span className="text-muted-foreground">{tx("checkout.payment.balanceNow")}</span>
           <BalanceChip balancePaise={context.balanceBeforePaise} />

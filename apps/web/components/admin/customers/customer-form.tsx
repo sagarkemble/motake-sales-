@@ -135,7 +135,7 @@ export function CustomerForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
         {/* Two cards. Phone: photo card, then Route + language card. Wider: side by side, same height. */}
         <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
-          <div className="rounded-2xl border bg-card p-4">
+          <div className="rounded-2xl border bg-card shadow-sm p-4">
             <FormField
               control={form.control}
               name="shopPhotoUrl"
@@ -177,7 +177,7 @@ export function CustomerForm({
           </div>
 
           {isCreate ? (
-            <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+            <div className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4">
               <FormField
                 control={form.control}
                 name="routeId"
@@ -205,7 +205,7 @@ export function CustomerForm({
             </div>
           ) : (
             fixedDetails && (
-              <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+              <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">
                     {tx("admin.customers.form.fixedDetailsTitle")}
@@ -241,7 +241,7 @@ export function CustomerForm({
         </div>
 
         {/* Phone: one column. Wider: shop | contact, phone, address | notes. */}
-        <div className="grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+        <div className="grid gap-4 rounded-2xl border bg-card shadow-sm p-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="shopName"
@@ -354,7 +354,7 @@ export function CustomerForm({
           />
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4">
           <FormField
             control={form.control}
             name="gstin"

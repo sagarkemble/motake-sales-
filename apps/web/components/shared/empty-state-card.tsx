@@ -40,7 +40,7 @@ export function EmptyStateCard({
   return (
     <div
       className={cn(
-        "col-span-full flex flex-col gap-3 rounded-2xl border bg-card",
+        "col-span-full flex flex-col gap-3 rounded-2xl border bg-card shadow-sm",
         compact ? "p-3" : "p-4",
         className,
       )}

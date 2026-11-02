@@ -169,7 +169,7 @@ export function LedgerBackHeader({
 export function PaperLoadFailed({ message, onRetry }: { message: string; onRetry: () => void }) {
   const tx = useTranslate();
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-4 py-8 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card shadow-sm px-4 py-8 text-center">
       <p className="text-sm text-muted-foreground">{message}</p>
       <Button type="button" variant="outline" className="rounded-full" onClick={onRetry}>
         {tx("common.actions.tryAgain")}

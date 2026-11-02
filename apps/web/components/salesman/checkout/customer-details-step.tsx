@@ -201,7 +201,7 @@ export function CustomerDetailsStep({
                 {customerOptions.map((customer) => (
                   <div
                     key={customer.id}
-                    className="flex items-start gap-2 rounded-2xl border bg-card p-3 transition-colors hover:bg-accent"
+                    className="flex items-start gap-2 rounded-2xl border bg-card shadow-sm p-3 transition-colors hover:bg-accent"
                   >
                     <Button
                       type="button"
@@ -248,7 +248,7 @@ export function CustomerDetailsStep({
           <Collapsible
             open={isAddCustomerOpen}
             onOpenChange={setIsAddCustomerOpen}
-            className="rounded-2xl border bg-card"
+            className="rounded-2xl border bg-card shadow-sm"
           >
             <CollapsibleTrigger asChild>
               <Button
@@ -276,7 +276,7 @@ export function CustomerDetailsStep({
         </>
       )}
 
-      <div className="flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
+      <div className="flex items-center justify-between rounded-2xl border bg-card shadow-sm px-3 py-2 text-sm">
         <span className="text-muted-foreground">
           {tx("salesman.checkout.customer.placeOrderFor")}
         </span>

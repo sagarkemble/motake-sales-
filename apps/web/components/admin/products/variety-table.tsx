@@ -148,7 +148,7 @@ export function VarietyTable({ productId, productName }: VarietyTableProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">{tx("admin.varieties.title")}</h2>
         <Button

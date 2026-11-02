@@ -81,7 +81,7 @@ export default function SalesmanAccountPage() {
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
       <p className="text-base font-semibold">{tx("common.nav.account")}</p>
 
-      <div className="flex items-center gap-3 rounded-2xl border bg-card p-4">
+      <div className="flex items-center gap-3 rounded-2xl border bg-card shadow-sm p-4">
         <Avatar className="size-16">
           <AvatarImage src={profile.avatarUrl ?? undefined} alt="Avatar" />
           <AvatarFallback className="text-xl">{avatarInitial}</AvatarFallback>
@@ -92,7 +92,7 @@ export default function SalesmanAccountPage() {
         </div>
       </div>
 
-      <div className="flex flex-col divide-y rounded-2xl border bg-card">
+      <div className="flex flex-col divide-y rounded-2xl border bg-card shadow-sm">
         {detailRows.map((row) => (
           <div key={row.key} className="flex items-center gap-3 px-4 py-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">

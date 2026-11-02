@@ -460,7 +460,7 @@ export function HistoryList({
       </div>
       <ol className="flex flex-col gap-2 md:hidden">
         {newestFirst.map((event) => (
-          <li key={event.id} className="space-y-1 rounded-2xl border bg-card p-3">
+          <li key={event.id} className="space-y-1 rounded-2xl border bg-card shadow-sm p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium">

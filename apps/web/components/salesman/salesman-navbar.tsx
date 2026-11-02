@@ -100,7 +100,7 @@ export function SalesmanNavbar() {
                       />
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="flex flex-col overflow-hidden rounded-2xl border bg-card">
+                  <CollapsibleContent className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
                     {salesmanQuickActions.map((quickAction) => {
                       const QuickActionIcon = quickAction.icon;
                       return (

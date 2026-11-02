@@ -45,7 +45,7 @@ export function GatepassTodayViewDesktop({
         totals={totals}
       />
 
-      <div className="flex flex-col divide-y rounded-2xl border bg-card">
+      <div className="flex flex-col divide-y rounded-2xl border bg-card shadow-sm">
         <div className="grid grid-cols-6 gap-2 px-4 py-2 text-xs text-muted-foreground">
           <p className="col-span-2">{tx("salesman.gatepass.col.item")}</p>
           <p className="text-right">{tx("salesman.gatepass.col.issued")}</p>

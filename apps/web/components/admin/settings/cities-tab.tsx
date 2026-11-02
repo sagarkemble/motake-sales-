@@ -82,7 +82,7 @@ export function CitiesTab() {
         )
       ) : (
         shownGroups.map((group) => (
-          <div key={group.state} className="rounded-xl border bg-card p-3">
+          <div key={group.state} className="rounded-xl border bg-card shadow-sm p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-sm font-medium">{group.state}</p>
               <Badge variant="outline" className="shrink-0 text-muted-foreground">

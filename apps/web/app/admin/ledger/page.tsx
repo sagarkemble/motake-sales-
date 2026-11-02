@@ -186,7 +186,7 @@ function LedgerPageContent() {
       </div>
 
       {!customerId ? (
-        <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
+        <div className="rounded-2xl border border-dashed bg-card shadow-sm px-4 py-10 text-center">
           <p className="text-sm font-medium">{tx("admin.ledger.pickCustomerTitle")}</p>
           <p className="text-sm text-muted-foreground">{tx("admin.ledger.pickCustomerHint")}</p>
         </div>
@@ -195,7 +195,7 @@ function LedgerPageContent() {
           {inactive && <InactiveBanner />}
 
           {openPreorders.length > 0 && (
-            <section className="rounded-2xl border bg-card p-3">
+            <section className="rounded-2xl border bg-card shadow-sm p-3">
               <p className="mb-2 text-sm font-medium">
                 {tx("admin.ledger.preorders.title")}{" "}
                 <span className="text-muted-foreground">
@@ -210,7 +210,7 @@ function LedgerPageContent() {
             </section>
           )}
 
-          <section className="overflow-hidden rounded-2xl border bg-card">
+          <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             {isLoading ? (
               <LedgerSkeleton />
             ) : isError || !summary ? (

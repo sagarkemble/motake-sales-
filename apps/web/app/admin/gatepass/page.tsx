@@ -197,7 +197,7 @@ function GatepassPageContent() {
         <h1 className="text-base font-semibold">{tx("admin.gatepass.allot.title")}</h1>
       )}
 
-      <section className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6">
+      <section className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4 sm:p-6">
         {allottedGatepass ? (
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-brand">

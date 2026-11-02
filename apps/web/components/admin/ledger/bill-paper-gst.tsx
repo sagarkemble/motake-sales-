@@ -97,7 +97,7 @@ export function GstCard({
 }) {
   const tx = useTranslate();
   return (
-    <section className="space-y-3 rounded-2xl border bg-card p-3">
+    <section className="space-y-3 rounded-2xl border bg-card shadow-sm p-3">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold">{tx("admin.ledger.paper.gst.title")}</h2>

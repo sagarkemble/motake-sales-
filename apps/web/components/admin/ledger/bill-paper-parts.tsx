@@ -168,7 +168,7 @@ export function NotesList({ paper }: { paper: BillPaper }) {
   if (paper.notes.length === 0)
     return <p className="text-sm text-muted-foreground">{tx("admin.ledger.paper.notesEmpty")}</p>;
   return (
-    <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+    <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-sm">
       {paper.notes.map((note) => (
         <li
           key={note.id}

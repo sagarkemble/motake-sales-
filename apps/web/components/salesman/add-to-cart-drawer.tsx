@@ -93,7 +93,7 @@ export function AddToCartDrawer({
               varieties.map((variety) => (
                 <div
                   key={variety.varietyId}
-                  className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3"
+                  className="flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-sm p-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{variety.varietyName}</p>
@@ -122,7 +122,7 @@ export function AddToCartDrawer({
 
         <DrawerFooter>
           {selectedQuantity > 0 && (
-            <div className="mb-1 flex items-center justify-between rounded-2xl border bg-card px-3 py-2 text-sm">
+            <div className="mb-1 flex items-center justify-between rounded-2xl border bg-card shadow-sm px-3 py-2 text-sm">
               <span className="text-muted-foreground">{tx("salesman.catalog.selected")}</span>
               <span className="font-semibold text-brand">{selectedQuantity}</span>
             </div>

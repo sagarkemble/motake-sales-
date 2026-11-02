@@ -50,7 +50,7 @@ export function SalesmanDetailsForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4">
           <FormField
             control={form.control}
             name="name"

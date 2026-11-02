@@ -47,7 +47,7 @@ export function NewRouteForm({ onCreated, onCancel }: NewRouteFormProps) {
   return (
     <form
       onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-col gap-3 rounded-2xl border bg-card p-3"
+      className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-3"
       noValidate
     >
       <div>

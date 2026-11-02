@@ -125,7 +125,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, lines }: Handov
                       <div
                         key={line.id}
                         className={cn(
-                          "rounded-2xl border bg-card p-3",
+                          "rounded-2xl border bg-card shadow-sm p-3",
                           short > 0 && "border-amber-500/40",
                         )}
                       >

@@ -35,7 +35,7 @@ export function GstSkeleton({ rows = 5 }: { rows?: number }) {
 export function GstError({ onRetry }: { onRetry: () => void }) {
   const tx = useTranslate();
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-4 py-8 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card shadow-sm px-4 py-8 text-center">
       <p className="text-sm text-muted-foreground">{tx("admin.gst.loadError.title")}</p>
       <Button type="button" variant="outline" className="rounded-full" onClick={onRetry}>
         {tx("common.actions.tryAgain")}
@@ -75,7 +75,7 @@ export function FilingsList({
           <li key={filing.id}>
             <button
               type="button"
-              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent"
+              className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-card shadow-sm p-3 text-left transition-colors hover:bg-accent"
               onClick={() => onCorrect(filing)}
             >
               <span className="min-w-0">
@@ -96,7 +96,7 @@ export function FilingsList({
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-hidden rounded-2xl border bg-card md:block">
+      <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>

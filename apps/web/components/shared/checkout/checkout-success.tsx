@@ -210,7 +210,7 @@ export function CheckoutSuccess({
         </Alert>
       )}
 
-      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border bg-card p-4 text-left">
+      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4 text-left">
         {rows.map((row) => (
           <div
             key={row.key}

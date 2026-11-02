@@ -63,7 +63,7 @@ export function AllotRouteStep({
                 type="button"
                 onClick={() => onSelectRoute(route.id)}
                 className={cn(
-                  "flex flex-col gap-2 rounded-2xl border bg-card p-4 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors",
+                  "flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-4 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors",
                   isSelected ? "border-brand bg-accent" : "hover:bg-accent",
                 )}
               >

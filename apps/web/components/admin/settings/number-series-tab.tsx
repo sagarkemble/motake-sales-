@@ -137,7 +137,7 @@ export function NumberSeriesTab({
       ) : (
         <ul className="flex flex-col gap-2">
           {numberSeries.map((entry) => (
-            <li key={entry.kind} className="rounded-xl border bg-card p-3">
+            <li key={entry.kind} className="rounded-xl border bg-card shadow-sm p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">

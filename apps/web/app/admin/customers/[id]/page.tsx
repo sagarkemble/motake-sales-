@@ -82,7 +82,7 @@ export default function CustomerDetailPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-4 sm:px-6">
       <BackHeader href="/admin/customers" title={customer.shopName} />
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4">
         {/* Phone: photo + contact, details panel below. Wider: photo | contact | details panel. */}
         <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]">
           <ShopPhotoThumbnail
@@ -267,7 +267,7 @@ export default function CustomerDetailPage() {
               value={formatPaiseCompact(customerStats?.lifetimeValuePaise ?? 0)}
               icon={IndianRupeeIcon}
             />
-            <div className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card p-3 sm:col-span-3">
+            <div className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card shadow-sm p-3 sm:col-span-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
                 <CalendarIcon className="size-4" />
               </div>

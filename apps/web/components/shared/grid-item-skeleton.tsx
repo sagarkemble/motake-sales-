@@ -8,7 +8,7 @@ export function GridItemSkeleton({ count = 6 }: GridItemSkeletonProps) {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
+        <div key={index} className="flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-3">
           <Skeleton className="aspect-square w-full rounded-xl" />
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-3 w-1/3" />

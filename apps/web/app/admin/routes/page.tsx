@@ -131,7 +131,7 @@ function RoutesPageContent() {
                 type="button"
                 onClick={() => selectRoute(route.id)}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl border bg-card p-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "flex items-center gap-3 rounded-2xl border bg-card shadow-sm p-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   activeRouteId === route.id && "border-brand bg-accent",
                   route.hidden && "border-dashed",
                 )}
@@ -166,7 +166,7 @@ function RoutesPageContent() {
       <section
         ref={detailRef}
         // Fits the screen under the navbar (and above the phone tab bar); the prices scroll inside.
-        className="flex h-[calc(100dvh-9.5rem)] min-w-0 scroll-mt-20 flex-col overflow-hidden rounded-2xl border bg-card p-4 md:h-[calc(100dvh-7rem)] lg:sticky lg:top-[4.5rem]"
+        className="flex h-[calc(100dvh-9.5rem)] min-w-0 scroll-mt-20 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm p-4 md:h-[calc(100dvh-7rem)] lg:sticky lg:top-[4.5rem]"
       >
         {activeRouteId ? (
           <RouteDetail routeId={activeRouteId} />

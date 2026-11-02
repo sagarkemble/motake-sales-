@@ -39,7 +39,7 @@ export function UnitsTab() {
           </Button>
         </div>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
           {units.map((unit) => (
             <li key={unit.id} className="px-3 py-2.5 text-sm font-medium">
               {unit.code}

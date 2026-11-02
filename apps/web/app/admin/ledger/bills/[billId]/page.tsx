@@ -145,7 +145,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
           <NotesList paper={paper} />
         </div>
         <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
-          <div className="space-y-3 rounded-2xl border bg-card p-3">
+          <div className="space-y-3 rounded-2xl border bg-card shadow-sm p-3">
             <div>
               <p className="font-mono text-base font-semibold">{paper.bill.number}</p>
               {paper.customer && (

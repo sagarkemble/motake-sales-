@@ -113,7 +113,10 @@ export function BillList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <form onSubmit={handleLookup} className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
+      <form
+        onSubmit={handleLookup}
+        className="flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-3"
+      >
         <p className="text-sm font-medium">{tx("admin.bills.lookupTitle")}</p>
         <div className="flex gap-2">
           <Input
@@ -135,7 +138,7 @@ export function BillList() {
         {lookupError && <p className="text-xs text-destructive">{lookupError}</p>}
       </form>
 
-      <div className="grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border bg-card shadow-sm p-3 sm:grid-cols-3 lg:grid-cols-5">
         <FilterField label={tx("admin.bills.numberSearch")} className="col-span-2 sm:col-span-1">
           <Input
             value={numberSearch}
@@ -278,7 +281,7 @@ function BillTable({ rows, onSelect }: { rows: BillListRow[]; onSelect: (id: str
   const formatDate = useFormatDate();
 
   return (
-    <div className="hidden overflow-hidden rounded-2xl border bg-card md:block">
+    <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
       <Table>
         <TableHeader>
           <TableRow>
@@ -327,7 +330,7 @@ function BillCard({ row, onSelect }: { row: BillListRow; onSelect: (id: string) 
     <button
       type="button"
       onClick={() => onSelect(row.id)}
-      className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3 text-left transition-colors hover:bg-accent"
+      className="flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-sm p-3 text-left transition-colors hover:bg-accent"
     >
       <div className="min-w-0">
         <BillNumber row={row} />

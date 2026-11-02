@@ -77,7 +77,7 @@ export default function AdminAccountPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-4">
-      <section className="flex flex-col items-center gap-3 rounded-2xl border bg-card p-4">
+      <section className="flex flex-col items-center gap-3 rounded-2xl border bg-card shadow-sm p-4">
         <Avatar className="size-24 ring-4 ring-brand/10">
           <AvatarImage src={signedInUser.avatarUrl ?? undefined} alt={tx("account.avatar.alt")} />
           <AvatarFallback className="bg-brand/10 text-2xl font-semibold text-brand">
@@ -97,7 +97,7 @@ export default function AdminAccountPage() {
         </Button>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+      <section className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4">
         <h2 className="text-base font-semibold">{tx("account.profile.title")}</h2>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="account-name">{tx("common.fields.name")}</Label>
