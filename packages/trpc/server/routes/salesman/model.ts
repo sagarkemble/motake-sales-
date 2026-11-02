@@ -1,8 +1,4 @@
 import { z } from "../../schema";
-export {
-  allowedAvatarImageContentTypes,
-  createAvatarUploadUrlInputSchema,
-} from "@repo/services/salesman";
 
 export const salesmanSchema = z.object({
   id: z.string(),
@@ -66,17 +62,6 @@ export const salesmanHistoryInputSchema = z.object({
   id: z.string().uuid(),
   from: z.string(),
   to: z.string(),
-});
-
-export const updateMyProfileInputSchema = z.object({
-  name: z.string().min(1).max(120).optional(),
-  avatarKey: z.string().optional(),
-});
-
-export const createAvatarUploadUrlOutputSchema = z.object({
-  uploadUrl: z.string(),
-  imageKey: z.string(),
-  imageUrl: z.string(),
 });
 
 export const salesmanDayWiseHistoryRowSchema = z.object({

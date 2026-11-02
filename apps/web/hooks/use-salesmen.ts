@@ -51,19 +51,6 @@ export function useSalesmen({
   const updateSalesmanAccountMutation = trpc.salesmen.update.useMutation({
     onSuccess: () => utils.salesmen.invalidate(),
   });
-  const updateMyProfileMutation = trpc.salesmen.updateMyProfile.useMutation({
-    onSuccess: () => {
-      utils.salesmen.invalidate();
-      utils.auth.me.invalidate();
-    },
-  });
-  const createAvatarUploadUrlMutation = trpc.salesmen.createAvatarUploadUrl.useMutation();
-  const deleteMyAvatarMutation = trpc.salesmen.deleteMyAvatar.useMutation({
-    onSuccess: () => {
-      utils.salesmen.invalidate();
-      utils.auth.me.invalidate();
-    },
-  });
 
   return {
     salesmenPage:
@@ -113,19 +100,5 @@ export function useSalesmen({
     updateSalesmanAccountAsync: updateSalesmanAccountMutation.mutateAsync,
     isUpdatingSalesmanAccount: updateSalesmanAccountMutation.isPending,
     updateSalesmanAccountError: updateSalesmanAccountMutation.error ?? null,
-
-    updateMyProfile: updateMyProfileMutation.mutate,
-    updateMyProfileAsync: updateMyProfileMutation.mutateAsync,
-    isUpdatingMyProfile: updateMyProfileMutation.isPending,
-    updateMyProfileError: updateMyProfileMutation.error ?? null,
-
-    createAvatarUploadUrlAsync: createAvatarUploadUrlMutation.mutateAsync,
-    isCreatingAvatarUploadUrl: createAvatarUploadUrlMutation.isPending,
-    createAvatarUploadUrlError: createAvatarUploadUrlMutation.error ?? null,
-
-    deleteMyAvatar: deleteMyAvatarMutation.mutate,
-    deleteMyAvatarAsync: deleteMyAvatarMutation.mutateAsync,
-    isDeletingMyAvatar: deleteMyAvatarMutation.isPending,
-    deleteMyAvatarError: deleteMyAvatarMutation.error ?? null,
   };
 }

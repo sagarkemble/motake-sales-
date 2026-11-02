@@ -13,24 +13,16 @@ import { db } from "@repo/database";
 import { businessDateOf } from "@repo/database/queries/shared/business-date";
 import type { DbExecutor } from "@repo/database/queries/shared/executor";
 import type { PaginatedResult } from "@repo/database/queries/shared/pagination";
-import type { SelectProfile, SelectSalesman } from "@repo/database/schema";
+import type { SelectSalesman } from "@repo/database/schema";
 
-import {
-  createProfileAvatarUploadUrl,
-  deleteProfileAvatar,
-  updateProfileNameAndAvatar,
-  type ProfileAvatarUploadUrlResult,
-} from "../shared/profile-avatar";
 import { nextSalesmanCode } from "./code";
 import {
   createSalesmanInputSchema,
   listSalesmenInputSchema,
   salesmanHistoryRangeInputSchema,
-  type CreateAvatarUploadUrlInput,
   type CreateSalesmanInput,
   type ListSalesmenInput,
   type SalesmanHistoryRangeInput,
-  type UpdateSalesmanProfileInput,
 } from "./model";
 
 class SalesmanService {
@@ -68,24 +60,6 @@ class SalesmanService {
     );
   }
 
-  public async updateSalesmanProfile(
-    salesmanId: string,
-    changes: UpdateSalesmanProfileInput,
-  ): Promise<SelectProfile | undefined> {
-    return updateProfileNameAndAvatar(salesmanId, changes);
-  }
-
-  public async deleteSalesmanAvatar(salesmanId: string): Promise<SelectProfile | undefined> {
-    return deleteProfileAvatar(salesmanId);
-  }
-
-  public async createAvatarUploadUrl(
-    salesmanId: string,
-    input: CreateAvatarUploadUrlInput,
-  ): Promise<ProfileAvatarUploadUrlResult> {
-    return createProfileAvatarUploadUrl(salesmanId, input);
-  }
-
   public async getDayWiseHistory(
     salesmanId: string,
     range: SalesmanHistoryRangeInput,
@@ -96,5 +70,3 @@ class SalesmanService {
 }
 
 export default SalesmanService;
-
-export { allowedAvatarImageContentTypes, createAvatarUploadUrlInputSchema } from "./model";
