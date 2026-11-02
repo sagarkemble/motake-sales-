@@ -110,103 +110,108 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{tx("checkout.payment.mode")}</Label>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={draft.mode}
-            disabled={disabled}
-            onValueChange={(value) => value && setMode(value as PaymentMode)}
-            className="w-full sm:w-fit"
-          >
-            {PAYMENT_MODES.map((mode) => (
-              <ToggleGroupItem
-                key={mode}
-                value={mode}
-                className="flex-1 px-4 data-[state=on]:bg-accent data-[state=on]:text-brand"
-              >
-                {tx(`checkout.payment.modes.${mode}`)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`${idPrefix}-received`} className="text-xs">
-            {tx("checkout.payment.received")}
-          </Label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              ₹
-            </span>
-            <Input
-              id={`${idPrefix}-received`}
-              inputMode="decimal"
-              value={draft.receivedText}
-              disabled={disabled}
-              onChange={(event) =>
-                update({ receivedText: cleanReceivedText(event.target.value), overpay: null })
-              }
-              placeholder="0"
-              className="h-11 rounded-xl pl-8 text-base tabular-nums"
-              aria-label={tx("checkout.payment.receivedA11y")}
-              aria-invalid={isAmountTooLarge(draft.receivedText)}
-            />
-          </div>
-          {isAmountTooLarge(draft.receivedText) && (
-            <p className="text-xs text-destructive">{tx("common.validation.amountTooLarge")}</p>
-          )}
-        </div>
-      </div>
-
-      {amountChips.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {amountChips.map((chip) => (
-            <Button
-              key={chip.key}
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={disabled}
-              className="h-7 rounded-full text-xs"
-              onClick={() => update({ receivedText: paiseToRupeeInput(chip.paise), overpay: null })}
-            >
-              {chip.label}
-            </Button>
-          ))}
-        </div>
-      )}
-
-      {draft.mode !== "cash" && (
-        <div className="flex flex-col gap-2">
-          {draft.mode === "upi" && <PaymentScannerButton />}
+      {/* What was received: mode, amount, quick amounts and the reference, in one card. */}
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`${idPrefix}-reference`} className="text-xs">
-              {tx(
-                draft.mode === "upi"
-                  ? "checkout.payment.referenceUpi"
-                  : "checkout.payment.referenceBank",
-              )}{" "}
-              <span className="text-muted-foreground">{tx("checkout.payment.optional")}</span>
-            </Label>
-            <Input
-              id={`${idPrefix}-reference`}
-              value={draft.reference}
-              maxLength={128}
+            <Label className="text-xs">{tx("checkout.payment.mode")}</Label>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={draft.mode}
               disabled={disabled}
-              onChange={(event) => update({ reference: event.target.value })}
-              placeholder={tx(
-                draft.mode === "upi"
-                  ? "checkout.payment.referenceUpiPlaceholder"
-                  : "checkout.payment.referenceBankPlaceholder",
-              )}
-              className="h-10 rounded-xl"
-            />
+              onValueChange={(value) => value && setMode(value as PaymentMode)}
+              className="w-full sm:w-fit"
+            >
+              {PAYMENT_MODES.map((mode) => (
+                <ToggleGroupItem
+                  key={mode}
+                  value={mode}
+                  className="flex-1 px-4 data-[state=on]:bg-accent data-[state=on]:text-brand"
+                >
+                  {tx(`checkout.payment.modes.${mode}`)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`${idPrefix}-received`} className="text-xs">
+              {tx("checkout.payment.received")}
+            </Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                ₹
+              </span>
+              <Input
+                id={`${idPrefix}-received`}
+                inputMode="decimal"
+                value={draft.receivedText}
+                disabled={disabled}
+                onChange={(event) =>
+                  update({ receivedText: cleanReceivedText(event.target.value), overpay: null })
+                }
+                placeholder="0"
+                className="h-11 rounded-xl pl-8 text-base tabular-nums"
+                aria-label={tx("checkout.payment.receivedA11y")}
+                aria-invalid={isAmountTooLarge(draft.receivedText)}
+              />
+            </div>
+            {isAmountTooLarge(draft.receivedText) && (
+              <p className="text-xs text-destructive">{tx("common.validation.amountTooLarge")}</p>
+            )}
           </div>
         </div>
-      )}
+
+        {amountChips.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {amountChips.map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={disabled}
+                className="h-7 rounded-full text-xs"
+                onClick={() =>
+                  update({ receivedText: paiseToRupeeInput(chip.paise), overpay: null })
+                }
+              >
+                {chip.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {draft.mode !== "cash" && (
+          <div className="flex flex-col gap-2">
+            {draft.mode === "upi" && <PaymentScannerButton />}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${idPrefix}-reference`} className="text-xs">
+                {tx(
+                  draft.mode === "upi"
+                    ? "checkout.payment.referenceUpi"
+                    : "checkout.payment.referenceBank",
+                )}{" "}
+                <span className="text-muted-foreground">{tx("checkout.payment.optional")}</span>
+              </Label>
+              <Input
+                id={`${idPrefix}-reference`}
+                value={draft.reference}
+                maxLength={128}
+                disabled={disabled}
+                onChange={(event) => update({ reference: event.target.value })}
+                placeholder={tx(
+                  draft.mode === "upi"
+                    ? "checkout.payment.referenceUpiPlaceholder"
+                    : "checkout.payment.referenceBankPlaceholder",
+                )}
+                className="h-10 rounded-xl"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {draft.mode !== "cash" && extraPaise > 0 && (
         <Alert className="border-brand/20 bg-brand-faint">
@@ -283,7 +288,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
         </div>
       )}
 
-      <div className="rounded-xl border text-sm">
+      <div className="overflow-hidden rounded-xl border bg-card text-sm shadow-sm">
         {previewRows.map((row) => (
           <div key={row.key} className="flex justify-between border-b px-3 py-1.5">
             <span className="text-muted-foreground">
