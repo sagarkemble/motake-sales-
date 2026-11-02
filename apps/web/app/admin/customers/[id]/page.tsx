@@ -164,7 +164,7 @@ export default function CustomerDetailPage() {
         {movedToRouteMessage && (
           <p
             role="status"
-            className="flex items-start gap-2 rounded-xl border border-brand/30 bg-brand/10 p-3 text-sm"
+            className="flex items-start gap-2 rounded-xl border border-brand/30 bg-brand-soft p-3 text-sm"
           >
             <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-brand" />
             {movedToRouteMessage}
@@ -213,7 +213,7 @@ export default function CustomerDetailPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-full border-brand text-brand hover:bg-brand/10"
+                className="rounded-full border-brand text-brand hover:bg-brand-soft"
                 disabled={isReactivatingCustomer}
                 onClick={handleReactivate}
               >
@@ -225,7 +225,7 @@ export default function CustomerDetailPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+                className="rounded-full border-destructive text-destructive hover:bg-destructive-soft"
                 onClick={() => setIsDeactivateOpen(true)}
               >
                 {tx("admin.customers.deactivate")}

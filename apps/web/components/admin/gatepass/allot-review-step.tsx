@@ -70,7 +70,7 @@ export function AllotReviewStep({
       {refusal && (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm"
+          className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive-soft p-3 text-sm"
         >
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>{refusal}</span>

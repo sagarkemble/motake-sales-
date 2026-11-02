@@ -129,7 +129,7 @@ export default function EditProductPage() {
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="rounded-full border-destructive text-destructive hover:bg-destructive-soft hover:text-destructive"
               disabled={isDeactivatingProduct || Boolean(product.deletedAt)}
               onClick={() => setIsDeactivateConfirmOpen(true)}
             >
@@ -139,7 +139,7 @@ export default function EditProductPage() {
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full border-brand text-brand hover:bg-brand/10"
+              className="rounded-full border-brand text-brand hover:bg-brand-soft"
               disabled={isReactivatingProduct || Boolean(product.deletedAt)}
               onClick={handleReactivate}
             >
@@ -149,7 +149,7 @@ export default function EditProductPage() {
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+            className="rounded-full border-destructive text-destructive hover:bg-destructive-soft"
             disabled={isDeletingProduct || Boolean(product.deletedAt)}
             onClick={() => setIsDeleteConfirmOpen(true)}
           >

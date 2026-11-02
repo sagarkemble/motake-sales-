@@ -41,7 +41,7 @@ export function RefusalAlert({
   return (
     <Alert
       variant="destructive"
-      className={cn("border-destructive/30 bg-destructive/5", className)}
+      className={cn("border-destructive/30 bg-destructive-faint", className)}
     >
       <AlertTriangleIcon />
       <AlertTitle className="line-clamp-none">{tx(`${key}.title`)}</AlertTitle>

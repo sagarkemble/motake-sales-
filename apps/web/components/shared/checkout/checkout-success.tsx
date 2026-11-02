@@ -198,7 +198,7 @@ export function CheckoutSuccess({
       {whatsapp && messages && <CheckoutWhatsapp shopName={input.shopName} {...messages} />}
 
       {returnedChange && (
-        <Alert className="max-w-sm border-amber-500/40 bg-amber-500/5 text-left">
+        <Alert className="max-w-sm border-amber-500/40 bg-amber-faint text-left">
           <AlertTriangleIcon className="text-amber-700" />
           <AlertTitle className="line-clamp-none">
             {tx("checkout.success.returnedChanged", {

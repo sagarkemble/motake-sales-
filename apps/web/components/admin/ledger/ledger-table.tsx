@@ -44,7 +44,7 @@ function isAddedRow(row: LedgerRow, added: MoneyAdded | null | undefined) {
   return false;
 }
 
-const HIGHLIGHT = "bg-brand/5";
+const HIGHLIGHT = "bg-brand-faint";
 
 /** The Ledger rows: a table from `md` up, one card per row on phones. */
 export function LedgerTable({

@@ -106,7 +106,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between rounded-2xl border bg-amber-500/5 p-4">
+      <div className="flex items-center justify-between rounded-2xl border bg-amber-faint p-4">
         <div>
           <p className="text-sm font-medium">{tx("admin.salesmen.verify.awaitingApproval")}</p>
           <p className="text-xs text-muted-foreground">
@@ -143,7 +143,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
           variant="outline"
           disabled={isVerifyingGatepass || isFlaggingGatepass}
           onClick={() => setIsFlagOpen(true)}
-          className="flex-1 rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="flex-1 rounded-full border-destructive text-destructive hover:bg-destructive-soft hover:text-destructive"
         >
           {tx("admin.salesmen.verify.flagCta")}
         </Button>

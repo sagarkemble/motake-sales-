@@ -181,7 +181,7 @@ export function ImageUpload({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="rounded-full border-destructive text-destructive hover:bg-destructive-soft hover:text-destructive"
             disabled={isBusy}
             onClick={handleDeleteClicked}
           >

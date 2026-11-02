@@ -60,7 +60,7 @@ export function NewCustomerFields({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 rounded-2xl border border-brand/30 bg-brand/5 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 rounded-2xl border border-brand/30 bg-brand-faint px-3 py-2 text-sm">
         <RouteIcon className="size-4 shrink-0 text-brand" />
         <span>{tx("salesman.checkout.customer.addedOnRoute", { route: routeName })}</span>
       </div>

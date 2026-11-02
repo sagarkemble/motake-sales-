@@ -157,7 +157,7 @@ export default function AdminDashboardPage() {
               icon={TriangleAlertIcon}
               className={
                 (todayKpiSummary?.gatepassTotals.discrepancyGatepassCount ?? 0) > 0
-                  ? "border-destructive/40 bg-destructive/5"
+                  ? "border-destructive/40 bg-destructive-faint"
                   : undefined
               }
             />

@@ -50,7 +50,7 @@ export function PaymentScannerButton() {
       <Button
         type="button"
         variant="outline"
-        className="h-12 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:bg-accent/70"
+        className="h-12 w-full gap-3 rounded-2xl border-brand/30 bg-accent text-base font-semibold text-brand-deep hover:bg-accent-deep"
         onClick={() => setIsScannerOpen(true)}
       >
         <QrCodeIcon className="size-5" />

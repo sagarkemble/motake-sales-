@@ -161,7 +161,7 @@ export function HandoverDialog({ open, onOpenChange, gatepassId, lines }: Handov
                         </div>
 
                         {short > 0 && (
-                          <div className="mt-2 flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-2.5">
+                          <div className="mt-2 flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-faint p-2.5">
                             <p className="text-xs font-medium text-amber-700">
                               {tx("salesman.handover.shortWhy", { short, left: line.sellableQty })}
                             </p>

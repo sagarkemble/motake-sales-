@@ -38,6 +38,15 @@
      background showing through when they sit on the page. */
   --color-muted-faint: color-mix(in oklab, var(--muted) 25%, var(--card));
   --color-muted-soft: color-mix(in oklab, var(--muted) 40%, var(--card));
+  /* The same for the brand, destructive and amber tints of notices, notes and hovers: faint = 5%,
+     soft = 10%, deep = 18% over a card. Solid, so they don't turn see-through on the page. */
+  --color-brand-faint: color-mix(in oklab, var(--brand) 5%, var(--card));
+  --color-brand-soft: color-mix(in oklab, var(--brand) 10%, var(--card));
+  --color-accent-deep: color-mix(in oklab, var(--brand) 18%, var(--card));
+  --color-destructive-faint: color-mix(in oklab, var(--destructive) 5%, var(--card));
+  --color-destructive-soft: color-mix(in oklab, var(--destructive) 10%, var(--card));
+  --color-amber-faint: color-mix(in oklab, oklch(76.9% 0.188 70.08) 5%, var(--card));
+  --color-amber-soft: color-mix(in oklab, oklch(76.9% 0.188 70.08) 10%, var(--card));
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);

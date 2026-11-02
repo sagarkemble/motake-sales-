@@ -513,7 +513,7 @@ function BankDetailsDialog({ open, onOpenChange, seller }: DocumentDialogProps) 
           </div>
 
           {isPartlyFilled && (
-            <div className="flex gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs">
+            <div className="flex gap-2 rounded-xl bg-amber-soft px-3 py-2 text-xs">
               <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
               <p>
                 {tx("admin.settings.documents.bankPartial", {

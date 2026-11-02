@@ -209,7 +209,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
       )}
 
       {draft.mode !== "cash" && extraPaise > 0 && (
-        <Alert className="border-brand/20 bg-brand/5">
+        <Alert className="border-brand/20 bg-brand-faint">
           <InfoIcon className="text-brand" />
           <AlertDescription className="text-foreground">
             {tx("checkout.payment.extraKeptAsAdvance", {
@@ -224,7 +224,7 @@ export function PaymentBlock({ context, draft, onChange, disabled = false }: Pay
         <div
           className={cn(
             "flex flex-col gap-2 rounded-2xl border p-3",
-            preview.needsOverpayChoice ? "border-amber-500/50 bg-amber-500/5" : "border-border",
+            preview.needsOverpayChoice ? "border-amber-500/50 bg-amber-faint" : "border-border",
           )}
         >
           <p className="text-sm font-medium">

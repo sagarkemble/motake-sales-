@@ -173,7 +173,7 @@ export function CorrectPanel({
               </dd>
             </dl>
             {correctPreview.billHasNotes && (
-              <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
+              <p className="rounded-lg bg-amber-soft px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
                 {tx("admin.ledger.paper.preview.notesWarning")}
               </p>
             )}
@@ -447,7 +447,7 @@ export function RaiseNoteForm({
               )}
             </p>
             {raiseNotePreview.billHasNotes && (
-              <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
+              <p className="rounded-lg bg-amber-soft px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
                 {tx("admin.ledger.paper.preview.notesWarning")}
               </p>
             )}

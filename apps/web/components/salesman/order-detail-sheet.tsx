@@ -113,7 +113,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
               {isOrderDetailLoading ? (
                 <CardDetailSkeleton />
               ) : !orderDetail ? (
-                <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+                <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
                   <AlertTriangleIcon />
                   <AlertTitle className="line-clamp-none">
                     {tx("salesman.orders.sheet.loadFailed")}
@@ -162,7 +162,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     <div
                       className={cn(
                         "rounded-2xl p-3",
-                        isCancelled ? "bg-destructive/5" : "bg-brand/5",
+                        isCancelled ? "bg-destructive-faint" : "bg-brand-faint",
                       )}
                     >
                       <div className="flex items-baseline justify-between gap-2">
@@ -355,7 +355,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                     ) : isOrderBillError || !orderBill ? (
                       <Alert
                         variant="destructive"
-                        className="border-destructive/30 bg-destructive/5"
+                        className="border-destructive/30 bg-destructive-faint"
                       >
                         <AlertTriangleIcon />
                         <AlertTitle className="line-clamp-none">

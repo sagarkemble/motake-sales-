@@ -159,7 +159,7 @@ function ProductsPageContent() {
                   size="sm"
                   variant="outline"
                   disabled={Boolean(product.deletedAt)}
-                  className="w-full rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+                  className="w-full rounded-full border-brand text-brand hover:bg-brand-soft hover:text-brand"
                 >
                   {product.deletedAt ? (
                     tx("admin.products.edit")

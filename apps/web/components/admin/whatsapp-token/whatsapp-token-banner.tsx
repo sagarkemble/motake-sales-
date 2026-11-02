@@ -45,7 +45,7 @@ function Banner({
   const tx = useTranslate();
   const copy = useBannerCopy(pausedReason, heldCount);
   return (
-    <div role="alert" className="border-b border-destructive/30 bg-destructive/10">
+    <div role="alert" className="border-b border-destructive/30 bg-destructive-soft">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex min-w-0 gap-3">
           <MessageCircleOffIcon className="mt-0.5 size-5 shrink-0 text-destructive" />

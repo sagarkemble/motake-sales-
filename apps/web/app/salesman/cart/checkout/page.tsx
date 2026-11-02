@@ -106,7 +106,7 @@ export default function SalesmanCheckoutPage() {
   const content = (
     <>
       {wizard.isOutcomeUnknown && (
-        <Alert className="border-amber-500/40 bg-amber-500/5">
+        <Alert className="border-amber-500/40 bg-amber-faint">
           <AlertTriangleIcon className="text-amber-700" />
           <AlertTitle>{tx("salesman.checkout.outcomeUnknown.title")}</AlertTitle>
           <AlertDescription className="flex flex-col items-start gap-2">

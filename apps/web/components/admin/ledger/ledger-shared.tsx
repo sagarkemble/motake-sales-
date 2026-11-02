@@ -154,7 +154,7 @@ export function LedgerBackHeader({
         paperLabel && (
           <Badge
             variant="outline"
-            className="shrink-0 border-transparent bg-brand/10 text-[11px] font-bold uppercase tracking-wide text-brand"
+            className="shrink-0 border-transparent bg-brand-soft text-[11px] font-bold uppercase tracking-wide text-brand"
           >
             {paperLabel}
           </Badge>

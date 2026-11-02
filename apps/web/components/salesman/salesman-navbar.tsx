@@ -136,7 +136,7 @@ export function SalesmanNavbar() {
                           key={quickAction.href}
                           href={quickAction.href}
                           onClick={closeDrawer}
-                          className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand/5"
+                          className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-brand/40 hover:bg-brand-faint"
                         >
                           <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                             <QuickActionIcon className="size-4" />
@@ -153,7 +153,7 @@ export function SalesmanNavbar() {
                     type="button"
                     variant="ghost"
                     onClick={handleLogout}
-                    className="h-auto w-full justify-start gap-3 rounded-md px-3 py-2 text-sm font-normal text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="h-auto w-full justify-start gap-3 rounded-md px-3 py-2 text-sm font-normal text-destructive hover:bg-destructive-soft hover:text-destructive"
                   >
                     <LogOutIcon className="size-4" />
                     {tx("common.actions.logout")}
