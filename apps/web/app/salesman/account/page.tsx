@@ -1,5 +1,7 @@
 "use client";
 
+import { LogOutIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useAuth } from "~/hooks/use-auth";
 import { useSalesmen } from "~/hooks/use-salesmen";
 import { useTranslate } from "~/hooks/use-translate";
 import { getErrorMessage } from "~/lib/get-error-message";
@@ -18,6 +21,8 @@ import { getNameInitials } from "~/lib/get-name-initials";
 
 export default function SalesmanAccountPage() {
   const tx = useTranslate();
+  const router = useRouter();
+  const { logoutAsync, isLoggingOut } = useAuth();
   const {
     mySalesmanProfile,
     isMySalesmanProfileLoading,
@@ -48,6 +53,15 @@ export default function SalesmanAccountPage() {
       toast.success(tx("account.profile.nameUpdated"));
     } catch (updateError) {
       toast.error(getErrorMessage(tx, updateError, tx("account.profile.nameSaveFailed")));
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logoutAsync();
+      router.replace("/login");
+    } catch (logoutError) {
+      toast.error(getErrorMessage(tx, logoutError, tx("common.errors.logoutFailed")));
     }
   }
 
@@ -153,6 +167,17 @@ export default function SalesmanAccountPage() {
       </div>
 
       <InstallAppButton />
+
+      <Button
+        type="button"
+        variant="outline"
+        disabled={isLoggingOut}
+        onClick={() => void handleLogout()}
+        className="h-11 rounded-full border-destructive/40 text-destructive hover:bg-destructive-soft hover:text-destructive"
+      >
+        <LogOutIcon className="size-4" />
+        {tx("common.actions.logout")}
+      </Button>
 
       <UpdateAvatarDialog
         open={isUpdateAvatarDialogOpen}
