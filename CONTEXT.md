@@ -159,7 +159,7 @@ The WhatsApp sent when Balance changed because of a Bill edit, Credit/Debit Note
 The dedicated WhatsApp when a Motake Bill is cancelled. Bill number, reason, reversed amount, new Balance. No cancelled Bill PDF.
 
 **Statutory Note message**:
-The WhatsApp of a GST Credit Note or GST Debit Note to a GSTIN Customer, with the Note PDF. A Commercial Credit Note is account update only. A Customer without GSTIN never gets this message.
+The WhatsApp of a GST Credit Note or GST Debit Note to a GSTIN Customer, with the Note PDF. A Commercial Credit Note, or any Note to a Customer without GSTIN, goes as the Note update instead, which carries the Note PDF too.
 
 ### Settings
 

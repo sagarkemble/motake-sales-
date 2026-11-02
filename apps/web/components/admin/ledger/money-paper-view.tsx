@@ -118,7 +118,11 @@ export function MoneyPaperView({
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <LedgerBackHeader customerId={paper.customer.id} shopName={paper.customer.shopName} />
+        <LedgerBackHeader
+          customerId={paper.customer.id}
+          shopName={paper.customer.shopName}
+          paperLabel={tx(`admin.ledger.rowTypes.${model.kind}`)}
+        />
         <span className="text-xs text-muted-foreground">
           {tx("admin.ledger.paper.balanceNow", { balance: balanceText(paper.balance) })}
         </span>
@@ -209,7 +213,11 @@ export function OpeningPaperView({
   const { customer } = summary;
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4">
-      <LedgerBackHeader customerId={customer.id} shopName={customer.shopName} />
+      <LedgerBackHeader
+        customerId={customer.id}
+        shopName={customer.shopName}
+        paperLabel={tx("admin.ledger.rowTypes.opening_balance")}
+      />
       {opening == null ? (
         <Alert>
           <InfoIcon />

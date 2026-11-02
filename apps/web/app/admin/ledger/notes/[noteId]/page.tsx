@@ -181,7 +181,11 @@ function NotePaperView({ paper }: { paper: NotePaper }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <LedgerBackHeader customerId={paper.customer?.id} shopName={paper.customer?.shopName} />
+        <LedgerBackHeader
+          customerId={paper.customer?.id}
+          shopName={paper.customer?.shopName}
+          paperLabel={tx(`admin.ledger.rowTypes.${paper.note.kind}`)}
+        />
         {paper.balance && (
           <span className="text-xs text-muted-foreground">
             {tx("admin.ledger.paper.balanceNow", { balance: balanceText(paper.balance) })}

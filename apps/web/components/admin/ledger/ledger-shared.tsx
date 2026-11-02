@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { BackHeader } from "~/components/admin/products/back-header";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -123,18 +124,21 @@ export const DUE_CHIP = {
 } as const;
 
 /**
- * A paper's page header: round Back to the saved Ledger URL (or `href`), and the shop name.
+ * A paper's page header: round Back to the saved Ledger URL (or `href`), the shop name, and a
+ * badge naming the paper (Tax Invoice, GST credit note, Payment, ...).
  * The saved Ledger URL is read after mount: it lives in this tab's session storage.
  */
 export function LedgerBackHeader({
   customerId,
   shopName,
   href: fixedHref,
+  paperLabel,
   actions,
 }: {
   customerId?: string;
   shopName?: string;
   href?: string;
+  paperLabel?: string;
   actions?: ReactNode;
 }) {
   const tx = useTranslate();
@@ -146,6 +150,16 @@ export function LedgerBackHeader({
     <BackHeader
       href={fixedHref ?? href}
       title={shopName ?? tx("admin.ledger.title")}
+      badge={
+        paperLabel && (
+          <Badge
+            variant="outline"
+            className="shrink-0 border-transparent bg-brand/10 text-[11px] font-bold uppercase tracking-wide text-brand"
+          >
+            {paperLabel}
+          </Badge>
+        )
+      }
       actions={actions}
     />
   );

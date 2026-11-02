@@ -13,18 +13,24 @@ const sql = readFileSync(
   "utf8",
 );
 const rowPattern =
-  /\('whatsapp', '([a-z0-9_]+)', '(en|mr|hi)', 1, '(\[[^']*\])'::jsonb, '(pdf|none)', true\)/g;
+  /\('whatsapp', '([a-z0-9_]+)', '(en|mr|hi)', (\d+), '(\[[^']*\])'::jsonb, '(pdf|none)', true\)/g;
 
 describe("notification-templates-v2.sql", () => {
   it("inserts every template in en, mr and hi with the code's value names, in order, and its document type", () => {
-    const rows = [...sql.matchAll(rowPattern)].map(
-      ([, templateId, language, values, documentType]) => ({
-        templateId,
-        language,
-        values: JSON.parse(values!) as string[],
-        documentType,
-      }),
-    );
+    // The highest version of each template and language is the one in use.
+    const latest = new Map<string, { version: number; row: Record<string, unknown> }>();
+    for (const [, templateId, language, version, values, documentType] of sql.matchAll(
+      rowPattern,
+    )) {
+      const key = `${templateId}|${language}`;
+      if ((latest.get(key)?.version ?? 0) < Number(version)) {
+        latest.set(key, {
+          version: Number(version),
+          row: { templateId, language, values: JSON.parse(values!) as string[], documentType },
+        });
+      }
+    }
+    const rows = [...latest.values()].map((entry) => entry.row);
 
     const expected = Object.values(customerMessageTemplates).flatMap((template) =>
       (["en", "mr"] as const).map((language) => ({
