@@ -42,21 +42,16 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "admin.nav.routes", href: "/admin/routes", icon: RouteIcon },
 ];
 
-// The day's two main jobs (`primary`) lead the Dashboard in brand green.
-export type AdminQuickAction = NavItem & { primary?: boolean };
-
-export const adminQuickActions: AdminQuickAction[] = [
+export const adminQuickActions: AdminNavItem[] = [
   {
     label: "admin.nav.quickAllotGatePass",
     href: "/admin/gatepass",
     icon: TicketIcon,
-    primary: true,
   },
   {
     label: "admin.nav.quickNewOrder",
     href: "/admin/orders/new",
     icon: ShoppingCartIcon,
-    primary: true,
   },
   { label: "admin.nav.quickNewCustomer", href: "/admin/customers/new", icon: StoreIcon },
   { label: "admin.nav.quickAddSalesman", href: "/admin/salesman/new", icon: UserPlusIcon },

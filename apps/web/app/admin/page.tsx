@@ -92,7 +92,6 @@ export default function AdminDashboardPage() {
               href={quickAction.href}
               label={quickAction.label}
               icon={quickAction.icon}
-              primary={quickAction.primary}
             />
           ))}
         </div>
