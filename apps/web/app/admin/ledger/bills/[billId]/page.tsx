@@ -124,7 +124,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
           <div className="lg:hidden">{whatsapp}</div>
           <LockNotice paper={paper} />
           {editing && (
-            <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+            <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
               {tx("admin.ledger.paper.editing", {
                 version: paper.bill.latestVersionNumber,
                 next: paper.bill.latestVersionNumber + 1,
@@ -174,7 +174,7 @@ function PaperView({ paper }: { paper: BillPaper }) {
                 </Button>
                 <Button
                   variant="outline"
-                  className="rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="rounded-full border-destructive text-destructive hover:bg-destructive-soft hover:text-destructive"
                   disabled={!paper.actions.canCancel}
                   title={offReason(paper, "cancel", tx)}
                   onClick={() => setSheet("cancel")}

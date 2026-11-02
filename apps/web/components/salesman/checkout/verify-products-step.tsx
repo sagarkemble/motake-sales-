@@ -55,7 +55,7 @@ export function VerifyProductsStep({
       {quoteRefusal ? (
         <RefusalAlert refusal={quoteRefusal} shopName="" />
       ) : hasQuoteError ? (
-        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
           <AlertTriangleIcon />
           <AlertTitle>{tx("salesman.checkout.cart.quoteFailed")}</AlertTitle>
           <AlertDescription>
@@ -71,7 +71,7 @@ export function VerifyProductsStep({
         </Alert>
       ) : (
         badLineCount > 0 && (
-          <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+          <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
             <AlertTriangleIcon />
             <AlertTitle>
               {tx("salesman.checkout.cart.badLinesTitle", { count: badLineCount })}

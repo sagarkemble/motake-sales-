@@ -105,7 +105,7 @@ export function NumberSeriesTab({
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+            className="rounded-full border-brand text-brand hover:bg-brand-soft hover:text-brand"
             disabled={missingCount === 0 || isPreparingYear}
             onClick={() => void handlePrepareYear()}
           >

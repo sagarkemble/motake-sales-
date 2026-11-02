@@ -36,7 +36,7 @@ export function CancelPreOrderButton({
       size={size}
       variant="outline"
       className={cn(
-        "rounded-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive",
+        "rounded-full border-destructive text-destructive hover:bg-destructive-soft hover:text-destructive",
         className,
       )}
       onClick={(event) => {

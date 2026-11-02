@@ -110,7 +110,7 @@ export function SellerSettingsTab() {
   if (!seller) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex gap-3 rounded-2xl bg-amber-500/10 p-3 text-sm">
+        <div className="flex gap-3 rounded-2xl bg-amber-soft p-3 text-sm">
           <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <div>
             <p className="font-medium">{tx("admin.settings.seller.notSetUpTitle")}</p>

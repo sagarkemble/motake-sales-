@@ -53,7 +53,7 @@ export function PaymentStep({
           onAction={() => onQuoteRefusalAction(quoteRefusal)}
         />
       ) : hasQuoteError ? (
-        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
           <AlertTriangleIcon />
           <AlertTitle className="line-clamp-none">{tx("checkout.payment.loadFailed")}</AlertTitle>
           <AlertDescription>

@@ -195,7 +195,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
               <Button
                 type="button"
                 variant="outline"
-                className="mt-5 h-auto min-h-11 max-w-36 rounded-full border-destructive px-4 leading-tight text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-full sm:max-w-none sm:px-3"
+                className="mt-5 h-auto min-h-11 max-w-36 rounded-full border-destructive px-4 leading-tight text-destructive hover:bg-destructive-soft hover:text-destructive sm:w-full sm:max-w-none sm:px-3"
                 disabled={isHidingRoute}
                 onClick={() => setIsConfirmOpen(true)}
               >

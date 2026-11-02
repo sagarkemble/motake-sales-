@@ -173,7 +173,7 @@ export function NotesList({ paper }: { paper: BillPaper }) {
         <li
           key={note.id}
           id={`note-${note.id}`}
-          className="flex scroll-mt-20 flex-col gap-2 p-3 target:bg-brand/5 sm:flex-row sm:items-center sm:justify-between"
+          className="flex scroll-mt-20 flex-col gap-2 p-3 target:bg-brand-faint sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0 text-sm">
             <Link

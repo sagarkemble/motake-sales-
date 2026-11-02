@@ -21,7 +21,7 @@ export function NoActiveGatepassNotice({
   const tx = useTranslate();
 
   return (
-    <Alert role="status" className="border-amber-500/40 bg-amber-500/5">
+    <Alert role="status" className="border-amber-500/40 bg-amber-faint">
       <TicketXIcon className="text-amber-700" />
       <AlertTitle className="line-clamp-none">
         {tx("salesman.checkout.noActiveGatepass.title")}

@@ -16,7 +16,7 @@ export function InstallAppButton() {
 
   if (isIos) {
     return (
-      <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
+      <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand-faint p-3 text-xs">
         <Share className="mt-0.5 size-4 shrink-0 text-brand" />
         <span className="text-foreground">{tx("common.install.hint")}</span>
       </div>

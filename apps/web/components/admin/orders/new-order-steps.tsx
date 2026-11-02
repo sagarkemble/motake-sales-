@@ -299,7 +299,7 @@ function ItemList({ order }: { order: OfficeOrder }) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="shrink-0 rounded-full border-brand text-brand hover:bg-brand/10 hover:text-brand"
+                    className="shrink-0 rounded-full border-brand text-brand hover:bg-brand-soft hover:text-brand"
                     disabled={order.isPlacing}
                     onClick={() => order.setQty(row.sku, 1)}
                   >
@@ -407,7 +407,7 @@ export function CheckoutStep({ order }: { order: OfficeOrder }) {
   return (
     <section className="flex flex-col gap-4">
       {badLines.length > 0 && (
-        <ul className="flex flex-col gap-1 rounded-2xl bg-destructive/10 p-3 text-xs text-destructive">
+        <ul className="flex flex-col gap-1 rounded-2xl bg-destructive-soft p-3 text-xs text-destructive">
           {badLines.map((line) => (
             <li key={line.sku}>
               {nameBySku.get(line.sku) ?? line.sku}: {tx(`admin.orders.new.badLine.${line.reason}`)}

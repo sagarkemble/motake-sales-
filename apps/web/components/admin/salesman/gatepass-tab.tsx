@@ -208,7 +208,7 @@ export function GatepassLinesTable({ rows, handedOver }: GatepassLinesTableProps
               return (
                 <TableRow
                   key={`${item.varietyId}-${index}`}
-                  className={short > 0 ? "bg-amber-500/5" : undefined}
+                  className={short > 0 ? "bg-amber-faint" : undefined}
                 >
                   <TableCell className="font-medium">{item.productName}</TableCell>
                   <TableCell className="text-muted-foreground">{item.varietyName}</TableCell>
@@ -261,7 +261,7 @@ export function GatepassLinesTable({ rows, handedOver }: GatepassLinesTableProps
               key={`${item.varietyId}-${index}`}
               className={cn(
                 "flex flex-col gap-2 rounded-xl border bg-card p-3",
-                short > 0 && "border-amber-500/30 bg-amber-500/5",
+                short > 0 && "border-amber-500/30 bg-amber-faint",
               )}
             >
               <p className="text-sm font-medium">

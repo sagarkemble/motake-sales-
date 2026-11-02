@@ -11,7 +11,7 @@ export function QuickActionLink({ href, label, icon: Icon }: QuickActionLinkProp
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-2xl border bg-card p-3.5 transition-colors hover:border-brand/40 hover:bg-brand/5"
+      className="group flex items-center gap-3 rounded-2xl border bg-card p-3.5 transition-colors hover:border-brand/40 hover:bg-brand-faint"
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand transition-colors group-hover:bg-brand group-hover:text-brand-foreground">
         <Icon className="size-5" />

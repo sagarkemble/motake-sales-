@@ -41,7 +41,7 @@ export function BillPaper({ bill, onOpenOrder }: BillPaperProps) {
   return (
     <div className="flex flex-col gap-4">
       {bill.cancelled && (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
           {tx("admin.bills.cancelledNotice", { number: bill.number })}
         </p>
       )}

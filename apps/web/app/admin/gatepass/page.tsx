@@ -285,7 +285,7 @@ function GatepassPageContent() {
                   onSelectSalesman={setSelectedSalesmanId}
                 />
                 {selectedSalesmanHasActiveGatepass && (
-                  <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
+                  <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber-600">
                     {tx("admin.gatepass.allot.activeBlocks")}
                   </p>
                 )}

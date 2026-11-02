@@ -124,7 +124,7 @@ export function RoutePreordersSection() {
   return (
     <section className="flex flex-col gap-3">
       {overdue.length > 0 && (
-        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
           <AlertTriangleIcon />
           <AlertTitle className="line-clamp-none">
             {tx("salesman.orders.route.overdueAlert", { count: overdue.length })}
@@ -145,13 +145,13 @@ export function RoutePreordersSection() {
       {isDuePreordersLoading || (isReloading && isDuePreordersFetching) ? (
         <ListItemSkeleton count={2} />
       ) : noActiveGatepass ? (
-        <Alert className="border-amber-500/40 bg-amber-500/5">
+        <Alert className="border-amber-500/40 bg-amber-faint">
           <TicketXIcon className="text-amber-700" />
           <AlertTitle>{tx("salesman.checkout.noActiveGatepass.title")}</AlertTitle>
           <AlertDescription>{tx("salesman.orders.route.noGatepass")}</AlertDescription>
         </Alert>
       ) : duePreordersError ? (
-        <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive-faint">
           <AlertTriangleIcon />
           <AlertTitle className="line-clamp-none">
             {tx("salesman.orders.route.loadFailed")}

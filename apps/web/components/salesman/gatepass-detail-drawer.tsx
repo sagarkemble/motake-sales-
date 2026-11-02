@@ -101,7 +101,10 @@ export function GatepassDetailDrawer({
                 </div>
 
                 {myGatepass.gatepass.hasDiscrepancy && (
-                  <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+                  <Alert
+                    variant="destructive"
+                    className="border-destructive/30 bg-destructive-faint"
+                  >
                     <TriangleAlertIcon />
                     <AlertTitle className="line-clamp-none">
                       {tx("salesman.gatepass.flaggedBy", {
@@ -135,7 +138,7 @@ export function GatepassDetailDrawer({
                       return (
                         <div
                           key={item.id}
-                          className={cn("px-3 py-3 text-sm", short > 0 && "bg-amber-500/5")}
+                          className={cn("px-3 py-3 text-sm", short > 0 && "bg-amber-faint")}
                         >
                           <div className="grid grid-cols-6 gap-2 tabular-nums">
                             <div className="col-span-2 min-w-0">
@@ -177,7 +180,7 @@ export function GatepassDetailDrawer({
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand/5 p-3 text-xs">
+                <div className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand-faint p-3 text-xs">
                   <InfoIcon className="mt-0.5 size-4 shrink-0 text-brand" />
                   <p className="text-foreground">{tx("salesman.gatepass.hint.soldOrdersOnly")}</p>
                 </div>

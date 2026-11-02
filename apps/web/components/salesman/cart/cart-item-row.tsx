@@ -30,7 +30,7 @@ export function CartItemRow({
     <div
       className={cn(
         "flex flex-col gap-2 rounded-2xl border bg-card p-3",
-        tone === "bad" && "border-destructive/50 bg-destructive/5",
+        tone === "bad" && "border-destructive/50 bg-destructive-faint",
         tone === "short" && "border-amber-500/50",
       )}
     >
