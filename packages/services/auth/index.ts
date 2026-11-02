@@ -13,7 +13,14 @@ import { supabaseAdminClient } from "../clients/supabase-admin";
 import { env } from "../env";
 import { runInTransaction } from "@repo/database/queries/shared/executor";
 
-import { badRequest, internalError, notFound, screenRefusal, unauthorized } from "../errors";
+import {
+  badRequest,
+  forbidden,
+  internalError,
+  notFound,
+  screenRefusal,
+  unauthorized,
+} from "../errors";
 import GatepassService from "../gatepass";
 import SalesmanService from "../salesman";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
@@ -61,6 +68,12 @@ export async function deletedEmailFor(email: string): Promise<string> {
     candidate = `delete+${copy}+${email}`;
   }
   return candidate;
+}
+
+// A salesman's photo, name and phone are the Admin's to change; the salesman only reads them.
+async function assertNotSalesman(profileId: string): Promise<void> {
+  const profile = await getProfileById(profileId);
+  if (profile?.role === "salesman") throw forbidden("Only your admin can change your details");
 }
 
 class AuthService {
@@ -196,6 +209,7 @@ class AuthService {
     if (!authenticatedUser.phone || !authenticatedUser.phoneConfirmedAt) {
       throw badRequest("Phone number was not verified by provider");
     }
+    await assertNotSalesman(authenticatedUser.id);
 
     const updatedProfile = await updateProfile(authenticatedUser.id, {
       phone: authenticatedUser.phone,
@@ -275,10 +289,12 @@ class AuthService {
     profileId: string,
     changes: UpdateMyProfileInput,
   ): Promise<SelectProfile | undefined> {
+    await assertNotSalesman(profileId);
     return updateProfileNameAndAvatar(profileId, changes);
   }
 
   public async deleteMyAvatar(profileId: string): Promise<SelectProfile | undefined> {
+    await assertNotSalesman(profileId);
     return deleteProfileAvatar(profileId);
   }
 
@@ -286,6 +302,7 @@ class AuthService {
     profileId: string,
     input: CreateAvatarUploadUrlInput,
   ): Promise<ProfileAvatarUploadUrlResult> {
+    await assertNotSalesman(profileId);
     return createProfileAvatarUploadUrl(profileId, input);
   }
 

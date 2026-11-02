@@ -73,7 +73,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div className="flex flex-col items-center gap-2 rounded-2xl border bg-card p-4">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border bg-card shadow-sm p-4">
           <p className="text-sm font-medium">{tx("admin.salesmen.form.photoOptional")}</p>
           <ImageUpload
             imageUrl={form.watch("avatarUrl") || null}
@@ -93,7 +93,7 @@ export function SalesmanForm({ isSubmitting, submitLabel, onSubmit }: SalesmanFo
           />
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4">
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card shadow-sm p-4">
           <FormField
             control={form.control}
             name="name"

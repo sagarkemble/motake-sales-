@@ -52,7 +52,7 @@ function NewOrderContent() {
     const preOrderId = result.kind === "preorder" ? result.result.orderId : null;
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-4 py-4">
-        <div className="w-full rounded-2xl border bg-card p-4">
+        <div className="w-full rounded-2xl border bg-card shadow-sm p-4">
           <CheckoutSuccess
             input={result}
             actions={[
@@ -161,7 +161,7 @@ function NewOrderContent() {
           onStepClick={(stepNumber) => setStep(stepNumber - 1)}
         />
         <CheckoutViewMobile {...viewProps}>
-          <div className="rounded-2xl border bg-card p-4">{content}</div>
+          <div className="rounded-2xl border bg-card shadow-sm p-4">{content}</div>
         </CheckoutViewMobile>
       </div>
       <div className="hidden md:block">

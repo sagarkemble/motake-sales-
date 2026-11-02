@@ -133,7 +133,7 @@ function SalesmanPageContent() {
                   event.preventDefault();
                   router.push(`/admin/salesman/${salesman.id}`);
                 }}
-                className={`flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3.5 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+                className={`flex cursor-pointer items-center gap-3 rounded-2xl border bg-card shadow-sm p-3.5 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
                   profile.deletedAt ? "opacity-60" : ""
                 }`}
               >

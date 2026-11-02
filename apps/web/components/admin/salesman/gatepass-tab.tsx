@@ -46,7 +46,7 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
     return (
       <div className="flex flex-col gap-4">
         <StatGridSkeleton count={4} />
-        <div className="rounded-2xl border bg-card p-2">
+        <div className="rounded-2xl border bg-card shadow-sm p-2">
           <TableRowsSkeleton rows={4} columns={7} />
         </div>
       </div>
@@ -65,7 +65,7 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between rounded-2xl border bg-card p-4">
+      <div className="flex items-center justify-between rounded-2xl border bg-card shadow-sm p-4">
         <div>
           <p className="text-sm font-medium">{tx("admin.salesmen.gatepass.todayTitle")}</p>
           <p className="text-xs text-muted-foreground">
@@ -114,7 +114,7 @@ export function GatepassTab({ salesmanId, isSalesmanDeleted = false }: GatepassT
 
       <GatepassQuantityKpis totals={totals} handedOver={handedOver} />
 
-      <div className="rounded-2xl border bg-card p-2">
+      <div className="rounded-2xl border bg-card shadow-sm p-2">
         {allocatedItems.length === 0 ? (
           <EmptyStateCard
             compact
@@ -156,7 +156,7 @@ export function GatepassQuantityKpis({ totals, handedOver }: GatepassQuantityKpi
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {stats.map((stat) => (
-        <div key={stat.label} className="rounded-2xl border bg-card p-4">
+        <div key={stat.label} className="rounded-2xl border bg-card shadow-sm p-4">
           <p className="text-xs text-muted-foreground">{tx(stat.label)}</p>
           <p
             className={cn(
@@ -260,7 +260,7 @@ export function GatepassLinesTable({ rows, handedOver }: GatepassLinesTableProps
             <div
               key={`${item.varietyId}-${index}`}
               className={cn(
-                "flex flex-col gap-2 rounded-xl border bg-card p-3",
+                "flex flex-col gap-2 rounded-xl border bg-card shadow-sm p-3",
                 short > 0 && "border-amber-500/30 bg-amber-faint",
               )}
             >

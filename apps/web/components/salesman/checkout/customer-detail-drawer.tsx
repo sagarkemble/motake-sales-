@@ -87,7 +87,7 @@ export function CustomerDetailDrawer({
                     />
                   </div>
                 </div>
-                <div className="divide-y rounded-2xl border bg-card">
+                <div className="divide-y rounded-2xl border bg-card shadow-sm">
                   {detailRows.map((row) => (
                     <div key={row.label} className="flex items-start gap-3 px-3 py-2.5">
                       <row.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

@@ -71,7 +71,10 @@ export function GatepassDayList({
             (gatepass) => gatepass.salesmanId === salesman.id,
           );
           return (
-            <div key={salesman.id} className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
+            <div
+              key={salesman.id}
+              className="flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-3"
+            >
               <p className="text-sm font-semibold">
                 <SalesmanNameLink salesmanId={salesman.id}>{salesman.name}</SalesmanNameLink>
               </p>
@@ -92,7 +95,7 @@ export function GatepassDayList({
                       key={gatepass.id}
                       type="button"
                       onClick={() => setOpenGatepassId(gatepass.id)}
-                      className="flex w-full flex-col gap-1.5 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
+                      className="flex w-full flex-col gap-1.5 rounded-2xl border bg-card shadow-sm p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
                     >
                       <div className="flex w-full items-start justify-between gap-2">
                         <p className="text-xs text-muted-foreground">
@@ -152,7 +155,7 @@ export function GatepassDayList({
                     totals={sumGatepassQuantities(linesOf(openGatepass.id))}
                     handedOver={isHandedOver(openGatepass.status)}
                   />
-                  <div className="rounded-2xl border bg-card p-2">
+                  <div className="rounded-2xl border bg-card shadow-sm p-2">
                     <GatepassLinesTable
                       rows={linesOf(openGatepass.id)}
                       handedOver={isHandedOver(openGatepass.status)}

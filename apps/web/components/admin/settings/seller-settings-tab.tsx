@@ -117,7 +117,7 @@ export function SellerSettingsTab() {
             <p className="text-muted-foreground">{tx("admin.settings.seller.notSetUpBody")}</p>
           </div>
         </div>
-        <section className="rounded-2xl border bg-card p-4">
+        <section className="rounded-2xl border bg-card shadow-sm p-4">
           <SellerForm
             mode="setup"
             defaultValues={sellerSetupDefaults ?? undefined}
@@ -131,7 +131,7 @@ export function SellerSettingsTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-2xl border bg-card p-4">
+      <section className="rounded-2xl border bg-card shadow-sm p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="font-medium">{tx("admin.settings.seller.title")}</h2>
           {!isEditing && (

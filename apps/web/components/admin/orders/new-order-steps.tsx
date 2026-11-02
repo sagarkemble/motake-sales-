@@ -40,7 +40,7 @@ export function PickedCustomer({ order, onChange }: { order: OfficeOrder; onChan
   const { summary } = order;
   if (!summary) return null;
   return (
-    <div className="flex items-start gap-3 rounded-2xl border bg-card p-3">
+    <div className="flex items-start gap-3 rounded-2xl border bg-card shadow-sm p-3">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
         <StoreIcon className="size-4" />
       </span>
@@ -131,7 +131,7 @@ function CustomerList({ order }: { order: OfficeOrder }) {
                   type="button"
                   onClick={() => order.setCustomerId(customer.id)}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent",
+                    "flex w-full items-start gap-3 rounded-xl border bg-card shadow-sm p-3 text-left transition-colors hover:bg-accent",
                     selected && "border-brand bg-accent",
                   )}
                 >
@@ -170,7 +170,7 @@ export function CustomerStep({ order }: { order: OfficeOrder }) {
       <CustomerList order={order} />
       {order.inactive && <InactiveBanner />}
       {order.openPreorders.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
+        <section className="flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-3">
           <div>
             <p className="text-sm font-medium">
               {tx("admin.orders.new.openPreorders", { count: order.openPreorders.length })}
@@ -230,7 +230,7 @@ function ItemList({ order }: { order: OfficeOrder }) {
     );
   }
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="relative border-b p-3">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -324,7 +324,7 @@ function AdvanceFields({ order }: { order: OfficeOrder }) {
   const balancePaise = order.summary?.footer.closing.balancePaise ?? 0;
   const advancePaise = order.advanceErrorKey ? 0 : order.advancePaise;
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-3">
       <div>
         <p className="text-sm font-semibold">{tx("admin.orders.new.advanceTitle")}</p>
         <p className="text-xs text-muted-foreground">{tx("admin.orders.new.advanceHint")}</p>
@@ -428,7 +428,7 @@ export function CheckoutStep({ order }: { order: OfficeOrder }) {
         <p className="text-sm font-semibold">
           {tx(isPreOrder ? "admin.orders.new.confirmPreOrder" : "admin.orders.new.billTitle")}
         </p>
-        <div className="flex flex-col divide-y rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y rounded-2xl border bg-card shadow-sm">
           {quote?.lines.map((line) => (
             <div
               key={line.sku}

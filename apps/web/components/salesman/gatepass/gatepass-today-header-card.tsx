@@ -32,7 +32,7 @@ export function GatepassTodayHeaderCard({
   const formatDate = useFormatDate();
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 text-base font-semibold">
           {tx("salesman.gatepass.todayTitle")} · {formatDate(parseISO(businessDate), "d MMM yyyy")}

@@ -8,15 +8,6 @@ export const createSalesmanInputSchema = z.object({
 });
 export type CreateSalesmanInput = z.infer<typeof createSalesmanInputSchema>;
 
-export {
-  updateProfileNameAndAvatarInputSchema as updateSalesmanProfileInputSchema,
-  createProfileAvatarUploadUrlInputSchema as createAvatarUploadUrlInputSchema,
-  allowedAvatarImageContentTypes,
-  maxAvatarImageContentLengthBytes,
-  type UpdateProfileNameAndAvatarInput as UpdateSalesmanProfileInput,
-  type CreateProfileAvatarUploadUrlInput as CreateAvatarUploadUrlInput,
-} from "../shared/profile-avatar";
-
 export const listSalesmenInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),

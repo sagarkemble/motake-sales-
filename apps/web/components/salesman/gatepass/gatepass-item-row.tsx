@@ -23,7 +23,7 @@ export function GatepassItemRow({ line, handedOver }: GatepassItemRowProps) {
   ];
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+    <div className="flex items-center gap-3 rounded-2xl border bg-card shadow-sm p-3">
       <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted-soft">
         <PackageIcon className="size-5 text-muted-foreground" />
       </div>

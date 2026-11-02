@@ -128,7 +128,7 @@ export function VerifyProductsStep({
       </div>
 
       {!quoteRefusal && !hasQuoteError && (
-        <div className="rounded-2xl border bg-card p-4">
+        <div className="rounded-2xl border bg-card shadow-sm p-4">
           <QuoteTotals totals={quote?.totals ?? null} isLoading={isQuoteLoading} />
         </div>
       )}

@@ -21,7 +21,7 @@ export function WhatsAppTokenSettingsCard() {
   const { status, isStatusLoading } = useWhatsAppToken();
 
   return (
-    <section className="rounded-2xl border bg-card p-4">
+    <section className="rounded-2xl border bg-card shadow-sm p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="font-medium">{tx("admin.whatsappToken.settingsCard.title")}</h2>
         <Button size="sm" variant="outline" className="rounded-full" onClick={() => setOpen(true)}>

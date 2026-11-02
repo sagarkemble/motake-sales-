@@ -37,7 +37,7 @@ export function CartViewDesktop({
       </div>
 
       <div className="col-span-1">
-        <div className="sticky top-20 flex flex-col gap-3 rounded-2xl border bg-card p-4">
+        <div className="sticky top-20 flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4">
           <p className="text-sm font-medium">{tx("salesman.cart.orderSummary")}</p>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{tx("salesman.checkout.success.totalItems")}</span>

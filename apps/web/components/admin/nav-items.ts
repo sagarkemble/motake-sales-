@@ -6,7 +6,9 @@ import {
   PackagePlusIcon,
   RouteIcon,
   ShoppingCart,
+  ShoppingCartIcon,
   Store,
+  StoreIcon,
   TicketIcon,
   Users,
   UserPlusIcon,
@@ -40,12 +42,25 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "admin.nav.routes", href: "/admin/routes", icon: RouteIcon },
 ];
 
-export const adminQuickActions: AdminNavItem[] = [
-  { label: "admin.nav.quickAllotGatePass", href: "/admin/gatepass", icon: TicketIcon },
-  { label: "admin.nav.quickAddProduct", href: "/admin/products/new", icon: PackagePlusIcon },
+// The day's two main jobs (`primary`) lead the Dashboard in brand green.
+export type AdminQuickAction = NavItem & { primary?: boolean };
+
+export const adminQuickActions: AdminQuickAction[] = [
+  {
+    label: "admin.nav.quickAllotGatePass",
+    href: "/admin/gatepass",
+    icon: TicketIcon,
+    primary: true,
+  },
+  {
+    label: "admin.nav.quickNewOrder",
+    href: "/admin/orders/new",
+    icon: ShoppingCartIcon,
+    primary: true,
+  },
+  { label: "admin.nav.quickNewCustomer", href: "/admin/customers/new", icon: StoreIcon },
   { label: "admin.nav.quickAddSalesman", href: "/admin/salesman/new", icon: UserPlusIcon },
-  { label: "admin.nav.quickViewCustomers", href: "/admin/customers", icon: Store },
-  { label: "admin.nav.quickViewOrders", href: "/admin/orders", icon: ShoppingCart },
+  { label: "admin.nav.quickAddProduct", href: "/admin/products/new", icon: PackagePlusIcon },
 ];
 
 export function isNavItemActive(itemHref: string, currentPathname: string) {

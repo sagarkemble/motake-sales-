@@ -194,7 +194,7 @@ function VarietyRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-xl border bg-card px-3 py-2",
+        "flex flex-wrap items-center gap-3 rounded-xl border bg-card shadow-sm px-3 py-2",
         isUnpriced && "border-dashed bg-muted-faint",
       )}
     >

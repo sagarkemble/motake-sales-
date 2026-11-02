@@ -34,7 +34,7 @@ export function VerificationWaitingPanel() {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-card p-4 sm:p-5">
+    <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-card shadow-sm p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ClipboardCheckIcon className="size-4 text-amber-700" />
@@ -50,7 +50,7 @@ export function VerificationWaitingPanel() {
           <Link
             key={gatepass.id}
             href={`/admin/salesman/${gatepass.salesmanId}?tab=verification`}
-            className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="flex items-center justify-between gap-3 rounded-xl border bg-card shadow-sm p-3 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <div className="flex min-w-0 flex-col gap-1">
               <p className="truncate text-sm font-medium">{nameOf(gatepass.salesmanId)}</p>

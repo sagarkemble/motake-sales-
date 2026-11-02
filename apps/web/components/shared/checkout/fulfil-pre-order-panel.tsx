@@ -65,7 +65,7 @@ export function LockedLines({ state, shopName, scheduledDate, placedAt }: Locked
         </span>
         {state.quote.balance && <BalanceChip balancePaise={state.quote.balance.balancePaise} />}
       </div>
-      <div className="flex flex-col divide-y rounded-2xl border bg-card">
+      <div className="flex flex-col divide-y rounded-2xl border bg-card shadow-sm">
         {state.quote.lines.map((line) => (
           <div key={line.sku} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
             <div className="min-w-0">

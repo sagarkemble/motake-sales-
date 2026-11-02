@@ -78,7 +78,7 @@ export function OrderTypeStep({
         <Label
           htmlFor={`${idPrefix}-order-type-book-now`}
           className={cn(
-            "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
+            "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal shadow-sm",
             orderType === "book_now" ? "border-brand bg-accent" : "bg-card",
             !isBookNowAllowed && "opacity-70",
           )}
@@ -117,7 +117,7 @@ export function OrderTypeStep({
         <Label
           htmlFor={`${idPrefix}-order-type-pre-order`}
           className={cn(
-            "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal",
+            "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-normal shadow-sm",
             orderType === "pre_order" ? "border-brand bg-accent" : "bg-card",
           )}
         >
@@ -166,7 +166,7 @@ export function OrderTypeStep({
       )}
 
       {orderType === "pre_order" && datePicker === "inline" && (
-        <div className="flex flex-col items-center gap-1 rounded-2xl border bg-card p-2">
+        <div className="flex flex-col items-center gap-1 rounded-2xl border bg-card shadow-sm p-2">
           <p className="self-start px-2 pt-1 text-xs font-medium">
             {tx("salesman.checkout.orderType.deliveryDate")}
           </p>

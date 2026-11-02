@@ -8,10 +8,8 @@ import {
   RotateCcwIcon,
   ShoppingCartIcon,
   TicketIcon,
-  TriangleAlertIcon,
 } from "lucide-react";
 
-import { DiscrepancyPanel } from "~/components/admin/dashboard/discrepancy-panel";
 import { KpiCard } from "~/components/admin/dashboard/kpi-card";
 import { OrderHistoryPanel } from "~/components/admin/dashboard/order-history-panel";
 import { VerificationWaitingPanel } from "~/components/admin/dashboard/verification-waiting-panel";
@@ -83,6 +81,23 @@ export default function AdminDashboardPage() {
         <p className="text-sm text-muted-foreground">{tx("admin.dashboard.subtitle")}</p>
       </section>
 
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {tx("common.nav.quickActions")}
+        </h2>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+          {adminQuickActions.map((quickAction) => (
+            <QuickActionLink
+              key={quickAction.href}
+              href={quickAction.href}
+              label={quickAction.label}
+              icon={quickAction.icon}
+              primary={quickAction.primary}
+            />
+          ))}
+        </div>
+      </section>
+
       <VerificationWaitingPanel />
 
       <section className="flex flex-col gap-3">
@@ -129,9 +144,9 @@ export default function AdminDashboardPage() {
         </h2>
         {isTodayKpiSummaryLoading ||
         (isReloading && (isTodayKpiSummaryFetching || isYesterdayKpiSummaryFetching)) ? (
-          <KpiGridSkeleton count={4} columnClassName="sm:grid-cols-4" />
+          <KpiGridSkeleton count={3} columnClassName="grid-cols-3" />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-3">
             <KpiCard
               label="admin.dashboard.kpi.issuedQty"
               value={todayKpiSummary?.gatepassTotals.totalIssuedQty ?? 0}
@@ -150,39 +165,8 @@ export default function AdminDashboardPage() {
               previousValue={yesterdayKpiSummary?.gatepassTotals.totalReturnedQty}
               icon={RotateCcwIcon}
             />
-            <KpiCard
-              label="admin.dashboard.kpi.discrepancies"
-              value={todayKpiSummary?.gatepassTotals.discrepancyGatepassCount ?? 0}
-              previousValue={yesterdayKpiSummary?.gatepassTotals.discrepancyGatepassCount}
-              icon={TriangleAlertIcon}
-              className={
-                (todayKpiSummary?.gatepassTotals.discrepancyGatepassCount ?? 0) > 0
-                  ? "border-destructive/40 bg-destructive-faint"
-                  : undefined
-              }
-            />
           </div>
         )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <DiscrepancyPanel businessDate={format(today, "yyyy-MM-dd")} />
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {tx("common.nav.quickActions")}
-        </h2>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-          {adminQuickActions.map((quickAction) => (
-            <QuickActionLink
-              key={quickAction.href}
-              href={quickAction.href}
-              label={quickAction.label}
-              icon={quickAction.icon}
-            />
-          ))}
-        </div>
       </section>
 
       <section className="flex flex-col gap-3">

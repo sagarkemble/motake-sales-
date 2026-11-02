@@ -128,7 +128,7 @@ export function MoneyPaperView({
         </span>
       </div>
       {!canCorrect && <InactiveNotice />}
-      <article className="space-y-4 rounded-2xl border bg-card p-4">
+      <article className="space-y-4 rounded-2xl border bg-card shadow-sm p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <PaperHeading model={model} />
           <div className="flex flex-col gap-2 sm:items-end">
@@ -225,7 +225,7 @@ export function OpeningPaperView({
           <AlertDescription>{tx("admin.ledger.money.opening.noneBody")}</AlertDescription>
         </Alert>
       ) : (
-        <article className="rounded-2xl border bg-card p-4">
+        <article className="rounded-2xl border bg-card shadow-sm p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h2 className="text-base font-semibold">{tx("admin.ledger.money.opening.title")}</h2>

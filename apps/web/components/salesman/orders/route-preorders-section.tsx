@@ -75,7 +75,7 @@ export function RoutePreordersSection() {
       <div
         key={order.id}
         className={cn(
-          "flex items-center gap-3 rounded-2xl border bg-card p-3",
+          "flex items-center gap-3 rounded-2xl border bg-card shadow-sm p-3",
           isOverdue && "border-destructive/40",
           isUpcoming && "bg-muted-faint",
         )}

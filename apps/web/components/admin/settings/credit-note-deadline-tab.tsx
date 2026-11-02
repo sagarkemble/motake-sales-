@@ -55,7 +55,7 @@ export function CreditNoteDeadlineTab({ deadlines }: { deadlines: CreditNoteDead
         </AlertDescription>
       </Alert>
       {deadlines.map((entry) => (
-        <div key={entry.financialYear} className="rounded-xl border bg-card p-3">
+        <div key={entry.financialYear} className="rounded-xl border bg-card shadow-sm p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-medium">

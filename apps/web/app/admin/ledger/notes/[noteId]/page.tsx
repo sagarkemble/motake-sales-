@@ -47,7 +47,7 @@ function NoteDocument({ paper }: { paper: NotePaper }) {
   });
 
   return (
-    <article className="rounded-2xl border bg-card px-4 py-3">
+    <article className="rounded-2xl border bg-card shadow-sm px-4 py-3">
       <header className="flex flex-col gap-1 border-b pb-3">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
           {tx(`admin.ledger.rowTypes.${note.kind}`)}
@@ -203,7 +203,7 @@ function NotePaperView({ paper }: { paper: NotePaper }) {
           <NoteDocument paper={paper} />
         </div>
         <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
-          <div className="space-y-3 rounded-2xl border bg-card p-3">
+          <div className="space-y-3 rounded-2xl border bg-card shadow-sm p-3">
             <div>
               <p className="font-mono text-base font-semibold">{paper.note.number}</p>
               {paper.customer && (

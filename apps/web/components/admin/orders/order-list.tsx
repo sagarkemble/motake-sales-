@@ -150,7 +150,7 @@ export function OrderList({ customerId }: OrderListProps) {
   return (
     <div className="flex flex-col gap-3">
       {showFilters && (
-        <Collapsible defaultOpen className="group/filters rounded-2xl border bg-card p-3">
+        <Collapsible defaultOpen className="group/filters rounded-2xl border bg-card shadow-sm p-3">
           <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 rounded-lg text-left text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
             <SlidersHorizontalIcon className="size-4" />
             {tx("admin.orders.filters.title")}
@@ -385,7 +385,7 @@ function OrderTable({
   const tx = useTranslate();
 
   return (
-    <div className="hidden overflow-hidden rounded-2xl border bg-card md:block">
+    <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
       <Table>
         <TableHeader>
           <TableRow>
@@ -469,7 +469,7 @@ function OrderCard({
     <button
       type="button"
       onClick={() => onSelect(row)}
-      className="flex flex-col gap-2 rounded-2xl border bg-card p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
+      className="flex flex-col gap-2 rounded-2xl border bg-card shadow-sm p-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors hover:bg-accent"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

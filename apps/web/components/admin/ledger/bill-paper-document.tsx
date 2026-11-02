@@ -133,7 +133,7 @@ export function BillPaperDocument({ paper, edit }: { paper: BillPaper; edit?: Co
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card p-4 text-card-foreground sm:p-6",
+        "relative overflow-hidden rounded-2xl border bg-card shadow-sm p-4 text-card-foreground sm:p-6",
       )}
     >
       {paper.bill.cancelled && (

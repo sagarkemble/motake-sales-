@@ -29,7 +29,7 @@ export function CheckoutViewDesktop({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-8">
-      <div className="rounded-2xl border bg-card p-6">{children}</div>
+      <div className="rounded-2xl border bg-card shadow-sm p-6">{children}</div>
 
       {hint && <p className="-mb-4 text-right text-xs text-muted-foreground">{hint}</p>}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

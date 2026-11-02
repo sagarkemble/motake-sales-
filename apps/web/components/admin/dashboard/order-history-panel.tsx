@@ -53,7 +53,7 @@ export function OrderHistoryPanel({ salesmanId, heading }: OrderHistoryPanelProp
   }, [loadMoreOrders]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:p-5">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card shadow-sm p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-muted-foreground">
           {heading ?? tx("admin.dashboard.orderHistory")}

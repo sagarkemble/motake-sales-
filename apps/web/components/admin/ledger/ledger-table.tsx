@@ -162,7 +162,7 @@ export function LedgerTable({
             key={row.id}
             data-row-id={row.id}
             className={cn(
-              "overflow-hidden rounded-2xl border bg-card",
+              "overflow-hidden rounded-2xl border bg-card shadow-sm",
               row.id === highlightedId && HIGHLIGHT,
             )}
           >

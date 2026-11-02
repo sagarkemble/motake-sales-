@@ -65,7 +65,7 @@ export function NewCustomerFields({
         <span>{tx("salesman.checkout.customer.addedOnRoute", { route: routeName })}</span>
       </div>
 
-      <div className="rounded-2xl border bg-card p-3">
+      <div className="rounded-2xl border bg-card shadow-sm p-3">
         <Label className="mb-2 block">{tx("salesman.checkout.customer.shopPhoto")}</Label>
         <ImageUpload
           imageUrl={newCustomerForm.shopPhotoUrl || null}

@@ -52,7 +52,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
 
   if (isCanonicalDateLoading || isGatepassesLoading || isAllotmentMatrixLoading || !businessDate) {
     return (
-      <div className="rounded-2xl border bg-card p-2">
+      <div className="rounded-2xl border bg-card shadow-sm p-2">
         <TableRowsSkeleton rows={4} columns={7} />
       </div>
     );
@@ -133,7 +133,7 @@ export function VerificationTab({ salesmanId }: VerificationTabProps) {
 
       <GatepassQuantityKpis totals={totals} handedOver />
 
-      <div className="rounded-2xl border bg-card p-2">
+      <div className="rounded-2xl border bg-card shadow-sm p-2">
         <GatepassLinesTable rows={pendingItems} handedOver />
       </div>
 
