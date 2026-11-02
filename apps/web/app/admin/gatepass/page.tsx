@@ -362,17 +362,20 @@ function GatepassPageContent() {
         )}
       </section>
 
-      <GatepassDayList
-        businessDate={businessDate}
-        salesmen={salesmen}
-        dayGatepasses={dayGatepasses}
-        allotmentMatrix={allotmentMatrix}
-        isLoading={isGatepassesLoading || isAllotmentMatrixLoading || isSalesmenListLoading}
-        onAllot={(salesmanId) => {
-          startAnotherAllotment(salesmanId);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
-      />
+      {/* Who has a GatePass today shows while choosing the Salesman, not on the later steps. */}
+      {(stepIndex === 0 || allottedGatepass) && (
+        <GatepassDayList
+          businessDate={businessDate}
+          salesmen={salesmen}
+          dayGatepasses={dayGatepasses}
+          allotmentMatrix={allotmentMatrix}
+          isLoading={isGatepassesLoading || isAllotmentMatrixLoading || isSalesmenListLoading}
+          onAllot={(salesmanId) => {
+            startAnotherAllotment(salesmanId);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
     </div>
   );
 }
