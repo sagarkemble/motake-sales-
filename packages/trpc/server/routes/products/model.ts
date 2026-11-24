@@ -1,7 +1,7 @@
 import { varietySizeValueSchema } from "@repo/services/products";
 import { unitOfMeasureCodeSchema } from "@repo/services/units-of-measure";
 
-import { z } from "../../schema";
+import { imageUploadFormFieldsSchema, z } from "../../schema";
 
 export const entityStatusSchema = z.enum(["active", "inactive"]);
 
@@ -96,6 +96,7 @@ export const createImageUploadUrlOutputSchema = z.object({
   uploadUrl: z.string(),
   imageKey: z.string(),
   imageUrl: z.string(),
+  formFields: imageUploadFormFieldsSchema,
 });
 
 // Variety tax periods (Admin only). The rate crosses the API as integer basis points; 5% is 500.

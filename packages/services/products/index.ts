@@ -25,10 +25,10 @@ import UnitOfMeasureService from "../units-of-measure";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   buildObjectKey,
-  buildPublicUrl,
-  createPresignedUploadUrl,
+  createClientUpload,
   deleteObject,
-} from "../uploads/r2-client";
+  type ImageUploadFormFields,
+} from "../uploads/imagekit-client";
 import {
   createImageUploadUrlInputSchema,
   createProductInputSchema,
@@ -63,6 +63,7 @@ interface ImageUploadUrlResult {
   uploadUrl: string;
   imageKey: string;
   imageUrl: string;
+  formFields: ImageUploadFormFields;
 }
 
 class ProductService {
@@ -349,8 +350,7 @@ class ProductService {
   ): Promise<ImageUploadUrlResult> {
     const parsedInput = createImageUploadUrlInputSchema.parse(input);
     const imageKey = buildObjectKey(productImageFolderName, "admin", parsedInput.fileName);
-    const uploadUrl = await createPresignedUploadUrl(imageKey, parsedInput.contentType);
-    return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
+    return createClientUpload(imageKey);
   }
 }
 

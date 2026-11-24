@@ -26,12 +26,9 @@ const envSchema = z.object({
   INNGEST_SIGNING_KEY: z.string().min(1),
   INNGEST_BASE_URL: z.string().url().default("http://127.0.0.1:8288"),
 
-  // Private Documents bucket (Spec L) with this app's own read-only R2 key.
-  // Cloudflare account id (same as the API's R2_ACCOUNT_ID); the endpoint is built from it.
-  NOTIFICATION_R2_ACCOUNT_ID: z.string().min(1),
-  NOTIFICATION_R2_ACCESS_KEY_ID: z.string().min(1),
-  NOTIFICATION_R2_SECRET_ACCESS_KEY: z.string().min(1),
-  R2_DOCUMENTS_BUCKET_NAME: z.string().min(1),
+  // Private ImageKit PDFs (same account as the main API; server-only private key).
+  IMAGEKIT_PRIVATE_KEY: z.string().min(1),
+  IMAGEKIT_URL_ENDPOINT: z.string().url(),
 });
 
 function createEnv(env: NodeJS.ProcessEnv) {

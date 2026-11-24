@@ -231,7 +231,7 @@ describe("Spec L draws Spec G's papers", () => {
 
     for (const version of versions) {
       const link = await documents.getDownloadLink(world.admin.id, { billVersionId: version.id });
-      expect(link.url).toContain("X-Amz-Signature");
+      expect(link.url).toContain("ik-s=");
     }
     for (const note of await notesOf(placed.billId)) {
       const link = await documents.getDownloadLink(world.admin.id, { noteId: note.id });

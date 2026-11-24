@@ -1,4 +1,4 @@
-import { z } from "../../schema";
+import { imageUploadFormFieldsSchema, z } from "../../schema";
 
 export const appRoleSchema = z.enum(["admin", "salesman"]);
 
@@ -49,4 +49,5 @@ export const createAvatarUploadUrlOutputSchema = z.object({
   uploadUrl: z.string(),
   imageKey: z.string(),
   imageUrl: z.string(),
+  formFields: imageUploadFormFieldsSchema,
 });

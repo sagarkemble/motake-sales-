@@ -16,24 +16,14 @@ const envSchema = z
       .describe(
         "Supabase service role key. Bypasses RLS; server-only, never expose in client-side code.",
       ),
-    R2_ACCOUNT_ID: z.string().min(1).describe("Cloudflare R2 account id"),
-    R2_ACCESS_KEY_ID: z.string().min(1).describe("Cloudflare R2 S3 API access key id"),
-    R2_SECRET_ACCESS_KEY: z
+    IMAGEKIT_PUBLIC_KEY: z.string().min(1).describe("ImageKit public API key (safe to send to the browser for uploads)"),
+    IMAGEKIT_PRIVATE_KEY: z
       .string()
       .min(1)
-      .describe(
-        "Cloudflare R2 S3 API secret access key. Server-only, never expose in client-side code.",
-      ),
-    R2_BUCKET_NAME: z.string().min(1).describe("Cloudflare R2 bucket name for uploaded files"),
-    R2_PUBLIC_BASE_URL: z
+      .describe("ImageKit private API key. Server-only, never expose in client-side code."),
+    IMAGEKIT_URL_ENDPOINT: z
       .url()
-      .describe("Public base URL for reading uploaded files back, no trailing slash"),
-    R2_DOCUMENTS_BUCKET_NAME: z
-      .string()
-      .min(1)
-      .describe(
-        "Private Cloudflare R2 bucket for Bill, Note and Payment receipt PDFs. No public access; the R2 token must be allowed on it too.",
-      ),
+      .describe("ImageKit URL endpoint, e.g. https://ik.imagekit.io/your_id, no trailing slash"),
     // Spec J-0: the notification app (typed client) and the Fix access token dialog. Unset
     // in dev without the notification app: the token status then reads `unknown`.
     NOTIFICATION_URL: z

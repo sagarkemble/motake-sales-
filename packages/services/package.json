@@ -31,7 +31,7 @@
     "./routes": "./routes/index.ts",
     "./salesman": "./salesman/index.ts",
     "./settings": "./settings/index.ts",
-    "./uploads": "./uploads/r2-client.ts",
+    "./uploads": "./uploads/imagekit-client.ts",
     "./units-of-measure": "./units-of-measure/index.ts",
     "./variety-tax-periods": "./variety-tax-periods/index.ts",
     "./whatsapp-token": "./whatsapp-token/index.ts"
@@ -41,13 +41,14 @@
     "@repo/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "dotenv-cli": "^11.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "unpdf": "^1.9.1",
     "vitest": "^3"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.925.0",
-    "@aws-sdk/s3-request-presigner": "^3.925.0",
+    "@imagekit/nodejs": "^7.15.0",
     "@repo/database": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/pdf": "workspace:*",
@@ -58,6 +59,7 @@
     "zod": "^4.3.5"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate:r2-to-imagekit": "tsx ./scripts/migrate-r2-to-imagekit.ts"
   }
 }

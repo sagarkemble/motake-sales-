@@ -14,7 +14,8 @@
     "loadtest": "dotenv -- bash k6/run.sh",
     "seed:k6-users": "dotenv -- node scripts/seed-k6-users.mjs",
     "tokens:k6": "dotenv -- node scripts/fetch-k6-tokens.mjs",
-    "cleanup:k6": "dotenv -- node scripts/cleanup-k6-data.mjs"
+    "cleanup:k6": "dotenv -- node scripts/cleanup-k6-data.mjs",
+    "media:migrate-r2-to-imagekit": "dotenv -- pnpm --filter @repo/services migrate:r2-to-imagekit"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

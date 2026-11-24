@@ -201,12 +201,9 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 | `JWT_SECRET` | `JWT_SECRET` |
 | `SUPABASE_URL` | `SUPABASE_URL` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
-| `R2_ACCOUNT_ID` | `R2_ACCOUNT_ID` |
-| `R2_ACCESS_KEY_ID` | `R2_ACCESS_KEY_ID` |
-| `R2_SECRET_ACCESS_KEY` | `R2_SECRET_ACCESS_KEY` |
-| `R2_BUCKET_NAME` | `R2_BUCKET_NAME` |
-| `R2_PUBLIC_BASE_URL` | `R2_PUBLIC_BASE_URL` |
-| `R2_DOCUMENTS_BUCKET_NAME` | `R2_DOCUMENTS_BUCKET_NAME` (private PDF bucket, no public access) |
+| `IMAGEKIT_PUBLIC_KEY` | `IMAGEKIT_PUBLIC_KEY` |
+| `IMAGEKIT_PRIVATE_KEY` | `IMAGEKIT_PRIVATE_KEY` |
+| `IMAGEKIT_URL_ENDPOINT` | `IMAGEKIT_URL_ENDPOINT` (e.g. `https://ik.imagekit.io/your_id`) |
 
 #### Build-time + runtime (web — baked into Next.js at CI build)
 
@@ -227,7 +224,7 @@ GitHub Actions reads these automatically on every deploy — **replacing interac
 
 #### Notification service (Spec K — `apps/notification` Docker container)
 
-Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNAL_API_KEY` switches the service on: unset, deploy skips the notification container (and Docker) with a warning; set, every secret below is required and deploy fails on a missing one. The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (above), which never switches the service on. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
+Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNAL_API_KEY` switches the service on: unset, deploy skips the notification container (and Docker) with a warning; set, every secret below is required and deploy fails on a missing one. The container also gets `IMAGEKIT_PRIVATE_KEY` and `IMAGEKIT_URL_ENDPOINT` so it can read private PDFs. They are written to `deploy/generated/notification.env` (mode 600) for the container, **not** to the root `.env` the API loads — except `NOTIFICATION_INTERNAL_API_KEY`, which the main API also needs (with `NOTIFICATION_URL`, written by the deploy).
 
 | Secret | Purpose |
 |--------|---------|
@@ -237,9 +234,8 @@ Separate secrets, so leaking one does not open the others. `NOTIFICATION_INTERNA
 | `META_WEBHOOK_VERIFY_TOKEN` | Any long random string; the same value goes into the Meta webhook settings |
 | `INNGEST_EVENT_KEY` | Self-hosted Inngest event key (`openssl rand -hex 16`) |
 | `INNGEST_SIGNING_KEY` | Self-hosted Inngest signing key, hex with an even length (`openssl rand -hex 32`) |
-| `NOTIFICATION_R2_ACCOUNT_ID` | Cloudflare account id (same value as `R2_ACCOUNT_ID`); the endpoint is built from it |
-| `NOTIFICATION_R2_ACCESS_KEY_ID` | Read-only R2 token for the private Documents bucket only |
-| `NOTIFICATION_R2_SECRET_ACCESS_KEY` | Its secret |
+| `IMAGEKIT_PRIVATE_KEY` | Same ImageKit private key as the API (PDF reads) |
+| `IMAGEKIT_URL_ENDPOINT` | Same ImageKit URL endpoint as the API |
 
 ### 5.2 Variables (non-sensitive — repository variables)
 
@@ -477,7 +473,9 @@ DATABASE_URL=...
 JWT_SECRET=...
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
-R2_*=...
+IMAGEKIT_PUBLIC_KEY=...
+IMAGEKIT_PRIVATE_KEY=...
+IMAGEKIT_URL_ENDPOINT=...
 LOGGER_LEVEL=error
 NEXT_PUBLIC_API_URL=https://sales-api.motakedairy.com/trpc
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -691,7 +689,7 @@ Use `production` (not `prod`) everywhere — API, logger, and Next.js expect the
 | `DATABASE_URL` | ✅ | ✅ (secret) |
 | `JWT_SECRET` | ✅ | ✅ (secret) |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | ✅ (secret) |
-| `R2_*` | ✅ | ✅ (secret) |
+| `IMAGEKIT_*` | ✅ | ✅ (secret) |
 | `CORS_ALLOWED_ORIGIN` | optional | `https://sales.motakedairy.com` |
 
 **Rules:**

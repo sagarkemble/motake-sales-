@@ -125,7 +125,7 @@ export const notesTable = pgTable(
     sellerAddress: text("seller_address").notNull(),
     sellerGstin: varchar("seller_gstin", { length: 15 }).notNull(),
 
-    // Private R2 key of the Note PDF; set once.
+    // Private ImageKit key of the Note PDF; set once.
     pdfKey: text("pdf_key"),
 
     // The one Ledger row for this Note.

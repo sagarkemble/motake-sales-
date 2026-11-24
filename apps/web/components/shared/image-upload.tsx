@@ -24,7 +24,14 @@ interface ImageUploadProps {
     fileName: string;
     contentType: AcceptedContentType;
     contentLength: number;
-  }) => Promise<{ data: { uploadUrl: string; imageKey: string; imageUrl: string } }>;
+  }) => Promise<{
+    data: {
+      uploadUrl: string;
+      imageKey: string;
+      imageUrl: string;
+      formFields: Record<string, string>;
+    };
+  }>;
   altText: string;
   shape?: "square" | "circle";
   uploadButtonLabel?: string;
@@ -70,13 +77,19 @@ export function ImageUpload({
         contentType: selectedFile.type as AcceptedContentType,
         contentLength: selectedFile.size,
       });
-      const { uploadUrl, imageKey, imageUrl: uploadedImageUrl } = uploadUrlResponse.data;
+      const {
+        uploadUrl,
+        imageKey,
+        imageUrl: uploadedImageUrl,
+        formFields,
+      } = uploadUrlResponse.data;
 
-      const putResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: selectedFile,
-        headers: { "Content-Type": selectedFile.type },
-      });
+      const uploadBody = new FormData();
+      uploadBody.append("file", selectedFile);
+      for (const [fieldName, fieldValue] of Object.entries(formFields)) {
+        uploadBody.append(fieldName, fieldValue);
+      }
+      const putResponse = await fetch(uploadUrl, { method: "POST", body: uploadBody });
       if (!putResponse.ok) throw new Error("Upload to storage failed");
 
       setPreviewUrl(uploadedImageUrl);

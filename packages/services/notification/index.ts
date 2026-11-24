@@ -1045,7 +1045,10 @@ export {
   META_GRAPH_API_VERSION,
   classifyMetaError,
 } from "./meta-whatsapp-provider";
-export { R2DocumentReader, type R2DocumentReaderConfig } from "./r2-document-reader";
+export {
+  ImageKitDocumentReader,
+  type ImageKitDocumentReaderConfig,
+} from "./imagekit-document-reader";
 export {
   WhatsAppTokenStore,
   type WhatsAppTokenMetadata,

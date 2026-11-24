@@ -30,9 +30,10 @@ import { changedFields, createdFields, recordAudit } from "../shared/audit";
 import {
   buildObjectKey,
   buildPublicUrl,
-  createPresignedUploadUrl,
+  createClientUpload,
   deleteObject,
-} from "../uploads/r2-client";
+  type ImageUploadFormFields,
+} from "../uploads/imagekit-client";
 import {
   createCustomerAsAdminInputSchema,
   createCustomerAsSalesmanInputSchema,
@@ -72,6 +73,7 @@ export interface ShopPhotoUploadUrlResult {
   uploadUrl: string;
   imageKey: string;
   imageUrl: string;
+  formFields: ImageUploadFormFields;
 }
 
 function assertShopPhotoKeyBelongsToCreator(shopPhotoKey: string, creatorId: string): void {
@@ -99,12 +101,7 @@ class CustomerService {
   ): Promise<ShopPhotoUploadUrlResult> {
     const parsedInput = createShopPhotoUploadUrlInputSchema.parse(input);
     const imageKey = buildObjectKey(shopPhotoFolderName, uploaderId, parsedInput.fileName);
-    const uploadUrl = await createPresignedUploadUrl(
-      imageKey,
-      parsedInput.contentType,
-      parsedInput.contentLength,
-    );
-    return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
+    return createClientUpload(imageKey);
   }
 
   // Admin picks any listed Route. Same phone on two Customers is allowed.

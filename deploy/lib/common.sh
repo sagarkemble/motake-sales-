@@ -28,7 +28,7 @@ LOCAL_CADDYFILE="$GENERATED_DIR/Caddyfile"
 NOTIFICATION_ENV_FILE="$GENERATED_DIR/notification.env"
 
 # The notification container's own secrets: all or none, switched on by
-# NOTIFICATION_INTERNAL_API_KEY. Meta, Inngest and the R2 read key are separate secrets.
+# NOTIFICATION_INTERNAL_API_KEY. Meta, Inngest and the ImageKit private key are separate secrets.
 NOTIFICATION_SECRET_VARS=(
   NOTIFICATION_INTERNAL_API_KEY
   META_PHONE_NUMBER_ID
@@ -36,15 +36,13 @@ NOTIFICATION_SECRET_VARS=(
   META_WEBHOOK_VERIFY_TOKEN
   INNGEST_EVENT_KEY
   INNGEST_SIGNING_KEY
-  NOTIFICATION_R2_ACCOUNT_ID
-  NOTIFICATION_R2_ACCESS_KEY_ID
-  NOTIFICATION_R2_SECRET_ACCESS_KEY
+  IMAGEKIT_PRIVATE_KEY
 )
 
-# Root values the container also gets. Always set for the API (Spec L), so they never decide
+# Root values the container also gets. Always set for the API, so they never decide
 # whether the notification service is configured.
 NOTIFICATION_SHARED_VARS=(
-  R2_DOCUMENTS_BUCKET_NAME
+  IMAGEKIT_URL_ENDPOINT
 )
 
 trim_whitespace() {

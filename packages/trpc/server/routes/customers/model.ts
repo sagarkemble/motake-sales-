@@ -1,4 +1,4 @@
-import { z } from "../../schema";
+import { imageUploadFormFieldsSchema, z } from "../../schema";
 
 export const preferredLanguageSchema = z.enum(["mr", "en"]);
 
@@ -118,4 +118,5 @@ export const createShopPhotoUploadUrlOutputSchema = z.object({
   uploadUrl: z.string(),
   imageKey: z.string(),
   imageUrl: z.string(),
+  formFields: imageUploadFormFieldsSchema,
 });

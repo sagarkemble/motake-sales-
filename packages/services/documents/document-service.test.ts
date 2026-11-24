@@ -27,7 +27,7 @@ import {
   type LineInput,
 } from "../test/builders";
 import { refusalOf } from "../errors";
-import { MemoryDocumentStore, TEST_DOCUMENTS_BUCKET } from "../test/memory-document-store";
+import { MemoryDocumentStore, TEST_IMAGEKIT_ID } from "../test/memory-document-store";
 import { printedText } from "../test/pdf-text";
 import DocumentService from "./index";
 
@@ -45,15 +45,12 @@ async function refusalFrom(call: Promise<unknown>): Promise<{ code: string; reas
   throw new Error("Expected the call to be refused");
 }
 
-// The bucket and key a signed link points at, for either S3 addressing style.
-function signedObjectOf(link: string): { bucket: string; key: string } {
+// Object key inside an ImageKit URL: https://ik.imagekit.io/{id}/{key}
+function signedObjectKeyOf(link: string): string {
   const url = new URL(link);
-  const path = decodeURIComponent(url.pathname.slice(1));
-  const hostBucket = url.hostname.split(".")[0]!;
-  if (url.hostname.startsWith(`${TEST_DOCUMENTS_BUCKET}.`))
-    return { bucket: hostBucket, key: path };
-  const [bucket, ...key] = path.split("/");
-  return { bucket: bucket!, key: key.join("/") };
+  const parts = decodeURIComponent(url.pathname).split("/").filter(Boolean);
+  if (parts[0] === TEST_IMAGEKIT_ID) parts.shift();
+  return parts.join("/");
 }
 
 async function versionsOf(billId: string) {
@@ -557,12 +554,10 @@ describe("DocumentService.getDownloadLink", () => {
     expect(await pdfKeyOf(version.id)).toBe(key);
     expect(store.puts).toEqual([key]);
     const url = new URL(link.url);
-    expect(signedObjectOf(link.url)).toEqual({ bucket: TEST_DOCUMENTS_BUCKET, key });
-    expect(url.searchParams.get("X-Amz-Expires")).toBe("300");
-    expect(url.searchParams.get("response-content-type")).toBe("application/pdf");
-    expect(url.searchParams.get("response-content-disposition")).toContain(
-      `attachment; filename="${filename}"`,
-    );
+    expect(signedObjectKeyOf(link.url)).toBe(key);
+    expect(url.searchParams.get("ik-s")).toBeTruthy();
+    expect(url.searchParams.get("ik-attachment")).toBe("true");
+    expect(url.searchParams.get("ik-fileName")).toBe(filename);
     expect(link.expiresAt.getTime() - Date.now()).toBeGreaterThan(290_000);
     expect(link.url).not.toContain("r2.dev");
   });
@@ -596,9 +591,9 @@ describe("DocumentService.getDownloadLink", () => {
       billVersionId: supply.version.id,
     });
 
-    expect(signedObjectOf(v1Link.url).key).toBe(`documents/bills/${bill.id}/v1.pdf`);
-    expect(signedObjectOf(v2Link.url).key).toBe(`documents/bills/${bill.id}/v2.pdf`);
-    expect(signedObjectOf(supplyV1Link.url).key).toBe(`documents/bills/${supply.bill.id}/v1.pdf`);
+    expect(signedObjectKeyOf(v1Link.url)).toBe(`documents/bills/${bill.id}/v1.pdf`);
+    expect(signedObjectKeyOf(v2Link.url)).toBe(`documents/bills/${bill.id}/v2.pdf`);
+    expect(signedObjectKeyOf(supplyV1Link.url)).toBe(`documents/bills/${supply.bill.id}/v1.pdf`);
   });
 
   it("opens an old Bill version and a Note, and refuses a salesman", async () => {
@@ -639,15 +634,9 @@ describe("DocumentService.getDownloadLink", () => {
       documents.getDownloadLink(salesman.profile.id, { billVersionId: v1.id }),
     );
 
-    expect(signedObjectOf(oldVersionLink.url)).toEqual({
-      bucket: TEST_DOCUMENTS_BUCKET,
-      key: `documents/bills/${bill.id}/v1.pdf`,
-    });
+    expect(signedObjectKeyOf(oldVersionLink.url)).toBe(`documents/bills/${bill.id}/v1.pdf`);
     expect(noteLink.filename).toBe("Motake Debit Note MD-26-27-000007.pdf");
-    expect(signedObjectOf(noteLink.url)).toEqual({
-      bucket: TEST_DOCUMENTS_BUCKET,
-      key: `documents/notes/${note.id}.pdf`,
-    });
+    expect(signedObjectKeyOf(noteLink.url)).toBe(`documents/notes/${note.id}.pdf`);
     expect(salesmanRefusal).toEqual({ code: "FORBIDDEN", reason: "forbidden" });
   });
 });

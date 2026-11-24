@@ -24,10 +24,11 @@ import {
   type SellerValues,
   type SupplyType,
 } from "@repo/pdf";
-import { R2DocumentStore, type DocumentStore } from "@repo/pdf/store";
+import { type DocumentStore } from "@repo/pdf/store";
 
 import { env } from "../env";
 import { documentRefused, internalError } from "../errors";
+import { ImageKitDocumentStore } from "./imagekit-store";
 import SettingsService from "../settings";
 import { INDIAN_STATES } from "../shared/indian-states";
 import {
@@ -59,11 +60,9 @@ type PaperFor<L extends LayoutName = LayoutName> = {
 }[L];
 
 function defaultDocumentStore(): DocumentStore {
-  return new R2DocumentStore({
-    accountId: env.R2_ACCOUNT_ID,
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    bucketName: env.R2_DOCUMENTS_BUCKET_NAME,
+  return new ImageKitDocumentStore({
+    privateKey: env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: env.IMAGEKIT_URL_ENDPOINT,
   });
 }
 

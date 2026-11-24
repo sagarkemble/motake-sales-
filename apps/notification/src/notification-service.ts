@@ -1,6 +1,6 @@
 import NotificationService, {
   MetaWhatsAppProvider,
-  R2DocumentReader,
+  ImageKitDocumentReader,
   WhatsAppTokenStore,
 } from "@repo/services/notification";
 
@@ -13,17 +13,15 @@ export const tokenStore = new WhatsAppTokenStore({
   vaultSecretName: env.WHATSAPP_TOKEN_VAULT_SECRET_NAME,
 });
 
-// The one NotificationService this app serves, wired to Meta, the private R2 bucket and Inngest.
+// The one NotificationService this app serves, wired to Meta, private ImageKit PDFs and Inngest.
 export const notificationService = new NotificationService({
   provider: new MetaWhatsAppProvider({
     tokenSource: tokenStore,
     phoneNumberId: env.META_PHONE_NUMBER_ID,
   }),
-  documentReader: new R2DocumentReader({
-    accountId: env.NOTIFICATION_R2_ACCOUNT_ID,
-    accessKeyId: env.NOTIFICATION_R2_ACCESS_KEY_ID,
-    secretAccessKey: env.NOTIFICATION_R2_SECRET_ACCESS_KEY,
-    bucketName: env.R2_DOCUMENTS_BUCKET_NAME,
+  documentReader: new ImageKitDocumentReader({
+    privateKey: env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: env.IMAGEKIT_URL_ENDPOINT,
   }),
   dispatcher: new InngestDispatcher(),
   webhook: {

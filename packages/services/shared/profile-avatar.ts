@@ -7,9 +7,10 @@ import { screenRefusal } from "../errors";
 import {
   buildObjectKey,
   buildPublicUrl,
-  createPresignedUploadUrl,
+  createClientUpload,
   deleteObject,
-} from "../uploads/r2-client";
+  type ImageUploadFormFields,
+} from "../uploads/imagekit-client";
 
 const avatarImageFolderName = "avatars";
 
@@ -35,6 +36,7 @@ export interface ProfileAvatarUploadUrlResult {
   uploadUrl: string;
   imageKey: string;
   imageUrl: string;
+  formFields: ImageUploadFormFields;
 }
 
 export async function updateProfileNameAndAvatar(
@@ -95,10 +97,5 @@ export async function createProfileAvatarUploadUrl(
 ): Promise<ProfileAvatarUploadUrlResult> {
   const parsedInput = createProfileAvatarUploadUrlInputSchema.parse(input);
   const imageKey = buildObjectKey(avatarImageFolderName, profileId, parsedInput.fileName);
-  const uploadUrl = await createPresignedUploadUrl(
-    imageKey,
-    parsedInput.contentType,
-    parsedInput.contentLength,
-  );
-  return { uploadUrl, imageKey, imageUrl: buildPublicUrl(imageKey) };
+  return createClientUpload(imageKey);
 }

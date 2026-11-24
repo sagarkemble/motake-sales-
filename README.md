@@ -15,7 +15,7 @@ Full-stack monorepo for the Motake dairy distribution platform.
 | `scripts/`          | Seeding, token-fetch, and cleanup scripts for load testing              |
 
 
-**Stack:** Node 22, pnpm, Turborepo, Next.js, Express, tRPC, Drizzle, Supabase (Auth + Postgres), Cloudflare R2.
+**Stack:** Node 22, pnpm, Turborepo, Next.js, Express, tRPC, Drizzle, Supabase (Auth + Postgres), ImageKit.
 
 ## Local development setup
 
@@ -26,7 +26,7 @@ Full-stack monorepo for the Motake dairy distribution platform.
 - **Node.js 22+**
 - **pnpm 9** (`corepack enable` or `npm i -g pnpm@9`)
 - A **Supabase project** (Auth + Postgres)
-- Optional: **Cloudflare R2** bucket for image uploads
+- **ImageKit** account (public images + private Bill/Note/receipt PDFs)
 - Optional: **[k6](https://grafana.com/docs/k6/latest/set-up/install-k6/)** for load tests
 
 
@@ -60,8 +60,8 @@ Fill in at minimum:
 | `SUPABASE_ANON_KEY`                                          | Required by `POST /api/auth/login` (server-side password grant) |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client                                         |
 | `JWT_SECRET`                                                 | Session signing secret                                          |
-| `R2_*`                                                       | Cloudflare R2 credentials (image uploads)                       |
-| `R2_DOCUMENTS_BUCKET_NAME`                                   | Private R2 bucket for Bill, Note and receipt PDFs               |
+| `IMAGEKIT_PUBLIC_KEY` / `IMAGEKIT_PRIVATE_KEY` / `IMAGEKIT_URL_ENDPOINT` | ImageKit (uploads + private PDFs)                |
+| `R2_*` (optional)                                            | Only for `pnpm media:migrate-r2-to-imagekit`                    |
 
 
 

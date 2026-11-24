@@ -24,7 +24,7 @@ import {
 import GatepassService from "../gatepass";
 import SalesmanService from "../salesman";
 import { changedFields, createdFields, recordAudit } from "../shared/audit";
-import { deleteObject } from "../uploads/r2-client";
+import { deleteObject } from "../uploads/imagekit-client";
 import {
   adminUploadedAvatar,
   createProfileAvatarUploadUrl,

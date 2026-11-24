@@ -44,7 +44,7 @@ See [`deployment.md`](../../deployment.md) §5 for the full list.
 Minimum:
 
 - `VPS_HOST`, `VPS_USER`, `VPS_APP_PATH`, `VPS_SSH_KEY`
-- `DATABASE_URL`, `JWT_SECRET`, Supabase, R2 keys
+- `DATABASE_URL`, `JWT_SECRET`, Supabase, ImageKit keys
 - `NEXT_PUBLIC_*`, `BASE_URL`, `CORS_ALLOWED_ORIGIN`
 
 Notification service (Spec K, optional — `NOTIFICATION_INTERNAL_API_KEY` switches it on, then all are required; unset skips the container and Docker):
@@ -52,8 +52,7 @@ Notification service (Spec K, optional — `NOTIFICATION_INTERNAL_API_KEY` switc
 - `NOTIFICATION_INTERNAL_API_KEY`, `META_PHONE_NUMBER_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`
 - No WhatsApp access token secret (Spec J-0): the token lives in Supabase Vault and the Admin sets it in the Fix access token dialog from the Admin banner (see `deployment.md` §9.1a).
 - `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` (hex: `openssl rand -hex 32`)
-- `NOTIFICATION_R2_ACCOUNT_ID`, `NOTIFICATION_R2_ACCESS_KEY_ID`, `NOTIFICATION_R2_SECRET_ACCESS_KEY`
-- The container also gets the root `R2_DOCUMENTS_BUCKET_NAME` (Spec L)
+- `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_URL_ENDPOINT` (same as the API; private PDF reads)
 
 They go to `deploy/generated/notification.env` for the Docker container, not to the API's `.env`. Docker is installed by `ensure-production.sh` only when the key is set; it rewrites the managed sudoers file (validated with `visudo`) first, so an existing VPS gains `/usr/sbin/usermod`. Meta setup: [`deployment.md`](../../deployment.md) §9.1a.
 
